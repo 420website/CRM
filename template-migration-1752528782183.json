@@ -1,0 +1,162 @@
+{
+  "export_date": "2025-07-14T21:33:02.182Z",
+  "environment": "development",
+  "clinical_templates": [
+    {
+      "_id": "6873f0f424961b50ffbaaae1",
+      "id": "7743159e-db8c-483c-9323-742155b559f1",
+      "name": "Positive",
+      "content": "Patient has tested positive for Hepatitis C virus. Recommend immediate treatment consultation.",
+      "is_default": false,
+      "created_at": "2025-07-13T17:46:28.393336",
+      "updated_at": "2025-07-13T17:47:31.823609"
+    },
+    {
+      "_id": "6873f0fa24961b50ffbaaae3",
+      "id": "a18a0b79-d7bd-477c-94f9-df174937e617",
+      "name": "Follow-up Required",
+      "content": "Additional testing required. Schedule follow-up appointment.",
+      "is_default": false,
+      "created_at": "2025-07-13T17:46:34.922708",
+      "updated_at": "2025-07-13T17:46:34.922710"
+    },
+    {
+      "_id": "6873f0fb24961b50ffbaaae4",
+      "id": "0ebf17ad-637c-4e5c-a1dc-77888f33c43c",
+      "name": "Bulk Template 1",
+      "content": "This is bulk template content 1",
+      "is_default": false,
+      "created_at": "2025-07-13T17:46:35.045679",
+      "updated_at": "2025-07-13T17:46:35.045680"
+    },
+    {
+      "_id": "6873f0fb24961b50ffbaaae5",
+      "id": "22fcf907-c48a-45f3-b0ee-f1439d4bd117",
+      "name": "Bulk Template 2",
+      "content": "This is bulk template content 2",
+      "is_default": false,
+      "created_at": "2025-07-13T17:46:35.047270",
+      "updated_at": "2025-07-13T17:46:35.047271"
+    },
+    {
+      "_id": "6873f0fb24961b50ffbaaae6",
+      "id": "a80ef24a-48e2-413e-abde-30057e715b15",
+      "name": "Migration Test",
+      "content": "Migrated from localStorage to database",
+      "is_default": false,
+      "created_at": "2025-07-13T17:46:35.048656",
+      "updated_at": "2025-07-13T17:46:35.048657"
+    },
+    {
+      "_id": "6873f0fb24961b50ffbaaae7",
+      "id": "824c1b06-816f-4d05-b252-f6331ad802f6",
+      "name": "Negative - Pipes",
+      "content": "Met with client today. Shares pipes. Counselled regarding risk factors. Completed point of care testing for HIV/HCV and both results were negative. No further follow up required.",
+      "is_default": false,
+      "created_at": "2025-07-13T17:46:35.170854",
+      "updated_at": "2025-07-13T17:57:36.305333"
+    },
+    {
+      "_id": "6873f0fb24961b50ffbaaae8",
+      "id": "c4458aeb-bd9e-427d-9527-c3f299e4df51",
+      "name": "Inconclusive",
+      "content": "Test results are inconclusive. Recommend retesting in 2-4 weeks.",
+      "is_default": false,
+      "created_at": "2025-07-13T17:46:35.172816",
+      "updated_at": "2025-07-13T17:47:31.826372"
+    },
+    {
+      "_id": "6873f0fb24961b50ffbaaae9",
+      "id": "4c7a1b02-567e-48ac-bfb4-1be7f92b31d3",
+      "name": "Follow-up",
+      "content": "Patient requires follow-up testing. Schedule appointment in 3 months.",
+      "is_default": false,
+      "created_at": "2025-07-13T17:46:35.174372",
+      "updated_at": "2025-07-13T17:47:31.827574"
+    },
+    {
+      "_id": "6873f17f24961b50ffbaaaeb",
+      "id": "bb5020d9-7d67-4418-9425-4d346700bb38",
+      "name": "Migration Template 1",
+      "content": "Content for migration template 1",
+      "is_default": false,
+      "created_at": "2025-07-13T17:48:47.247130",
+      "updated_at": "2025-07-13T17:48:47.247132"
+    },
+    {
+      "_id": "6873f17f24961b50ffbaaaec",
+      "id": "c3808b61-4dcb-4ed5-90a5-a772abe34e9f",
+      "name": "Migration Template 2",
+      "content": "Content for migration template 2",
+      "is_default": false,
+      "created_at": "2025-07-13T17:48:47.248696",
+      "updated_at": "2025-07-13T17:48:47.248697"
+    },
+    {
+      "_id": "6873f3a689f8d8528a29c05a",
+      "id": "0e2ab0fa-f4be-4db7-8548-00927b5050f1",
+      "name": "Negative - Pipes/Straws",
+      "content": "Met with client today. Shares pipes/straws. Counselled regarding risk factors. Completed point of care testing for HIV/HCV and both results were negative. No further follow up required.",
+      "is_default": false,
+      "created_at": "2025-07-13T17:57:58.677334",
+      "updated_at": "2025-07-13T17:57:58.677336"
+    },
+    {
+      "_id": "6873f3bc89f8d8528a29c05b",
+      "id": "345d3e79-dc1b-45a8-976d-f9f61b207ebb",
+      "name": "Negative - Pipes/Straws/Needles",
+      "content": "Met with client today. Shares pipes/straws/needles. Counselled regarding risk factors. Completed point of care testing for HIV/HCV and both results were negative. No further follow up required.",
+      "is_default": false,
+      "created_at": "2025-07-13T17:58:20.344999",
+      "updated_at": "2025-07-13T17:58:20.345001"
+    },
+    {
+      "_id": "6873fa5fd07fd6b59202bf4d",
+      "id": "7b5d26ee-0af9-4884-b92f-927813eae030",
+      "name": "Bulk Test Template 1",
+      "content": "Content for bulk test template 1",
+      "is_default": false,
+      "created_at": "2025-07-13T18:26:39.196608",
+      "updated_at": "2025-07-13T18:26:39.196611"
+    },
+    {
+      "_id": "6873fa5fd07fd6b59202bf4e",
+      "id": "5dc1e743-783f-4071-b9e5-e814db886200",
+      "name": "Bulk Test Template 2",
+      "content": "Content for bulk test template 2",
+      "is_default": false,
+      "created_at": "2025-07-13T18:26:39.198460",
+      "updated_at": "2025-07-13T18:26:39.198462"
+    }
+  ],
+  "notes_templates": [
+    {
+      "_id": "6874807bcc7a549ee14c0fe6",
+      "id": "consultation-default",
+      "name": "Consultation",
+      "content": "",
+      "is_default": true,
+      "created_at": "2025-07-14T03:58:51.096Z",
+      "updated_at": "2025-07-14T03:58:51.107Z"
+    },
+    {
+      "_id": "6874807bcc7a549ee14c0fe7",
+      "id": "lab-default",
+      "name": "Lab",
+      "content": "",
+      "is_default": true,
+      "created_at": "2025-07-14T03:58:51.107Z",
+      "updated_at": "2025-07-14T03:58:51.107Z"
+    },
+    {
+      "_id": "6874807bcc7a549ee14c0fe8",
+      "id": "prescription-default",
+      "name": "Prescription",
+      "content": "",
+      "is_default": true,
+      "created_at": "2025-07-14T03:58:51.107Z",
+      "updated_at": "2025-07-14T03:58:51.107Z"
+    }
+  ],
+  "total_templates": 17
+}

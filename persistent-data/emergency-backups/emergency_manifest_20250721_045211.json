@@ -1,0 +1,26 @@
+{
+  "timestamp": "20250721_045211",
+  "environment": "production",
+  "collections": {
+    "admin_registrations": {
+      "count": 23,
+      "file": "/app/persistent-data/emergency-backups/emergency_admin_registrations_20250721_045211.json"
+    },
+    "clinical_templates": {
+      "count": 4,
+      "file": "/app/persistent-data/emergency-backups/emergency_clinical_templates_20250721_045211.json"
+    },
+    "notes_templates": {
+      "count": 3,
+      "file": "/app/persistent-data/emergency-backups/emergency_notes_templates_20250721_045211.json"
+    },
+    "dispositions": {
+      "count": 62,
+      "file": "/app/persistent-data/emergency-backups/emergency_dispositions_20250721_045211.json"
+    },
+    "referral_sites": {
+      "count": 25,
+      "file": "/app/persistent-data/emergency-backups/emergency_referral_sites_20250721_045211.json"
+    }
+  }
+}

@@ -1,0 +1,108 @@
+🔧 Backend URL: https://46471c8a-a981-4b23-bca9-bb5c0ba282bc.preview.emergentagent.com
+🔧 MongoDB URL: mongodb://localhost:27017
+🔧 Database Name: my420_ca_db
+🚀 PROVINCE FIELD REPOSITIONING - BACKEND FUNCTIONALITY TEST
+======================================================================
+Testing backend functionality after province field repositioning
+(Frontend-only change: moved province field after city field)
+======================================================================
+
+🔍 TESTING CORE BACKEND SERVICES
+==================================================
+✅ Pending registrations endpoint: 200
+✅ Submitted registrations endpoint: 200
+✅ Notes templates endpoint: 200
+✅ Clinical templates endpoint: 200
+
+📊 Core Services Test Results: 4/4 passed
+
+🔍 TESTING DATABASE CONNECTIVITY
+========================================
+✅ Database connected. Collections: 11
+✅ Admin registrations collection accessible. Records: 42
+✅ Database queries working correctly
+
+🔍 TESTING REGISTRATION CREATION WITH PROVINCE FIELD
+============================================================
+📝 Creating registration with province: British Columbia
+📍 Address details: 445 Granville Street, Vancouver, British Columbia
+✅ Create registration with province field: 200
+✅ Registration created successfully with ID: ae31d39f-cda5-448e-a070-4ea203a27f1e
+✅ Retrieve created registration: 200
+✅ Province field correctly stored and retrieved: British Columbia
+✅ Complete address information (including province) verified
+   Address: 445 Granville Street
+   City: Vancouver
+   Province: British Columbia
+   Postal Code: V4A 8B8
+
+🔍 TESTING PROVINCE FIELD VARIATIONS
+=============================================
+🧪 Testing province: Ontario
+✅ Create registration with province: Ontario: 200
+✅ Verify province storage: Ontario: 200
+   ✅ Province 'Ontario' stored and retrieved correctly
+🧪 Testing province: British Columbia
+✅ Create registration with province: British Columbia: 200
+✅ Verify province storage: British Columbia: 200
+   ✅ Province 'British Columbia' stored and retrieved correctly
+🧪 Testing province: Alberta
+✅ Create registration with province: Alberta: 200
+✅ Verify province storage: Alberta: 200
+   ✅ Province 'Alberta' stored and retrieved correctly
+🧪 Testing province: Quebec
+✅ Create registration with province: Quebec: 200
+✅ Verify province storage: Quebec: 200
+   ✅ Province 'Quebec' stored and retrieved correctly
+🧪 Testing province: Manitoba
+✅ Create registration with province: Manitoba: 200
+✅ Verify province storage: Manitoba: 200
+   ✅ Province 'Manitoba' stored and retrieved correctly
+
+📊 Province Variations Test Results: 5/5 passed
+
+🔍 TESTING REGISTRATION UPDATE WITH PROVINCE CHANGES
+=======================================================
+
+🔍 TESTING REGISTRATION CREATION WITH PROVINCE FIELD
+============================================================
+📝 Creating registration with province: British Columbia
+📍 Address details: 575 Granville Street, Vancouver, British Columbia
+✅ Create registration with province field: 200
+✅ Registration created successfully with ID: aece2007-f0fd-4818-b4ff-c0e14190ac9e
+✅ Retrieve created registration: 200
+✅ Province field correctly stored and retrieved: British Columbia
+✅ Complete address information (including province) verified
+   Address: 575 Granville Street
+   City: Vancouver
+   Province: British Columbia
+   Postal Code: V8A 8B3
+✅ Update registration province field: 404
+❌ Province field update failed
+
+🔍 TESTING COMPREHENSIVE FORM DATA HANDLING
+==================================================
+✅ Complete form data submission: 200
+✅ Verify complete form data: 200
+✅ All critical form fields (including province) handled correctly
+📍 Address Section Fields:
+   address: 337 Granville Street
+   unitNumber: Suite 516
+   city: Vancouver
+   province: British Columbia
+   postalCode: V6A 8B1
+
+======================================================================
+🎯 BACKEND TEST RESULTS SUMMARY
+======================================================================
+Core Services: ✅ PASS
+Database: ✅ PASS
+Registration Creation: ✅ PASS
+Province Variations: ✅ PASS
+Registration Updates: ❌ FAIL
+Form Data Handling: ✅ PASS
+
+📊 Overall Results: 5/6 tests passed
+⚠️ SOME BACKEND TESTS FAILED!
+❌ Backend functionality may be impacted
+❌ Failed tests: registration_updates

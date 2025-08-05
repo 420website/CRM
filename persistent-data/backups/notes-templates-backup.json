@@ -1,0 +1,26 @@
+[
+  {
+    "id": "consultation-default",
+    "name": "Consultation",
+    "content": "Received consultation report an added a copy to the patient\u2019s file.",
+    "is_default": true,
+    "created_at": "2025-07-14T03:58:51.096Z",
+    "updated_at": "2025-07-15T18:56:41.740124"
+  },
+  {
+    "id": "lab-default",
+    "name": "Lab",
+    "content": "Submitted sample to lab.",
+    "is_default": true,
+    "created_at": "2025-07-14T03:58:51.107Z",
+    "updated_at": "2025-07-28T15:38:40.219259"
+  },
+  {
+    "id": "prescription-default",
+    "name": "Prescription",
+    "content": "Received Rx added to file.",
+    "is_default": true,
+    "created_at": "2025-07-14T03:58:51.107Z",
+    "updated_at": "2025-07-15T20:42:55.798731"
+  }
+]

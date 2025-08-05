@@ -1,0 +1,38 @@
+[
+  {
+    "_id": "6877d6d34ce8f0d63d477348",
+    "id": "positive-default",
+    "name": "Positive",
+    "content": "Dx 10+ years ago and treated. RNA - no labs available. However, has had ongoing risk factors with sharing pipes and straws. Counselled regarding risk factors. Point of care test was completed for HCV and tested positive at approximately two minutes with a dark line. HIV testing came back negative. Collected a DBS specimen and advised that it will take approximately 7 to 10 days for results. Referral: none. Client does have a valid address and has also provided a phone number for results.",
+    "is_default": true,
+    "created_at": "2025-07-16T16:44:02.932Z",
+    "updated_at": "2025-07-16T16:44:02.936Z"
+  },
+  {
+    "_id": "6877d6d34ce8f0d63d477349",
+    "id": "negative-pipes-default",
+    "name": "Negative - Pipes",
+    "content": "Met with client today. Shares pipes. Counselled regarding risk factors. Completed point of care testing for HIV/HCV and both results were negative. No further follow up required.",
+    "is_default": true,
+    "created_at": "2025-07-16T16:44:02.936Z",
+    "updated_at": "2025-07-18T01:55:45.928776"
+  },
+  {
+    "_id": "6877d6d34ce8f0d63d47734a",
+    "id": "negative-pipes-straws-default",
+    "name": "Negative - Pipes/Straws",
+    "content": "Met with client today. Shares pipes/straws. Counselled regarding risk factors. Completed point of care testing for HIV/HCV and both results were negative. No further follow up required.",
+    "is_default": true,
+    "created_at": "2025-07-16T16:44:02.936Z",
+    "updated_at": "2025-07-18T01:56:07.005152"
+  },
+  {
+    "_id": "6877d6d34ce8f0d63d47734b",
+    "id": "negative-pipes-straws-needles-default",
+    "name": "Negative - Pipes/Straws/Needles",
+    "content": "Met with client today. Shares pipes/straws/needles. Counselled regarding risk factors. Completed point of care testing for HIV/HCV and both results were negative. No further follow up required.",
+    "is_default": true,
+    "created_at": "2025-07-16T16:44:02.936Z",
+    "updated_at": "2025-07-18T01:56:23.331101"
+  }
+]

@@ -1,0 +1,202 @@
+[
+  {
+    "id": "495e3cb3-60f0-4a69-8a56-62530c69d916",
+    "name": "Toronto - Outreach",
+    "is_frequent": true,
+    "is_default": true,
+    "created_at": "2025-07-20T05:45:50.610707",
+    "updated_at": "2025-07-20T05:45:50.610709"
+  },
+  {
+    "id": "e6100f37-7cc8-4bcb-9bbc-9ddeaeca5170",
+    "name": "Hamilton - Wellington",
+    "is_frequent": true,
+    "is_default": true,
+    "created_at": "2025-07-20T05:45:50.610811",
+    "updated_at": "2025-07-20T05:45:50.610811"
+  },
+  {
+    "id": "10cc71a1-1ae5-435a-9a36-14c2491ca492",
+    "name": "Windsor - Outreach",
+    "is_frequent": true,
+    "is_default": true,
+    "created_at": "2025-07-20T05:45:50.610875",
+    "updated_at": "2025-07-20T05:45:50.610876"
+  },
+  {
+    "id": "3cf76150-fafa-4f1a-9e3f-d27cfac9b3ec",
+    "name": "Hamilton - Homewood Suit",
+    "is_frequent": false,
+    "is_default": true,
+    "created_at": "2025-07-20T05:45:50.610949",
+    "updated_at": "2025-07-20T05:45:50.610949"
+  },
+  {
+    "id": "c1d570fa-70d9-4c38-b944-8d64a368c6d9",
+    "name": "Kingston - Outreach",
+    "is_frequent": false,
+    "is_default": true,
+    "created_at": "2025-07-20T05:45:50.610965",
+    "updated_at": "2025-07-20T05:45:50.610965"
+  },
+  {
+    "id": "865d9313-ee43-4992-b9f3-8813d9dbd24a",
+    "name": "London - LMP (Night)",
+    "is_frequent": false,
+    "is_default": true,
+    "created_at": "2025-07-20T05:45:50.610981",
+    "updated_at": "2025-07-20T05:45:50.610981"
+  },
+  {
+    "id": "e4f4a8fb-482b-4ad8-b782-a1bfaa3600d7",
+    "name": "Niagara - Crysler House",
+    "is_frequent": false,
+    "is_default": true,
+    "created_at": "2025-07-20T05:45:50.611014",
+    "updated_at": "2025-07-20T05:45:50.611015"
+  },
+  {
+    "id": "7e849097-7021-4a4d-ad57-3b204577b4fe",
+    "name": "Niagara - Summer",
+    "is_frequent": false,
+    "is_default": true,
+    "created_at": "2025-07-20T05:45:50.611040",
+    "updated_at": "2025-07-20T05:45:50.611040"
+  },
+  {
+    "id": "3e208d54-0acb-4a3c-86a2-4b1f50ffdc42",
+    "name": "Orillia - Downtown Dispensary",
+    "is_frequent": false,
+    "is_default": true,
+    "created_at": "2025-07-20T05:45:50.611058",
+    "updated_at": "2025-07-20T05:45:50.611058"
+  },
+  {
+    "id": "3eccdaa7-afb5-4b14-84a4-fcf075b41528",
+    "name": "Orillia - The Light House",
+    "is_frequent": false,
+    "is_default": true,
+    "created_at": "2025-07-20T05:45:50.611090",
+    "updated_at": "2025-07-20T05:45:50.611090"
+  },
+  {
+    "id": "485f7933-d13c-4c2e-bde4-8ee138d49903",
+    "name": "Toronto - Margaret's Drop-In",
+    "is_frequent": false,
+    "is_default": true,
+    "created_at": "2025-07-20T05:45:50.611121",
+    "updated_at": "2025-07-20T05:45:50.611122"
+  },
+  {
+    "id": "9ae6718e-e721-404e-8202-ecbd8826cca4",
+    "name": "Toronto - Renascent (Dundas)",
+    "is_frequent": false,
+    "is_default": true,
+    "created_at": "2025-07-20T05:45:50.611137",
+    "updated_at": "2025-07-20T05:45:50.611137"
+  },
+  {
+    "id": "977b60c4-7e80-4232-9873-5dd811001717",
+    "name": "Toronto - St. Felix Centre",
+    "is_frequent": false,
+    "is_default": true,
+    "created_at": "2025-07-20T05:45:50.611168",
+    "updated_at": "2025-07-20T05:45:50.611168"
+  },
+  {
+    "id": "7a20b3fe-45fe-427d-b6c5-a2d2c526587e",
+    "name": "Windsor - Downtown Mission",
+    "is_frequent": false,
+    "is_default": true,
+    "created_at": "2025-07-20T05:45:50.611183",
+    "updated_at": "2025-07-20T05:45:50.611184"
+  },
+  {
+    "id": "d6f32977-a514-455b-9668-abab9bbd026d",
+    "name": "Windsor - Salvation Army",
+    "is_frequent": false,
+    "is_default": true,
+    "created_at": "2025-07-20T05:45:50.611215",
+    "updated_at": "2025-07-20T05:45:50.611216"
+  },
+  {
+    "id": "673a837e-f29b-466d-9980-dac793a4716f",
+    "name": "London - LMP",
+    "is_frequent": true,
+    "is_default": true,
+    "created_at": "2025-07-20T05:45:50.610837",
+    "updated_at": "2025-07-20T05:45:50.610837"
+  },
+  {
+    "id": "3bbd68d3-6583-46ed-9db5-eb8bd17b0949",
+    "name": "Ottawa - Outreach",
+    "is_frequent": true,
+    "is_default": true,
+    "created_at": "2025-07-20T05:45:50.610857",
+    "updated_at": "2025-07-20T05:45:50.610858"
+  },
+  {
+    "id": "babbcc29-4a98-4626-af23-4d8c177db895",
+    "name": "Barrie - City Centre Pharmacy",
+    "is_frequent": true,
+    "is_default": true,
+    "created_at": "2025-07-20T05:45:50.610893",
+    "updated_at": "2025-07-28T15:26:16.488358"
+  },
+  {
+    "id": "d1a2cb3e-8eb6-4ab2-887d-d7f8973982c1",
+    "name": "Barrie - John Howard Society of Sir",
+    "is_frequent": false,
+    "is_default": true,
+    "created_at": "2025-07-20T05:45:50.610913",
+    "updated_at": "2025-07-20T05:45:50.610913"
+  },
+  {
+    "id": "7407fbb3-7eb2-4195-844c-a4706ae3843a",
+    "name": "Brantford - Outreach",
+    "is_frequent": false,
+    "is_default": true,
+    "created_at": "2025-07-20T05:45:50.610931",
+    "updated_at": "2025-07-20T05:45:50.610932"
+  },
+  {
+    "id": "040b6560-f325-41b1-8eb3-45ab07f23d0a",
+    "name": "Niagara - Community Health",
+    "is_frequent": false,
+    "is_default": true,
+    "created_at": "2025-07-20T05:45:50.610998",
+    "updated_at": "2025-07-20T05:45:50.610998"
+  },
+  {
+    "id": "71823b7f-523e-453a-9c02-041868592fdc",
+    "name": "Orillia - John Howard Society",
+    "is_frequent": false,
+    "is_default": true,
+    "created_at": "2025-07-20T05:45:50.611074",
+    "updated_at": "2025-07-20T05:45:50.611074"
+  },
+  {
+    "id": "f961dbda-75fd-445e-88db-2d9f80f83775",
+    "name": "Toronto - Dixon Hall (Lakeshore)",
+    "is_frequent": false,
+    "is_default": true,
+    "created_at": "2025-07-20T05:45:50.611105",
+    "updated_at": "2025-07-20T05:45:50.611106"
+  },
+  {
+    "id": "10cd3b53-418a-4011-a3c6-176c99a87171",
+    "name": "Toronto - Renascent (Whitby)",
+    "is_frequent": false,
+    "is_default": true,
+    "created_at": "2025-07-20T05:45:50.611152",
+    "updated_at": "2025-07-20T05:45:50.611153"
+  },
+  {
+    "id": "64676ae6-09ab-4299-b7d5-d2e18c3bf004",
+    "name": "Windsor - Night",
+    "is_frequent": false,
+    "is_default": true,
+    "created_at": "2025-07-20T05:45:50.611199",
+    "updated_at": "2025-07-20T05:45:50.611199"
+  }
+]

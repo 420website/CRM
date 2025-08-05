@@ -1,0 +1,29 @@
+[
+  {
+    "_id": "6877d6d392ffdda8db22b2aa",
+    "id": "consultation-default",
+    "name": "Consultation",
+    "content": "",
+    "is_default": true,
+    "created_at": "2025-07-16T16:44:03.218Z",
+    "updated_at": "2025-07-16T16:44:03.222Z"
+  },
+  {
+    "_id": "6877d6d392ffdda8db22b2ab",
+    "id": "lab-default",
+    "name": "Lab",
+    "content": "",
+    "is_default": true,
+    "created_at": "2025-07-16T16:44:03.222Z",
+    "updated_at": "2025-07-16T16:44:03.222Z"
+  },
+  {
+    "_id": "6877d6d392ffdda8db22b2ac",
+    "id": "prescription-default",
+    "name": "Prescription",
+    "content": "",
+    "is_default": true,
+    "created_at": "2025-07-16T16:44:03.222Z",
+    "updated_at": "2025-07-16T16:44:03.222Z"
+  }
+]

@@ -1,0 +1,498 @@
+[
+  {
+    "id": "82cd1166-151a-40ec-b3e2-bd51226db4ab",
+    "name": "BW RLTS",
+    "is_frequent": true,
+    "is_default": true,
+    "created_at": "2025-07-20T05:45:50.585176",
+    "updated_at": "2025-07-20T05:45:50.585177"
+  },
+  {
+    "id": "6861e2e6-e976-4087-aaf8-48fa99331b6d",
+    "name": "DISPENSING",
+    "is_frequent": true,
+    "is_default": true,
+    "created_at": "2025-07-20T05:45:50.585240",
+    "updated_at": "2025-07-20T05:45:50.585240"
+  },
+  {
+    "id": "4073c020-cc50-4a8c-889f-0c48d38b4a68",
+    "name": "ACTIVE-ALL",
+    "is_frequent": false,
+    "is_default": true,
+    "created_at": "2025-07-20T05:45:50.585360",
+    "updated_at": "2025-07-20T05:45:50.585360"
+  },
+  {
+    "id": "4ffbe09a-9df6-45a4-8f9d-439012de3fc4",
+    "name": "ACTIVE-ALL-NC",
+    "is_frequent": false,
+    "is_default": true,
+    "created_at": "2025-07-20T05:45:50.585381",
+    "updated_at": "2025-07-20T05:45:50.585381"
+  },
+  {
+    "id": "94ccdf39-3220-49de-b827-d65b0d455783",
+    "name": "ACTIVE-OK",
+    "is_frequent": false,
+    "is_default": true,
+    "created_at": "2025-07-20T05:45:50.585478",
+    "updated_at": "2025-07-20T05:45:50.585478"
+  },
+  {
+    "id": "ee0e2008-4e6d-4dd4-98c3-6231541c7f0b",
+    "name": "BW REQ",
+    "is_frequent": false,
+    "is_default": true,
+    "created_at": "2025-07-20T05:45:50.585510",
+    "updated_at": "2025-07-20T05:45:50.585510"
+  },
+  {
+    "id": "8fd26cca-5200-4d93-aa1a-cedc3a0cfaed",
+    "name": "BW RLTS-P",
+    "is_frequent": false,
+    "is_default": true,
+    "created_at": "2025-07-20T05:45:50.585526",
+    "updated_at": "2025-07-20T05:45:50.585526"
+  },
+  {
+    "id": "8b385bd1-580d-4523-8d91-411d1307a9fb",
+    "name": "CURED",
+    "is_frequent": false,
+    "is_default": true,
+    "created_at": "2025-07-20T05:45:50.585573",
+    "updated_at": "2025-07-20T05:45:50.585574"
+  },
+  {
+    "id": "1c759ea1-4980-4839-80b4-910449cbcc9d",
+    "name": "DELETED",
+    "is_frequent": false,
+    "is_default": true,
+    "created_at": "2025-07-20T05:45:50.585620",
+    "updated_at": "2025-07-20T05:45:50.585621"
+  },
+  {
+    "id": "8602e3b6-c17f-41cf-abff-e0844f72f7cc",
+    "name": "DISCONTINUED",
+    "is_frequent": false,
+    "is_default": true,
+    "created_at": "2025-07-20T05:45:50.585637",
+    "updated_at": "2025-07-20T05:45:50.585637"
+  },
+  {
+    "id": "b394f3cd-8b9c-4759-bdb7-69e42adec7e3",
+    "name": "DUPLICATE",
+    "is_frequent": false,
+    "is_default": true,
+    "created_at": "2025-07-20T05:45:50.585653",
+    "updated_at": "2025-07-20T05:45:50.585653"
+  },
+  {
+    "id": "94bac86d-9d90-4fef-a463-d84988228425",
+    "name": "EXTERNAL TX",
+    "is_frequent": false,
+    "is_default": true,
+    "created_at": "2025-07-20T05:45:50.585669",
+    "updated_at": "2025-07-20T05:45:50.585669"
+  },
+  {
+    "id": "151a6c80-c395-466b-8378-fa0f17478f73",
+    "name": "HIV (ACTIVE)",
+    "is_frequent": false,
+    "is_default": true,
+    "created_at": "2025-07-20T05:45:50.585704",
+    "updated_at": "2025-07-20T05:45:50.585704"
+  },
+  {
+    "id": "9f2f3dd5-f6a0-4412-b141-eef37ddfe030",
+    "name": "HIV - DISCHARGED",
+    "is_frequent": false,
+    "is_default": true,
+    "created_at": "2025-07-20T05:45:50.585720",
+    "updated_at": "2025-07-20T05:45:50.585720"
+  },
+  {
+    "id": "d67ad4cd-1779-4350-8284-4150af4d4a44",
+    "name": "HOUSING",
+    "is_frequent": false,
+    "is_default": true,
+    "created_at": "2025-07-20T05:45:50.585767",
+    "updated_at": "2025-07-20T05:45:50.585768"
+  },
+  {
+    "id": "07ff2ddc-930d-45d6-bb2a-5afd5cb4f33f",
+    "name": "JAIL",
+    "is_frequent": false,
+    "is_default": true,
+    "created_at": "2025-07-20T05:45:50.585877",
+    "updated_at": "2025-07-20T05:45:50.585878"
+  },
+  {
+    "id": "ced07eb2-983f-49ab-8591-c0045c5ac1d9",
+    "name": "LAB APPOINTMENT",
+    "is_frequent": false,
+    "is_default": true,
+    "created_at": "2025-07-20T05:45:50.585894",
+    "updated_at": "2025-07-20T05:45:50.585895"
+  },
+  {
+    "id": "3196b945-b708-4b3c-b1b5-cc38b2d4c8ee",
+    "name": "LAB REQ",
+    "is_frequent": false,
+    "is_default": true,
+    "created_at": "2025-07-20T05:45:50.585910",
+    "updated_at": "2025-07-20T05:45:50.585910"
+  },
+  {
+    "id": "931e492b-63e5-486a-9a3d-eb47295862ca",
+    "name": "MD UPDATE",
+    "is_frequent": false,
+    "is_default": true,
+    "created_at": "2025-07-20T05:45:50.585941",
+    "updated_at": "2025-07-20T05:45:50.585941"
+  },
+  {
+    "id": "4c36724a-9656-4ddb-a254-247040b1b6ce",
+    "name": "REFUSED TX",
+    "is_frequent": false,
+    "is_default": true,
+    "created_at": "2025-07-20T05:45:50.586024",
+    "updated_at": "2025-07-20T05:45:50.586024"
+  },
+  {
+    "id": "eaf2b5ed-8886-4c5c-acdf-3e51865a8671",
+    "name": "REIMBURSEMENT (SAV)",
+    "is_frequent": false,
+    "is_default": true,
+    "created_at": "2025-07-20T05:45:50.586068",
+    "updated_at": "2025-07-20T05:45:50.586068"
+  },
+  {
+    "id": "78349241-eea4-494f-8460-71bdf8a10627",
+    "name": "SOT-2 WEEKS",
+    "is_frequent": false,
+    "is_default": true,
+    "created_at": "2025-07-20T05:45:50.586100",
+    "updated_at": "2025-07-20T05:45:50.586100"
+  },
+  {
+    "id": "1d68d704-872a-4d66-b6db-4da58d3cfbdd",
+    "name": "SOT-ALL",
+    "is_frequent": false,
+    "is_default": true,
+    "created_at": "2025-07-20T05:45:50.586119",
+    "updated_at": "2025-07-20T05:45:50.586119"
+  },
+  {
+    "id": "66cec328-23a7-4794-8f09-69c4336832e5",
+    "name": "SOT-BRIDGED",
+    "is_frequent": false,
+    "is_default": true,
+    "created_at": "2025-07-20T05:45:50.586135",
+    "updated_at": "2025-07-20T05:45:50.586135"
+  },
+  {
+    "id": "5aaed28d-a13e-45d7-a8b4-397f0423fa34",
+    "name": "SOT-HOLD",
+    "is_frequent": false,
+    "is_default": true,
+    "created_at": "2025-07-20T05:45:50.586166",
+    "updated_at": "2025-07-20T05:45:50.586167"
+  },
+  {
+    "id": "28c94e27-f68f-405e-bd1d-8c643fff2e47",
+    "name": "SOT-LOCATE",
+    "is_frequent": false,
+    "is_default": true,
+    "created_at": "2025-07-20T05:45:50.586182",
+    "updated_at": "2025-07-20T05:45:50.586182"
+  },
+  {
+    "id": "fb89fff0-884e-4818-b84d-a69a7cb57e4d",
+    "name": "SOT-LOCATED",
+    "is_frequent": false,
+    "is_default": true,
+    "created_at": "2025-07-20T05:45:50.586198",
+    "updated_at": "2025-07-20T05:45:50.586198"
+  },
+  {
+    "id": "fee43c81-b914-49d7-8e2e-1afe22721978",
+    "name": "SOT-SCHEDULED",
+    "is_frequent": false,
+    "is_default": true,
+    "created_at": "2025-07-20T05:45:50.586229",
+    "updated_at": "2025-07-20T05:45:50.586229"
+  },
+  {
+    "id": "b7127bc5-4ba4-4218-9de8-2de7ec8e6cd1",
+    "name": "TX PENDING",
+    "is_frequent": false,
+    "is_default": true,
+    "created_at": "2025-07-20T05:45:50.586260",
+    "updated_at": "2025-07-20T05:45:50.586261"
+  },
+  {
+    "id": "5fedaa27-c966-4019-b095-83b0a922cfee",
+    "name": "WAIT",
+    "is_frequent": false,
+    "is_default": true,
+    "created_at": "2025-07-20T05:45:50.586291",
+    "updated_at": "2025-07-20T05:45:50.586291"
+  },
+  {
+    "id": "5b2aef73-e4cc-4ac9-995f-a0c9fbc6e2aa",
+    "name": "ACTIVE",
+    "is_frequent": true,
+    "is_default": true,
+    "created_at": "2025-07-20T05:45:50.585089",
+    "updated_at": "2025-07-20T05:45:50.585092"
+  },
+  {
+    "id": "a96f0643-62c9-450d-88d6-b0902078864e",
+    "name": "CONSULT REQ",
+    "is_frequent": true,
+    "is_default": true,
+    "created_at": "2025-07-20T05:45:50.585201",
+    "updated_at": "2025-07-20T05:45:50.585201"
+  },
+  {
+    "id": "4a67602b-6960-4ff8-be66-760fcc862048",
+    "name": "DELIVERY",
+    "is_frequent": true,
+    "is_default": true,
+    "created_at": "2025-07-20T05:45:50.585221",
+    "updated_at": "2025-07-20T05:45:50.585221"
+  },
+  {
+    "id": "45249c2d-64d4-4914-8c49-a668c88a9721",
+    "name": "PENDING",
+    "is_frequent": true,
+    "is_default": true,
+    "created_at": "2025-07-20T05:45:50.585258",
+    "updated_at": "2025-07-20T05:45:50.585258"
+  },
+  {
+    "id": "1ef610d5-e03f-442e-b5c3-46353c8e7501",
+    "name": "POCT NEG",
+    "is_frequent": true,
+    "is_default": true,
+    "created_at": "2025-07-20T05:45:50.585279",
+    "updated_at": "2025-07-20T05:45:50.585279"
+  },
+  {
+    "id": "a4cdb16e-43a6-4338-a66b-7e62fc2697e1",
+    "name": "PREVIOUSLY TX",
+    "is_frequent": true,
+    "is_default": true,
+    "created_at": "2025-07-20T05:45:50.585298",
+    "updated_at": "2025-07-20T05:45:50.585298"
+  },
+  {
+    "id": "5537bbbc-ff63-4a39-8d3e-f11c8d047844",
+    "name": "SELF CURED",
+    "is_frequent": true,
+    "is_default": true,
+    "created_at": "2025-07-20T05:45:50.585316",
+    "updated_at": "2025-07-20T05:45:50.585317"
+  },
+  {
+    "id": "cb585503-74fb-493e-b4c7-e39c6588d3a2",
+    "name": "SOT",
+    "is_frequent": true,
+    "is_default": true,
+    "created_at": "2025-07-20T05:45:50.585333",
+    "updated_at": "2025-07-20T05:45:50.585333"
+  },
+  {
+    "id": "9575780e-994a-427e-8ed4-cd18beb3f70e",
+    "name": "ACTIVE-ALL-OK",
+    "is_frequent": false,
+    "is_default": true,
+    "created_at": "2025-07-20T05:45:50.585398",
+    "updated_at": "2025-07-20T05:45:50.585398"
+  },
+  {
+    "id": "4aca141b-8082-4ae8-9107-df852560dde2",
+    "name": "ACTIVE-BRIDGE",
+    "is_frequent": false,
+    "is_default": true,
+    "created_at": "2025-07-20T05:45:50.585428",
+    "updated_at": "2025-07-20T05:45:50.585428"
+  },
+  {
+    "id": "6b4c9612-3d24-4596-832a-1dbdc9fdfe5d",
+    "name": "ACTIVE-JAIL",
+    "is_frequent": false,
+    "is_default": true,
+    "created_at": "2025-07-20T05:45:50.585446",
+    "updated_at": "2025-07-20T05:45:50.585446"
+  },
+  {
+    "id": "c14c59ce-dd8c-4a6c-909b-adea6e0a5c99",
+    "name": "ACTIVE-NC",
+    "is_frequent": false,
+    "is_default": true,
+    "created_at": "2025-07-20T05:45:50.585462",
+    "updated_at": "2025-07-20T05:45:50.585462"
+  },
+  {
+    "id": "0f1bf214-622b-447f-b8f9-e82d0c910fb8",
+    "name": "BW ERROR",
+    "is_frequent": false,
+    "is_default": true,
+    "created_at": "2025-07-20T05:45:50.585494",
+    "updated_at": "2025-07-20T05:45:50.585494"
+  },
+  {
+    "id": "b6c30acd-bd3c-4937-885b-848bf4df0eac",
+    "name": "COMPLETED",
+    "is_frequent": false,
+    "is_default": true,
+    "created_at": "2025-07-20T05:45:50.585542",
+    "updated_at": "2025-07-20T05:45:50.585542"
+  },
+  {
+    "id": "b0a72db7-a8db-4786-a49a-bee038f67b33",
+    "name": "CONSULT-LOCATE",
+    "is_frequent": false,
+    "is_default": true,
+    "created_at": "2025-07-20T05:45:50.585558",
+    "updated_at": "2025-07-20T05:45:50.585558"
+  },
+  {
+    "id": "65d294d0-a1dc-4575-bf10-06f6ab057290",
+    "name": "DBS",
+    "is_frequent": false,
+    "is_default": true,
+    "created_at": "2025-07-20T05:45:50.585589",
+    "updated_at": "2025-07-20T05:45:50.585589"
+  },
+  {
+    "id": "d029235f-3624-4f46-bc8d-859eb76ac62c",
+    "name": "DECEASED",
+    "is_frequent": false,
+    "is_default": true,
+    "created_at": "2025-07-20T05:45:50.585605",
+    "updated_at": "2025-07-20T05:45:50.585605"
+  },
+  {
+    "id": "f5aeb161-f816-484d-9950-9215b57ad8dd",
+    "name": "HEALTH CARD",
+    "is_frequent": false,
+    "is_default": true,
+    "created_at": "2025-07-20T05:45:50.585684",
+    "updated_at": "2025-07-20T05:45:50.585685"
+  },
+  {
+    "id": "93e238ad-18ae-4f4e-94b7-ab2f880dce75",
+    "name": "HIV PATIENT",
+    "is_frequent": false,
+    "is_default": true,
+    "created_at": "2025-07-20T05:45:50.585735",
+    "updated_at": "2025-07-20T05:45:50.585736"
+  },
+  {
+    "id": "bb64e6cb-f6fc-4f94-9cab-35dc590951d0",
+    "name": "HOME VISIT",
+    "is_frequent": false,
+    "is_default": true,
+    "created_at": "2025-07-20T05:45:50.585752",
+    "updated_at": "2025-07-20T05:45:50.585752"
+  },
+  {
+    "id": "03a8b5db-9fad-47b9-b3a8-edec05e56987",
+    "name": "INACTIVE",
+    "is_frequent": false,
+    "is_default": true,
+    "created_at": "2025-07-20T05:45:50.585852",
+    "updated_at": "2025-07-20T05:45:50.585853"
+  },
+  {
+    "id": "e3b58f19-b897-4ad3-ae96-2ee2ba850c0f",
+    "name": "LOCATE",
+    "is_frequent": false,
+    "is_default": true,
+    "created_at": "2025-07-20T05:45:50.585925",
+    "updated_at": "2025-07-20T05:45:50.585926"
+  },
+  {
+    "id": "6d9deac0-2c54-456d-9f2a-02b5690eefd9",
+    "name": "MISSING RNA",
+    "is_frequent": false,
+    "is_default": true,
+    "created_at": "2025-07-20T05:45:50.585957",
+    "updated_at": "2025-07-20T05:45:50.585957"
+  },
+  {
+    "id": "e0e27eee-0d51-453a-a9cb-76c3cec0b46c",
+    "name": "NOT READY",
+    "is_frequent": false,
+    "is_default": true,
+    "created_at": "2025-07-20T05:45:50.585973",
+    "updated_at": "2025-07-20T05:45:50.585973"
+  },
+  {
+    "id": "8175ee38-c208-439a-94cf-03e7bb3e5579",
+    "name": "POCT INCOMPLETE",
+    "is_frequent": false,
+    "is_default": true,
+    "created_at": "2025-07-20T05:45:50.585991",
+    "updated_at": "2025-07-20T05:45:50.585991"
+  },
+  {
+    "id": "a143514c-d307-4209-922d-69116b3a2a94",
+    "name": "REFUSED BW",
+    "is_frequent": false,
+    "is_default": true,
+    "created_at": "2025-07-20T05:45:50.586006",
+    "updated_at": "2025-07-20T05:45:50.586007"
+  },
+  {
+    "id": "2868c4e9-7a81-465a-8b8e-427b1e350654",
+    "name": "REIMBURSEMENT",
+    "is_frequent": false,
+    "is_default": true,
+    "created_at": "2025-07-20T05:45:50.586051",
+    "updated_at": "2025-07-20T05:45:50.586051"
+  },
+  {
+    "id": "c853676c-8f28-444f-a7c2-cc63d1b3ce31",
+    "name": "RX",
+    "is_frequent": false,
+    "is_default": true,
+    "created_at": "2025-07-20T05:45:50.586084",
+    "updated_at": "2025-07-20T05:45:50.586084"
+  },
+  {
+    "id": "e30a7409-3bef-4376-9ce9-f64b6374bd05",
+    "name": "SOT-CONSULT",
+    "is_frequent": false,
+    "is_default": true,
+    "created_at": "2025-07-20T05:45:50.586150",
+    "updated_at": "2025-07-20T05:45:50.586151"
+  },
+  {
+    "id": "bc7d3c60-4d47-4a79-bdff-e307466d2fab",
+    "name": "SOT-OW",
+    "is_frequent": false,
+    "is_default": true,
+    "created_at": "2025-07-20T05:45:50.586213",
+    "updated_at": "2025-07-20T05:45:50.586213"
+  },
+  {
+    "id": "8f27c5bb-89b1-43e7-88e4-7a357fda57c3",
+    "name": "TRILLIUM",
+    "is_frequent": false,
+    "is_default": true,
+    "created_at": "2025-07-20T05:45:50.586245",
+    "updated_at": "2025-07-20T05:45:50.586245"
+  },
+  {
+    "id": "9c84ec10-f9f6-42f4-b9b6-22dab7401367",
+    "name": "UNABLE TO TX",
+    "is_frequent": false,
+    "is_default": true,
+    "created_at": "2025-07-20T05:45:50.586276",
+    "updated_at": "2025-07-20T05:45:50.586276"
+  }
+]

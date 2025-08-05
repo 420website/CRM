@@ -1,0 +1,777 @@
+{
+  "timestamp": "2025-07-16T15:22:28.959186",
+  "clinical_templates": [
+    {
+      "id": "a18a0b79-d7bd-477c-94f9-df174937e617",
+      "name": "Follow-up Required",
+      "content": "Additional testing required. Schedule follow-up appointment.",
+      "is_default": false,
+      "created_at": "2025-07-13T17:46:34.922708",
+      "updated_at": "2025-07-13T17:46:34.922710"
+    },
+    {
+      "id": "0ebf17ad-637c-4e5c-a1dc-77888f33c43c",
+      "name": "Bulk Template 1",
+      "content": "This is bulk template content 1",
+      "is_default": false,
+      "created_at": "2025-07-13T17:46:35.045679",
+      "updated_at": "2025-07-13T17:46:35.045680"
+    },
+    {
+      "id": "22fcf907-c48a-45f3-b0ee-f1439d4bd117",
+      "name": "Bulk Template 2",
+      "content": "This is bulk template content 2",
+      "is_default": false,
+      "created_at": "2025-07-13T17:46:35.047270",
+      "updated_at": "2025-07-13T17:46:35.047271"
+    },
+    {
+      "id": "a80ef24a-48e2-413e-abde-30057e715b15",
+      "name": "Migration Test",
+      "content": "Migrated from localStorage to database",
+      "is_default": false,
+      "created_at": "2025-07-13T17:46:35.048656",
+      "updated_at": "2025-07-13T17:46:35.048657"
+    },
+    {
+      "id": "824c1b06-816f-4d05-b252-f6331ad802f6",
+      "name": "Negative - Pipes",
+      "content": "Met with client today. Shares pipes. Counselled regarding risk factors. Completed point of care testing for HIV/HCV and both results were negative. No further follow up required.",
+      "is_default": false,
+      "created_at": "2025-07-13T17:46:35.170854",
+      "updated_at": "2025-07-13T17:57:36.305333"
+    },
+    {
+      "id": "c4458aeb-bd9e-427d-9527-c3f299e4df51",
+      "name": "Inconclusive",
+      "content": "Test results are inconclusive. Recommend retesting in 2-4 weeks.",
+      "is_default": false,
+      "created_at": "2025-07-13T17:46:35.172816",
+      "updated_at": "2025-07-13T17:47:31.826372"
+    },
+    {
+      "id": "4c7a1b02-567e-48ac-bfb4-1be7f92b31d3",
+      "name": "Follow-up",
+      "content": "Patient requires follow-up testing. Schedule appointment in 3 months.",
+      "is_default": false,
+      "created_at": "2025-07-13T17:46:35.174372",
+      "updated_at": "2025-07-13T17:47:31.827574"
+    },
+    {
+      "id": "bb5020d9-7d67-4418-9425-4d346700bb38",
+      "name": "Migration Template 1",
+      "content": "Content for migration template 1",
+      "is_default": false,
+      "created_at": "2025-07-13T17:48:47.247130",
+      "updated_at": "2025-07-13T17:48:47.247132"
+    },
+    {
+      "id": "c3808b61-4dcb-4ed5-90a5-a772abe34e9f",
+      "name": "Migration Template 2",
+      "content": "Content for migration template 2",
+      "is_default": false,
+      "created_at": "2025-07-13T17:48:47.248696",
+      "updated_at": "2025-07-13T17:48:47.248697"
+    },
+    {
+      "id": "0e2ab0fa-f4be-4db7-8548-00927b5050f1",
+      "name": "Negative - Pipes/Straws",
+      "content": "Met with client today. Shares pipes/straws. Counselled regarding risk factors. Completed point of care testing for HIV/HCV and both results were negative. No further follow up required.",
+      "is_default": false,
+      "created_at": "2025-07-13T17:57:58.677334",
+      "updated_at": "2025-07-13T17:57:58.677336"
+    },
+    {
+      "id": "345d3e79-dc1b-45a8-976d-f9f61b207ebb",
+      "name": "Negative - Pipes/Straws/Needles",
+      "content": "Met with client today. Shares pipes/straws/needles. Counselled regarding risk factors. Completed point of care testing for HIV/HCV and both results were negative. No further follow up required.",
+      "is_default": false,
+      "created_at": "2025-07-13T17:58:20.344999",
+      "updated_at": "2025-07-13T17:58:20.345001"
+    },
+    {
+      "id": "7b5d26ee-0af9-4884-b92f-927813eae030",
+      "name": "Bulk Test Template 1",
+      "content": "Content for bulk test template 1",
+      "is_default": false,
+      "created_at": "2025-07-13T18:26:39.196608",
+      "updated_at": "2025-07-13T18:26:39.196611"
+    },
+    {
+      "id": "5dc1e743-783f-4071-b9e5-e814db886200",
+      "name": "Bulk Test Template 2",
+      "content": "Content for bulk test template 2",
+      "is_default": false,
+      "created_at": "2025-07-13T18:26:39.198460",
+      "updated_at": "2025-07-13T18:26:39.198462"
+    },
+    {
+      "id": "positive-default",
+      "name": "Positive",
+      "content": "Dx 10+ years ago and treated. RNA - no labs available. However, has had ongoing risk factors with sharing pipes and straws. Counselled regarding risk factors. Point of care test was completed for HCV and tested positive at approximately two minutes with a dark line. HIV testing came back negative. Collected a DBS specimen and advised that it will take approximately 7 to 10 days for results. Referral: none. Client does have a valid address and has also provided a phone number for results.",
+      "is_default": true,
+      "created_at": "2025-07-15T06:14:07.445000Z",
+      "updated_at": "2025-07-15T06:14:07.448000Z"
+    },
+    {
+      "id": "64cfe468-419a-4a78-925e-cd15d329d185",
+      "name": "Blood work",
+      "content": "Test",
+      "is_default": false,
+      "created_at": "2025-07-15T16:14:13.156953",
+      "updated_at": "2025-07-15T16:14:13.156955"
+    },
+    {
+      "id": "5764337b-ae21-42c1-8f82-2a6702ffba86",
+      "name": "Test Clinical cbxiyv",
+      "content": "Test clinical template content cbxiyv",
+      "is_default": false,
+      "created_at": "2025-07-15T20:01:18.017156",
+      "updated_at": "2025-07-15T20:01:18.017158"
+    }
+  ],
+  "notes_templates": [
+    {
+      "id": "consultation-default",
+      "name": "Consultation",
+      "content": "Test consultation template content for backend testing",
+      "is_default": true,
+      "created_at": "2025-07-14T03:57:11.134000Z",
+      "updated_at": "2025-07-14T20:26:19.526871"
+    },
+    {
+      "id": "lab-default",
+      "name": "Lab",
+      "content": "Test lab template content for backend testing",
+      "is_default": true,
+      "created_at": "2025-07-14T03:57:11.138000Z",
+      "updated_at": "2025-07-14T20:26:19.528688"
+    },
+    {
+      "id": "prescription-default",
+      "name": "Prescription",
+      "content": "",
+      "is_default": true,
+      "created_at": "2025-07-14T03:57:11.138000Z",
+      "updated_at": "2025-07-14T14:32:03.750608"
+    },
+    {
+      "id": "72a1caf8-ab52-4cb6-8736-b2508c8687ed",
+      "name": "Custom Test Template",
+      "content": "This is a custom test template for save/load cycle testing",
+      "is_default": false,
+      "created_at": "2025-07-14T20:26:19.530620",
+      "updated_at": "2025-07-14T20:26:19.530622"
+    },
+    {
+      "id": "504a9d3b-47c4-435b-ae08-08554919af90",
+      "name": "Test Template 20250714_202619",
+      "content": "Unique test content created at 2025-07-14T20:26:19.537260",
+      "is_default": false,
+      "created_at": "2025-07-14T20:26:19.564636",
+      "updated_at": "2025-07-14T20:26:19.564638"
+    },
+    {
+      "id": "8070170d-f284-4ea8-83e9-98ddc08313fd",
+      "name": "Test Template 1",
+      "content": "Test content for template 1",
+      "is_default": false,
+      "created_at": "2025-07-14T21:03:46.944864",
+      "updated_at": "2025-07-14T21:03:46.944866"
+    },
+    {
+      "id": "241b1d8d-d66b-4904-869e-36cdb312976c",
+      "name": "Test Template 2",
+      "content": "Test content for template 2",
+      "is_default": false,
+      "created_at": "2025-07-14T21:03:46.946384",
+      "updated_at": "2025-07-14T21:03:46.946385"
+    },
+    {
+      "id": "16af0900-7736-4604-8283-d6cd3dde8af5",
+      "name": "Blood \ud83e\ude78",
+      "content": "Received positive RNA sample and and added a copy to the patient\u2019s file.",
+      "is_default": false,
+      "created_at": "2025-07-14T23:18:18.495273",
+      "updated_at": "2025-07-14T23:19:12.754848"
+    },
+    {
+      "id": "08743b1e-f909-4861-85dc-a8ebdfe68a56",
+      "name": "Test Template qwmu00",
+      "content": "This is a test template content qwmu00",
+      "is_default": false,
+      "created_at": "2025-07-15T01:18:55.095313",
+      "updated_at": "2025-07-15T01:18:55.095315"
+    },
+    {
+      "id": "64efd7e8-2dce-4d60-bc64-df591bb531b6",
+      "name": "Test Template 2286",
+      "content": "This is a test template created during backend verification",
+      "is_default": false,
+      "created_at": "2025-07-15T18:14:35.925271",
+      "updated_at": "2025-07-15T18:14:35.925273"
+    },
+    {
+      "id": "58fa7876-30c0-4ac8-a990-37351a02943a",
+      "name": "Test Template 7672",
+      "content": "This is a test template created during backend verification",
+      "is_default": false,
+      "created_at": "2025-07-15T18:16:04.731565",
+      "updated_at": "2025-07-15T18:16:04.731567"
+    },
+    {
+      "id": "ad38ca0a-d777-4a7e-9ce3-46ca66cfeaca",
+      "name": "Test Template cbxiyv",
+      "content": "Test template content cbxiyv",
+      "is_default": false,
+      "created_at": "2025-07-15T20:01:17.995976",
+      "updated_at": "2025-07-15T20:01:17.995979"
+    }
+  ],
+  "dispositions": [
+    {
+      "id": "98c5037f-78b1-43ac-8f0f-829e621aa972",
+      "name": "ACTIVE",
+      "is_frequent": true,
+      "is_default": true,
+      "created_at": "2025-07-16T01:32:30.345681",
+      "updated_at": "2025-07-16T01:32:30.345683"
+    },
+    {
+      "id": "6c4eb0d7-4617-4da6-8dd0-bdefc8272995",
+      "name": "BW RLTS",
+      "is_frequent": true,
+      "is_default": true,
+      "created_at": "2025-07-16T01:32:30.345770",
+      "updated_at": "2025-07-16T02:04:29.137280"
+    },
+    {
+      "id": "1fa4e65c-d45a-457e-8bc1-76a073f676b2",
+      "name": "CONSULT REQ",
+      "is_frequent": true,
+      "is_default": true,
+      "created_at": "2025-07-16T01:32:30.345795",
+      "updated_at": "2025-07-16T01:32:30.345795"
+    },
+    {
+      "id": "ac704a6f-8adc-4afd-9f48-28082ecb374e",
+      "name": "DELIVERY",
+      "is_frequent": true,
+      "is_default": true,
+      "created_at": "2025-07-16T01:32:30.345814",
+      "updated_at": "2025-07-16T01:32:30.345814"
+    },
+    {
+      "id": "bc89d35d-7a7f-4583-860e-19c75b3e10ff",
+      "name": "DISPENSING",
+      "is_frequent": true,
+      "is_default": true,
+      "created_at": "2025-07-16T01:32:30.345832",
+      "updated_at": "2025-07-16T01:32:30.345833"
+    },
+    {
+      "id": "d3fd7d51-758d-4712-844e-9b0c5289a61d",
+      "name": "PENDING",
+      "is_frequent": true,
+      "is_default": true,
+      "created_at": "2025-07-16T01:32:30.345851",
+      "updated_at": "2025-07-16T01:32:30.345851"
+    },
+    {
+      "id": "8ece57dd-b4a3-47ea-b927-5d48d5686c87",
+      "name": "POCT NEG",
+      "is_frequent": true,
+      "is_default": true,
+      "created_at": "2025-07-16T01:32:30.345885",
+      "updated_at": "2025-07-16T01:32:30.345886"
+    },
+    {
+      "id": "0133cef9-889f-4dbd-a10b-4fcf8521fa67",
+      "name": "PREVIOUSLY TX",
+      "is_frequent": true,
+      "is_default": true,
+      "created_at": "2025-07-16T01:32:30.345906",
+      "updated_at": "2025-07-16T01:32:30.345906"
+    },
+    {
+      "id": "c89d2069-6ff5-4774-8592-d4e748d41bde",
+      "name": "SELF CURED",
+      "is_frequent": true,
+      "is_default": true,
+      "created_at": "2025-07-16T01:32:30.345924",
+      "updated_at": "2025-07-16T01:32:30.345925"
+    },
+    {
+      "id": "cc25bad8-b6c7-438e-991c-ed0e9c711be9",
+      "name": "SOT",
+      "is_frequent": true,
+      "is_default": true,
+      "created_at": "2025-07-16T01:32:30.345941",
+      "updated_at": "2025-07-16T01:32:30.345942"
+    },
+    {
+      "id": "a1276acd-f2c2-49d7-8579-2c77f5b2f193",
+      "name": "ACTIVE-ALL",
+      "is_frequent": false,
+      "is_default": true,
+      "created_at": "2025-07-16T01:32:30.345958",
+      "updated_at": "2025-07-16T01:32:30.345958"
+    },
+    {
+      "id": "c6c051f7-0430-40d5-8219-c31ccc24b3be",
+      "name": "ACTIVE-ALL-NC",
+      "is_frequent": false,
+      "is_default": true,
+      "created_at": "2025-07-16T01:32:30.345975",
+      "updated_at": "2025-07-16T01:32:30.345975"
+    },
+    {
+      "id": "486f0710-ab32-40ba-bc21-d58a748789a6",
+      "name": "ACTIVE-ALL-OK",
+      "is_frequent": false,
+      "is_default": true,
+      "created_at": "2025-07-16T01:32:30.345991",
+      "updated_at": "2025-07-16T01:32:30.345992"
+    },
+    {
+      "id": "74170667-a7df-464a-9a86-49780f054b02",
+      "name": "ACTIVE-BRIDGE",
+      "is_frequent": false,
+      "is_default": true,
+      "created_at": "2025-07-16T01:32:30.346007",
+      "updated_at": "2025-07-16T01:32:30.346008"
+    },
+    {
+      "id": "b3ebd7c4-5148-4f37-8d5b-7d838b44eacb",
+      "name": "ACTIVE-JAIL",
+      "is_frequent": false,
+      "is_default": true,
+      "created_at": "2025-07-16T01:32:30.346024",
+      "updated_at": "2025-07-16T01:32:30.346024"
+    },
+    {
+      "id": "ddc5e3ac-68ce-4df6-acbe-7dba4b93d371",
+      "name": "ACTIVE-NC",
+      "is_frequent": false,
+      "is_default": true,
+      "created_at": "2025-07-16T01:32:30.346040",
+      "updated_at": "2025-07-16T01:32:30.346041"
+    },
+    {
+      "id": "7b62d0b8-3ada-4eee-b2e2-c7b4939ae9f8",
+      "name": "ACTIVE-OK",
+      "is_frequent": false,
+      "is_default": true,
+      "created_at": "2025-07-16T01:32:30.346056",
+      "updated_at": "2025-07-16T01:32:30.346057"
+    },
+    {
+      "id": "1fd41163-d79f-4309-aa11-ae62ed9a303d",
+      "name": "BW ERROR",
+      "is_frequent": false,
+      "is_default": true,
+      "created_at": "2025-07-16T01:32:30.346072",
+      "updated_at": "2025-07-16T01:32:30.346073"
+    },
+    {
+      "id": "4f58e73a-a482-42df-873a-4be664d95d81",
+      "name": "BW REQ",
+      "is_frequent": false,
+      "is_default": true,
+      "created_at": "2025-07-16T01:32:30.346089",
+      "updated_at": "2025-07-16T01:32:30.346089"
+    },
+    {
+      "id": "9e32840e-5dec-4616-93bd-970f7b03cb07",
+      "name": "BW RLTS-P",
+      "is_frequent": false,
+      "is_default": true,
+      "created_at": "2025-07-16T01:32:30.346105",
+      "updated_at": "2025-07-16T01:32:30.346106"
+    },
+    {
+      "id": "d61ed961-9264-44cf-b2a5-5c9a3d606171",
+      "name": "COMPLETED",
+      "is_frequent": false,
+      "is_default": true,
+      "created_at": "2025-07-16T01:32:30.346121",
+      "updated_at": "2025-07-16T01:32:30.346122"
+    },
+    {
+      "id": "be904f63-3765-4be1-a644-306eb7d3860c",
+      "name": "CONSULT-LOCATE",
+      "is_frequent": false,
+      "is_default": true,
+      "created_at": "2025-07-16T01:32:30.346153",
+      "updated_at": "2025-07-16T01:32:30.346153"
+    },
+    {
+      "id": "1ce8976d-9c92-424d-a85f-c7e706cac006",
+      "name": "CURED",
+      "is_frequent": false,
+      "is_default": true,
+      "created_at": "2025-07-16T01:32:30.346169",
+      "updated_at": "2025-07-16T01:32:30.346170"
+    },
+    {
+      "id": "9313759f-8736-4079-abb7-e7f452b2d842",
+      "name": "DBS",
+      "is_frequent": false,
+      "is_default": true,
+      "created_at": "2025-07-16T01:32:30.346185",
+      "updated_at": "2025-07-16T01:32:30.346201"
+    },
+    {
+      "id": "5d05be66-a687-4be7-ac8d-e711ab91dc00",
+      "name": "DECEASED",
+      "is_frequent": false,
+      "is_default": true,
+      "created_at": "2025-07-16T01:32:30.346224",
+      "updated_at": "2025-07-16T01:32:30.346224"
+    },
+    {
+      "id": "1772a98f-c9da-45d9-9260-8ecc14669b39",
+      "name": "DELETED",
+      "is_frequent": false,
+      "is_default": true,
+      "created_at": "2025-07-16T01:32:30.346241",
+      "updated_at": "2025-07-16T01:32:30.346241"
+    },
+    {
+      "id": "f0fc2cd9-bee0-483b-bab7-aeb179b9bddb",
+      "name": "DISCONTINUED",
+      "is_frequent": false,
+      "is_default": true,
+      "created_at": "2025-07-16T01:32:30.346258",
+      "updated_at": "2025-07-16T01:32:30.346259"
+    },
+    {
+      "id": "5a88059b-b7ba-431a-8871-868c56dde3e6",
+      "name": "DUPLICATE",
+      "is_frequent": false,
+      "is_default": true,
+      "created_at": "2025-07-16T01:32:30.346275",
+      "updated_at": "2025-07-16T01:32:30.346275"
+    },
+    {
+      "id": "754f6b47-3132-4454-ba23-1dc0bd425ce7",
+      "name": "EXTERNAL TX",
+      "is_frequent": false,
+      "is_default": true,
+      "created_at": "2025-07-16T01:32:30.346291",
+      "updated_at": "2025-07-16T01:32:30.346291"
+    },
+    {
+      "id": "7a9ef8ae-8af7-4bc0-9634-612c1a2a0961",
+      "name": "HEALTH CARD",
+      "is_frequent": false,
+      "is_default": true,
+      "created_at": "2025-07-16T01:32:30.346307",
+      "updated_at": "2025-07-16T01:32:30.346307"
+    },
+    {
+      "id": "7a14c297-9ad0-48e7-b87a-45404b4b11a7",
+      "name": "HIV (ACTIVE)",
+      "is_frequent": false,
+      "is_default": true,
+      "created_at": "2025-07-16T01:32:30.346332",
+      "updated_at": "2025-07-16T01:32:30.346332"
+    },
+    {
+      "id": "af482f80-2735-4abd-857e-d096f42303a6",
+      "name": "HIV - DISCHARGED",
+      "is_frequent": false,
+      "is_default": true,
+      "created_at": "2025-07-16T01:32:30.346348",
+      "updated_at": "2025-07-16T01:32:30.346349"
+    },
+    {
+      "id": "50057b61-160f-4c71-b523-90f6893826ef",
+      "name": "HIV PATIENT",
+      "is_frequent": false,
+      "is_default": true,
+      "created_at": "2025-07-16T01:32:30.346364",
+      "updated_at": "2025-07-16T01:32:30.346364"
+    },
+    {
+      "id": "811b1894-99df-45e2-b103-5a5f66088fff",
+      "name": "HOME VISIT",
+      "is_frequent": false,
+      "is_default": true,
+      "created_at": "2025-07-16T01:32:30.346380",
+      "updated_at": "2025-07-16T01:32:30.346381"
+    },
+    {
+      "id": "8019ddf2-be3d-4618-9dc6-04fd62edc801",
+      "name": "HOUSING",
+      "is_frequent": false,
+      "is_default": true,
+      "created_at": "2025-07-16T01:32:30.346397",
+      "updated_at": "2025-07-16T01:32:30.346397"
+    },
+    {
+      "id": "ae821ba7-afad-44fc-a577-650e58fbdd37",
+      "name": "INACTIVE",
+      "is_frequent": false,
+      "is_default": true,
+      "created_at": "2025-07-16T01:32:30.346416",
+      "updated_at": "2025-07-16T01:32:30.346417"
+    },
+    {
+      "id": "9f99f4ad-9420-4292-bf8a-a81dd9cde4dd",
+      "name": "JAIL",
+      "is_frequent": false,
+      "is_default": true,
+      "created_at": "2025-07-16T01:32:30.346433",
+      "updated_at": "2025-07-16T01:32:30.346433"
+    },
+    {
+      "id": "3e32daa3-dc24-4029-bf7d-e3cea08dd7e2",
+      "name": "LAB APPOINTMENT",
+      "is_frequent": false,
+      "is_default": true,
+      "created_at": "2025-07-16T01:32:30.346449",
+      "updated_at": "2025-07-16T01:32:30.346449"
+    },
+    {
+      "id": "f366c027-8de4-41fb-8fb6-a896b4a95f7b",
+      "name": "LAB REQ",
+      "is_frequent": false,
+      "is_default": true,
+      "created_at": "2025-07-16T01:32:30.346465",
+      "updated_at": "2025-07-16T01:32:30.346465"
+    },
+    {
+      "id": "a24784c8-ef36-4370-abee-9235d14362f4",
+      "name": "LOCATE",
+      "is_frequent": false,
+      "is_default": true,
+      "created_at": "2025-07-16T01:32:30.346480",
+      "updated_at": "2025-07-16T01:32:30.346481"
+    },
+    {
+      "id": "048c7cae-caab-44ed-a396-6837e301fd23",
+      "name": "MD UPDATE",
+      "is_frequent": false,
+      "is_default": true,
+      "created_at": "2025-07-16T01:32:30.346499",
+      "updated_at": "2025-07-16T01:32:30.346499"
+    },
+    {
+      "id": "4aa907f7-24fe-46b5-93a7-98298a71a02d",
+      "name": "MISSING RNA",
+      "is_frequent": false,
+      "is_default": true,
+      "created_at": "2025-07-16T01:32:30.346515",
+      "updated_at": "2025-07-16T01:32:30.346516"
+    },
+    {
+      "id": "2e878857-643f-47ae-b653-18d1b0de4bcd",
+      "name": "NOT READY",
+      "is_frequent": false,
+      "is_default": true,
+      "created_at": "2025-07-16T01:32:30.346531",
+      "updated_at": "2025-07-16T01:32:30.346532"
+    },
+    {
+      "id": "4be8f914-927e-4b98-9606-82dc7235308f",
+      "name": "POCT INCOMPLETE",
+      "is_frequent": false,
+      "is_default": true,
+      "created_at": "2025-07-16T01:32:30.346547",
+      "updated_at": "2025-07-16T01:32:30.346547"
+    },
+    {
+      "id": "efde4b20-8fd7-4905-b28b-224389da5d5b",
+      "name": "REFUSED BW",
+      "is_frequent": false,
+      "is_default": true,
+      "created_at": "2025-07-16T01:32:30.346563",
+      "updated_at": "2025-07-16T01:32:30.346564"
+    },
+    {
+      "id": "c46f604d-5a6a-4454-a57c-6e641601305a",
+      "name": "REFUSED TX",
+      "is_frequent": false,
+      "is_default": true,
+      "created_at": "2025-07-16T01:32:30.346579",
+      "updated_at": "2025-07-16T01:32:30.346579"
+    },
+    {
+      "id": "7da2a718-658b-4ba8-9a88-ae8e730ef3ae",
+      "name": "REIMBURSEMENT",
+      "is_frequent": false,
+      "is_default": true,
+      "created_at": "2025-07-16T01:32:30.346595",
+      "updated_at": "2025-07-16T01:32:30.346595"
+    },
+    {
+      "id": "2415ad37-2c2c-4f57-9dbb-bb3d096ef6e4",
+      "name": "REIMBURSEMENT (SAV)",
+      "is_frequent": false,
+      "is_default": true,
+      "created_at": "2025-07-16T01:32:30.346616",
+      "updated_at": "2025-07-16T01:32:30.346616"
+    },
+    {
+      "id": "d82054b2-cde0-4e31-8bfb-a89c061ae8d2",
+      "name": "RX",
+      "is_frequent": false,
+      "is_default": true,
+      "created_at": "2025-07-16T01:32:30.346632",
+      "updated_at": "2025-07-16T01:32:30.346632"
+    },
+    {
+      "id": "23b618e1-d678-4f36-84c1-9434e2553454",
+      "name": "SOT-2 WEEKS",
+      "is_frequent": false,
+      "is_default": true,
+      "created_at": "2025-07-16T01:32:30.346647",
+      "updated_at": "2025-07-16T01:32:30.346647"
+    },
+    {
+      "id": "da547e7f-02ce-4da7-858a-42bd373c081a",
+      "name": "SOT-ALL",
+      "is_frequent": false,
+      "is_default": true,
+      "created_at": "2025-07-16T01:32:30.346663",
+      "updated_at": "2025-07-16T01:32:30.346663"
+    },
+    {
+      "id": "5c701360-9891-4d96-9995-47c748392af3",
+      "name": "SOT-BRIDGED",
+      "is_frequent": false,
+      "is_default": true,
+      "created_at": "2025-07-16T01:32:30.346678",
+      "updated_at": "2025-07-16T01:32:30.346679"
+    },
+    {
+      "id": "6dee9245-5294-432a-aa68-f5a7ca082ffb",
+      "name": "SOT-CONSULT",
+      "is_frequent": false,
+      "is_default": true,
+      "created_at": "2025-07-16T01:32:30.346694",
+      "updated_at": "2025-07-16T01:32:30.346694"
+    },
+    {
+      "id": "8d1077a1-9ab8-44a3-871c-eb248306cade",
+      "name": "SOT-HOLD",
+      "is_frequent": false,
+      "is_default": true,
+      "created_at": "2025-07-16T01:32:30.346710",
+      "updated_at": "2025-07-16T01:32:30.346710"
+    },
+    {
+      "id": "fdf09b5e-ecd6-4717-ba6f-f5d360d356e1",
+      "name": "SOT-LOCATE",
+      "is_frequent": false,
+      "is_default": true,
+      "created_at": "2025-07-16T01:32:30.346726",
+      "updated_at": "2025-07-16T01:32:30.346726"
+    },
+    {
+      "id": "dcbed1f1-4215-4b61-bb71-f77bd7166cd6",
+      "name": "SOT-LOCATED",
+      "is_frequent": false,
+      "is_default": true,
+      "created_at": "2025-07-16T01:32:30.346741",
+      "updated_at": "2025-07-16T01:32:30.346741"
+    },
+    {
+      "id": "091005da-4c65-45b8-9cad-1770885aeee1",
+      "name": "SOT-OW",
+      "is_frequent": false,
+      "is_default": true,
+      "created_at": "2025-07-16T01:32:30.346757",
+      "updated_at": "2025-07-16T01:32:30.346757"
+    },
+    {
+      "id": "23044890-d05b-4678-bec3-84fe812b1d64",
+      "name": "SOT-SCHEDULED",
+      "is_frequent": false,
+      "is_default": true,
+      "created_at": "2025-07-16T01:32:30.346773",
+      "updated_at": "2025-07-16T01:32:30.346773"
+    },
+    {
+      "id": "5a7f5a11-2297-4974-8b36-1a42bd80f82a",
+      "name": "TRILLIUM",
+      "is_frequent": false,
+      "is_default": true,
+      "created_at": "2025-07-16T01:32:30.346788",
+      "updated_at": "2025-07-16T01:32:30.346789"
+    },
+    {
+      "id": "2fd2feb9-58e5-4324-9623-702e986b4376",
+      "name": "TX PENDING",
+      "is_frequent": false,
+      "is_default": true,
+      "created_at": "2025-07-16T01:32:30.346804",
+      "updated_at": "2025-07-16T01:32:30.346804"
+    },
+    {
+      "id": "c4ec352d-bb94-4271-809d-038265337fc4",
+      "name": "UNABLE TO TX",
+      "is_frequent": false,
+      "is_default": true,
+      "created_at": "2025-07-16T01:32:30.346821",
+      "updated_at": "2025-07-16T01:32:30.346822"
+    },
+    {
+      "id": "7a80d654-95dc-47af-94d3-6e0b2936426e",
+      "name": "WAIT",
+      "is_frequent": false,
+      "is_default": true,
+      "created_at": "2025-07-16T01:32:30.346837",
+      "updated_at": "2025-07-16T01:32:30.346837"
+    },
+    {
+      "id": "c51374ec-e397-4749-b97e-28c431f4c434",
+      "name": "TEST_DISPOSITION_1752629655",
+      "is_frequent": true,
+      "is_default": false,
+      "created_at": "2025-07-16T01:34:41.007550",
+      "updated_at": "2025-07-16T01:34:41.007553"
+    },
+    {
+      "id": "4b4f6c15-5c8e-499c-b133-2a11e0aedb80",
+      "name": "BULK_TEST_1_1752629665",
+      "is_frequent": true,
+      "is_default": false,
+      "created_at": "2025-07-16T01:34:43.953564",
+      "updated_at": "2025-07-16T01:34:43.953567"
+    },
+    {
+      "id": "fd4e3507-2140-4b53-8168-886a0e493b1c",
+      "name": "BULK_TEST_2_1752629665",
+      "is_frequent": false,
+      "is_default": false,
+      "created_at": "2025-07-16T01:34:43.955444",
+      "updated_at": "2025-07-16T01:34:43.955446"
+    },
+    {
+      "id": "a41e8500-c605-49d5-b805-f1f2a626819a",
+      "name": "BULK_TEST_1_1752629786",
+      "is_frequent": true,
+      "is_default": false,
+      "created_at": "2025-07-16T01:36:26.857595",
+      "updated_at": "2025-07-16T01:36:26.857598"
+    },
+    {
+      "id": "b517c2e1-6d08-4e23-b1bf-73f0e431b268",
+      "name": "BULK_TEST_2_1752629786",
+      "is_frequent": false,
+      "is_default": false,
+      "created_at": "2025-07-16T01:36:26.859433",
+      "updated_at": "2025-07-16T01:36:26.859435"
+    },
+    {
+      "id": "b0b9e319-7ba6-478a-9188-4468677d4021",
+      "name": "UPDATE_TEST_1752629840_VALID_UPDATE",
+      "is_frequent": false,
+      "is_default": false,
+      "created_at": "2025-07-16T01:37:20.120493",
+      "updated_at": "2025-07-16T01:37:20.144255"
+    }
+  ]
+}

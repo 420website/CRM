@@ -1,0 +1,560 @@
+[
+  {
+    "_id": "6877d6d393df1d5ec3d120f8",
+    "id": "89134bba-5f8f-421d-84d4-75db18073fe5",
+    "name": "ACTIVE",
+    "is_frequent": true,
+    "is_default": true,
+    "created_at": "2025-07-16T16:44:03.316664",
+    "updated_at": "2025-07-16T16:44:03.316666"
+  },
+  {
+    "_id": "6877d6d393df1d5ec3d120f9",
+    "id": "a4d2458a-1c74-4adf-acbc-02258a1bf984",
+    "name": "BW RLTS",
+    "is_frequent": true,
+    "is_default": true,
+    "created_at": "2025-07-16T16:44:03.316766",
+    "updated_at": "2025-07-16T16:44:03.316766"
+  },
+  {
+    "_id": "6877d6d393df1d5ec3d120fa",
+    "id": "5b2f4ece-563f-4904-adc8-d35e884e6921",
+    "name": "CONSULT REQ",
+    "is_frequent": true,
+    "is_default": true,
+    "created_at": "2025-07-16T16:44:03.316794",
+    "updated_at": "2025-07-16T16:44:03.316794"
+  },
+  {
+    "_id": "6877d6d393df1d5ec3d120fb",
+    "id": "e5a84e8d-ef8c-4585-aa6e-49feb76b772c",
+    "name": "DELIVERY",
+    "is_frequent": true,
+    "is_default": true,
+    "created_at": "2025-07-16T16:44:03.316814",
+    "updated_at": "2025-07-16T16:44:03.316815"
+  },
+  {
+    "_id": "6877d6d393df1d5ec3d120fc",
+    "id": "3c2b3537-d414-45a3-acc1-489b033f8194",
+    "name": "DISPENSING",
+    "is_frequent": true,
+    "is_default": true,
+    "created_at": "2025-07-16T16:44:03.316833",
+    "updated_at": "2025-07-16T16:44:03.316833"
+  },
+  {
+    "_id": "6877d6d393df1d5ec3d120fd",
+    "id": "3a6809bb-d1f0-4405-ae47-be1cc9881d22",
+    "name": "PENDING",
+    "is_frequent": true,
+    "is_default": true,
+    "created_at": "2025-07-16T16:44:03.316851",
+    "updated_at": "2025-07-16T16:44:03.316851"
+  },
+  {
+    "_id": "6877d6d393df1d5ec3d120fe",
+    "id": "a3b03724-1e7e-4100-b296-1aea0280bf48",
+    "name": "POCT NEG",
+    "is_frequent": true,
+    "is_default": true,
+    "created_at": "2025-07-16T16:44:03.316872",
+    "updated_at": "2025-07-16T16:44:03.316873"
+  },
+  {
+    "_id": "6877d6d393df1d5ec3d120ff",
+    "id": "ba67ec2a-d227-4a64-99c9-ed9b5e71b882",
+    "name": "PREVIOUSLY TX",
+    "is_frequent": true,
+    "is_default": true,
+    "created_at": "2025-07-16T16:44:03.316902",
+    "updated_at": "2025-07-16T16:44:03.316902"
+  },
+  {
+    "_id": "6877d6d393df1d5ec3d12100",
+    "id": "8ac5a5e3-3ee7-496d-852f-2c99c3d3e164",
+    "name": "SELF CURED",
+    "is_frequent": true,
+    "is_default": true,
+    "created_at": "2025-07-16T16:44:03.316922",
+    "updated_at": "2025-07-16T16:44:03.316922"
+  },
+  {
+    "_id": "6877d6d393df1d5ec3d12101",
+    "id": "c6cb114f-d40a-4208-8dc8-afefe836eb78",
+    "name": "SOT",
+    "is_frequent": true,
+    "is_default": true,
+    "created_at": "2025-07-16T16:44:03.316939",
+    "updated_at": "2025-07-16T16:44:03.316939"
+  },
+  {
+    "_id": "6877d6d393df1d5ec3d12102",
+    "id": "ffc88038-f9bc-4579-93a0-43f69b8333d3",
+    "name": "ACTIVE-ALL",
+    "is_frequent": false,
+    "is_default": true,
+    "created_at": "2025-07-16T16:44:03.316956",
+    "updated_at": "2025-07-16T16:44:03.316956"
+  },
+  {
+    "_id": "6877d6d393df1d5ec3d12103",
+    "id": "df6e81b3-1966-45cc-9e63-404a1ee0f88a",
+    "name": "ACTIVE-ALL-NC",
+    "is_frequent": false,
+    "is_default": true,
+    "created_at": "2025-07-16T16:44:03.316985",
+    "updated_at": "2025-07-16T16:44:03.316985"
+  },
+  {
+    "_id": "6877d6d393df1d5ec3d12104",
+    "id": "30aa5b86-13ed-44de-8eb9-f49b18b27364",
+    "name": "ACTIVE-ALL-OK",
+    "is_frequent": false,
+    "is_default": true,
+    "created_at": "2025-07-16T16:44:03.317003",
+    "updated_at": "2025-07-16T16:44:03.317003"
+  },
+  {
+    "_id": "6877d6d393df1d5ec3d12105",
+    "id": "e3f7a2ad-4dcd-49c6-b8a8-14e114e16e6c",
+    "name": "ACTIVE-BRIDGE",
+    "is_frequent": false,
+    "is_default": true,
+    "created_at": "2025-07-16T16:44:03.317019",
+    "updated_at": "2025-07-16T16:44:03.317019"
+  },
+  {
+    "_id": "6877d6d393df1d5ec3d12106",
+    "id": "c537ece2-9af3-44db-9f80-722651da0819",
+    "name": "ACTIVE-JAIL",
+    "is_frequent": false,
+    "is_default": true,
+    "created_at": "2025-07-16T16:44:03.317035",
+    "updated_at": "2025-07-16T16:44:03.317035"
+  },
+  {
+    "_id": "6877d6d393df1d5ec3d12107",
+    "id": "e0e1e7af-53d2-4810-b3b0-6ae5ad105192",
+    "name": "ACTIVE-NC",
+    "is_frequent": false,
+    "is_default": true,
+    "created_at": "2025-07-16T16:44:03.317051",
+    "updated_at": "2025-07-16T16:44:03.317051"
+  },
+  {
+    "_id": "6877d6d393df1d5ec3d12108",
+    "id": "19d2d416-cd7f-4c3c-b367-b6ebfd5941d1",
+    "name": "ACTIVE-OK",
+    "is_frequent": false,
+    "is_default": true,
+    "created_at": "2025-07-16T16:44:03.317067",
+    "updated_at": "2025-07-16T16:44:03.317067"
+  },
+  {
+    "_id": "6877d6d393df1d5ec3d12109",
+    "id": "c59915bd-f2b2-4431-951c-cfd5dcb4b8e9",
+    "name": "BW ERROR",
+    "is_frequent": false,
+    "is_default": true,
+    "created_at": "2025-07-16T16:44:03.317083",
+    "updated_at": "2025-07-16T16:44:03.317083"
+  },
+  {
+    "_id": "6877d6d393df1d5ec3d1210a",
+    "id": "7e4f66e5-84e2-4b7b-87ba-6338d3c98732",
+    "name": "BW REQ",
+    "is_frequent": false,
+    "is_default": true,
+    "created_at": "2025-07-16T16:44:03.317099",
+    "updated_at": "2025-07-16T16:44:03.317100"
+  },
+  {
+    "_id": "6877d6d393df1d5ec3d1210b",
+    "id": "b90e7fe2-ff1d-4048-b5a3-619ed2969587",
+    "name": "BW RLTS-P",
+    "is_frequent": false,
+    "is_default": true,
+    "created_at": "2025-07-16T16:44:03.317115",
+    "updated_at": "2025-07-16T16:44:03.317115"
+  },
+  {
+    "_id": "6877d6d393df1d5ec3d1210c",
+    "id": "685096a1-a4bd-4a6c-933a-6c6297ffc7e2",
+    "name": "COMPLETED",
+    "is_frequent": false,
+    "is_default": true,
+    "created_at": "2025-07-16T16:44:03.317131",
+    "updated_at": "2025-07-16T16:44:03.317131"
+  },
+  {
+    "_id": "6877d6d393df1d5ec3d1210d",
+    "id": "309ac8b1-91fb-4904-be12-9a7b01ee9fac",
+    "name": "CONSULT-LOCATE",
+    "is_frequent": false,
+    "is_default": true,
+    "created_at": "2025-07-16T16:44:03.317147",
+    "updated_at": "2025-07-16T16:44:03.317147"
+  },
+  {
+    "_id": "6877d6d393df1d5ec3d1210e",
+    "id": "c485a29f-d7f8-4eec-a3bf-c92fd7572bf6",
+    "name": "CURED",
+    "is_frequent": false,
+    "is_default": true,
+    "created_at": "2025-07-16T16:44:03.317163",
+    "updated_at": "2025-07-16T16:44:03.317163"
+  },
+  {
+    "_id": "6877d6d393df1d5ec3d1210f",
+    "id": "d4122558-b69c-4d38-9033-a5b0f6242b27",
+    "name": "DBS",
+    "is_frequent": false,
+    "is_default": true,
+    "created_at": "2025-07-16T16:44:03.317179",
+    "updated_at": "2025-07-16T16:44:03.317179"
+  },
+  {
+    "_id": "6877d6d393df1d5ec3d12110",
+    "id": "b2254fc0-6350-4c15-a9f9-376ac4c8acb8",
+    "name": "DECEASED",
+    "is_frequent": false,
+    "is_default": true,
+    "created_at": "2025-07-16T16:44:03.317198",
+    "updated_at": "2025-07-16T16:44:03.317198"
+  },
+  {
+    "_id": "6877d6d393df1d5ec3d12111",
+    "id": "b499cc7d-a393-408f-8a38-a2dd4f17e84a",
+    "name": "DELETED",
+    "is_frequent": false,
+    "is_default": true,
+    "created_at": "2025-07-16T16:44:03.317216",
+    "updated_at": "2025-07-16T16:44:03.317216"
+  },
+  {
+    "_id": "6877d6d393df1d5ec3d12112",
+    "id": "ba855ecf-678c-4d99-9311-d2c14a5909cb",
+    "name": "DISCONTINUED",
+    "is_frequent": false,
+    "is_default": true,
+    "created_at": "2025-07-16T16:44:03.317232",
+    "updated_at": "2025-07-16T16:44:03.317233"
+  },
+  {
+    "_id": "6877d6d393df1d5ec3d12113",
+    "id": "ef281f5f-10f5-4d22-b5ec-c5d64b3c3e3a",
+    "name": "DUPLICATE",
+    "is_frequent": false,
+    "is_default": true,
+    "created_at": "2025-07-16T16:44:03.317249",
+    "updated_at": "2025-07-16T16:44:03.317249"
+  },
+  {
+    "_id": "6877d6d393df1d5ec3d12114",
+    "id": "d39f1f3c-704a-4d2b-b15a-c62453533be7",
+    "name": "EXTERNAL TX",
+    "is_frequent": false,
+    "is_default": true,
+    "created_at": "2025-07-16T16:44:03.317264",
+    "updated_at": "2025-07-16T16:44:03.317265"
+  },
+  {
+    "_id": "6877d6d393df1d5ec3d12115",
+    "id": "c9f80507-b752-4f28-940b-0c6ac0b3790f",
+    "name": "HEALTH CARD",
+    "is_frequent": false,
+    "is_default": true,
+    "created_at": "2025-07-16T16:44:03.317280",
+    "updated_at": "2025-07-16T16:44:03.317280"
+  },
+  {
+    "_id": "6877d6d393df1d5ec3d12116",
+    "id": "4a87a542-5ae6-4bd0-9e97-d2c9b34681b6",
+    "name": "HIV (ACTIVE)",
+    "is_frequent": false,
+    "is_default": true,
+    "created_at": "2025-07-16T16:44:03.317296",
+    "updated_at": "2025-07-16T16:44:03.317296"
+  },
+  {
+    "_id": "6877d6d393df1d5ec3d12117",
+    "id": "64cb0c5c-8276-4f2c-9b26-7a1fcae2c70f",
+    "name": "HIV - DISCHARGED",
+    "is_frequent": false,
+    "is_default": true,
+    "created_at": "2025-07-16T16:44:03.317312",
+    "updated_at": "2025-07-16T16:44:03.317312"
+  },
+  {
+    "_id": "6877d6d393df1d5ec3d12118",
+    "id": "f4ba303e-1d5c-4798-a0d5-4e0178d329f6",
+    "name": "HIV PATIENT",
+    "is_frequent": false,
+    "is_default": true,
+    "created_at": "2025-07-16T16:44:03.317328",
+    "updated_at": "2025-07-16T16:44:03.317328"
+  },
+  {
+    "_id": "6877d6d393df1d5ec3d12119",
+    "id": "da6891a3-ae80-4336-8760-8fdbe63cb3f3",
+    "name": "HOME VISIT",
+    "is_frequent": false,
+    "is_default": true,
+    "created_at": "2025-07-16T16:44:03.317344",
+    "updated_at": "2025-07-16T16:44:03.317344"
+  },
+  {
+    "_id": "6877d6d393df1d5ec3d1211a",
+    "id": "47c9b2c6-45d5-44d9-bd4f-db4af3b9fea5",
+    "name": "HOUSING",
+    "is_frequent": false,
+    "is_default": true,
+    "created_at": "2025-07-16T16:44:03.317360",
+    "updated_at": "2025-07-16T16:44:03.317360"
+  },
+  {
+    "_id": "6877d6d393df1d5ec3d1211b",
+    "id": "e9d8b82b-34b3-4e2a-9dc3-b7ca22e437ec",
+    "name": "INACTIVE",
+    "is_frequent": false,
+    "is_default": true,
+    "created_at": "2025-07-16T16:44:03.317376",
+    "updated_at": "2025-07-16T16:44:03.317376"
+  },
+  {
+    "_id": "6877d6d393df1d5ec3d1211c",
+    "id": "aabadcc6-7ff2-4bec-8ae9-5a1a6b54a5f7",
+    "name": "JAIL",
+    "is_frequent": false,
+    "is_default": true,
+    "created_at": "2025-07-16T16:44:03.317406",
+    "updated_at": "2025-07-16T16:44:03.317406"
+  },
+  {
+    "_id": "6877d6d393df1d5ec3d1211d",
+    "id": "2e643f24-5619-414c-9a28-e97bb6542398",
+    "name": "LAB APPOINTMENT",
+    "is_frequent": false,
+    "is_default": true,
+    "created_at": "2025-07-16T16:44:03.317425",
+    "updated_at": "2025-07-16T16:44:03.317426"
+  },
+  {
+    "_id": "6877d6d393df1d5ec3d1211e",
+    "id": "63909fed-574e-481c-a26f-37a400df160d",
+    "name": "LAB REQ",
+    "is_frequent": false,
+    "is_default": true,
+    "created_at": "2025-07-16T16:44:03.317441",
+    "updated_at": "2025-07-16T16:44:03.317442"
+  },
+  {
+    "_id": "6877d6d393df1d5ec3d1211f",
+    "id": "2ab8f240-d715-400c-8614-e6f2d6525929",
+    "name": "LOCATE",
+    "is_frequent": false,
+    "is_default": true,
+    "created_at": "2025-07-16T16:44:03.317458",
+    "updated_at": "2025-07-16T16:44:03.317458"
+  },
+  {
+    "_id": "6877d6d393df1d5ec3d12120",
+    "id": "b1433505-4558-425d-88c9-c05171d5bdee",
+    "name": "MD UPDATE",
+    "is_frequent": false,
+    "is_default": true,
+    "created_at": "2025-07-16T16:44:03.317473",
+    "updated_at": "2025-07-16T16:44:03.317474"
+  },
+  {
+    "_id": "6877d6d393df1d5ec3d12121",
+    "id": "9f37384c-2ea3-4881-800e-e542c8740bf1",
+    "name": "MISSING RNA",
+    "is_frequent": false,
+    "is_default": true,
+    "created_at": "2025-07-16T16:44:03.317489",
+    "updated_at": "2025-07-16T16:44:03.317489"
+  },
+  {
+    "_id": "6877d6d393df1d5ec3d12122",
+    "id": "e26b1adc-10f2-460d-a219-bf0f47c899a9",
+    "name": "NOT READY",
+    "is_frequent": false,
+    "is_default": true,
+    "created_at": "2025-07-16T16:44:03.317505",
+    "updated_at": "2025-07-16T16:44:03.317505"
+  },
+  {
+    "_id": "6877d6d393df1d5ec3d12123",
+    "id": "5b91d3f6-b1d1-471d-8e59-b3b54d17d8f5",
+    "name": "POCT INCOMPLETE",
+    "is_frequent": false,
+    "is_default": true,
+    "created_at": "2025-07-16T16:44:03.317520",
+    "updated_at": "2025-07-16T16:44:03.317520"
+  },
+  {
+    "_id": "6877d6d393df1d5ec3d12124",
+    "id": "43a39c8c-778e-4f8c-870d-e1e8ec588838",
+    "name": "REFUSED BW",
+    "is_frequent": false,
+    "is_default": true,
+    "created_at": "2025-07-16T16:44:03.317536",
+    "updated_at": "2025-07-16T16:44:03.317536"
+  },
+  {
+    "_id": "6877d6d393df1d5ec3d12125",
+    "id": "84d2756f-5bb4-4ff3-9af0-aede799eba6e",
+    "name": "REFUSED TX",
+    "is_frequent": false,
+    "is_default": true,
+    "created_at": "2025-07-16T16:44:03.317556",
+    "updated_at": "2025-07-16T16:44:03.317556"
+  },
+  {
+    "_id": "6877d6d393df1d5ec3d12126",
+    "id": "28f64e47-3508-47ef-94ec-57ea6f06d8b2",
+    "name": "REIMBURSEMENT",
+    "is_frequent": false,
+    "is_default": true,
+    "created_at": "2025-07-16T16:44:03.317572",
+    "updated_at": "2025-07-16T16:44:03.317572"
+  },
+  {
+    "_id": "6877d6d393df1d5ec3d12127",
+    "id": "a5363a0f-17a5-4014-825b-5f8eb98f95ee",
+    "name": "REIMBURSEMENT (SAV)",
+    "is_frequent": false,
+    "is_default": true,
+    "created_at": "2025-07-16T16:44:03.317588",
+    "updated_at": "2025-07-16T16:44:03.317588"
+  },
+  {
+    "_id": "6877d6d393df1d5ec3d12128",
+    "id": "76e9e5b9-3494-48bd-bd9b-9fb43451f314",
+    "name": "RX",
+    "is_frequent": false,
+    "is_default": true,
+    "created_at": "2025-07-16T16:44:03.317604",
+    "updated_at": "2025-07-16T16:44:03.317604"
+  },
+  {
+    "_id": "6877d6d393df1d5ec3d12129",
+    "id": "3b4f338e-17ff-48a3-a97d-dc345bb5904c",
+    "name": "SOT-2 WEEKS",
+    "is_frequent": false,
+    "is_default": true,
+    "created_at": "2025-07-16T16:44:03.317622",
+    "updated_at": "2025-07-16T16:44:03.317622"
+  },
+  {
+    "_id": "6877d6d393df1d5ec3d1212a",
+    "id": "c338dae3-29d8-4868-9bfb-f5b69de02ad5",
+    "name": "SOT-ALL",
+    "is_frequent": false,
+    "is_default": true,
+    "created_at": "2025-07-16T16:44:03.317640",
+    "updated_at": "2025-07-16T16:44:03.317640"
+  },
+  {
+    "_id": "6877d6d393df1d5ec3d1212b",
+    "id": "40c73f20-c9a0-439f-9935-b48a7197620d",
+    "name": "SOT-BRIDGED",
+    "is_frequent": false,
+    "is_default": true,
+    "created_at": "2025-07-16T16:44:03.317656",
+    "updated_at": "2025-07-16T16:44:03.317656"
+  },
+  {
+    "_id": "6877d6d393df1d5ec3d1212c",
+    "id": "0703b398-3a14-438c-9408-7a39ad21f8b6",
+    "name": "SOT-CONSULT",
+    "is_frequent": false,
+    "is_default": true,
+    "created_at": "2025-07-16T16:44:03.317673",
+    "updated_at": "2025-07-16T16:44:03.317673"
+  },
+  {
+    "_id": "6877d6d393df1d5ec3d1212d",
+    "id": "b82d2d23-deb5-4abe-8a08-db99e826be2e",
+    "name": "SOT-HOLD",
+    "is_frequent": false,
+    "is_default": true,
+    "created_at": "2025-07-16T16:44:03.317692",
+    "updated_at": "2025-07-16T16:44:03.317693"
+  },
+  {
+    "_id": "6877d6d393df1d5ec3d1212e",
+    "id": "8a1fd611-e08a-42ad-8a59-4d52c640b4f6",
+    "name": "SOT-LOCATE",
+    "is_frequent": false,
+    "is_default": true,
+    "created_at": "2025-07-16T16:44:03.317709",
+    "updated_at": "2025-07-16T16:44:03.317710"
+  },
+  {
+    "_id": "6877d6d393df1d5ec3d1212f",
+    "id": "2dadc3f5-45f5-4a8a-8b79-121d5e6bfe1d",
+    "name": "SOT-LOCATED",
+    "is_frequent": false,
+    "is_default": true,
+    "created_at": "2025-07-16T16:44:03.317733",
+    "updated_at": "2025-07-16T16:44:03.317734"
+  },
+  {
+    "_id": "6877d6d393df1d5ec3d12130",
+    "id": "36e546dc-01c9-483a-89d8-5e7f00c944ac",
+    "name": "SOT-OW",
+    "is_frequent": false,
+    "is_default": true,
+    "created_at": "2025-07-16T16:44:03.317750",
+    "updated_at": "2025-07-16T16:44:03.317750"
+  },
+  {
+    "_id": "6877d6d393df1d5ec3d12131",
+    "id": "632551ec-0556-41b9-ae7b-803536c60e86",
+    "name": "SOT-SCHEDULED",
+    "is_frequent": false,
+    "is_default": true,
+    "created_at": "2025-07-16T16:44:03.317765",
+    "updated_at": "2025-07-16T16:44:03.317766"
+  },
+  {
+    "_id": "6877d6d393df1d5ec3d12132",
+    "id": "4264507c-c495-49ed-8ac5-410346799353",
+    "name": "TRILLIUM",
+    "is_frequent": false,
+    "is_default": true,
+    "created_at": "2025-07-16T16:44:03.317781",
+    "updated_at": "2025-07-16T16:44:03.317782"
+  },
+  {
+    "_id": "6877d6d393df1d5ec3d12133",
+    "id": "96b97fbe-7d72-4300-895c-efc09c0a61d0",
+    "name": "TX PENDING",
+    "is_frequent": false,
+    "is_default": true,
+    "created_at": "2025-07-16T16:44:03.317797",
+    "updated_at": "2025-07-16T16:44:03.317797"
+  },
+  {
+    "_id": "6877d6d393df1d5ec3d12134",
+    "id": "49127c26-5199-424a-a61a-a2d0a228ebef",
+    "name": "UNABLE TO TX",
+    "is_frequent": false,
+    "is_default": true,
+    "created_at": "2025-07-16T16:44:03.317812",
+    "updated_at": "2025-07-16T16:44:03.317813"
+  },
+  {
+    "_id": "6877d6d393df1d5ec3d12135",
+    "id": "c9f99655-7401-4036-a2de-57bdc7393715",
+    "name": "WAIT",
+    "is_frequent": false,
+    "is_default": true,
+    "created_at": "2025-07-16T16:44:03.317828",
+    "updated_at": "2025-07-16T16:44:03.317828"
+  }
+]

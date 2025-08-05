@@ -1,0 +1,105 @@
+🔧 Backend URL: https://46471c8a-a981-4b23-bca9-bb5c0ba282bc.preview.emergentagent.com
+🔧 MongoDB URL: mongodb://localhost:27017
+🔧 Database Name: my420_ca_db
+🚀 PROVINCE FIELD REPOSITIONING - BACKEND FUNCTIONALITY TEST
+======================================================================
+Testing backend functionality after province field repositioning
+(Frontend-only change: moved province field after city field)
+======================================================================
+
+🔍 TESTING CORE BACKEND SERVICES
+==================================================
+✅ Pending registrations endpoint: 200
+✅ Submitted registrations endpoint: 200
+✅ Notes templates endpoint: 200
+✅ Clinical templates endpoint: 200
+
+📊 Core Services Test Results: 4/4 passed
+
+🔍 TESTING DATABASE CONNECTIVITY
+========================================
+✅ Database connected. Collections: 11
+✅ Admin registrations collection accessible. Records: 50
+✅ Database queries working correctly
+
+🔍 TESTING REGISTRATION CREATION WITH PROVINCE FIELD
+============================================================
+📝 Creating registration with province: British Columbia
+📍 Address details: 796 Granville Street, Vancouver, British Columbia
+✅ Create registration with province field: 200
+✅ Registration created successfully with ID: af475101-cb7b-4420-8b61-3908b7c7f0e6
+✅ Retrieve created registration: 200
+✅ Province field correctly stored and retrieved: British Columbia
+✅ Complete address information (including province) verified
+   Address: 796 Granville Street
+   City: Vancouver
+   Province: British Columbia
+   Postal Code: V5A 3B7
+
+🔍 TESTING PROVINCE FIELD VARIATIONS
+=============================================
+🧪 Testing province: Ontario
+❌ Create registration with province: Ontario: Connection error - HTTPSConnectionPool(host='b0e582bf-99e6-4387-8b0a-6411c933492c.preview.emergentagent.com', port=443): Read timed out. (read timeout=30)
+   ❌ Failed to create registration with province: Ontario
+🧪 Testing province: British Columbia
+✅ Create registration with province: British Columbia: 200
+✅ Verify province storage: British Columbia: 200
+   ✅ Province 'British Columbia' stored and retrieved correctly
+🧪 Testing province: Alberta
+❌ Create registration with province: Alberta: Connection error - HTTPSConnectionPool(host='b0e582bf-99e6-4387-8b0a-6411c933492c.preview.emergentagent.com', port=443): Read timed out. (read timeout=30)
+   ❌ Failed to create registration with province: Alberta
+🧪 Testing province: Quebec
+✅ Create registration with province: Quebec: 200
+✅ Verify province storage: Quebec: 200
+   ✅ Province 'Quebec' stored and retrieved correctly
+🧪 Testing province: Manitoba
+❌ Create registration with province: Manitoba: Connection error - HTTPSConnectionPool(host='b0e582bf-99e6-4387-8b0a-6411c933492c.preview.emergentagent.com', port=443): Read timed out. (read timeout=30)
+   ❌ Failed to create registration with province: Manitoba
+
+📊 Province Variations Test Results: 2/5 passed
+
+🔍 TESTING REGISTRATION UPDATE WITH PROVINCE CHANGES
+=======================================================
+
+🔍 TESTING REGISTRATION CREATION WITH PROVINCE FIELD
+============================================================
+📝 Creating registration with province: British Columbia
+📍 Address details: 835 Granville Street, Vancouver, British Columbia
+✅ Create registration with province field: 200
+✅ Registration created successfully with ID: bdc9b983-40d3-4890-ab8f-9cc51c56ea59
+✅ Retrieve created registration: 200
+✅ Province field correctly stored and retrieved: British Columbia
+✅ Complete address information (including province) verified
+   Address: 835 Granville Street
+   City: Vancouver
+   Province: British Columbia
+   Postal Code: V9A 9B7
+✅ Update registration province field: 422
+❌ Province field update failed
+
+🔍 TESTING COMPREHENSIVE FORM DATA HANDLING
+==================================================
+✅ Complete form data submission: 200
+✅ Verify complete form data: 200
+✅ All critical form fields (including province) handled correctly
+📍 Address Section Fields:
+   address: 356 Granville Street
+   unitNumber: Suite 840
+   city: Vancouver
+   province: British Columbia
+   postalCode: V2A 8B2
+
+======================================================================
+🎯 BACKEND TEST RESULTS SUMMARY
+======================================================================
+Core Services: ✅ PASS
+Database: ✅ PASS
+Registration Creation: ✅ PASS
+Province Variations: ❌ FAIL
+Registration Updates: ❌ FAIL
+Form Data Handling: ✅ PASS
+
+📊 Overall Results: 4/6 tests passed
+⚠️ SOME BACKEND TESTS FAILED!
+❌ Backend functionality may be impacted
+❌ Failed tests: province_variations, registration_updates

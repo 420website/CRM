@@ -1,0 +1,198 @@
+const { MongoClient } = require('mongodb');
+const { v4: uuidv4 } = require('uuid');
+
+const MONGO_URL = process.env.MONGO_URL || 'mongodb://localhost:27017';
+const DB_NAME = process.env.DB_NAME || 'my420_ca_db';
+
+async function seedDispositions() {
+  console.log('🔄 Seeding dispositions...');
+  
+  const client = new MongoClient(MONGO_URL);
+  await client.connect();
+  const db = client.db(DB_NAME);
+  
+  // Check if dispositions already exist
+  const existingCount = await db.collection('dispositions').countDocuments();
+  if (existingCount > 0) {
+    console.log('✅ Dispositions already exist in database');
+    await client.close();
+    return;
+  }
+  
+  // Default dispositions with frequency flags
+  const defaultDispositions = [
+    // Most frequently used dispositions
+    { name: "ACTIVE", is_frequent: true, is_default: true },
+    { name: "BW RLTS", is_frequent: true, is_default: true },
+    { name: "CONSULT REQ", is_frequent: true, is_default: true },
+    { name: "DELIVERY", is_frequent: true, is_default: true },
+    { name: "DISPENSING", is_frequent: true, is_default: true },
+    { name: "PENDING", is_frequent: true, is_default: true },
+    { name: "POCT NEG", is_frequent: true, is_default: true },
+    { name: "PREVIOUSLY TX", is_frequent: true, is_default: true },
+    { name: "SELF CURED", is_frequent: true, is_default: true },
+    { name: "SOT", is_frequent: true, is_default: true },
+    
+    // All other dispositions in alphabetical order
+    { name: "ACTIVE-ALL", is_frequent: false, is_default: true },
+    { name: "ACTIVE-ALL-NC", is_frequent: false, is_default: true },
+    { name: "ACTIVE-ALL-OK", is_frequent: false, is_default: true },
+    { name: "ACTIVE-BRIDGE", is_frequent: false, is_default: true },
+    { name: "ACTIVE-JAIL", is_frequent: false, is_default: true },
+    { name: "ACTIVE-NC", is_frequent: false, is_default: true },
+    { name: "ACTIVE-OK", is_frequent: false, is_default: true },
+    { name: "BW ERROR", is_frequent: false, is_default: true },
+    { name: "BW REQ", is_frequent: false, is_default: true },
+    { name: "BW RLTS-P", is_frequent: false, is_default: true },
+    { name: "COMPLETED", is_frequent: false, is_default: true },
+    { name: "CONSULT-LOCATE", is_frequent: false, is_default: true },
+    { name: "CURED", is_frequent: false, is_default: true },
+    { name: "DBS", is_frequent: false, is_default: true },
+    { name: "DECEASED", is_frequent: false, is_default: true },
+    { name: "DELETED", is_frequent: false, is_default: true },
+    { name: "DISCONTINUED", is_frequent: false, is_default: true },
+    { name: "DUPLICATE", is_frequent: false, is_default: true },
+    { name: "EXTERNAL TX", is_frequent: false, is_default: true },
+    { name: "HEALTH CARD", is_frequent: false, is_default: true },
+    { name: "HIV (ACTIVE)", is_frequent: false, is_default: true },
+    { name: "HIV - DISCHARGED", is_frequent: false, is_default: true },
+    { name: "HIV PATIENT", is_frequent: false, is_default: true },
+    { name: "HOME VISIT", is_frequent: false, is_default: true },
+    { name: "HOUSING", is_frequent: false, is_default: true },
+    { name: "INACTIVE", is_frequent: false, is_default: true },
+    { name: "JAIL", is_frequent: false, is_default: true },
+    { name: "LAB APPOINTMENT", is_frequent: false, is_default: true },
+    { name: "LAB REQ", is_frequent: false, is_default: true },
+    { name: "LOCATE", is_frequent: false, is_default: true },
+    { name: "MD UPDATE", is_frequent: false, is_default: true },
+    { name: "MISSING RNA", is_frequent: false, is_default: true },
+    { name: "NOT READY", is_frequent: false, is_default: true },
+    { name: "POCT INCOMPLETE", is_frequent: false, is_default: true },
+    { name: "REFUSED BW", is_frequent: false, is_default: true },
+    { name: "REFUSED TX", is_frequent: false, is_default: true },
+    { name: "REIMBURSEMENT", is_frequent: false, is_default: true },
+    { name: "REIMBURSEMENT (SAV)", is_frequent: false, is_default: true },
+    { name: "RX", is_frequent: false, is_default: true },
+    { name: "SOT-2 WEEKS", is_frequent: false, is_default: true },
+    { name: "SOT-ALL", is_frequent: false, is_default: true },
+    { name: "SOT-BRIDGED", is_frequent: false, is_default: true },
+    { name: "SOT-CONSULT", is_frequent: false, is_default: true },
+    { name: "SOT-HOLD", is_frequent: false, is_default: true },
+    { name: "SOT-LOCATE", is_frequent: false, is_default: true },
+    { name: "SOT-LOCATED", is_frequent: false, is_default: true },
+    { name: "SOT-OW", is_frequent: false, is_default: true },
+    { name: "SOT-SCHEDULED", is_frequent: false, is_default: true },
+    { name: "TRILLIUM", is_frequent: false, is_default: true },
+    { name: "TX PENDING", is_frequent: false, is_default: true },
+    { name: "UNABLE TO TX", is_frequent: false, is_default: true },
+    { name: "WAIT", is_frequent: false, is_default: true },
+  ];
+  
+  // Create disposition objects and insert them
+  const dispositionObjects = [];
+  for (const dispData of defaultDispositions) {
+    const disposition = {
+      id: uuidv4(),
+      name: dispData.name,
+      is_frequent: dispData.is_frequent,
+      is_default: dispData.is_default,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    };
+    dispositionObjects.push(disposition);
+  }
+  
+  // Insert all dispositions
+  if (dispositionObjects.length > 0) {
+    await db.collection('dispositions').insertMany(dispositionObjects);
+    console.log(`✅ Seeded ${dispositionObjects.length} default dispositions`);
+  }
+  
+  await client.close();
+}
+
+async function seedReferralSites() {
+  console.log('🔄 Seeding referral sites...');
+  
+  const client = new MongoClient(MONGO_URL);
+  await client.connect();
+  const db = client.db(DB_NAME);
+  
+  // Check if referral sites already exist
+  const existingCount = await db.collection('referral_sites').countDocuments();
+  if (existingCount > 0) {
+    console.log('✅ Referral sites already exist in database');
+    await client.close();
+    return;
+  }
+  
+  // Default referral sites with frequency flags
+  const defaultReferralSites = [
+    // Most frequently used referral sites
+    { name: "Toronto - Outreach", is_frequent: true, is_default: true },
+    { name: "Hamilton - Wellington", is_frequent: true, is_default: true },
+    { name: "London - LMP", is_frequent: true, is_default: true },
+    { name: "Ottawa - Outreach", is_frequent: true, is_default: true },
+    { name: "Windsor - Outreach", is_frequent: true, is_default: true },
+    
+    // All other referral sites in alphabetical order
+    { name: "Barrie - City Centre Pharmacy", is_frequent: false, is_default: true },
+    { name: "Barrie - John Howard Society of Sir", is_frequent: false, is_default: true },
+    { name: "Brantford - Outreach", is_frequent: false, is_default: true },
+    { name: "Hamilton - Homewood Suit", is_frequent: false, is_default: true },
+    { name: "Kingston - Outreach", is_frequent: false, is_default: true },
+    { name: "London - LMP (Night)", is_frequent: false, is_default: true },
+    { name: "Niagara - Community Health", is_frequent: false, is_default: true },
+    { name: "Niagara - Crysler House", is_frequent: false, is_default: true },
+    { name: "Niagara - Summer", is_frequent: false, is_default: true },
+    { name: "Orillia - Downtown Dispensary", is_frequent: false, is_default: true },
+    { name: "Orillia - John Howard Society", is_frequent: false, is_default: true },
+    { name: "Orillia - The Light House", is_frequent: false, is_default: true },
+    { name: "Toronto - Dixon Hall (Lakeshore)", is_frequent: false, is_default: true },
+    { name: "Toronto - Margaret's Drop-In", is_frequent: false, is_default: true },
+    { name: "Toronto - Renascent (Dundas)", is_frequent: false, is_default: true },
+    { name: "Toronto - Renascent (Whitby)", is_frequent: false, is_default: true },
+    { name: "Toronto - St. Felix Centre", is_frequent: false, is_default: true },
+    { name: "Windsor - Downtown Mission", is_frequent: false, is_default: true },
+    { name: "Windsor - Night", is_frequent: false, is_default: true },
+    { name: "Windsor - Salvation Army", is_frequent: false, is_default: true },
+  ];
+  
+  // Create referral site objects and insert them
+  const referralSiteObjects = [];
+  for (const siteData of defaultReferralSites) {
+    const referralSite = {
+      id: uuidv4(),
+      name: siteData.name,
+      is_frequent: siteData.is_frequent,
+      is_default: siteData.is_default,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    };
+    referralSiteObjects.push(referralSite);
+  }
+  
+  // Insert all referral sites
+  if (referralSiteObjects.length > 0) {
+    await db.collection('referral_sites').insertMany(referralSiteObjects);
+    console.log(`✅ Seeded ${referralSiteObjects.length} default referral sites`);
+  }
+  
+  await client.close();
+}
+
+async function main() {
+  console.log('🚀 FORCE SEEDING DISPOSITIONS AND REFERRAL SITES');
+  console.log('=' * 60);
+  
+  try {
+    await seedDispositions();
+    await seedReferralSites();
+    console.log('🎉 Force seeding completed successfully!');
+  } catch (error) {
+    console.error('❌ Error during force seeding:', error);
+    process.exit(1);
+  }
+}
+
+main();

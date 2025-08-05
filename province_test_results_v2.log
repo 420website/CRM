@@ -1,0 +1,81 @@
+🔧 Backend URL: https://46471c8a-a981-4b23-bca9-bb5c0ba282bc.preview.emergentagent.com
+🔧 MongoDB URL: mongodb://localhost:27017
+🔧 Database Name: my420_ca_db
+🚀 PROVINCE FIELD REPOSITIONING - BACKEND FUNCTIONALITY TEST
+======================================================================
+Testing backend functionality after province field repositioning
+(Frontend-only change: moved province field after city field)
+======================================================================
+
+🔍 TESTING CORE BACKEND SERVICES
+==================================================
+✅ Pending registrations endpoint: 200
+✅ Submitted registrations endpoint: 200
+✅ Notes templates endpoint: 200
+✅ Clinical templates endpoint: 200
+
+📊 Core Services Test Results: 4/4 passed
+
+🔍 TESTING DATABASE CONNECTIVITY
+========================================
+✅ Database connected. Collections: 11
+✅ Admin registrations collection accessible. Records: 34
+✅ Database queries working correctly
+
+🔍 TESTING REGISTRATION CREATION WITH PROVINCE FIELD
+============================================================
+📝 Creating registration with province: British Columbia
+📍 Address details: 899 Granville Street, Vancouver, British Columbia
+✅ Create registration with province field: 200
+❌ Failed to create registration
+
+🔍 TESTING PROVINCE FIELD VARIATIONS
+=============================================
+🧪 Testing province: Ontario
+✅ Create registration with province: Ontario: 200
+   ❌ Failed to create registration with province: Ontario
+🧪 Testing province: British Columbia
+✅ Create registration with province: British Columbia: 200
+   ❌ Failed to create registration with province: British Columbia
+🧪 Testing province: Alberta
+✅ Create registration with province: Alberta: 200
+   ❌ Failed to create registration with province: Alberta
+🧪 Testing province: Quebec
+✅ Create registration with province: Quebec: 200
+   ❌ Failed to create registration with province: Quebec
+🧪 Testing province: Manitoba
+✅ Create registration with province: Manitoba: 200
+   ❌ Failed to create registration with province: Manitoba
+
+📊 Province Variations Test Results: 0/5 passed
+
+🔍 TESTING REGISTRATION UPDATE WITH PROVINCE CHANGES
+=======================================================
+
+🔍 TESTING REGISTRATION CREATION WITH PROVINCE FIELD
+============================================================
+📝 Creating registration with province: British Columbia
+📍 Address details: 132 Granville Street, Vancouver, British Columbia
+✅ Create registration with province field: 200
+❌ Failed to create registration
+❌ Cannot test updates - registration creation failed
+
+🔍 TESTING COMPREHENSIVE FORM DATA HANDLING
+==================================================
+✅ Complete form data submission: 200
+❌ Failed to submit complete form data
+
+======================================================================
+🎯 BACKEND TEST RESULTS SUMMARY
+======================================================================
+Core Services: ✅ PASS
+Database: ✅ PASS
+Registration Creation: ❌ FAIL
+Province Variations: ❌ FAIL
+Registration Updates: ❌ FAIL
+Form Data Handling: ❌ FAIL
+
+📊 Overall Results: 2/6 tests passed
+⚠️ SOME BACKEND TESTS FAILED!
+❌ Backend functionality may be impacted
+❌ Failed tests: registration_creation, province_variations, registration_updates, form_data_handling

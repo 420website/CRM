@@ -1,0 +1,58 @@
+🔧 Backend URL: https://46471c8a-a981-4b23-bca9-bb5c0ba282bc.preview.emergentagent.com/api
+================================================================================
+BACKEND VERIFICATION TEST - Labels Button PDF/Print Removal
+================================================================================
+🚀 Starting Backend Verification Tests
+📅 Test Date: 2025-07-15 18:11:37
+🔗 Backend URL: https://46471c8a-a981-4b23-bca9-bb5c0ba282bc.preview.emergentagent.com/api
+
+📋 TEST 1: Core API Endpoints
+----------------------------------------
+❌ Request failed: HTTPSConnectionPool(host='b0e582bf-99e6-4387-8b0a-6411c933492c.preview.emergentagent.com', port=443): Read timed out. (read timeout=30)
+❌ FAIL - API Root Endpoint | Backend not responding
+
+📝 TEST 2: Registration CRUD Operations
+----------------------------------------
+❌ FAIL - CREATE Registration | Status: No response
+
+📄 TEST 3: Template Operations
+----------------------------------------
+✅ PASS - Notes Templates Retrieval | Found 9 templates
+✅ PASS - Notes Default Templates | Found: Consultation, Lab, Prescription
+✅ PASS - Clinical Templates Retrieval | Found 15 templates
+✅ PASS - Clinical Default Templates | Found templates with: Positive, Negative
+
+💾 TEST 4: Database Persistence
+----------------------------------------
+❌ FAIL - Registration in Pending List | Total pending: 28
+
+⚠️  TEST 5: Error Handling
+----------------------------------------
+✅ PASS - Invalid ID Error Handling | Proper 404 response
+❌ FAIL - Invalid Data Validation | Expected 422, got No response
+
+🏷️  TEST 6: Labels-Related Data Access
+----------------------------------------
+
+🧹 CLEANUP: Removing Test Data
+----------------------------------------
+
+================================================================================
+BACKEND VERIFICATION TEST RESULTS
+================================================================================
+❌ FAIL - API Root Endpoint | Backend not responding
+❌ FAIL - CREATE Registration | Status: No response
+✅ PASS - Notes Templates Retrieval | Found 9 templates
+✅ PASS - Notes Default Templates | Found: Consultation, Lab, Prescription
+✅ PASS - Clinical Templates Retrieval | Found 15 templates
+✅ PASS - Clinical Default Templates | Found templates with: Positive, Negative
+❌ FAIL - Registration in Pending List | Total pending: 28
+✅ PASS - Invalid ID Error Handling | Proper 404 response
+❌ FAIL - Invalid Data Validation | Expected 422, got No response
+
+📊 SUMMARY:
+   Tests Run: 9
+   Tests Passed: 5
+   Success Rate: 55.6%
+
+⚠️  SOME TESTS FAILED - Backend issues detected

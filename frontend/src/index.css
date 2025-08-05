@@ -1,0 +1,32 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Fix for iOS Safari date input height inconsistency and proper width */
+input[type="date"] {
+    -webkit-appearance: none;
+    appearance: none;
+    height: 40px !important;
+    min-width: 140px !important; /* Ensure dates display properly without being cut off */
+    box-sizing: border-box;
+}
+
+/* Ensure date input picker icon is still visible after removing appearance */
+input[type="date"]::-webkit-calendar-picker-indicator {
+    opacity: 1;
+    cursor: pointer;
+}
+
+body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto",
+        "Oxygen", "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans",
+        "Helvetica Neue", sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+code {
+    font-family: source-code-pro, Menlo, Monaco, Consolas, "Courier New",
+        monospace;
+}

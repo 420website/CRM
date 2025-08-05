@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>PDF Generation Test</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+</head>
+<body>
+    <h1>PDF Label Generation Test</h1>
+    <button onclick="testPDFGeneration()">Generate Test Label</button>
+    
+    <script>
+        function testPDFGeneration() {
+            try {
+                console.log('jsPDF available:', typeof window.jsPDF);
+                
+                if (typeof window.jsPDF === 'undefined') {
+                    alert('jsPDF not loaded');
+                    return;
+                }
+                
+                const { jsPDF } = window.jsPDF;
+                
+                const pdf = new jsPDF({
+                    unit: 'mm',
+                    format: [89, 36],
+                    orientation: 'landscape'
+                });
+                
+                pdf.setFontSize(8);
+                pdf.text('Test Label Data', 3, 6);
+                pdf.text('HCN: 1234567890 ON  Sex: M', 3, 10);
+                pdf.text('Doe, John', 3, 14);
+                pdf.text('DOB: 1990-01-01', 3, 18);
+                
+                const pdfBlob = pdf.output('blob');
+                const blobUrl = URL.createObjectURL(pdfBlob);
+                
+                // Open in new window
+                const newWindow = window.open(blobUrl, '_blank');
+                
+                console.log('PDF generated successfully');
+                alert('PDF generated and opened in new window');
+                
+            } catch (error) {
+                console.error('PDF generation failed:', error);
+                alert('PDF generation failed: ' + error.message);
+            }
+        }
+    </script>
+</body>
+</html>

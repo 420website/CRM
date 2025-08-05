@@ -1,0 +1,18 @@
+User-agent: *
+Allow: /
+
+# Sitemap
+Sitemap: https://my420.ca/sitemap.xml
+
+# Block sensitive areas
+Disallow: /api/
+Disallow: /*.json
+Disallow: /private/
+
+# Allow important pages
+Allow: /
+Allow: /services
+Allow: /register  
+Allow: /about
+Allow: /resources
+Allow: /contact

@@ -1,0 +1,25 @@
+{
+  "timestamp": "20250721_133421",
+  "environment": "production",
+  "collections": {
+    "admin_registrations": {
+      "error": "Object of type datetime is not JSON serializable"
+    },
+    "clinical_templates": {
+      "count": 4,
+      "file": "/app/persistent-data/emergency-backups/emergency_clinical_templates_20250721_133421.json"
+    },
+    "notes_templates": {
+      "count": 3,
+      "file": "/app/persistent-data/emergency-backups/emergency_notes_templates_20250721_133421.json"
+    },
+    "dispositions": {
+      "count": 62,
+      "file": "/app/persistent-data/emergency-backups/emergency_dispositions_20250721_133421.json"
+    },
+    "referral_sites": {
+      "count": 25,
+      "file": "/app/persistent-data/emergency-backups/emergency_referral_sites_20250721_133421.json"
+    }
+  }
+}
