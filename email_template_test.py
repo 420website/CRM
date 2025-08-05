@@ -42,7 +42,7 @@ logger = logging.getLogger(__name__)
 class EmailTemplateTest:
     def __init__(self):
         self.test_results = []
-        self.backend_url = os.environ.get('REACT_APP_BACKEND_URL', 'https://46471c8a-a981-4b23-bca9-bb5c0ba282bc.preview.emergentagent.com')
+        self.backend_url = os.environ.get('REACT_APP_BACKEND_URL', 'https://dfe9a1e1-7f3d-45aa-ad71-43a254e568c5.preview.emergentagent.com')
         
     def log_result(self, test_name, success, message, details=None):
         """Log test result"""

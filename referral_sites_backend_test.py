@@ -7,7 +7,7 @@ from datetime import datetime
 import uuid
 
 # Configuration
-BACKEND_URL = "https://46471c8a-a981-4b23-bca9-bb5c0ba282bc.preview.emergentagent.com/api"
+BACKEND_URL = "https://dfe9a1e1-7f3d-45aa-ad71-43a254e568c5.preview.emergentagent.com/api"
 
 def test_referral_sites_api():
     """

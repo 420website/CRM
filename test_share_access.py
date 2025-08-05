@@ -37,7 +37,7 @@ for share in shares:
             print(f"EXPIRED: {expires_at} < {now}")
     
     # Test preview URL
-    preview_url = f"https://46471c8a-a981-4b23-bca9-bb5c0ba282bc.preview.emergentagent.com/api/shared-attachment/{share_id}/preview"
+    preview_url = f"https://dfe9a1e1-7f3d-45aa-ad71-43a254e568c5.preview.emergentagent.com/api/shared-attachment/{share_id}/preview"
     print(f"Testing preview URL: {preview_url}")
     
     try:
@@ -59,7 +59,7 @@ for share in shares:
         print(f"Error accessing preview URL: {str(e)}")
     
     # Test download URL
-    download_url = f"https://46471c8a-a981-4b23-bca9-bb5c0ba282bc.preview.emergentagent.com/api/shared-attachment/{share_id}/download"
+    download_url = f"https://dfe9a1e1-7f3d-45aa-ad71-43a254e568c5.preview.emergentagent.com/api/shared-attachment/{share_id}/download"
     print(f"Testing download URL: {download_url}")
     
     try:

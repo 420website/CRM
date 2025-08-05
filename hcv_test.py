@@ -428,7 +428,7 @@ class HCVTestTester:
 
 def main():
     # Use the external backend URL for testing
-    backend_url = "https://46471c8a-a981-4b23-bca9-bb5c0ba282bc.preview.emergentagent.com"
+    backend_url = "https://dfe9a1e1-7f3d-45aa-ad71-43a254e568c5.preview.emergentagent.com"
     print(f"🔗 Using external backend URL: {backend_url}")
     
     # Run the tests

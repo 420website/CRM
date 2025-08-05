@@ -4,7 +4,7 @@ import json
 def test_share_attachment():
     """Test the share attachment endpoint directly"""
     # Base URL from frontend .env
-    base_url = "https://46471c8a-a981-4b23-bca9-bb5c0ba282bc.preview.emergentagent.com"
+    base_url = "https://dfe9a1e1-7f3d-45aa-ad71-43a254e568c5.preview.emergentagent.com"
     
     # Create a simple test attachment
     attachment_data = {
@@ -44,7 +44,7 @@ def test_share_attachment():
                 print("✅ Preview URL does not contain localhost references")
                 
             # Check for correct domain
-            expected_domain = "https://46471c8a-a981-4b23-bca9-bb5c0ba282bc.preview.emergentagent.com"
+            expected_domain = "https://dfe9a1e1-7f3d-45aa-ad71-43a254e568c5.preview.emergentagent.com"
             if data.get('share_url', '').startswith(expected_domain):
                 print(f"✅ Share URL uses correct external domain: {expected_domain}")
             else:

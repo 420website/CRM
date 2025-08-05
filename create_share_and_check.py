@@ -52,7 +52,7 @@ def create_share_and_check_urls():
     print(f"Created share with ID: {share_id}")
     
     # Generate URLs using the correct external base URL
-    base_url = "https://46471c8a-a981-4b23-bca9-bb5c0ba282bc.preview.emergentagent.com"
+    base_url = "https://dfe9a1e1-7f3d-45aa-ad71-43a254e568c5.preview.emergentagent.com"
     share_url = f"{base_url}/api/shared-attachment/{share_id}/download"
     preview_url = f"{base_url}/api/shared-attachment/{share_id}/preview"
     

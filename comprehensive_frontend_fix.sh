@@ -7,7 +7,7 @@ echo "=" * 60
 
 # 1. Verify backend APIs are working
 echo "🔍 Step 1: Verifying backend APIs..."
-API_URL="https://46471c8a-a981-4b23-bca9-bb5c0ba282bc.preview.emergentagent.com"
+API_URL="https://dfe9a1e1-7f3d-45aa-ad71-43a254e568c5.preview.emergentagent.com"
 
 echo "Testing dispositions API..."
 DISPOSITIONS_COUNT=$(curl -s "${API_URL}/api/dispositions" | jq length)
@@ -51,7 +51,7 @@ sleep 10
 # 4. Test frontend connectivity
 echo ""
 echo "🌐 Step 3: Testing frontend connectivity..."
-FRONTEND_STATUS=$(curl -s -o /dev/null -w "%{http_code}" "https://46471c8a-a981-4b23-bca9-bb5c0ba282bc.preview.emergentagent.com")
+FRONTEND_STATUS=$(curl -s -o /dev/null -w "%{http_code}" "https://dfe9a1e1-7f3d-45aa-ad71-43a254e568c5.preview.emergentagent.com")
 echo "Frontend HTTP Status: $FRONTEND_STATUS"
 
 if [ "$FRONTEND_STATUS" = "200" ]; then
@@ -68,7 +68,7 @@ echo "✅ Frontend: Restarted and accessible"
 
 echo ""
 echo "📋 USER INSTRUCTIONS:"
-echo "1. Go to: https://46471c8a-a981-4b23-bca9-bb5c0ba282bc.preview.emergentagent.com"
+echo "1. Go to: https://dfe9a1e1-7f3d-45aa-ad71-43a254e568c5.preview.emergentagent.com"
 echo "2. Navigate to admin registration page"
 echo "3. Click on disposition dropdown - should show $DISPOSITIONS_COUNT options"
 echo "4. Click 'Manage Dispositions' - should show organized lists"

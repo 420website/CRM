@@ -17,7 +17,7 @@ from dotenv import load_dotenv
 load_dotenv('/app/frontend/.env')
 
 def test_additional_registration():
-    base_url = os.getenv('REACT_APP_BACKEND_URL', 'https://46471c8a-a981-4b23-bca9-bb5c0ba282bc.preview.emergentagent.com')
+    base_url = os.getenv('REACT_APP_BACKEND_URL', 'https://dfe9a1e1-7f3d-45aa-ad71-43a254e568c5.preview.emergentagent.com')
     api_url = f"{base_url}/api"
     
     print("🧪 ADDITIONAL TEST SUMMARY WORKFLOW VERIFICATION")
