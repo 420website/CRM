@@ -4836,16 +4836,7 @@ ${currentDate} ${currentTime}`;
             {/* Tabs Navigation */}
             <div className="border-b border-gray-200 mb-6 relative">
               <div className="flex space-x-1 overflow-x-auto scrollbar-hide">
-                {[
-                  { id: 'patient', name: 'Client' },
-                  { id: 'tests', name: 'Tests' },
-                  { id: 'medication', name: 'Medication' },
-                  { id: 'dispensing', name: 'Dispensing' },
-                  { id: 'notes', name: 'Notes' },
-                  { id: 'activities', name: 'Activities' },
-                  { id: 'interactions', name: 'Interactions' },
-                  { id: 'attachments', name: 'Attachments' }
-                ].map((tab) => (
+                {getAllowedTabs().map((tab) => (
                   <button
                     key={tab.id}
                     type="button"
