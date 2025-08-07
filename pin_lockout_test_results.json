@@ -7,7 +7,7 @@
       "status_code": 200,
       "pending_count": 4
     },
-    "timestamp": "2025-08-07T17:03:18.483753"
+    "timestamp": "2025-08-07T17:05:56.550151"
   },
   {
     "test": "PIN Verification System Working",
@@ -26,7 +26,7 @@
       ],
       "user_type": "admin"
     },
-    "timestamp": "2025-08-07T17:03:18.725817"
+    "timestamp": "2025-08-07T17:05:56.830740"
   },
   {
     "test": "Lockout Trigger and Duration Message",
@@ -36,18 +36,19 @@
       "lockout_message": "System locked due to multiple failed PIN attempts. Try again in 4 hours and 20 minutes.",
       "failed_attempts": 2
     },
-    "timestamp": "2025-08-07T17:03:19.215065"
+    "timestamp": "2025-08-07T17:05:57.311512"
   },
   {
     "test": "Lockout Duration Calculation",
-    "success": false,
-    "message": "Lockout duration incorrect: 499 minutes (expected ~260)",
+    "success": true,
+    "message": "Lockout duration is correct: 259 minutes (expected ~260)",
     "details": {
-      "calculated_minutes": 499,
-      "expected": 260,
-      "message": "System locked due to multiple failed PIN attempts. Try again in 8 hours and 19 minutes."
+      "calculated_minutes": 259,
+      "hours": 4,
+      "minutes": 19,
+      "message": "System locked due to multiple failed PIN attempts. Try again in 4 hours and 19 minutes."
     },
-    "timestamp": "2025-08-07T17:03:19.698486"
+    "timestamp": "2025-08-07T17:05:57.829153"
   },
   {
     "test": "Timezone Fix Working",
@@ -57,7 +58,7 @@
       "consistent_responses": 3,
       "total_tests": 3
     },
-    "timestamp": "2025-08-07T17:03:20.581156"
+    "timestamp": "2025-08-07T17:05:58.626677"
   },
   {
     "test": "Admin PIN Bypass Functionality",
@@ -68,7 +69,7 @@
         "pin_valid": true,
         "user_id": "admin",
         "user_type": "admin",
-        "session_token": "131ab55c-0134-4601-ad49-def987d5d3d4",
+        "session_token": "9b56f811-0ec1-4032-aaaa-e9201e1f7a18",
         "two_fa_enabled": false,
         "two_fa_required": true,
         "two_fa_email": "cmarcoux.personal@gmail.com",
@@ -76,7 +77,7 @@
       },
       "post_bypass_status": 401
     },
-    "timestamp": "2025-08-07T17:03:21.417714"
+    "timestamp": "2025-08-07T17:05:59.486749"
   },
   {
     "test": "No Regressions in Authentication System",
@@ -91,13 +92,13 @@
         "pin_valid": true,
         "user_id": "admin",
         "user_type": "admin",
-        "session_token": "f44c4d6d-ea38-4c50-9b59-b1cc03921e75",
+        "session_token": "ad9bbe2b-fc58-4a30-8a4c-c250166450b6",
         "two_fa_enabled": false,
         "two_fa_required": true,
         "two_fa_email": "cmarcoux.personal@gmail.com",
         "needs_email_verification": true
       }
     },
-    "timestamp": "2025-08-07T17:03:21.945531"
+    "timestamp": "2025-08-07T17:06:00.012486"
   }
 ]
