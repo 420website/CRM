@@ -211,7 +211,7 @@ const AdminPIN = () => {
                   id="pin"
                   name="pin"
                   type="password"
-                  maxLength="4"
+                  maxLength="10"
                   pattern="[0-9]*"
                   inputMode="numeric"
                   required
