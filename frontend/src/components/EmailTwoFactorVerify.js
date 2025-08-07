@@ -49,7 +49,7 @@ const EmailTwoFactorVerify = ({ sessionToken, adminEmail, onVerificationSuccess,
 
       const data = await response.json();
       setCodeSent(true);
-      setTimeLeft(180); // 3 minutes = 180 seconds
+      setTimeLeft(60); // 1 minute = 60 seconds (changed from 180)
       console.log('Verification code sent successfully');
     } catch (err) {
       setError(err.message);
