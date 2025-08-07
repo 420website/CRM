@@ -5635,22 +5635,11 @@ ${currentDate} ${currentTime}`;
                             whiteSpace: 'pre-wrap',
                             lineHeight: '1.5'
                           }}
-                          placeholder={
-                            selectedTemplate === 'Select' 
-                              ? "Please select a template above..." 
-                              : selectedTemplate === 'Positive' 
-                                ? "Auto-generated based on selections above..." 
-                                : "Enter clinical summary content..."
-                          }
-                          readOnly={selectedTemplate === 'Select'}
+                          placeholder="Type your clinical summary here or select a template above to auto-populate..."
+                          readOnly={false}
                         />
                         <p className="mt-1 text-sm text-gray-500">
-                          {selectedTemplate === 'Select'
-                            ? "Please select a clinical summary template from the dropdown above."
-                            : selectedTemplate === 'Positive' 
-                              ? "This template is auto-generated based on your selections above. You can edit it for this patient."
-                              : "Template content loaded. You can edit this text for this specific patient."
-                          }
+                          You can type manually here or select a template above to auto-populate the content. Templates can be edited for individual patients.
                         </p>
                       </div>
 
