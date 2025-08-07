@@ -133,6 +133,108 @@ const EmailTwoFactorVerify = ({ sessionToken, adminEmail, onVerificationSuccess,
     }
   };
 
+  // Show input screen after user clicks "Enter Verification Code"
+  if (showInputScreen) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
+        <div className="sm:mx-auto sm:w-full sm:max-w-md">
+          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
+            Enter Verification Code
+          </h2>
+          <p className="mt-2 text-center text-sm text-gray-600">
+            Enter the 6-digit code sent to {adminEmail}
+          </p>
+        </div>
+
+        <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
+          <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
+            {error && (
+              <div className="mb-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded text-sm">
+                {error}
+              </div>
+            )}
+
+            {timeLeft > 0 && (
+              <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-md">
+                <div className="flex">
+                  <div className="flex-shrink-0">
+                    <svg className="h-5 w-5 text-green-400" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                    </svg>
+                  </div>
+                  <div className="ml-3">
+                    <p className="text-sm font-medium text-green-800">
+                      Code expires in <strong>{formatTime(timeLeft)}</strong>
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            <form onSubmit={handleVerify} className="space-y-6">
+              <div>
+                <label htmlFor="email-code" className="block text-sm font-medium text-gray-700 text-center">
+                  6-digit verification code
+                </label>
+                <div className="mt-1">
+                  <input
+                    id="email-code"
+                    type="text"
+                    maxLength="6"
+                    pattern="[0-9]*"
+                    inputMode="numeric"
+                    value={emailCode}
+                    onChange={(e) => {
+                      const value = e.target.value.replace(/\D/g, '');
+                      setEmailCode(value);
+                      setError('');
+                    }}
+                    onKeyPress={handleKeyPress}
+                    className="appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-black focus:border-black focus:z-10 sm:text-sm text-center text-2xl tracking-widest font-mono"
+                    placeholder="000000"
+                    autoComplete="one-time-code"
+                  />
+                </div>
+              </div>
+
+              <div className="flex space-x-4">
+                <button
+                  type="button"
+                  onClick={() => setShowInputScreen(false)}
+                  className="flex-1 py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
+                >
+                  Back
+                </button>
+                <button
+                  type="submit"
+                  disabled={loading || emailCode.length !== 6}
+                  className="flex-1 py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-black hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-black disabled:bg-gray-300"
+                >
+                  {loading ? 'Verifying...' : 'Verify'}
+                </button>
+              </div>
+
+              <div className="text-center">
+                <button
+                  type="button"
+                  onClick={sendVerificationCode}
+                  disabled={sendingCode || timeLeft > 0}
+                  className="text-sm text-gray-600 hover:text-gray-800 underline disabled:text-gray-400 disabled:no-underline"
+                >
+                  {sendingCode ? 'Sending...' : 
+                   timeLeft > 0 ? `Request new code in ${formatTime(timeLeft)}` :
+                   'Resend verification code'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Show confirmation screen initially (matching EmailTwoFactorSetup layout)
+
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
