@@ -6053,8 +6053,9 @@ async def verify_pin_unified(request: dict):
             if lockout_until:
                 # Ensure proper timezone handling for comparison
                 if hasattr(lockout_until, 'tzinfo') and lockout_until.tzinfo is None:
-                    # If stored as naive datetime, assume it's in Toronto timezone
-                    lockout_until = pytz.timezone('America/Toronto').localize(lockout_until)
+                    # MongoDB stores timezone-aware datetimes as UTC naive datetimes
+                    # So we need to treat naive datetimes as UTC and convert to Toronto
+                    lockout_until = pytz.UTC.localize(lockout_until).astimezone(pytz.timezone('America/Toronto'))
                 elif hasattr(lockout_until, 'tzinfo') and lockout_until.tzinfo is not None:
                     # If stored with timezone info, convert to Toronto timezone
                     lockout_until = lockout_until.astimezone(pytz.timezone('America/Toronto'))
