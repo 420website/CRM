@@ -151,7 +151,7 @@ const EmailTwoFactorSetup = ({ onSetupComplete, onCancel, userEmail, sessionToke
                   <ul className="space-y-1">
                     <li>• Check {emailToUse} for a 6-digit verification code</li>
                     <li>• Enter the code in the next screen to complete setup</li>
-                    <li>• Codes expire after 3 minutes for security</li>
+                    <li>• Codes expire after 1 minute for security</li>
                   </ul>
                 </div>
               </div>
