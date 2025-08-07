@@ -7,6 +7,7 @@ const EmailTwoFactorVerify = ({ sessionToken, adminEmail, onVerificationSuccess,
   const [error, setError] = useState('');
   const [codeSent, setCodeSent] = useState(false);
   const [timeLeft, setTimeLeft] = useState(0);
+  const [showInputScreen, setShowInputScreen] = useState(false);
 
   // Countdown timer
   useEffect(() => {
