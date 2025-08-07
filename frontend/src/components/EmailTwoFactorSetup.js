@@ -7,9 +7,18 @@ const EmailTwoFactorSetup = ({ onSetupComplete, onCancel, userEmail, sessionToke
   const [showInputScreen, setShowInputScreen] = useState(false);
   const [emailCode, setEmailCode] = useState('');
   const [verifyLoading, setVerifyLoading] = useState(false);
+  const [timeLeft, setTimeLeft] = useState(0);
 
   // Use the provided userEmail or fallback to admin email
   const emailToUse = userEmail || 'support@my420.ca';
+
+  // Countdown timer
+  useEffect(() => {
+    if (timeLeft > 0) {
+      const timer = setTimeout(() => setTimeLeft(timeLeft - 1), 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [timeLeft]);
 
   useEffect(() => {
     // Always send verification code when component mounts with valid session token
