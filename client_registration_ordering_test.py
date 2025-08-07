@@ -23,7 +23,7 @@ import pytz
 import time
 
 # Use the external URL from frontend/.env
-BACKEND_URL = "https://dfe9a1e1-7f3d-45aa-ad71-43a254e568c5.preview.emergentagent.com/api"
+BACKEND_URL = "https://cd556dd9-d36b-422e-8110-4b1830397661.preview.emergentagent.com/api"
 
 def create_test_registration(first_name, last_name, timestamp_offset_hours=0):
     """Create a test registration with a specific timestamp offset"""
