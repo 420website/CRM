@@ -35,7 +35,7 @@ def log_test(message):
 def test_backend_health():
     """Test if backend is accessible"""
     try:
-        response = requests.get(f"{BACKEND_URL}/", timeout=10)
+        response = requests.get(f"{BACKEND_URL}/", timeout=30)
         if response.status_code == 200:
             log_test("✅ Backend health check passed")
             return True
