@@ -4,6 +4,9 @@ const EmailTwoFactorSetup = ({ onSetupComplete, onCancel, userEmail, sessionToke
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [step, setStep] = useState('sending'); // 'sending', 'verify', 'error'
+  const [showInputScreen, setShowInputScreen] = useState(false);
+  const [emailCode, setEmailCode] = useState('');
+  const [verifyLoading, setVerifyLoading] = useState(false);
 
   // Use the provided userEmail or fallback to admin email
   const emailToUse = userEmail || 'support@my420.ca';
