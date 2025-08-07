@@ -123,6 +123,76 @@ const EmailTwoFactorSetup = ({ onSetupComplete, onCancel, userEmail, sessionToke
     );
   }
 
+  // Show input screen when user clicks "Enter Verification Code"
+  if (showInputScreen) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
+        <div className="sm:mx-auto sm:w-full sm:max-w-md">
+          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
+            Enter Verification Code
+          </h2>
+          <p className="mt-2 text-center text-sm text-gray-600">
+            Enter the 6-digit code sent to {emailToUse}
+          </p>
+        </div>
+
+        <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
+          <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
+            {error && (
+              <div className="mb-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded text-sm">
+                {error}
+              </div>
+            )}
+
+            <form onSubmit={handleVerify} className="space-y-6">
+              <div>
+                <label htmlFor="email-code" className="block text-sm font-medium text-gray-700 text-center">
+                  6-digit verification code
+                </label>
+                <div className="mt-1">
+                  <input
+                    id="email-code"
+                    type="text"
+                    maxLength="6"
+                    pattern="[0-9]*"
+                    inputMode="numeric"
+                    value={emailCode}
+                    onChange={(e) => {
+                      const value = e.target.value.replace(/\D/g, '');
+                      setEmailCode(value);
+                      setError('');
+                    }}
+                    onKeyPress={handleKeyPress}
+                    className="appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-black focus:border-black focus:z-10 sm:text-sm text-center text-2xl tracking-widest font-mono"
+                    placeholder="000000"
+                    autoComplete="one-time-code"
+                  />
+                </div>
+              </div>
+
+              <div className="flex space-x-4">
+                <button
+                  type="button"
+                  onClick={() => setShowInputScreen(false)}
+                  className="flex-1 py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
+                >
+                  Back
+                </button>
+                <button
+                  type="submit"
+                  disabled={verifyLoading || emailCode.length !== 6}
+                  className="flex-1 py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-black hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-black disabled:bg-gray-300"
+                >
+                  {verifyLoading ? 'Verifying...' : 'Verify'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   if (step === 'error') {
     return (
       <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
