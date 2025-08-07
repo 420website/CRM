@@ -3,7 +3,48 @@ import { useNavigate } from "react-router-dom";
 import AddressAutocomplete from '../components/AddressAutocomplete';
 
 const AdminRegister = () => {
-  const navigate = useNavigate();
+  // Get current user permissions
+  const getCurrentUserPermissions = () => {
+    try {
+      const currentUser = sessionStorage.getItem('current_user');
+      if (currentUser) {
+        const userData = JSON.parse(currentUser);
+        return userData.permissions || {};
+      }
+    } catch (error) {
+      console.error('Error getting user permissions:', error);
+    }
+    return {};
+  };
+
+  // Check if user has permission for a tab
+  const hasTabPermission = (tabName) => {
+    const permissions = getCurrentUserPermissions();
+    
+    // If no permissions are set, allow all tabs (backward compatibility)
+    if (Object.keys(permissions).length === 0) {
+      return true;
+    }
+    
+    // Check if user has permission for this specific tab
+    return permissions[tabName] === true;
+  };
+
+  // Get allowed tabs based on user permissions
+  const getAllowedTabs = () => {
+    const allTabs = [
+      { id: 'patient', name: 'Client' },
+      { id: 'tests', name: 'Tests' },
+      { id: 'medication', name: 'Medication' },
+      { id: 'dispensing', name: 'Dispensing' },
+      { id: 'notes', name: 'Notes' },
+      { id: 'activities', name: 'Activities' },
+      { id: 'interactions', name: 'Interactions' },
+      { id: 'attachments', name: 'Attachments' }
+    ];
+    
+    return allTabs.filter(tab => hasTabPermission(tab.name));
+  };
   const [pinVerified, setPinVerified] = useState(false);
   const [pinInput, setPinInput] = useState("");
   const [pinError, setPinError] = useState("");
