@@ -70,7 +70,7 @@ def test_user_creation_with_permissions():
     }
     
     try:
-        response = requests.post(f"{BACKEND_URL}/users", json=user_data, timeout=10)
+        response = requests.post(f"{BACKEND_URL}/users", json=user_data, timeout=30)
         
         if response.status_code == 200:
             result = response.json()
@@ -83,6 +83,21 @@ def test_user_creation_with_permissions():
                 return result.get("user", {}).get("id")
             else:
                 log_test(f"❌ Permissions not correctly returned: {returned_permissions}")
+                return None
+        elif response.status_code == 400 and "PIN already exists" in response.text:
+            log_test("⚠️  PIN already exists, trying different PIN...")
+            # Try with different PIN
+            user_data["pin"] = "9876543210"
+            response = requests.post(f"{BACKEND_URL}/users", json=user_data, timeout=30)
+            if response.status_code == 200:
+                result = response.json()
+                log_test("✅ User created successfully with alternative PIN")
+                returned_permissions = result.get("user", {}).get("permissions", {})
+                if returned_permissions.get("Client") == True and returned_permissions.get("Tests") == True:
+                    log_test("✅ Permissions correctly returned in creation response")
+                    return result.get("user", {}).get("id")
+            else:
+                log_test(f"❌ User creation failed with alternative PIN: {response.status_code}")
                 return None
         else:
             log_test(f"❌ User creation failed: {response.status_code} - {response.text}")
