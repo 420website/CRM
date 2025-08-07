@@ -21,31 +21,42 @@ const AdminPIN = () => {
   const handlePinSubmit = async (e) => {
     e.preventDefault();
     
+    console.log('PIN submitted:', pin, 'Length:', pin.length); // Debug log
+    
     // Accept both 4-digit (secret admin 0224) and 10-digit (regular users) PINs
     if (pin.length !== 4 && pin.length !== 10) {
+      console.log('PIN length validation failed'); // Debug log
       setError('PIN must be exactly 10 digits');
       return;
     }
 
     // Additional check for format
     if (!/^\d+$/.test(pin)) {
+      console.log('PIN format validation failed'); // Debug log
       setError('PIN must contain only numbers');
       return;
     }
 
+    console.log('PIN validation passed, sending request'); // Debug log
     setLoading(true);
     setError('');
 
     try {
+      const backendUrl = process.env.REACT_APP_BACKEND_URL || import.meta.env.REACT_APP_BACKEND_URL;
+      console.log('Using backend URL:', backendUrl); // Debug log
+      
       // Use the new unified PIN verification endpoint
-      const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/auth/pin-verify`, {
+      const response = await fetch(`${backendUrl}/api/auth/pin-verify`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ pin }),
       });
 
+      console.log('Response status:', response.status); // Debug log
+
       if (!response.ok) {
         const errorData = await response.json();
+        console.log('Error response:', errorData); // Debug log
         throw new Error(errorData.detail || 'Invalid PIN');
       }
 
