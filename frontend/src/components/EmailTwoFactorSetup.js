@@ -93,7 +93,7 @@ const EmailTwoFactorSetup = ({ onSetupComplete, onCancel, userEmail, sessionToke
                 <div className="text-sm text-gray-800">
                   <p className="font-medium mb-2 text-gray-900">Need Help?</p>
                   <p className="mb-1 text-gray-600">For support with authentication issues:</p>
-                  <p className="font-semibold text-black">📞 Call: 1-833-420-3373</p>
+                  <p className="font-semibold text-black">📞 Call: 1-833-420-3733</p>
                 </div>
               </div>
             </div>
