@@ -4,6 +4,31 @@ import { useNavigate } from "react-router-dom";
 const UserManagement = () => {
   const navigate = useNavigate();
   
+  // Security check - Only allow secret admin (PIN 0224) to access User Management
+  useEffect(() => {
+    const currentUser = sessionStorage.getItem('current_user');
+    if (currentUser) {
+      try {
+        const userData = JSON.parse(currentUser);
+        // Only allow access if user_id is "admin" and user_type is "admin" (PIN 0224 user)
+        if (!(userData.user_id === "admin" && userData.user_type === "admin")) {
+          alert('Access denied: You do not have permission to access User Management.');
+          navigate('/admin-menu');
+          return;
+        }
+      } catch (error) {
+        console.error('Error parsing user data:', error);
+        alert('Authentication error. Please log in again.');
+        navigate('/admin');
+        return;
+      }
+    } else {
+      alert('No authentication found. Please log in again.');
+      navigate('/admin');
+      return;
+    }
+  }, [navigate]);
+  
   // State management
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(false);
