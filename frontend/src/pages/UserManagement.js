@@ -448,6 +448,14 @@ const UserManagement = () => {
                             <p><strong>Email:</strong> {user.email}</p>
                             <p><strong>Phone:</strong> {user.phone}</p>
                             <p><strong>PIN:</strong> {user.pin}</p>
+                            <p><strong>Tab Access:</strong> {
+                              user.permissions && Object.keys(user.permissions).length > 0 
+                                ? Object.entries(user.permissions)
+                                    .filter(([tab, allowed]) => allowed)
+                                    .map(([tab]) => tab)
+                                    .join(', ') || 'No access'
+                                : 'All tabs'
+                            }</p>
                             <p><strong>Created:</strong> {new Date(user.created_at).toLocaleString()}</p>
                             <p className="text-xs text-gray-500">ID: {user.id}</p>
                           </div>
