@@ -22,7 +22,7 @@ const EmailTwoFactorSetup = ({ onSetupComplete, onCancel, userEmail, sessionToke
       return;
     }
 
-    // Don't show loading screen - go directly to verification step
+    setLoading(true);
     setError('');
 
     try {
@@ -38,12 +38,14 @@ const EmailTwoFactorSetup = ({ onSetupComplete, onCancel, userEmail, sessionToke
         throw new Error(errorData.detail || 'Failed to send verification code');
       }
 
-      // Move to verification step without showing loading
+      // Move to verification step
       setStep('verify');
     } catch (err) {
       console.error('❌ Setup error:', err.message);
       setError(err.message);
       setStep('error');
+    } finally {
+      setLoading(false);
     }
   };
 
