@@ -78,12 +78,14 @@ const UserManagement = () => {
     fetchUsers();
   }, []);
 
-  // Handle form input changes
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
+  // Handle permissions checkbox changes
+  const handlePermissionChange = (tab) => {
     setFormData(prev => ({
       ...prev,
-      [name]: value
+      permissions: {
+        ...prev.permissions,
+        [tab]: !prev.permissions[tab]
+      }
     }));
   };
 
