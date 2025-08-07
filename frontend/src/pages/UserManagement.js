@@ -373,8 +373,8 @@ const UserManagement = () => {
                 <label className="block text-sm font-medium text-gray-700 mb-3">
                   Tab Access Permissions
                 </label>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  {['Client', 'Tests', 'Medication'].map((tab) => (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                  {['Client', 'Tests', 'Medication', 'Dispensing', 'Notes', 'Activities', 'Interactions', 'Attachments'].map((tab) => (
                     <div key={tab} className="flex items-center">
                       <input
                         type="checkbox"
