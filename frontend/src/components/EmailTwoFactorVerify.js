@@ -135,110 +135,63 @@ const EmailTwoFactorVerify = ({ sessionToken, adminEmail, onVerificationSuccess,
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
-        <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-          Check Your Email
-        </h2>
-        <p className="mt-2 text-center text-sm text-gray-600">
-          We've sent a verification code to your email
-        </p>
-      </div>
-
-      <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
         <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
+          <div className="text-center mb-6">
+            <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-blue-100 mb-4">
+              <svg className="h-6 w-6 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+              </svg>
+            </div>
+            <h3 className="text-lg font-medium text-gray-900">Verification Code Sent</h3>
+            <p className="text-sm text-gray-600 mt-2">
+              A 6-digit verification code has been sent to:
+            </p>
+            <p className="text-sm font-medium text-gray-900 mt-1">
+              📧 <strong>{adminEmail}</strong>
+            </p>
+          </div>
+
+          <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-6">
+            <div className="flex items-start">
+              <div className="flex-shrink-0">
+                <svg className="h-5 w-5 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
+              <div className="ml-3 text-sm text-gray-600">
+                <p className="font-medium text-gray-900 mb-1">Next Steps:</p>
+                <ul className="space-y-1">
+                  <li>• Check {adminEmail} for a 6-digit verification code</li>
+                  <li>• Enter the code in the next screen to complete setup</li>
+                  <li>• Codes expire after 1 minute for security {timeLeft > 0 && `(${formatTime(timeLeft)} remaining)`}</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+
           {error && (
-            <div className="mb-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
+            <div className="mb-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded text-sm">
               {error}
             </div>
           )}
 
-          {codeSent && (
-            <div className="mb-6 p-4 bg-gray-50 border border-gray-200 rounded-lg">
-              <div className="flex items-center">
-                <svg className="h-5 w-5 text-gray-600 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
-                </svg>
-                <p className="text-sm text-gray-900">
-                  Verification code sent to <strong>{adminEmail}</strong>
-                </p>
-              </div>
-              {timeLeft > 0 && (
-                <p className="text-xs text-gray-600 mt-1">
-                  Code expires in {formatTime(timeLeft)}
-                </p>
-              )}
-            </div>
-          )}
-
-          <form onSubmit={handleVerify} className="space-y-6">
-            <div>
-              <label htmlFor="email-code" className="block text-sm font-medium text-gray-700 text-center">
-                6-digit verification code
-              </label>
-              <div className="mt-1">
-                <input
-                  id="email-code"
-                  type="text"
-                  maxLength="6"
-                  pattern="[0-9]*"
-                  inputMode="numeric"
-                  value={emailCode}
-                  onChange={(e) => {
-                    const value = e.target.value.replace(/\D/g, '');
-                    setEmailCode(value);
-                    setError('');
-                  }}
-                  onKeyPress={handleKeyPress}
-                  className="appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-black focus:border-black focus:z-10 sm:text-sm text-center text-2xl tracking-widest font-mono"
-                  placeholder="000000"
-                  autoComplete="one-time-code"
-                />
-              </div>
-              <p className="mt-2 text-xs text-gray-500 text-center">
-                Enter the 6-digit code from your email
-              </p>
-            </div>
-
-            <div className="flex space-x-4">
-              <button
-                type="button"
-                onClick={onCancel}
-                className="flex-1 py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                disabled={loading || emailCode.length !== 6}
-                className="flex-1 py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-black hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-black disabled:bg-gray-300"
-              >
-                {loading ? 'Verifying...' : 'Verify'}
-              </button>
-            </div>
-
-            <div className="text-center">
-              <button
-                type="button"
-                onClick={sendVerificationCode}
-                disabled={sendingCode || timeLeft > 0}
-                className="text-sm text-gray-600 hover:text-gray-800 underline disabled:text-gray-400 disabled:no-underline"
-              >
-                {sendingCode ? 'Sending...' : 
-                 timeLeft > 0 ? `Request new code in ${formatTime(timeLeft)}` :
-                 'Resend verification code'}
-              </button>
-            </div>
-          </form>
-
-          <div className="mt-6 p-4 bg-gray-50 border border-gray-200 rounded-lg">
-            <h4 className="text-sm font-medium text-gray-900 mb-2">
-              💡 Didn't receive the email?
-            </h4>
-            <ul className="text-xs text-gray-700 space-y-1">
-              <li>• Check your spam/junk folder</li>
-              <li>• Make sure the email address is correct</li>
-              <li>• Wait a few minutes and check again</li>
-              <li>• Contact support if the issue persists</li>
-            </ul>
+          <div className="flex space-x-4">
+            <button
+              onClick={onCancel}
+              className="flex-1 py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={() => {
+                // Navigate to actual verification input screen (this will be handled by parent component)
+                const event = new Event('enterVerificationCode');
+                document.dispatchEvent(event);
+              }}
+              className="flex-1 py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-black hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-black"
+            >
+              Enter Verification Code
+            </button>
           </div>
         </div>
       </div>
