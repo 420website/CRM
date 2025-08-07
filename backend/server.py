@@ -5558,7 +5558,7 @@ async def get_all_activities_optimized(
                         {
                             "$project": {
                                 "firstName": 1, "lastName": 1, 
-                                "phone1": 1, "email": 1, "_id": 0
+                                "phone1": 1, "email": 1, "disposition": 1, "_id": 0
                             }
                         }
                     ]
