@@ -1,0 +1,70 @@
+[
+  {
+    "test": "Backend Health Check",
+    "success": false,
+    "message": "Backend returned status 502",
+    "details": {
+      "status_code": 502
+    },
+    "timestamp": "2025-08-07T17:02:44.109742"
+  },
+  {
+    "test": "PIN Verification System Working",
+    "success": false,
+    "message": "PIN verification failed with status 502",
+    "details": {
+      "status_code": 502
+    },
+    "timestamp": "2025-08-07T17:02:44.116539"
+  },
+  {
+    "test": "Lockout Trigger and Duration Message",
+    "success": false,
+    "message": "Lockout not triggered after 3 failed attempts",
+    "details": {
+      "failed_attempts": 0
+    },
+    "timestamp": "2025-08-07T17:02:44.450879"
+  },
+  {
+    "test": "Lockout Duration Calculation",
+    "success": false,
+    "message": "Expected lockout (423) but got status 502",
+    "details": {
+      "status_code": 502
+    },
+    "timestamp": "2025-08-07T17:02:44.827462"
+  },
+  {
+    "test": "Timezone Fix Working",
+    "success": false,
+    "message": "Timezone handling inconsistent - only 0/3 responses consistent",
+    "details": {
+      "consistent_responses": 0,
+      "total_tests": 3
+    },
+    "timestamp": "2025-08-07T17:02:45.474501"
+  },
+  {
+    "test": "Admin PIN Bypass Functionality",
+    "success": false,
+    "message": "Could not establish lockout for bypass test (status: 502)",
+    "details": {
+      "status_code": 502
+    },
+    "timestamp": "2025-08-07T17:02:45.868844"
+  },
+  {
+    "test": "No Regressions in Authentication System",
+    "success": false,
+    "message": "Authentication system regression test: Admin PIN: False, Invalid PIN handling: False, Session tokens: False, 2FA fields: False",
+    "details": {
+      "admin_pin_working": false,
+      "invalid_pin_handled": false,
+      "session_token_valid": false,
+      "twofa_fields_present": false,
+      "admin_response": {}
+    },
+    "timestamp": "2025-08-07T17:02:45.888147"
+  }
+]
