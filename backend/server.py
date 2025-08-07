@@ -6051,9 +6051,13 @@ async def verify_pin_unified(request: dict):
         if lockout_record:
             lockout_until = lockout_record.get("lockout_until")
             if lockout_until:
-                # Make sure datetime is timezone-aware for comparison
+                # Ensure proper timezone handling for comparison
                 if hasattr(lockout_until, 'tzinfo') and lockout_until.tzinfo is None:
+                    # If stored as naive datetime, assume it's in Toronto timezone
                     lockout_until = pytz.timezone('America/Toronto').localize(lockout_until)
+                elif hasattr(lockout_until, 'tzinfo') and lockout_until.tzinfo is not None:
+                    # If stored with timezone info, convert to Toronto timezone
+                    lockout_until = lockout_until.astimezone(pytz.timezone('America/Toronto'))
                 
                 if current_time < lockout_until:
                     time_remaining = int((lockout_until - current_time).total_seconds())
