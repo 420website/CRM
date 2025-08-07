@@ -1,70 +1,103 @@
 [
   {
     "test": "Backend Health Check",
-    "success": false,
-    "message": "Backend returned status 502",
+    "success": true,
+    "message": "Backend accessible and responding correctly (4 pending registrations)",
     "details": {
-      "status_code": 502
+      "status_code": 200,
+      "pending_count": 4
     },
-    "timestamp": "2025-08-07T17:02:44.109742"
+    "timestamp": "2025-08-07T17:03:18.483753"
   },
   {
     "test": "PIN Verification System Working",
-    "success": false,
-    "message": "PIN verification failed with status 502",
+    "success": true,
+    "message": "Admin PIN verification successful with all required fields",
     "details": {
-      "status_code": 502
+      "response_fields": [
+        "pin_valid",
+        "user_id",
+        "user_type",
+        "session_token",
+        "two_fa_enabled",
+        "two_fa_required",
+        "two_fa_email",
+        "needs_email_verification"
+      ],
+      "user_type": "admin"
     },
-    "timestamp": "2025-08-07T17:02:44.116539"
+    "timestamp": "2025-08-07T17:03:18.725817"
   },
   {
     "test": "Lockout Trigger and Duration Message",
-    "success": false,
-    "message": "Lockout not triggered after 3 failed attempts",
+    "success": true,
+    "message": "Lockout triggered after 2 attempts with correct '4 hours and 20 minutes' message",
     "details": {
-      "failed_attempts": 0
+      "lockout_message": "System locked due to multiple failed PIN attempts. Try again in 4 hours and 20 minutes.",
+      "failed_attempts": 2
     },
-    "timestamp": "2025-08-07T17:02:44.450879"
+    "timestamp": "2025-08-07T17:03:19.215065"
   },
   {
     "test": "Lockout Duration Calculation",
     "success": false,
-    "message": "Expected lockout (423) but got status 502",
+    "message": "Lockout duration incorrect: 499 minutes (expected ~260)",
     "details": {
-      "status_code": 502
+      "calculated_minutes": 499,
+      "expected": 260,
+      "message": "System locked due to multiple failed PIN attempts. Try again in 8 hours and 19 minutes."
     },
-    "timestamp": "2025-08-07T17:02:44.827462"
+    "timestamp": "2025-08-07T17:03:19.698486"
   },
   {
     "test": "Timezone Fix Working",
-    "success": false,
-    "message": "Timezone handling inconsistent - only 0/3 responses consistent",
+    "success": true,
+    "message": "Timezone handling working correctly - all 3 lockout responses consistent",
     "details": {
-      "consistent_responses": 0,
+      "consistent_responses": 3,
       "total_tests": 3
     },
-    "timestamp": "2025-08-07T17:02:45.474501"
+    "timestamp": "2025-08-07T17:03:20.581156"
   },
   {
     "test": "Admin PIN Bypass Functionality",
-    "success": false,
-    "message": "Could not establish lockout for bypass test (status: 502)",
+    "success": true,
+    "message": "Admin PIN 0224 successfully bypassed lockout and cleared system",
     "details": {
-      "status_code": 502
+      "admin_response": {
+        "pin_valid": true,
+        "user_id": "admin",
+        "user_type": "admin",
+        "session_token": "131ab55c-0134-4601-ad49-def987d5d3d4",
+        "two_fa_enabled": false,
+        "two_fa_required": true,
+        "two_fa_email": "cmarcoux.personal@gmail.com",
+        "needs_email_verification": true
+      },
+      "post_bypass_status": 401
     },
-    "timestamp": "2025-08-07T17:02:45.868844"
+    "timestamp": "2025-08-07T17:03:21.417714"
   },
   {
     "test": "No Regressions in Authentication System",
-    "success": false,
-    "message": "Authentication system regression test: Admin PIN: False, Invalid PIN handling: False, Session tokens: False, 2FA fields: False",
+    "success": true,
+    "message": "Authentication system regression test: Admin PIN: True, Invalid PIN handling: True, Session tokens: True, 2FA fields: True",
     "details": {
-      "admin_pin_working": false,
-      "invalid_pin_handled": false,
-      "session_token_valid": false,
-      "twofa_fields_present": false,
-      "admin_response": {}
+      "admin_pin_working": true,
+      "invalid_pin_handled": true,
+      "session_token_valid": true,
+      "twofa_fields_present": true,
+      "admin_response": {
+        "pin_valid": true,
+        "user_id": "admin",
+        "user_type": "admin",
+        "session_token": "f44c4d6d-ea38-4c50-9b59-b1cc03921e75",
+        "two_fa_enabled": false,
+        "two_fa_required": true,
+        "two_fa_email": "cmarcoux.personal@gmail.com",
+        "needs_email_verification": true
+      }
     },
-    "timestamp": "2025-08-07T17:02:45.888147"
+    "timestamp": "2025-08-07T17:03:21.945531"
   }
 ]
