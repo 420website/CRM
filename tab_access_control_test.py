@@ -448,7 +448,7 @@ def main():
             tests_passed += 1
         
         # 5. User Authentication with Permissions
-        if test_user_authentication_with_permissions():
+        if test_user_authentication_with_permissions(user_id):
             tests_passed += 1
         
         # 6. User Permission Update
