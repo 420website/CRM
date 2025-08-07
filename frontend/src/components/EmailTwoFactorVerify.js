@@ -32,7 +32,7 @@ const EmailTwoFactorVerify = ({ sessionToken, adminEmail, onVerificationSuccess,
         setTimeLeft(60); // Set timer but don't send email
       }
     }
-  }, [sessionToken, codeSent, sendingCode]);
+  }, [sessionToken]); // Only depend on sessionToken to run once
 
   const sendVerificationCode = async () => {
     // Prevent multiple simultaneous sends
