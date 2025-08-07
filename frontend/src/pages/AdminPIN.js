@@ -96,9 +96,9 @@ const AdminPIN = () => {
       // Move to verification step
       setStep('2fa-verify');
     } else {
-      // After 2FA setup is complete and verified, set authentication flag and go to dashboard
+      // After 2FA setup is complete and verified, set authentication flag and go to admin menu
       sessionStorage.setItem('admin_authenticated', 'true');
-      navigate('/admin-dashboard');
+      navigate('/admin-menu');
     }
   };
 
