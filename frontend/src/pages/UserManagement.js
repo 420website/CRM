@@ -368,6 +368,30 @@ const UserManagement = () => {
                 <p className="text-xs text-gray-600 mt-1">Must be exactly 10 digits</p>
               </div>
 
+              {/* Tab Permissions Section */}
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-3">
+                  Tab Access Permissions
+                </label>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  {['Client', 'Tests', 'Medication'].map((tab) => (
+                    <div key={tab} className="flex items-center">
+                      <input
+                        type="checkbox"
+                        id={`permission-${tab}`}
+                        checked={formData.permissions[tab] || false}
+                        onChange={() => handlePermissionChange(tab)}
+                        className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                      />
+                      <label htmlFor={`permission-${tab}`} className="ml-2 block text-sm text-gray-700">
+                        {tab}
+                      </label>
+                    </div>
+                  ))}
+                </div>
+                <p className="text-xs text-gray-600 mt-2">Select which tabs this user can access</p>
+              </div>
+
               <div className="flex gap-2">
                 <button
                   type="submit"
