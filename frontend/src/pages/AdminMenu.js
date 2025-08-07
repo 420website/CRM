@@ -86,15 +86,18 @@ const AdminMenu = () => {
               🤖 Analytics
             </button>
 
-            <button
-              onClick={handleUsers}
-              className="w-full py-4 px-6 rounded-lg text-lg font-medium flex items-center justify-center gap-3 text-white transition-colors"
-              style={{ backgroundColor: '#000000' }}
-              onMouseEnter={(e) => e.target.style.backgroundColor = '#1f2937'}
-              onMouseLeave={(e) => e.target.style.backgroundColor = '#000000'}
-            >
-              👥 Users
-            </button>
+            {/* Users button - Only visible to secret admin (PIN 0224) */}
+            {isSecretAdmin && (
+              <button
+                onClick={handleUsers}
+                className="w-full py-4 px-6 rounded-lg text-lg font-medium flex items-center justify-center gap-3 text-white transition-colors"
+                style={{ backgroundColor: '#000000' }}
+                onMouseEnter={(e) => e.target.style.backgroundColor = '#1f2937'}
+                onMouseLeave={(e) => e.target.style.backgroundColor = '#000000'}
+              >
+                👥 Users
+              </button>
+            )}
           </div>
 
           {/* Back Button */}
