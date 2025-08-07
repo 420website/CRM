@@ -295,7 +295,10 @@ const EmailTwoFactorVerify = ({ sessionToken, adminEmail, onVerificationSuccess,
               Cancel
             </button>
             <button
-              onClick={() => {
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                console.log('Enter Verification Code button clicked, showInputScreen:', showInputScreen);
                 setShowInputScreen(true);
               }}
               className="flex-1 py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-black hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-black"
