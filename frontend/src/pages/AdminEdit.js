@@ -4,6 +4,61 @@ import AddressAutocomplete from '../components/AddressAutocomplete';
 
 const AdminEdit = () => {
   const navigate = useNavigate();
+  
+  // Get current user permissions
+  const getCurrentUserPermissions = () => {
+    try {
+      const currentUser = sessionStorage.getItem('current_user');
+      if (currentUser) {
+        const userData = JSON.parse(currentUser);
+        return userData.permissions || {};
+      }
+    } catch (error) {
+      console.error('Error getting user permissions:', error);
+    }
+    return {};
+  };
+
+  // Check if user has permission for a tab
+  const hasTabPermission = (tabName) => {
+    const permissions = getCurrentUserPermissions();
+    
+    // If no permissions are set, allow all tabs (backward compatibility)
+    if (Object.keys(permissions).length === 0) {
+      return true;
+    }
+    
+    // Check if user has permission for this specific tab
+    return permissions[tabName] === true;
+  };
+
+  // Get allowed tabs based on user permissions
+  const getAllowedTabs = () => {
+    const allTabs = [
+      { id: 'patient', name: 'Client' },
+      { id: 'tests', name: 'Tests' },
+      { id: 'medication', name: 'Medication' },
+      { id: 'dispensing', name: 'Dispensing' },
+      { id: 'notes', name: 'Notes' },
+      { id: 'activities', name: 'Activities' },
+      { id: 'interactions', name: 'Interactions' },
+      { id: 'attachments', name: 'Attachments' }
+    ];
+    
+    return allTabs.filter(tab => hasTabPermission(tab.name));
+  };
+
+  // Set default active tab based on user permissions
+  useEffect(() => {
+    const allowedTabs = getAllowedTabs();
+    if (allowedTabs.length > 0) {
+      // If current active tab is not allowed, switch to first allowed tab
+      const isCurrentTabAllowed = allowedTabs.some(tab => tab.id === activeTab);
+      if (!isCurrentTabAllowed) {
+        setActiveTab(allowedTabs[0].id);
+      }
+    }
+  }, [activeTab]);
   const { registrationId } = useParams();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
