@@ -415,35 +415,39 @@ def main():
     
     # Test results tracking
     tests_passed = 0
-    total_tests = 6
+    total_tests = 7  # Updated to include existing user test
     
     # 1. Backend Health Check
     if test_backend_health():
         tests_passed += 1
     
-    # 2. User Creation with Permissions
+    # 2. Test Existing User Permissions
+    if test_existing_user_permissions():
+        tests_passed += 1
+    
+    # 3. User Creation with Permissions
     user_id = test_user_creation_with_permissions()
     if user_id:
         tests_passed += 1
         
-        # 3. User Retrieval with Permissions
+        # 4. User Retrieval with Permissions
         if test_user_retrieval_with_permissions(user_id):
             tests_passed += 1
         
-        # 4. User Authentication with Permissions
+        # 5. User Authentication with Permissions
         if test_user_authentication_with_permissions():
             tests_passed += 1
         
-        # 5. User Permission Update
+        # 6. User Permission Update
         if test_user_permission_update(user_id):
             tests_passed += 1
     
-    # 6. User Creation with No Permissions
+    # 7. User Creation with No Permissions
     no_perm_user_id = test_user_creation_with_no_permissions()
     if no_perm_user_id:
         tests_passed += 1
     
-    # 7. Permission Validation (bonus test)
+    # 8. Permission Validation (bonus test)
     if test_permission_validation():
         log_test("✅ Bonus: Permission validation test passed")
     
