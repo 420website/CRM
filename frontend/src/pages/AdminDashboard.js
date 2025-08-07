@@ -517,7 +517,7 @@ const AdminDashboard = () => {
             </span>
           </div>
           <div className="text-sm text-gray-600 mt-1">
-            <p className="font-medium">Client: {item.client_name} {item.client_disposition && <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded-md text-xs font-semibold ml-2">{item.client_disposition}</span>}</p>
+            <p className="font-medium">Client: {item.client_name} {item.client_disposition && <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded-md text-xs font-normal ml-2">{item.client_disposition.charAt(0).toUpperCase() + item.client_disposition.slice(1).toLowerCase()}</span>}</p>
             <p>Date: {new Date(item.date).toLocaleDateString()}</p>
             {item.time && <p>Time: {item.time}</p>}
             {item.client_phone && <p>Phone: {item.client_phone}</p>}
