@@ -3,6 +3,8 @@ import { useNavigate } from "react-router-dom";
 import AddressAutocomplete from '../components/AddressAutocomplete';
 
 const AdminRegister = () => {
+  const navigate = useNavigate();
+  
   // Get current user permissions
   const getCurrentUserPermissions = () => {
     try {
