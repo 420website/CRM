@@ -47,6 +47,19 @@ const AdminRegister = () => {
     
     return allTabs.filter(tab => hasTabPermission(tab.name));
   };
+
+  // Set default active tab based on user permissions
+  useEffect(() => {
+    const allowedTabs = getAllowedTabs();
+    if (allowedTabs.length > 0) {
+      // If current active tab is not allowed, switch to first allowed tab
+      const isCurrentTabAllowed = allowedTabs.some(tab => tab.id === activeTab);
+      if (!isCurrentTabAllowed) {
+        setActiveTab(allowedTabs[0].id);
+      }
+    }
+  }, [activeTab]);
+
   const [pinVerified, setPinVerified] = useState(false);
   const [pinInput, setPinInput] = useState("");
   const [pinError, setPinError] = useState("");
