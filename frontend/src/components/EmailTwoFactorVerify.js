@@ -294,15 +294,12 @@ const EmailTwoFactorVerify = ({ sessionToken, adminEmail, onVerificationSuccess,
                 e.stopPropagation();
                 console.log('Enter Verification Code button clicked');
                 
-                // If email not sent yet, send it and then show input screen
+                // If email not sent yet, send it (this will automatically show input screen)
                 if (!codeSent && !sendingCode) {
-                  console.log('Email not sent yet, sending now...');
-                  sendVerificationCode().then(() => {
-                    console.log('Email sent, showing input screen');
-                    setShowInputScreen(true);
-                  });
+                  console.log('Sending verification code...');
+                  sendVerificationCode();
                 } else {
-                  console.log('Email already sent, showing input screen directly');
+                  console.log('Email already sent, showing input screen');
                   setShowInputScreen(true);
                 }
               }}
