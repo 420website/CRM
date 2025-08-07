@@ -326,7 +326,7 @@ const UserManagement = () => {
                   pattern="[0-9]{10}"
                   className="w-full md:w-1/2 px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                   style={{ height: '40px' }}
-                  placeholder="0000"
+                  placeholder="0000000000"
                   required
                 />
                 <p className="text-xs text-gray-600 mt-1">Must be exactly 10 digits</p>
