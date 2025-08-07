@@ -5597,7 +5597,7 @@ async def get_all_activities_optimized(
                     "id": 1, "registration_id": 1, "date": 1, "time": 1,
                     "description": 1, "created_at": 1, "updated_at": 1,
                     "client_name": 1, "client_first_name": 1, "client_last_name": 1,
-                    "client_phone": 1, "client_email": 1, "status": 1,
+                    "client_phone": 1, "client_email": 1, "client_disposition": 1, "status": 1,
                     "_id": 0  # Note: Excluding registration_data by only including needed fields
                 }
             }
