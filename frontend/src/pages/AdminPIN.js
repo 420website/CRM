@@ -103,9 +103,9 @@ const AdminPIN = () => {
   };
 
   const handleTwoFactorVerifySuccess = () => {
-    // After 2FA verification, set authentication flag and go to dashboard
+    // After 2FA verification, set authentication flag and go to admin menu
     sessionStorage.setItem('admin_authenticated', 'true');
-    navigate('/admin-dashboard');
+    navigate('/admin-menu');
   };
 
   const handleCancel = () => {
