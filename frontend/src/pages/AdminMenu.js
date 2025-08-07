@@ -1,8 +1,24 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 const AdminMenu = () => {
   const navigate = useNavigate();
+  const [isSecretAdmin, setIsSecretAdmin] = useState(false);
+
+  useEffect(() => {
+    // Check if current user is the secret admin (PIN 0224)
+    const currentUser = sessionStorage.getItem('current_user');
+    if (currentUser) {
+      try {
+        const userData = JSON.parse(currentUser);
+        // Only show Users section if user_id is "admin" and user_type is "admin" (PIN 0224 user)
+        setIsSecretAdmin(userData.user_id === "admin" && userData.user_type === "admin");
+      } catch (error) {
+        console.error('Error parsing user data:', error);
+        setIsSecretAdmin(false);
+      }
+    }
+  }, []);
 
   const goBack = () => {
     navigate('/');
