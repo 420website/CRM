@@ -196,13 +196,26 @@ def test_user_retrieval_with_permissions(user_id):
         log_test(f"❌ User retrieval test failed: {str(e)}")
         return False
 
-def test_user_authentication_with_permissions():
+def test_user_authentication_with_permissions(user_id):
     """Test user authentication and verify permissions are included in session data"""
     log_test("🧪 Testing user authentication with permissions...")
     
     try:
+        # First get the user to find their PIN
+        user_response = requests.get(f"{BACKEND_URL}/users/{user_id}", timeout=30)
+        if user_response.status_code != 200:
+            log_test(f"❌ Failed to get user for authentication test: {user_response.status_code}")
+            return False
+        
+        user_data = user_response.json()
+        pin = user_data.get("pin")
+        
+        if not pin:
+            log_test("❌ No PIN found for user")
+            return False
+        
         # Test PIN verification which should return permissions
-        response = requests.post(f"{BACKEND_URL}/auth/pin-verify", json={"pin": "9876543210"}, timeout=30)
+        response = requests.post(f"{BACKEND_URL}/auth/pin-verify", json={"pin": pin}, timeout=30)
         
         if response.status_code == 200:
             auth_data = response.json()
