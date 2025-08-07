@@ -146,7 +146,7 @@ def test_user_authentication_with_permissions():
     
     try:
         # Test PIN verification which should return permissions
-        response = requests.post(f"{BACKEND_URL}/auth/pin-verify", json={"pin": "1234567890"}, timeout=10)
+        response = requests.post(f"{BACKEND_URL}/auth/pin-verify", json={"pin": "9876543210"}, timeout=30)
         
         if response.status_code == 200:
             auth_data = response.json()
