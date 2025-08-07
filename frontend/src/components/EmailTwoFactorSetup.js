@@ -55,20 +55,6 @@ const EmailTwoFactorSetup = ({ onSetupComplete, onCancel, userEmail, sessionToke
     }
   };
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
-        <div className="sm:mx-auto sm:w-full sm:max-w-md">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-black mx-auto mb-4"></div>
-            <p className="text-lg font-medium text-gray-900">Setting up Two-Factor Authentication...</p>
-            <p className="text-sm text-gray-600 mt-2">Please wait while we configure your secure login.</p>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
   if (step === 'error') {
     return (
       <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
