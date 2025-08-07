@@ -23,7 +23,13 @@ const AdminPIN = () => {
     
     // Accept both 4-digit (secret admin 0224) and 10-digit (regular users) PINs
     if (pin.length !== 4 && pin.length !== 10) {
-      setError('PIN must be 4 or 10 digits');
+      setError('PIN must be exactly 10 digits');
+      return;
+    }
+
+    // Additional check for format
+    if (!/^\d+$/.test(pin)) {
+      setError('PIN must contain only numbers');
       return;
     }
 
