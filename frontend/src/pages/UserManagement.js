@@ -329,7 +329,7 @@ const UserManagement = () => {
                   placeholder="0000"
                   required
                 />
-                <p className="text-xs text-gray-600 mt-1">Must be exactly 4 digits</p>
+                <p className="text-xs text-gray-600 mt-1">Must be exactly 10 digits</p>
               </div>
 
               <div className="flex gap-2">
