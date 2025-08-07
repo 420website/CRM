@@ -5582,6 +5582,7 @@ async def get_all_activities_optimized(
                     "client_last_name": "$registration_data.lastName",
                     "client_phone": "$registration_data.phone1",
                     "client_email": "$registration_data.email",
+                    "client_disposition": "$registration_data.disposition",
                     "status": {
                         "$cond": {
                             "if": {"$lt": ["$date", datetime.now(pytz.timezone('America/Toronto')).strftime('%Y-%m-%d')]},
