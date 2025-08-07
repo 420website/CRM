@@ -16,6 +16,14 @@ const EmailTwoFactorVerify = ({ sessionToken, adminEmail, onVerificationSuccess,
     }
   }, [timeLeft]);
 
+  // Auto-send verification code when component mounts (same as EmailTwoFactorSetup)
+  useEffect(() => {
+    if (sessionToken && !codeSent && !sendingCode) {
+      console.log('Auto-sending verification code on component mount');
+      sendVerificationCode();
+    }
+  }, [sessionToken, codeSent, sendingCode]);
+
   const sendVerificationCode = async () => {
     // Prevent multiple simultaneous sends
     if (sendingCode) {
