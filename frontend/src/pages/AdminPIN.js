@@ -204,7 +204,7 @@ const AdminPIN = () => {
 
             <div>
               <label htmlFor="pin" className="block text-sm font-medium text-gray-700 text-center">
-                Enter PIN
+                10-Digit PIN
               </label>
               <div className="mt-1">
                 <input
