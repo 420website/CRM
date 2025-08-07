@@ -52,7 +52,8 @@ const EmailTwoFactorVerify = ({ sessionToken, adminEmail, onVerificationSuccess,
       const data = await response.json();
       setCodeSent(true);
       setTimeLeft(60); // 1 minute = 60 seconds (changed from 180)
-      console.log('Verification code sent successfully');
+      setShowInputScreen(true); // Automatically show input screen after sending email
+      console.log('Verification code sent successfully, showing input screen');
     } catch (err) {
       setError(err.message);
       console.error('Failed to send verification code:', err);
