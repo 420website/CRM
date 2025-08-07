@@ -4532,11 +4532,11 @@ ${currentDate} ${currentTime}`;
                             whiteSpace: 'pre-wrap',
                             lineHeight: '1.5'
                           }}
-                          placeholder="Edit this client's clinical summary content..."
+                          placeholder="Type your clinical summary here or select a template above to auto-populate..."
                           readOnly={false}  // Always allow editing in AdminEdit to modify individual client's clinical summary
                         />
                         <p className="mt-1 text-sm text-gray-500">
-                          Edit this individual client's clinical summary. You can also change the template above if needed (with confirmation to prevent accidental content loss).
+                          You can type manually here or select a template above to auto-populate the content. Templates can be edited for individual patients.
                         </p>
                       </div>
 
