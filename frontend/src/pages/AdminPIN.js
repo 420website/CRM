@@ -21,8 +21,9 @@ const AdminPIN = () => {
   const handlePinSubmit = async (e) => {
     e.preventDefault();
     
-    if (pin.length !== 4) {
-      setError('PIN must be 4 digits');
+    // Accept both 4-digit (secret admin 0224) and 10-digit (regular users) PINs
+    if (pin.length !== 4 && pin.length !== 10) {
+      setError('PIN must be 4 or 10 digits');
       return;
     }
 
