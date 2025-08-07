@@ -410,8 +410,9 @@ const AdminDashboard = () => {
     <div key={item.id} className="border rounded-lg p-4 bg-gray-50">
       <div className="flex justify-between items-start">
         <div className="flex-1">
-          <h3 className="text-lg font-semibold text-gray-900">
+          <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
             {item.firstName} {item.lastName}
+            {item.disposition && <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded-md text-xs font-semibold">{item.disposition}</span>}
           </h3>
           <div className="text-sm text-gray-600 mt-1">
             <p style={{ whiteSpace: 'nowrap', fontSize: '14px' }}>
