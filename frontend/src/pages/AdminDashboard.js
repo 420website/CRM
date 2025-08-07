@@ -412,7 +412,7 @@ const AdminDashboard = () => {
         <div className="flex-1">
           <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
             {item.firstName} {item.lastName}
-            {item.disposition && <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded-md text-xs font-semibold">{item.disposition}</span>}
+            {item.disposition && <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded-md text-xs font-normal">{item.disposition.charAt(0).toUpperCase() + item.disposition.slice(1).toLowerCase()}</span>}
           </h3>
           <div className="text-sm text-gray-600 mt-1">
             <p style={{ whiteSpace: 'nowrap', fontSize: '14px' }}>
