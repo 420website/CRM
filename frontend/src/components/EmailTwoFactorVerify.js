@@ -291,8 +291,19 @@ const EmailTwoFactorVerify = ({ sessionToken, adminEmail, onVerificationSuccess,
               onClick={(e) => {
                 e.preventDefault();
                 e.stopPropagation();
-                console.log('Enter Verification Code button clicked, showInputScreen:', showInputScreen);
-                setShowInputScreen(true);
+                console.log('Enter Verification Code button clicked');
+                
+                // If email not sent yet, send it and then show input screen
+                if (!codeSent && !sendingCode) {
+                  console.log('Email not sent yet, sending now...');
+                  sendVerificationCode().then(() => {
+                    console.log('Email sent, showing input screen');
+                    setShowInputScreen(true);
+                  });
+                } else {
+                  console.log('Email already sent, showing input screen directly');
+                  setShowInputScreen(true);
+                }
               }}
               className="flex-1 py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-black hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-black"
             >
