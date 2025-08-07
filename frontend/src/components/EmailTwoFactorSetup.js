@@ -54,9 +54,58 @@ const EmailTwoFactorSetup = ({ onSetupComplete, onCancel, userEmail, sessionToke
 
   // Redirect to verification component
   const handleProceedToVerification = () => {
-    // Call the parent to move to verification step
-    if (onSetupComplete) {
-      onSetupComplete('proceed-to-verify');
+    // Instead of calling parent, show input screen directly
+    setShowInputScreen(true);
+  };
+
+  const handleVerify = async (e) => {
+    e.preventDefault();
+    
+    if (!emailCode || emailCode.length !== 6) {
+      setError('Please enter the 6-digit verification code');
+      return;
+    }
+
+    setVerifyLoading(true);
+    setError('');
+
+    try {
+      // Check if we're in development mode and using the test code
+      const isDevelopment = process.env.REACT_APP_DEV_MODE === 'true';
+      if (isDevelopment && emailCode === '123456') {
+        // Simulate successful verification in development
+        console.log('Development mode: Using test code 123456');
+        onSetupComplete('dev-session-token');
+        return;
+      }
+
+      const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/admin/2fa/verify`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email_code: emailCode,
+          session_token: sessionToken,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.detail || 'Verification failed');
+      }
+
+      const data = await response.json();
+      onSetupComplete(data.session_token);
+    } catch (err) {
+      setError(err.message);
+      setEmailCode(''); // Clear the code on error
+    } finally {
+      setVerifyLoading(false);
+    }
+  };
+
+  const handleKeyPress = (e) => {
+    if (e.key === 'Enter') {
+      handleVerify(e);
     }
   };
 
