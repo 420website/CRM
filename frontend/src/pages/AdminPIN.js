@@ -247,7 +247,7 @@ const AdminPIN = () => {
             <div>
               <button
                 type="submit"
-                disabled={loading || pin.length !== 4}
+                disabled={loading || (pin.length !== 4 && pin.length !== 10)}
                 className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-black hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-black disabled:bg-gray-300"
               >
                 {loading ? 'Verifying...' : 'Continue'}
