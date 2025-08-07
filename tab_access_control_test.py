@@ -46,6 +46,62 @@ def test_backend_health():
         log_test(f"❌ Backend health check failed: {str(e)}")
         return False
 
+def test_existing_user_permissions():
+    """Test that existing user has permissions correctly stored"""
+    log_test("🧪 Testing existing user permissions...")
+    
+    try:
+        # Get all users to find existing user
+        response = requests.get(f"{BACKEND_URL}/users", timeout=30)
+        
+        if response.status_code == 200:
+            users = response.json()
+            if users:
+                user = users[0]  # Get first user
+                permissions = user.get("permissions", {})
+                
+                log_test(f"✅ Found existing user: {user.get('firstName')} {user.get('lastName')}")
+                log_test(f"   Email: {user.get('email')}")
+                log_test(f"   Permissions: {permissions}")
+                
+                # Verify permissions structure
+                if isinstance(permissions, dict):
+                    log_test("✅ Permissions field is correctly structured as dictionary")
+                    
+                    # Test authentication with existing user's PIN
+                    pin = user.get("pin")
+                    if pin:
+                        auth_response = requests.post(f"{BACKEND_URL}/auth/pin-verify", json={"pin": pin}, timeout=30)
+                        if auth_response.status_code == 200:
+                            auth_data = auth_response.json()
+                            auth_permissions = auth_data.get("permissions", {})
+                            
+                            if auth_permissions == permissions:
+                                log_test("✅ Authentication returns same permissions as stored in user record")
+                                return True
+                            else:
+                                log_test(f"❌ Authentication permissions mismatch: {auth_permissions} vs {permissions}")
+                                return False
+                        else:
+                            log_test(f"❌ Authentication failed for existing user: {auth_response.status_code}")
+                            return False
+                    else:
+                        log_test("❌ No PIN found for existing user")
+                        return False
+                else:
+                    log_test(f"❌ Permissions field is not a dictionary: {type(permissions)}")
+                    return False
+            else:
+                log_test("❌ No users found in system")
+                return False
+        else:
+            log_test(f"❌ Failed to get users: {response.status_code}")
+            return False
+            
+    except Exception as e:
+        log_test(f"❌ Existing user permissions test failed: {str(e)}")
+        return False
+
 def test_user_creation_with_permissions():
     """Test creating a user with specific tab permissions"""
     log_test("🧪 Testing user creation with tab permissions...")
