@@ -944,7 +944,7 @@ class User(BaseModel):
     lastName: str = Field(..., min_length=1, max_length=100)
     email: EmailStr = Field(..., description="User's email address for 2FA")
     phone: str = Field(..., min_length=10, max_length=15, description="User's phone number")
-    pin: str = Field(..., min_length=4, max_length=4, description="4-digit PIN for authentication")
+    pin: str = Field(..., min_length=10, max_length=10, description="10-digit PIN for authentication")
     pin_hash: str = Field(..., description="Bcrypt hashed PIN")
     permissions: dict = Field(default_factory=dict, description="User permissions for tabs and fields")
     is_active: bool = Field(default=True, description="Whether user account is active")
