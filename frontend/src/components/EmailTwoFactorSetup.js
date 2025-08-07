@@ -50,8 +50,9 @@ const EmailTwoFactorSetup = ({ onSetupComplete, onCancel, userEmail, sessionToke
         throw new Error(errorData.detail || 'Failed to send verification code');
       }
 
-      // Move to verification step
+      // Move to verification step and set 1-minute timer
       setStep('verify');
+      setTimeLeft(60); // 1 minute = 60 seconds
     } catch (err) {
       console.error('❌ Setup error:', err.message);
       setError(err.message);
