@@ -163,7 +163,7 @@ const EmailTwoFactorVerify = ({ sessionToken, adminEmail, onVerificationSuccess,
 
           <form onSubmit={handleVerify} className="space-y-6">
             <div>
-              <label htmlFor="email-code" className="block text-sm font-medium text-gray-700">
+              <label htmlFor="email-code" className="block text-sm font-medium text-gray-700 text-center">
                 6-digit verification code
               </label>
               <div className="mt-1">
