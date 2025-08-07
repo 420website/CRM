@@ -141,8 +141,8 @@ const UserManagement = () => {
       return;
     }
 
-    if (formData.pin.length !== 4 || !/^\d{4}$/.test(formData.pin)) {
-      setError('PIN must be exactly 4 digits');
+    if (formData.pin.length !== 10 || !/^\d{10}$/.test(formData.pin)) {
+      setError('PIN must be exactly 10 digits');
       return;
     }
 
