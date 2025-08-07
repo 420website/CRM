@@ -17,12 +17,11 @@ const EmailTwoFactorVerify = ({ sessionToken, adminEmail, onVerificationSuccess,
     }
   }, [timeLeft]);
 
-  // Initialize component state - email should already be sent by the time we reach this component
+  // Auto-send verification code when component mounts for 10-digit PIN users
   useEffect(() => {
-    if (sessionToken) {
-      console.log('EmailTwoFactorVerify mounted - email should already be sent');
-      setCodeSent(true);
-      setTimeLeft(60); // Set 1-minute timer
+    if (sessionToken && !codeSent && !sendingCode) {
+      console.log('EmailTwoFactorVerify mounted - sending verification email');
+      sendVerificationCode();
     }
   }, [sessionToken]); // Only run once when component mounts
 
