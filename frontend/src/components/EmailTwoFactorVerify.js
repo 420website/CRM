@@ -17,11 +17,20 @@ const EmailTwoFactorVerify = ({ sessionToken, adminEmail, onVerificationSuccess,
     }
   }, [timeLeft]);
 
-  // Auto-send verification code when component mounts (same as EmailTwoFactorSetup)
+  // Auto-send verification code when component mounts (but only for 10-digit PIN users)
   useEffect(() => {
     if (sessionToken && !codeSent && !sendingCode) {
-      console.log('Auto-sending verification code on component mount');
-      sendVerificationCode();
+      // Check if this is a 10-digit PIN user (not coming from EmailTwoFactorSetup)
+      const currentUser = JSON.parse(sessionStorage.getItem('current_user') || '{}');
+      if (currentUser.user_type === 'user') {
+        console.log('Auto-sending verification code for 10-digit PIN user');
+        sendVerificationCode();
+      } else {
+        // For admin users, email was already sent by EmailTwoFactorSetup
+        console.log('Admin user - email already sent by setup component');
+        setCodeSent(true);
+        setTimeLeft(60); // Set timer but don't send email
+      }
     }
   }, [sessionToken, codeSent, sendingCode]);
 
