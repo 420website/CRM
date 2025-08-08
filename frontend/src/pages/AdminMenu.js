@@ -4,6 +4,30 @@ import { useNavigate } from 'react-router-dom';
 const AdminMenu = () => {
   const navigate = useNavigate();
   const [isSecretAdmin, setIsSecretAdmin] = useState(false);
+  const [hasTabPermissions, setHasTabPermissions] = useState(false);
+
+  // Get current user permissions
+  const getCurrentUserPermissions = () => {
+    try {
+      const currentUser = sessionStorage.getItem('current_user');
+      if (currentUser) {
+        const userData = JSON.parse(currentUser);
+        return userData.permissions || {};
+      }
+    } catch (error) {
+      console.error('Error getting user permissions:', error);
+    }
+    return {};
+  };
+
+  // Check if user has any tab permissions
+  const checkTabPermissions = () => {
+    const permissions = getCurrentUserPermissions();
+    const tabPermissions = ['Client', 'Tests', 'Medication', 'Dispensing', 'Notes', 'Activities', 'Interactions', 'Attachments'];
+    
+    // Check if user has permission for any tab
+    return tabPermissions.some(tab => permissions[tab] === true);
+  };
 
   useEffect(() => {
     // Check if current user is the secret admin (PIN 0224)
@@ -11,11 +35,21 @@ const AdminMenu = () => {
     if (currentUser) {
       try {
         const userData = JSON.parse(currentUser);
-        // Only show Users section if user_id is "admin" and user_type is "admin" (PIN 0224 user)
-        setIsSecretAdmin(userData.user_id === "admin" && userData.user_type === "admin");
+        
+        // Check if secret admin
+        const isAdmin = userData.user_id === "admin" && userData.user_type === "admin";
+        setIsSecretAdmin(isAdmin);
+        
+        // Admin always has tab permissions, for others check their permissions
+        if (isAdmin) {
+          setHasTabPermissions(true);
+        } else {
+          setHasTabPermissions(checkTabPermissions());
+        }
       } catch (error) {
         console.error('Error parsing user data:', error);
         setIsSecretAdmin(false);
+        setHasTabPermissions(false);
       }
     }
   }, []);
