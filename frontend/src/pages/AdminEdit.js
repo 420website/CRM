@@ -63,17 +63,6 @@ const AdminEdit = () => {
     return allowedTabs;
   };
 
-  // Set default active tab based on user permissions
-  useEffect(() => {
-    const allowedTabs = getAllowedTabs();
-    if (allowedTabs.length > 0) {
-      // If current active tab is not allowed, switch to first allowed tab
-      const isCurrentTabAllowed = allowedTabs.some(tab => tab.id === activeTab);
-      if (!isCurrentTabAllowed) {
-        setActiveTab(allowedTabs[0].id);
-      }
-    }
-  }, [activeTab]);
   const { registrationId } = useParams();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
