@@ -4856,21 +4856,35 @@ ${currentDate} ${currentTime}`;
 
             {/* Tabs Navigation */}
             <div className="border-b border-gray-200 mb-6 relative">
-              <div className="flex space-x-1 overflow-x-auto scrollbar-hide">
-                {getAllowedTabs().map((tab) => (
+              {getAllowedTabs().length > 0 ? (
+                <div className="flex space-x-1 overflow-x-auto scrollbar-hide">
+                  {getAllowedTabs().map((tab) => (
+                    <button
+                      key={tab.id}
+                      type="button"
+                      onClick={() => setActiveTab(tab.id)}
+                      className={`px-4 py-2 text-sm font-medium whitespace-nowrap relative ${
+                        activeTab === tab.id
+                          ? 'border-b-2 border-white text-black bg-white -mb-0.5 z-10'
+                          : 'border-b-2 border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-50'
+                      }`}
+                    >
+                      {tab.name}
+                    </button>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <div className="text-gray-500 text-lg mb-2">🔒 Access Restricted</div>
+                  <p className="text-gray-600 mb-4">You don't have permission to access any registration tabs.</p>
                   <button
-                    key={tab.id}
-                    type="button"
-                    onClick={() => setActiveTab(tab.id)}
-                    className={`px-4 py-2 text-sm font-medium whitespace-nowrap relative ${
-                      activeTab === tab.id
-                        ? 'border-b-2 border-white text-black bg-white -mb-0.5 z-10'
-                        : 'border-b-2 border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-50'
-                    }`}
+                    onClick={() => navigate('/admin-menu')}
+                    className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
                   >
-                    {tab.name}
+                    Back to Menu
                   </button>
-                ))}
+                </div>
+              )}
               </div>
             </div>
 
