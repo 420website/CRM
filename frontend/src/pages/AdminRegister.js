@@ -53,14 +53,7 @@ const AdminRegister = () => {
       { id: 'attachments', name: 'Attachments' }
     ];
     
-    const allowedTabs = allTabs.filter(tab => hasTabPermission(tab.name));
-    
-    // Ensure at least one tab is always available (default to Client if no permissions)
-    if (allowedTabs.length === 0) {
-      return [{ id: 'patient', name: 'Client' }];
-    }
-    
-    return allowedTabs;
+    return allTabs.filter(tab => hasTabPermission(tab.name));
   };
 
   const [pinVerified, setPinVerified] = useState(false);
