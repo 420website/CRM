@@ -1090,8 +1090,11 @@ ${currentDate} ${currentTime}`;
       if (!isCurrentTabAllowed) {
         setActiveTab(allowedTabs[0].id);
       }
+    } else {
+      // If user has no tab permissions, redirect to menu
+      navigate('/admin-menu');
     }
-  }, [activeTab]);
+  }, [activeTab, navigate]);
   
   // Attachment states
   const [documentType, setDocumentType] = useState('');
