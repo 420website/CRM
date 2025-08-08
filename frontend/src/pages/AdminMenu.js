@@ -90,26 +90,33 @@ const AdminMenu = () => {
 
           {/* Menu Options */}
           <div className="space-y-6">
-            <button
-              onClick={handleDashboard}
-              className="w-full py-4 px-6 rounded-lg text-lg font-medium flex items-center justify-center gap-3 text-white transition-colors"
-              style={{ backgroundColor: '#000000' }}
-              onMouseEnter={(e) => e.target.style.backgroundColor = '#1f2937'}
-              onMouseLeave={(e) => e.target.style.backgroundColor = '#000000'}
-            >
-              📊 Dashboard
-            </button>
+            {/* Dashboard - Only show if user has tab permissions */}
+            {hasTabPermissions && (
+              <button
+                onClick={handleDashboard}
+                className="w-full py-4 px-6 rounded-lg text-lg font-medium flex items-center justify-center gap-3 text-white transition-colors"
+                style={{ backgroundColor: '#000000' }}
+                onMouseEnter={(e) => e.target.style.backgroundColor = '#1f2937'}
+                onMouseLeave={(e) => e.target.style.backgroundColor = '#000000'}
+              >
+                📊 Dashboard
+              </button>
+            )}
 
-            <button
-              onClick={handleRegistration}
-              className="w-full py-4 px-6 rounded-lg text-lg font-medium flex items-center justify-center gap-3 text-white transition-colors"
-              style={{ backgroundColor: '#000000' }}
-              onMouseEnter={(e) => e.target.style.backgroundColor = '#1f2937'}
-              onMouseLeave={(e) => e.target.style.backgroundColor = '#000000'}
-            >
-              📝 Registration
-            </button>
+            {/* Registration - Only show if user has tab permissions */}
+            {hasTabPermissions && (
+              <button
+                onClick={handleRegistration}
+                className="w-full py-4 px-6 rounded-lg text-lg font-medium flex items-center justify-center gap-3 text-white transition-colors"
+                style={{ backgroundColor: '#000000' }}
+                onMouseEnter={(e) => e.target.style.backgroundColor = '#1f2937'}
+                onMouseLeave={(e) => e.target.style.backgroundColor = '#000000'}
+              >
+                📝 Registration
+              </button>
+            )}
 
+            {/* Analytics - Always available */}
             <button
               onClick={handleAnalytics}
               className="w-full py-4 px-6 rounded-lg text-lg font-medium flex items-center justify-center gap-3 text-white transition-colors"
