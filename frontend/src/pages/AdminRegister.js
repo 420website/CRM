@@ -53,7 +53,14 @@ const AdminRegister = () => {
       { id: 'attachments', name: 'Attachments' }
     ];
     
-    return allTabs.filter(tab => hasTabPermission(tab.name));
+    const allowedTabs = allTabs.filter(tab => hasTabPermission(tab.name));
+    
+    // Ensure at least one tab is always available (default to Client if no permissions)
+    if (allowedTabs.length === 0) {
+      return [{ id: 'patient', name: 'Client' }];
+    }
+    
+    return allowedTabs;
   };
 
   // Set default active tab based on user permissions
