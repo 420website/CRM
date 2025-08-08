@@ -4886,8 +4886,6 @@ ${currentDate} ${currentTime}`;
                 </div>
               )}
             </div>
-              </div>
-            </div>
 
             {/* Tab Content */}
             <div className="tab-content">
