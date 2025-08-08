@@ -23,12 +23,7 @@ const AdminRegister = () => {
   const hasTabPermission = (tabName) => {
     const permissions = getCurrentUserPermissions();
     
-    // If no permissions are set, allow all tabs (backward compatibility)
-    if (Object.keys(permissions).length === 0) {
-      return true;
-    }
-    
-    // Check if user has permission for this specific tab
+    // Only allow access if permission is explicitly set to true
     return permissions[tabName] === true;
   };
 
