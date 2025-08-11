@@ -646,7 +646,6 @@ const AdminDashboard = () => {
             </button>
             <button
               onClick={() => {
-                sessionStorage.setItem('admin_authenticated', 'true');
                 navigate('/admin-register');
               }}
               className="inline-flex items-center gap-1 px-2 py-1 bg-black text-white rounded-md hover:bg-gray-800 transition-colors text-xs font-medium"
