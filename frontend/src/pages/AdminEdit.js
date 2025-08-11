@@ -38,7 +38,15 @@ const AdminEdit = () => {
       { id: 'attachments', name: 'Attachments' }
     ];
     
-    return allTabs.filter(tab => hasTabPermission(tab.name));
+    // Special handling for admin user (PIN 0224) - always has all permissions
+    if (isAdmin()) {
+      return allTabs; // Admin has access to all tabs
+    }
+
+    const userPermissions = getCurrentUserPermissions();
+    
+    // Filter tabs based on user permissions
+    return allTabs.filter(tab => userPermissions[tab.name] === true);
   };
 
   const { registrationId } = useParams();
