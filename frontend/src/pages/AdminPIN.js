@@ -12,7 +12,7 @@ const AdminPIN = () => {
   const [adminEmail, setAdminEmail] = useState('');
   const navigate = useNavigate();
   
-  const { login, set2FAPending, complete2FA, isFullyAuthenticated, setError: setAuthError } = useAuth();
+  const { login, set2FAPending, complete2FA, isFullyAuthenticated, setError: setAuthError, sessionToken } = useAuth();
 
   // Check if user is already fully authenticated and redirect
   useEffect(() => {
