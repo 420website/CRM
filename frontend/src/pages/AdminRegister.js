@@ -1,9 +1,11 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from '../context/AuthContext';
 import AddressAutocomplete from '../components/AddressAutocomplete';
 
 const AdminRegister = () => {
   const navigate = useNavigate();
+  const { isAdmin, hasPermission, permissions } = useAuth();
   
   // Get current user permissions
   const getCurrentUserPermissions = () => {
