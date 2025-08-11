@@ -27,6 +27,11 @@ const AdminMenu = () => {
     navigate('/');
   };
 
+  const handleLogout = () => {
+    logout();
+    navigate('/');
+  };
+
   const handleDashboard = () => {
     // Navigate to dashboard (authentication already verified by ProtectedRoute)
     navigate('/admin-dashboard');
