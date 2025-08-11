@@ -1072,17 +1072,21 @@ ${currentDate} ${currentTime}`;
 
   // Set default active tab based on user permissions
   useEffect(() => {
+    // Check if user has any allowed tabs, redirect if none
     const allowedTabs = getAllowedTabs();
-    if (allowedTabs.length > 0) {
-      // If current active tab is not allowed, switch to first allowed tab
-      const isCurrentTabAllowed = allowedTabs.some(tab => tab.id === activeTab);
-      if (!isCurrentTabAllowed) {
-        setActiveTab(allowedTabs[0].id);
-      }
-    } else {
-      // If user has no tab permissions, redirect to menu
+    if (allowedTabs.length === 0) {
       navigate('/admin-menu');
+      return;
     }
+    
+    // Set the first allowed tab as active if current tab is not allowed
+    const isCurrentTabAllowed = allowedTabs.some(tab => tab.id === activeTab);
+    if (!isCurrentTabAllowed) {
+      setActiveTab(allowedTabs[0].id);
+    }
+    
+    // User is already authenticated via ProtectedRoute, no need to check here
+    setPinVerified(true);
   }, [activeTab, navigate]);
   
   // Attachment states
