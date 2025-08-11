@@ -2471,7 +2471,7 @@ async def create_attachment_share(request: ShareAttachmentRequest):
         
         # Generate URLs using the correct external base URL
         # Use the external URL that matches the frontend's REACT_APP_BACKEND_URL
-        base_url = "https://cd556dd9-d36b-422e-8110-4b1830397661.preview.emergentagent.com"
+        base_url = "https://258401ff-ff29-421c-8498-4969ee7788f0.preview.emergentagent.com"
         share_url = f"{base_url}/api/shared-attachment/{share_id}/download"
         preview_url = f"{base_url}/api/shared-attachment/{share_id}/preview"
         

@@ -44,7 +44,7 @@ def test_share_attachment():
                 print("✅ Preview URL does not contain localhost references")
                 
             # Check for correct domain
-            expected_domain = "https://cd556dd9-d36b-422e-8110-4b1830397661.preview.emergentagent.com"
+            expected_domain = "https://258401ff-ff29-421c-8498-4969ee7788f0.preview.emergentagent.com"
             if data.get('share_url', '').startswith(expected_domain):
                 print(f"✅ Share URL uses correct external domain: {expected_domain}")
             else:

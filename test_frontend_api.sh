@@ -15,7 +15,7 @@ cat > /tmp/test_api.html << 'EOF'
     <div id="results"></div>
     
     <script>
-        const API_URL = 'https://cd556dd9-d36b-422e-8110-4b1830397661.preview.emergentagent.com';
+        const API_URL = 'https://258401ff-ff29-421c-8498-4969ee7788f0.preview.emergentagent.com';
         const results = document.getElementById('results');
         
         async function testAPIs() {

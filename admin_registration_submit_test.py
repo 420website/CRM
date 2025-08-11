@@ -17,7 +17,7 @@ load_dotenv('/app/frontend/.env')
 class AdminRegistrationSubmitTester:
     def __init__(self):
         # Use the same URL that frontend uses
-        self.base_url = os.getenv('REACT_APP_BACKEND_URL', 'https://cd556dd9-d36b-422e-8110-4b1830397661.preview.emergentagent.com')
+        self.base_url = os.getenv('REACT_APP_BACKEND_URL', 'https://258401ff-ff29-421c-8498-4969ee7788f0.preview.emergentagent.com')
         self.api_url = f"{self.base_url}/api"
         self.tests_run = 0
         self.tests_passed = 0

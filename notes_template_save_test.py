@@ -270,9 +270,9 @@ def main():
                     base_url = line.split('=')[1].strip()
                     break
             else:
-                base_url = "https://cd556dd9-d36b-422e-8110-4b1830397661.preview.emergentagent.com"
+                base_url = "https://258401ff-ff29-421c-8498-4969ee7788f0.preview.emergentagent.com"
     except:
-        base_url = "https://cd556dd9-d36b-422e-8110-4b1830397661.preview.emergentagent.com"
+        base_url = "https://258401ff-ff29-421c-8498-4969ee7788f0.preview.emergentagent.com"
     
     print(f"Using backend URL: {base_url}")
     

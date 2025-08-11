@@ -94,7 +94,7 @@ class AttachmentSharingURLTester:
             print(f"Preview URL: {response.get('preview_url')}")
             
             # Verify URLs use the correct external domain
-            expected_domain = "https://cd556dd9-d36b-422e-8110-4b1830397661.preview.emergentagent.com"
+            expected_domain = "https://258401ff-ff29-421c-8498-4969ee7788f0.preview.emergentagent.com"
             
             if response.get('share_url').startswith(expected_domain):
                 print(f"✅ Share URL uses correct external domain: {expected_domain}")

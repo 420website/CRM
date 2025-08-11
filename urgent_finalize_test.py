@@ -11,7 +11,7 @@ from datetime import date
 import time
 
 # Get the backend URL from environment
-BACKEND_URL = "https://cd556dd9-d36b-422e-8110-4b1830397661.preview.emergentagent.com/api"
+BACKEND_URL = "https://258401ff-ff29-421c-8498-4969ee7788f0.preview.emergentagent.com/api"
 
 def test_admin_registration_finalization_email():
     """Test admin registration creation and finalization to check email address"""
