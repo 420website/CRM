@@ -8,50 +8,19 @@ const AdminMenu = () => {
 
   // Get current user permissions
   const getCurrentUserPermissions = () => {
-    try {
-      const currentUser = sessionStorage.getItem('current_user');
-      if (currentUser) {
-        const userData = JSON.parse(currentUser);
-        return userData.permissions || {};
-      }
-    } catch (error) {
-      console.error('Error getting user permissions:', error);
-    }
+    // This function is no longer needed as permissions are in the context
     return {};
   };
 
   // Check if user has any tab permissions
   const checkTabPermissions = () => {
-    const permissions = getCurrentUserPermissions();
-    const tabPermissions = ['Client', 'Tests', 'Medication', 'Dispensing', 'Notes', 'Activities', 'Interactions', 'Attachments'];
-    
-    // Check if user has permission for any tab
-    return tabPermissions.some(tab => permissions[tab] === true);
+    // This function is no longer needed as hasTabPermissions is in the context
+    return hasTabPermissions();
   };
 
   useEffect(() => {
-    // Check if current user is the secret admin (PIN 0224)
-    const currentUser = sessionStorage.getItem('current_user');
-    if (currentUser) {
-      try {
-        const userData = JSON.parse(currentUser);
-        
-        // Check if secret admin
-        const isAdmin = userData.user_id === "admin" && userData.user_type === "admin";
-        setIsSecretAdmin(isAdmin);
-        
-        // Admin always has tab permissions, for others check their permissions
-        if (isAdmin) {
-          setHasTabPermissions(true);
-        } else {
-          setHasTabPermissions(checkTabPermissions());
-        }
-      } catch (error) {
-        console.error('Error parsing user data:', error);
-        setIsSecretAdmin(false);
-        setHasTabPermissions(false);
-      }
-    }
+    // No need to check permissions here as they're handled by the context
+    // and ProtectedRoute component
   }, []);
 
   const goBack = () => {
