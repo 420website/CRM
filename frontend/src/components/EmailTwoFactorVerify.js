@@ -102,10 +102,9 @@ const EmailTwoFactorVerify = ({ sessionToken, adminEmail, onVerificationSuccess,
       const data = await response.json();
       
       // For new users, mark their email as verified
-      const currentUser = JSON.parse(sessionStorage.getItem('current_user') || '{}');
-      if (currentUser.user_type === 'user' && currentUser.user_id) {
+      if (user?.user_type === 'user' && user?.user_id) {
         try {
-          await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/users/${currentUser.user_id}/mark-email-verified`, {
+          await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/users/${user.user_id}/mark-email-verified`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' }
           });
