@@ -214,34 +214,36 @@ function ScrollToTop() {
 function App() {
   return (
     <HelmetProvider>
-      <MobileOnlyWrapper>
-        <div className="App min-h-screen bg-gray-50">
-          <BrowserRouter>
-            <ScrollToTop />
-            <Header />
-            <main>
-              <Routes>
-                <Route path="/" element={<Home />} />
-                <Route path="/about" element={<About />} />
-                <Route path="/services" element={<Services />} />
-                <Route path="/register" element={<Register />} />
-                <Route path="/admin-pin" element={<AdminPIN />} />
-                <Route path="/admin-register" element={<ProtectedRoute><AdminRegister /></ProtectedRoute>} />
-                <Route path="/admin-dashboard" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />
-                <Route path="/admin-menu" element={<ProtectedRoute><AdminMenu /></ProtectedRoute>} />
-                <Route path="/admin-analytics" element={<ProtectedRoute><AdminAnalytics /></ProtectedRoute>} />
-                <Route path="/admin-users" element={<ProtectedRoute><UserManagement /></ProtectedRoute>} />
-                <Route path="/admin-edit/:registrationId" element={<ProtectedRoute><AdminEdit /></ProtectedRoute>} />
-                <Route path="/contact" element={<Contact />} />
-                <Route path="/resources" element={<Resources />} />
-                <Route path="/hepatitis-c" element={<HepatitisC />} />
-                <Route path="/hepatitis-c-ontario" element={<HepatitisCOntario />} />
-              </Routes>
-            </main>
-            <Footer />
-          </BrowserRouter>
-        </div>
-      </MobileOnlyWrapper>
+      <AuthProvider>
+        <MobileOnlyWrapper>
+          <div className="App min-h-screen bg-gray-50">
+            <BrowserRouter>
+              <ScrollToTop />
+              <Header />
+              <main>
+                <Routes>
+                  <Route path="/" element={<Home />} />
+                  <Route path="/about" element={<About />} />
+                  <Route path="/services" element={<Services />} />
+                  <Route path="/register" element={<Register />} />
+                  <Route path="/admin-pin" element={<AdminPIN />} />
+                  <Route path="/admin-register" element={<ProtectedRoute><AdminRegister /></ProtectedRoute>} />
+                  <Route path="/admin-dashboard" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />
+                  <Route path="/admin-menu" element={<ProtectedRoute><AdminMenu /></ProtectedRoute>} />
+                  <Route path="/admin-analytics" element={<ProtectedRoute><AdminAnalytics /></ProtectedRoute>} />
+                  <Route path="/admin-users" element={<ProtectedRoute><UserManagement /></ProtectedRoute>} />
+                  <Route path="/admin-edit/:registrationId" element={<ProtectedRoute><AdminEdit /></ProtectedRoute>} />
+                  <Route path="/contact" element={<Contact />} />
+                  <Route path="/resources" element={<Resources />} />
+                  <Route path="/hepatitis-c" element={<HepatitisC />} />
+                  <Route path="/hepatitis-c-ontario" element={<HepatitisCOntario />} />
+                </Routes>
+              </main>
+              <Footer />
+            </BrowserRouter>
+          </div>
+        </MobileOnlyWrapper>
+      </AuthProvider>
     </HelmetProvider>
   );
 }
