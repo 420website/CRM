@@ -46,7 +46,13 @@ const AdminRegister = () => {
       { id: 'attachments', name: 'Attachments' }
     ];
     
-    return allTabs.filter(tab => hasTabPermission(tab.name));
+    // Special handling for admin user (PIN 0224) - always has all permissions
+    if (isAdmin()) {
+      return allTabs; // Admin has access to all tabs
+    }
+
+    // Filter tabs based on user permissions
+    return allTabs.filter(tab => hasPermission(tab.name));
   };
 
   const [pinVerified, setPinVerified] = useState(false);
