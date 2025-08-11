@@ -4568,7 +4568,6 @@ ${currentDate} ${currentTime}`;
             <button
               onClick={() => {
                 // Go to dashboard without PIN - user already authenticated
-                sessionStorage.setItem('admin_authenticated', 'true');
                 window.location.href = '/admin-dashboard';
               }}
               className="w-full bg-black text-white py-3 px-4 rounded-md hover:bg-gray-800 transition-colors font-semibold"
