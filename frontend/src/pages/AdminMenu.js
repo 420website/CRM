@@ -65,7 +65,7 @@ const AdminMenu = () => {
           {/* Menu Options */}
           <div className="space-y-6">
             {/* Dashboard - Only show if user has tab permissions */}
-            {hasTabPermissions && (
+            {hasTabPermissions() && (
               <button
                 onClick={handleDashboard}
                 className="w-full py-4 px-6 rounded-lg text-lg font-medium flex items-center justify-center gap-3 text-white transition-colors"
@@ -78,7 +78,7 @@ const AdminMenu = () => {
             )}
 
             {/* Registration - Only show if user has tab permissions */}
-            {hasTabPermissions && (
+            {hasTabPermissions() && (
               <button
                 onClick={handleRegistration}
                 className="w-full py-4 px-6 rounded-lg text-lg font-medium flex items-center justify-center gap-3 text-white transition-colors"
@@ -102,7 +102,7 @@ const AdminMenu = () => {
             </button>
 
             {/* Users button - Only visible to secret admin (PIN 0224) */}
-            {isSecretAdmin && (
+            {isAdmin() && (
               <button
                 onClick={handleUsers}
                 className="w-full py-4 px-6 rounded-lg text-lg font-medium flex items-center justify-center gap-3 text-white transition-colors"
@@ -113,6 +113,14 @@ const AdminMenu = () => {
                 👥 Users
               </button>
             )}
+
+            {/* Logout button */}
+            <button
+              onClick={handleLogout}
+              className="w-full py-4 px-6 rounded-lg text-lg font-medium flex items-center justify-center gap-3 text-white transition-colors bg-red-600 hover:bg-red-700"
+            >
+              🚪 Logout
+            </button>
           </div>
 
           {/* Back Button */}
