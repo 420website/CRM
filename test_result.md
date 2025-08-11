@@ -28,7 +28,6 @@ backend:
     status_history: []
 
 backend:
-backend:
   - task: "Admin Dashboard State Management Bug Fix Testing"
     implemented: true
     working: true
