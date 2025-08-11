@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 import EmailTwoFactorSetup from '../components/EmailTwoFactorSetup';
 import EmailTwoFactorVerify from '../components/EmailTwoFactorVerify';
 
@@ -8,15 +9,17 @@ const AdminPIN = () => {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [step, setStep] = useState('pin'); // 'pin', '2fa-setup', '2fa-verify'
-  const [sessionToken, setSessionToken] = useState('');
   const [adminEmail, setAdminEmail] = useState('');
   const navigate = useNavigate();
+  
+  const { login, set2FAPending, complete2FA, isFullyAuthenticated, setError: setAuthError } = useAuth();
 
-  // Check if user is already authenticated and should bypass PIN/2FA
+  // Check if user is already fully authenticated and redirect
   useEffect(() => {
-    // You can add logic here to check for existing authentication
-    // For now, we'll rely on the normal PIN -> 2FA flow
-  }, []);
+    if (isFullyAuthenticated()) {
+      navigate('/admin-menu');
+    }
+  }, [isFullyAuthenticated, navigate]);
 
   const handlePinSubmit = async (e) => {
     e.preventDefault();
