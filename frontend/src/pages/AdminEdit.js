@@ -14,23 +14,15 @@ const AdminEdit = () => {
 
   // Check if user has permission for a tab
   const hasTabPermission = (tabName) => {
-    const permissions = getCurrentUserPermissions();
-    
     // Special handling for admin user (PIN 0224) - always has all permissions
-    try {
-      const currentUser = sessionStorage.getItem('current_user');
-      if (currentUser) {
-        const userData = JSON.parse(currentUser);
-        if (userData.user_id === "admin" && userData.user_type === "admin") {
-          return true; // Admin has access to all tabs
-        }
-      }
-    } catch (error) {
-      console.error('Error checking admin status:', error);
+    if (isAdmin()) {
+      return true; // Admin has access to all tabs
     }
     
+    const userPermissions = getCurrentUserPermissions();
+    
     // For regular users, only allow access if permission is explicitly set to true
-    return permissions[tabName] === true;
+    return userPermissions[tabName] === true;
   };
 
   // Get allowed tabs based on user permissions
