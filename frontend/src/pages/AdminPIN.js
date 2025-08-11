@@ -119,15 +119,15 @@ const AdminPIN = () => {
       // Move to verification step
       setStep('2fa-verify');
     } else {
-      // After 2FA setup is complete and verified, set authentication flag and go to admin menu
-      sessionStorage.setItem('admin_authenticated', 'true');
+      // After 2FA setup is complete and verified, mark as fully authenticated
+      complete2FA();
       navigate('/admin-menu');
     }
   };
 
   const handleTwoFactorVerifySuccess = () => {
-    // After 2FA verification, set authentication flag and go to admin menu
-    sessionStorage.setItem('admin_authenticated', 'true');
+    // After 2FA verification, mark as fully authenticated
+    complete2FA();
     navigate('/admin-menu');
   };
 
@@ -135,7 +135,6 @@ const AdminPIN = () => {
     setStep('pin');
     setPin('');
     setError('');
-    setSessionToken('');
     setAdminEmail('');
   };
 
