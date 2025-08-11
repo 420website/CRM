@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useAuth } from '../context/AuthContext';
 
 const EmailTwoFactorVerify = ({ sessionToken, adminEmail, onVerificationSuccess, onCancel }) => {
   const [emailCode, setEmailCode] = useState('');
@@ -8,6 +9,8 @@ const EmailTwoFactorVerify = ({ sessionToken, adminEmail, onVerificationSuccess,
   const [codeSent, setCodeSent] = useState(false);
   const [timeLeft, setTimeLeft] = useState(0);
   const [showInputScreen, setShowInputScreen] = useState(false);
+  
+  const { user } = useAuth();
 
   // Countdown timer
   useEffect(() => {
