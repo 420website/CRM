@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from '../context/AuthContext';
 
 // Virtual Scrolling Component for better performance
 const VirtualizedList = ({ items, renderItem, itemHeight = 100 }) => {
