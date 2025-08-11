@@ -9,16 +9,7 @@ const AdminRegister = () => {
   
   // Get current user permissions
   const getCurrentUserPermissions = () => {
-    try {
-      const currentUser = sessionStorage.getItem('current_user');
-      if (currentUser) {
-        const userData = JSON.parse(currentUser);
-        return userData.permissions || {};
-      }
-    } catch (error) {
-      console.error('Error getting user permissions:', error);
-    }
-    return {};
+    return permissions;
   };
 
   // Check if user has permission for a tab
