@@ -68,33 +68,34 @@ const AdminPIN = () => {
       console.log('PIN verification response:', data); // Debug log
       
       if (data.pin_valid) {
-        setSessionToken(data.session_token);
-        
-        // Store user information for later use
-        sessionStorage.setItem('current_user', JSON.stringify({
+        // Prepare user data for context
+        const userData = {
           user_id: data.user_id,
           user_type: data.user_type,
           firstName: data.firstName,
           lastName: data.lastName,
           email: data.email,
           permissions: data.permissions
-        }));
+        };
         
         // Check if user needs email verification (first time users)
         if (data.needs_email_verification) {
           // First-time user - must verify email before getting access
           console.log('First-time user, requiring email verification');
           setAdminEmail(data.two_fa_email);
+          set2FAPending(userData, data.session_token);
           setStep('2fa-setup'); // This will send verification email
         } else if (data.two_fa_enabled && data.two_fa_email) {
           // Returning user with 2FA already enabled - go directly to verification
           console.log('2FA enabled, going to verification screen');
           setAdminEmail(data.two_fa_email);
+          set2FAPending(userData, data.session_token);
           setStep('2fa-verify');
         } else {
           // This shouldn't happen with the new logic, but fallback to setup
           console.log('Fallback to 2FA setup');
           setAdminEmail(data.two_fa_email);
+          set2FAPending(userData, data.session_token);
           setStep('2fa-setup');
         }
       }
@@ -106,6 +107,7 @@ const AdminPIN = () => {
         setStep('locked-out'); // New step for lockout display
       } else {
         setError(err.message);
+        setAuthError(err.message);
       }
     } finally {
       setLoading(false);
