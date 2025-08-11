@@ -31,15 +31,28 @@ function MobileOnlyWrapper({ children }) {
 
   useEffect(() => {
     const checkAccess = () => {
-      // Check if user is authenticated as admin
-      const adminAuthenticated = sessionStorage.getItem('admin_authenticated');
-      const currentUser = sessionStorage.getItem('current_user');
+      // Check if user is authenticated as admin through localStorage (new auth system)
+      const authState = localStorage.getItem('auth_state');
+      let adminAuthenticated = false;
+      
+      if (authState) {
+        try {
+          const authData = JSON.parse(authState);
+          adminAuthenticated = authData.isAuthenticated && authData.is2FAComplete;
+        } catch (error) {
+          console.error('Error parsing auth state:', error);
+        }
+      }
+      
+      // Check legacy sessionStorage for backward compatibility
+      const legacyAdminAuth = sessionStorage.getItem('admin_authenticated');
+      const legacyCurrentUser = sessionStorage.getItem('current_user');
       
       // Check if accessing admin routes directly by looking at current URL
       const isAdminRoute = window.location.pathname.startsWith('/admin');
       
       // Admin users can access from any device
-      if (adminAuthenticated === 'true' || currentUser !== null || isAdminRoute) {
+      if (adminAuthenticated || legacyAdminAuth === 'true' || legacyCurrentUser !== null || isAdminRoute) {
         setIsAdmin(true);
         setIsLoading(false);
         return;
