@@ -1,10 +1,10 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 
 const AdminMenu = () => {
   const navigate = useNavigate();
-  const [isSecretAdmin, setIsSecretAdmin] = useState(false);
-  const [hasTabPermissions, setHasTabPermissions] = useState(false);
+  const { isAdmin, hasTabPermissions, logout } = useAuth();
 
   // Get current user permissions
   const getCurrentUserPermissions = () => {
