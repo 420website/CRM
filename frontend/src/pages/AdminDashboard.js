@@ -43,48 +43,24 @@ const VirtualizedList = ({ items, renderItem, itemHeight = 100 }) => {
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
+  const { logout } = useAuth();
   
   // Get current user permissions
   const getCurrentUserPermissions = () => {
-    try {
-      const currentUser = sessionStorage.getItem('current_user');
-      if (currentUser) {
-        const userData = JSON.parse(currentUser);
-        return userData.permissions || {};
-      }
-    } catch (error) {
-      console.error('Error getting user permissions:', error);
-    }
+    // This function is no longer needed as permissions are managed by AuthContext
     return {};
   };
 
   // Check if user has any tab permissions
   const hasTabPermissions = () => {
-    // Special handling for admin user (PIN 0224) - always has all permissions
-    try {
-      const currentUser = sessionStorage.getItem('current_user');
-      if (currentUser) {
-        const userData = JSON.parse(currentUser);
-        if (userData.user_id === "admin" && userData.user_type === "admin") {
-          return true; // Admin has access to all tabs
-        }
-      }
-    } catch (error) {
-      console.error('Error checking admin status:', error);
-    }
-
-    const permissions = getCurrentUserPermissions();
-    const tabPermissions = ['Client', 'Tests', 'Medication', 'Dispensing', 'Notes', 'Activities', 'Interactions', 'Attachments'];
-    
-    // Check if user has permission for any tab
-    return tabPermissions.some(tab => permissions[tab] === true);
+    // This function is no longer needed as it's handled by ProtectedRoute
+    return true;
   };
 
   // Check permissions and redirect if necessary
   useEffect(() => {
-    if (!hasTabPermissions()) {
-      navigate('/admin-menu');
-    }
+    // Permission checking is now handled by ProtectedRoute
+    // No need for additional checks here
   }, [navigate]);
   
   // Core state
