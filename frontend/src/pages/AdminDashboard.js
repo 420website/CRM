@@ -481,7 +481,6 @@ const AdminDashboard = () => {
       <div className="flex gap-2 mt-4 flex-wrap">
         <button
           onClick={() => {
-            sessionStorage.setItem('admin_authenticated', 'true');
             navigate(`/admin-edit/${item.id}`);
           }}
           className="bg-black hover:bg-gray-800 text-white py-2 px-3 rounded-md transition-colors text-xs font-medium flex-1 min-w-[60px]"
