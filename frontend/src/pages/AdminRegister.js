@@ -4578,7 +4578,6 @@ ${currentDate} ${currentTime}`;
               <button
                 onClick={() => {
                   // Go directly to edit the patient file
-                  sessionStorage.setItem('admin_authenticated', 'true');
                   window.location.href = `/admin-edit/${submitStatus.id}`;
                 }}
                 className="w-full bg-black text-white py-3 px-4 rounded-md hover:bg-gray-800 transition-colors font-semibold"
