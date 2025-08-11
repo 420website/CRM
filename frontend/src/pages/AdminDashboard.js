@@ -625,11 +625,8 @@ const AdminDashboard = () => {
   };
 
   const handleLogout = () => {
-    // Clear authentication flags
-    sessionStorage.removeItem('admin_authenticated');
-    sessionStorage.removeItem('current_user');
-    
-    // Navigate to home page
+    // Use AuthContext logout function
+    logout();
     navigate('/');
   };
 
