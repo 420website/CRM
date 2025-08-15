@@ -1,0 +1,22 @@
+#syntax=docker/dockerfile:1 
+
+FROM node:23-slim
+
+# Create/Set dir
+WORKDIR /frontend 
+
+# Get yarn 
+RUN corepack enable && corepack prepare yarn@stable --activate
+
+# Copy only package files first
+COPY package.json yarn.lock ./
+
+# Install dependencies 
+RUN yarn install --frozen-lockfile
+
+# Copy source
+COPY . .
+
+
+
+

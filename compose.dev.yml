@@ -1,0 +1,84 @@
+services:
+  mongodb:
+    image: mongodb/mongodb-community-server:latest
+    container_name: mongodb
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+    profiles:
+      - dev 
+      - backend 
+    environment:
+      MONGODB_INITDB_ROOT_USERNAME: root
+      MONGODB_INITDB_ROOT_PASSWORD: example
+    networks:
+      - backend-net
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.dev 
+    env_file:
+      - .env
+    environment:
+      - MONGO_URL=mongodb://root:example@mongodb:27017
+      - DB_NAME=my420_ca_db
+      - ENVIRONMENT=dev
+    volumes:
+      - ./persistent-data:/app/persistent-data
+      - ./scripts:/app/scripts
+      - ./backend:/backend
+    depends_on:
+      - mongodb
+    networks:
+      - backend-net
+      - frontend-net
+    profiles:
+      - dev 
+      - backend 
+    ports:
+      - "8000:8000"
+    command: > 
+      sh -c "
+        cd /app/scripts && npm install && \
+        cd /backend && uvicorn server:app --host 0.0.0.0 --port 8000 --reload
+      "
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.dev 
+    env_file:
+      - .env
+    environment: 
+      - MONGO_URL=mongodb://root:example@mongodb:27017
+      - DB_NAME=my420_ca_db
+      - ENVIRONMENT=dev
+    networks:
+      - frontend-net
+    ports:
+      - "3000:3000"
+    profiles:
+      - dev 
+      - frontend
+    volumes:
+      - ./frontend:/frontend
+    command: yarn start
+
+volumes:
+  mongo_data:
+
+networks:
+  frontend-net:
+    driver: bridge
+ 
+  db-net:
+    driver: bridge
+
+  backend-net:
+    driver: bridge
+
+
+

@@ -1,0 +1,73 @@
+name: Deploy to Production   
+
+on:
+  workflow_run:
+    workflows: ["run-tests"]
+    types: [completed]
+
+
+jobs:
+  deploy:
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+
+      - name: Deploy
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.PRODUCTION_IP  }}
+          username: ${{ secrets.PRODUCTION_USERNAME  }}
+          key: ${{ secrets.PRODUCTION_KEY_PRIVATE  }}
+          port: ${{  secrets.PRODUCTION_PORT  }}
+          script: |
+            REPO_DIR="$HOME/worklog"
+            REPO_URL="git@github.com:anthonyb8/worklog.git"
+
+            # Clone the repo if it doesn't exist
+            if [ ! -d "$REPO_DIR/.git" ]; then
+                echo "Repo not found, cloning..."
+                git clone "$REPO_URL" "$REPO_DIR"
+                cd "$REPO_DIR"
+            else
+                echo "Repo found, pulling latest changes..."
+                cd "$REPO_DIR"
+                git pull origin main 
+            fi
+
+            # Import application/ TLS envrionment varibles
+            cat > .env << 'EOF'
+            # Backend 
+            ALLOWED_ORIGINS=${{ secrets.ALLOWED_ORIGINS }}
+            JWT_ALGORITHM=${{ secrets.JWT_ALGORITHM }}
+            JWT_ACCESS_SECRET=${{ secrets.JWT_ACCESS_TOKEN }}
+            JWT_REFRESH_SECRET=${{ secrets.JWT_REFRESH_SECRET }} 
+            MFA_ENCRYPTION_KEY=${{ secrets.MFA_ENCRYPTION_KEY }}
+
+            # Database 
+            MYSQL_ROOT_PASSWORD=${{ secrets.MYSQL_ROOT_PASSWORD }} 
+            MYSQL_DATABASE=${{ secrets.MYSQL_DATABASE }}
+            MYSQL_USER=${{ secrets.MYSQL_USER }}
+            MYSQL_PASSWORD=${{ secrets.MYSQL_PASSWORD }}
+            MYSQL_HOST=${{ secrets.MYSQL_HOST }}
+            MYSQL_PORT=${{ secrets.MYSQL_PORT }}
+            DBMATE_DATABASE_URL=${{ secrets.DBMATE_DATABASE_URL }}
+            BACKEND_DATABASE_URL=${{ secrets.BACKEND_DATABASE_URL }}
+
+            # Frontend 
+            VITE_API_BASE_URL=${{ secrets.VITE_API_BASE_URL }}
+
+            # Nginx
+            CERTBOT_EMAIL=${{ secrets.CERTBOT_EMAIL }}
+            DOMAIN_ROOT=${{ secrets.DOMAIN_ROOT }}
+            DOMAIN_NAME=${{ secrets.DOMAIN_NAME }}
+            SSL_CERT=${{ secrets.SSL_CERT }}
+            SSL_CERT_KEY=${{secrets.SSL_CERT_KEY }}
+
+            EOF
+
+            # Make deploy script executable and run it
+            chmod +x ./scripts/deploy.sh 
+            ./scripts/deploy.sh
