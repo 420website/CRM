@@ -1,38 +1,38 @@
-name: Renew SSL Certs Weekly
-
-on:
-  schedule:
-    - cron: '0 4 * * 0' # every Sunday at 4 am UTC 
-
-jobs: 
-  renew-certs:
-    runs-on: ubuntu-latest 
-
-    steps:
-      - name: Deploy
-        uses: appleboy/ssh-action@v1
-        with:
-          host: ${{ secrets.PRODUCTION_IP  }}
-          username: ${{ secrets.PRODUCTION_USERNAME  }}
-          key: ${{ secrets.PRODUCTION_KEY_PRIVATE  }}
-          port: ${{  secrets.PRODUCTION_PORT  }}
-          script: |
-
-            REPO_DIR="$HOME/worklog"
-            REPO_URL="https://github.com/anthonyb8/worklog.git"
-
-            # Clone the repo if it doesn't exist
-            if [ ! -d "$REPO_DIR/.git" ]; then
-                echo "Repo not found, cloning..."
-                git clone "$REPO_URL" "$REPO_DIR"
-                cd "$REPO_DIR"
-            else
-                echo "Repo found, pulling latest changes..."
-                cd "$REPO_DIR"
-                git pull origin main 
-            fi
-
-            # Make deploy script executable and run it
-            chmod +x ./scripts/deploy.sh 
-            ./scripts/deploy.sh
-
+# name: Renew SSL Certs Weekly
+#
+# on:
+#   schedule:
+#     - cron: '0 4 * * 0' # every Sunday at 4 am UTC 
+#
+# jobs: 
+#   renew-certs:
+#     runs-on: ubuntu-latest 
+#
+#     steps:
+#       - name: Deploy
+#         uses: appleboy/ssh-action@v1
+#         with:
+#           host: ${{ secrets.PRODUCTION_IP  }}
+#           username: ${{ secrets.PRODUCTION_USERNAME  }}
+#           key: ${{ secrets.PRODUCTION_KEY_PRIVATE  }}
+#           port: ${{  secrets.PRODUCTION_PORT  }}
+#           script: |
+#
+#             REPO_DIR="$HOME/worklog"
+#             REPO_URL="https://github.com/anthonyb8/worklog.git"
+#
+#             # Clone the repo if it doesn't exist
+#             if [ ! -d "$REPO_DIR/.git" ]; then
+#                 echo "Repo not found, cloning..."
+#                 git clone "$REPO_URL" "$REPO_DIR"
+#                 cd "$REPO_DIR"
+#             else
+#                 echo "Repo found, pulling latest changes..."
+#                 cd "$REPO_DIR"
+#                 git pull origin main 
+#             fi
+#
+#             # Make deploy script executable and run it
+#             chmod +x ./scripts/deploy.sh 
+#             ./scripts/deploy.sh
+#
