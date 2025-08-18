@@ -29,8 +29,8 @@ services:
       - dev 
       - prod
     volumes:
-      - ./persistent-data:/app/persistent-data
-      - ./scripts:/app/scripts
+      - ./persistent-data:/persistent-data
+      - ./scripts:/scripts
     # entrypoint: ["/app/scripts/wait-for-db.sh"]
     command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "5000"]
 
