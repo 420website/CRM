@@ -3,72 +3,131 @@ services:
     image: mongodb/mongodb-community-server:latest
     container_name: mongodb
     restart: unless-stopped
-    ports:
-      - "27017:27017"
-    volumes:
-      - mongo_data:/data/db
-    profiles:
-      - dev 
-      - backend 
+    env_file: 
+      - .env
     environment:
       MONGODB_INITDB_ROOT_USERNAME: root
       MONGODB_INITDB_ROOT_PASSWORD: example
     networks:
       - backend-net
-
-  backend:
-    build: ./backend
-    env_file:
-      - .env
+    profiles:
+      - dev 
+      - prod 
     volumes:
-      - ./persistent-data:/app/persistent-data
-      - ./scripts:/app/scripts
+      - mongo_data:/data/db
+
+  backend: 
+    build: ./backend
+    env_file: 
+      - .env
     depends_on:
       - mongodb
     networks:
-      - backend-net
+      - backend-net 
       - frontend-net
     profiles:
       - dev 
-      - backend 
-    ports:
-      - "8000:8000"
-    command: > 
+      - prod
+    volumes:
+      - ./persistent-data:/app/persistent-data
+      - ./scripts:/app/scripts
+    entrypoint: ["/app/scripts/wait-for-db.sh"]
+    command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "5000"]
+
+
+  frontend-builder:
+    build: ./frontend
+    env_file: 
+      - .env
+    profiles:
+      - dev 
+      - prod
+    volumes:
+      - frontend_dist:/dist
+    command: >
       sh -c "
-        cd /app/scripts && npm install && \
-        cd /backend && uvicorn server:app --host 0.0.0.0 --port 8000
+        npm run build &&
+        cp -r dist/. /dist
       "
 
-  frontend:
-    build: ./frontend
-    env_file:
-      - .env
+  nginx-dev:
+    image: nginx:stable-alpine
+    ports:
+      - 8000:80
+    profiles:
+      - dev
     networks:
       - frontend-net
-    ports:
-      - "3000:3000"
-    profiles:
-      - dev 
-      - frontend
-    develop:
-      watch:
-        - path: ./frontend/src
-          target: /frontend/src
-          action: sync+restart
-    command: yarn start
+    volumes:
+      - frontend_dist:/usr/share/nginx/html:ro
+      - ./nginx/nginx.dev.conf:/etc/nginx/conf.d/default.conf:ro
 
-volumes:
+  nginx-setup:
+    image: nginx:alpine
+    ports:
+      - 80:80
+    env_file:
+      - .env
+    profiles:
+      - staging
+    volumes:
+      - certbot-etc:/etc/letsencrypt
+      - certbot-var:/var/lib/letsencrypt
+      - certbot-www:/var/www/certbot
+      - frontend_dist:/usr/share/nginx/html:ro
+      - ./nginx/nginx.setup.conf:/etc/nginx/templates/nginx.conf.template
+
+  certbot-setup:
+    image: certbot/certbot
+    env_file:
+      - .env
+    depends_on: 
+      - nginx-setup
+    profiles:
+      - staging
+    volumes:
+      - certbot-etc:/etc/letsencrypt
+      - certbot-var:/var/lib/letsencrypt
+      - certbot-www:/var/www/certbot
+      - ./scripts/cert_check.sh:/scripts/cert_check.sh:ro
+    entrypoint: ["sh"]
+    command: ["/scripts/cert_check.sh"]
+  
+  nginx-prod:
+    image: nginx:alpine 
+    ports:
+      - 80:80
+      - 443:443
+    env_file:
+      - .env
+    profiles:
+      - prod
+    networks:
+      - frontend-net
+    depends_on:
+      - backend
+    volumes:
+      - certbot-etc:/etc/letsencrypt
+      - certbot-var:/var/lib/letsencrypt
+      - certbot-www:/var/www/certbot
+      - frontend_dist:/usr/share/nginx/html:ro
+      - ./nginx/nginx.prod.conf:/etc/nginx/templates/nginx.conf.template
+
+volumes: 
+  frontend_dist:
   mongo_data:
+  certbot-etc:
+  certbot-var:
+  certbot-www:
 
 networks:
   frontend-net:
     driver: bridge
  
-  db-net:
-    driver: bridge
-
   backend-net:
     driver: bridge
 
-
+  # db-net:
+  #   driver: bridge
+  #
 

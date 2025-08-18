@@ -73,6 +73,6 @@ jobs:
 
             EOF
 
-            # # Make deploy script executable and run it
-            # chmod +x ./scripts/deploy.sh 
-            # ./scripts/deploy.sh
+            # Make deploy script executable and run it
+            chmod +x ./scripts/deploy.sh 
+            ./scripts/deploy.sh
