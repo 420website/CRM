@@ -1,9 +1,9 @@
-# name: Renew SSL Certs Weekly
-#
-# on:
-#   schedule:
-#     - cron: '0 4 * * 0' # every Sunday at 4 am UTC 
-#
+name: Renew SSL Certs Weekly
+
+on:
+  schedule:
+    - cron: '0 4 * * 0' # every Sunday at 4 am UTC 
+
 # jobs: 
 #   renew-certs:
 #     runs-on: ubuntu-latest 
