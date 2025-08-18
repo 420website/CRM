@@ -19,7 +19,7 @@ jobs:
           script: |
 
             REPO_DIR="$HOME/cmr"
-            REPO_URL="https://github.com/420website/crm.git"
+            REPO_URL="git@github.com:420website/crm.git"
 
             # Clone the repo if it doesn't exist
             if [ ! -d "$REPO_DIR/.git" ]; then
@@ -33,5 +33,5 @@ jobs:
             fi
 
             # Make deploy script executable and run it
-            chmod +x ./scripts/deploy.sh 
-            ./scripts/deploy.sh
+            # chmod +x ./scripts/deploy.sh 
+            # ./scripts/deploy.sh
