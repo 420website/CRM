@@ -50,6 +50,7 @@ jobs:
             SMTP_PORT=${{ secrets.SMTP_PORT }}
             SMTP_USERNAME=${{ secrets.SMTP_USERNAME }}
             SMTP_PASSWORD=${{ secrets.SMTP_PASSWORD }}
+            ANTHROPIC_API_KEY=${{ secrets.ANTHROPIC_API_KEY }}
 
             # Frontend 
             REACT_APP_BACKEND_URL=${{ secrets. REACT_APP_BACKEND_URL }}
@@ -57,6 +58,8 @@ jobs:
 
             # Database 
             MONGO_URL=${{ secrets.MONGO_URL }}
+            MONGODB_INIT_ROOT_USERNAME=${{ secrets.MONGODB_INIT_ROOT_USERNAME }} 
+            MONGODB_INITDB_ROOT_PASSWORD=${{ secrets.MONGODB_INITDB_ROOT_USERNAME }}
             DB_NAME=${{ secrets.DB_NAME }}
             DB_ROOT_PASSWORD=${{ secrets.DB_ROOT_PASSWORD }}
             DB_HOST=${{ secrets.DB_HOST }} 
