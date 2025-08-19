@@ -58,7 +58,7 @@ jobs:
 
             # Database 
             MONGO_URL=${{ secrets.MONGO_URL }}
-            MONGODB_INIT_ROOT_USERNAME=${{ secrets.MONGODB_INIT_ROOT_USERNAME }} 
+            MONGODB_INITDB_ROOT_USERNAME=${{ secrets.MONGODB_INITDB_ROOT_USERNAME }} 
             MONGODB_INITDB_ROOT_PASSWORD=${{ secrets.MONGODB_INITDB_ROOT_PASSWORD }}
             DB_NAME=${{ secrets.DB_NAME }}
             DB_ROOT_PASSWORD=${{ secrets.DB_ROOT_PASSWORD }}
