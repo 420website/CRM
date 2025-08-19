@@ -7,19 +7,19 @@ FROM python:3.11-slim
 RUN apt-get update && apt-get install -y curl \
   && curl -fsSL https://deb.nodesource.com/setup_lts.x | bash - \
   && apt-get install -y nodejs \
+  && npm install -g mongodb \
   && apt-get clean \
   && rm -rf /var/lib/apt/lists/*
+
 
 # Set working directory
 WORKDIR /backend
 
 # Copy only requirements first for better caching
 COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy Node.js package files and install dependencies
-COPY package.json package-lock.json* ./
-RUN npm install
+# Install dependencies
+RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy the rest of the app code
 COPY . .
