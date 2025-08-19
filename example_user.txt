@@ -1,0 +1,20 @@
+{
+  "firstName": "string",
+  "lastName": "string",
+  "email": "anthonybaxter819@gmail.com",
+  "phone": "stringstri",
+  "pin": "1234567890",
+  "permissions": {
+      "Client": true,
+      "Tests": true,
+      "Medication": true,
+      "Dispensing": true,
+      "Notes": true,
+      "Activities": true,
+      "Interactions": true,
+      "Attachments": true,
+      "admin_access": true,
+      "patient_records": true,
+      "reports": true
+  }
+}

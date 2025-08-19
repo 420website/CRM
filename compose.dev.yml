@@ -28,6 +28,7 @@ services:
       - ENVIRONMENT=dev
     volumes:
       - ./persistent-data:/app/persistent-data
+      - ./production-protected:/app/.production-protected
       - ./scripts:/app/scripts
       - ./backend:/backend
     depends_on:
@@ -43,7 +44,7 @@ services:
     command: > 
       sh -c "
         cd /app/scripts && npm install && \
-        cd /backend && uvicorn server:app --host 0.0.0.0 --port 8000 --reload
+        cd /backend && uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
       "
 
   frontend:
@@ -53,9 +54,8 @@ services:
     env_file:
       - .env
     environment: 
-      - MONGO_URL=mongodb://root:example@mongodb:27017
-      - DB_NAME=my420_ca_db
-      - ENVIRONMENT=dev
+      - REACT_APP_BACKEND_URL=http://localhost:8000
+      - REACT_APP_DEV_MODE=true
     networks:
       - frontend-net
     ports:
