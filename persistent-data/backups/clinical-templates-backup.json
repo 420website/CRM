@@ -4,31 +4,31 @@
     "name": "Positive",
     "content": "Dx 10+ years ago and treated. RNA - no labs available. However, has had ongoing risk factors with sharing pipes and straws. Counselled regarding risk factors. Point of care test was completed for HCV and tested positive at approximately two minutes with a dark line. HIV testing came back negative. Collected a DBS specimen and advised that it will take approximately 7 to 10 days for results. Referral: none. Client does have a valid address and has also provided a phone number for results.",
     "is_default": true,
-    "created_at": "2025-08-15T14:03:01.177Z",
-    "updated_at": "2025-08-15T14:03:01.177Z"
+    "created_at": "2025-08-19T12:54:33.503Z",
+    "updated_at": "2025-08-19T12:54:33.509Z"
   },
   {
     "id": "negative-pipes-default",
     "name": "Negative - Pipes",
     "content": "",
     "is_default": true,
-    "created_at": "2025-08-15T14:03:01.177Z",
-    "updated_at": "2025-08-15T14:03:01.177Z"
+    "created_at": "2025-08-19T12:54:33.509Z",
+    "updated_at": "2025-08-19T12:54:33.509Z"
   },
   {
     "id": "negative-pipes-straws-default",
     "name": "Negative - Pipes/Straws",
     "content": "",
     "is_default": true,
-    "created_at": "2025-08-15T14:03:01.177Z",
-    "updated_at": "2025-08-15T14:03:01.177Z"
+    "created_at": "2025-08-19T12:54:33.509Z",
+    "updated_at": "2025-08-19T12:54:33.509Z"
   },
   {
     "id": "negative-pipes-straws-needles-default",
     "name": "Negative - Pipes/Straws/Needles",
     "content": "",
     "is_default": true,
-    "created_at": "2025-08-15T14:03:01.177Z",
-    "updated_at": "2025-08-15T14:03:01.177Z"
+    "created_at": "2025-08-19T12:54:33.509Z",
+    "updated_at": "2025-08-19T12:54:33.509Z"
   }
 ]

@@ -4,23 +4,23 @@
     "name": "Consultation",
     "content": "",
     "is_default": true,
-    "created_at": "2025-08-15T14:03:02.212Z",
-    "updated_at": "2025-08-15T14:03:02.212Z"
+    "created_at": "2025-08-19T12:54:34.430Z",
+    "updated_at": "2025-08-19T12:54:34.430Z"
   },
   {
     "id": "lab-default",
     "name": "Lab",
     "content": "",
     "is_default": true,
-    "created_at": "2025-08-15T14:03:02.212Z",
-    "updated_at": "2025-08-15T14:03:02.212Z"
+    "created_at": "2025-08-19T12:54:34.430Z",
+    "updated_at": "2025-08-19T12:54:34.430Z"
   },
   {
     "id": "prescription-default",
     "name": "Prescription",
     "content": "",
     "is_default": true,
-    "created_at": "2025-08-15T14:03:02.212Z",
-    "updated_at": "2025-08-15T14:03:02.212Z"
+    "created_at": "2025-08-19T12:54:34.430Z",
+    "updated_at": "2025-08-19T12:54:34.430Z"
   }
 ]
