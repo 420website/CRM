@@ -9846,20 +9846,18 @@ ${currentDate} ${currentTime}`;
                               >
                                 Edit
                               </button>
-                              {!template.is_default && (
-                                <button
-                                  type="button"
-                                  onClick={() =>
-                                    deleteClinicalTemplate(
-                                      template.id,
-                                      template.name,
-                                    )
-                                  }
-                                  className="text-red-600 hover:text-red-800 text-sm"
-                                >
-                                  Delete
-                                </button>
-                              )}
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  deleteClinicalTemplate(
+                                    template.id,
+                                    template.name,
+                                  )
+                                }
+                                className="text-red-600 hover:text-red-800 text-sm"
+                              >
+                                Delete
+                              </button>
                             </div>
                           </div>
                         )}
