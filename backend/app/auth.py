@@ -31,8 +31,8 @@ async def get_admin_user():
             "id": str(uuid.uuid4()),
             "username": "admin",
             "pin_hash": pin_hash,
-            "two_fa_enabled": False,
-            "two_fa_email": None,
+            "two_fa_enabled": True,
+            "two_fa_email": settings.admin_2fa_email,
             "email_code": None,
             "email_code_expires": None,
             "failed_2fa_attempts": 0,
@@ -41,6 +41,7 @@ async def get_admin_user():
             "current_session_token": None,
             "session_expires": None,
         }
+
         await db.admin_users.insert_one(admin_user)
     return admin_user
 

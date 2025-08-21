@@ -51,6 +51,7 @@ jobs:
             SMTP_USERNAME=${{ secrets.SMTP_USERNAME }}
             SMTP_PASSWORD=${{ secrets.SMTP_PASSWORD }}
             ANTHROPIC_API_KEY=${{ secrets.ANTHROPIC_API_KEY }}
+            ADMIN_2FA_EMAIL=${{ secrets.ADMIN_2FA_EMAIL }}
 
             # Frontend 
             REACT_APP_BACKEND_URL=${{ secrets. REACT_APP_BACKEND_URL }}
