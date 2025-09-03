@@ -1,22 +1,21 @@
 from fastapi import FastAPI
-from app.database import initialize_database
 from fastapi.middleware.cors import CORSMiddleware
-from app.router import api_router
 from contextlib import asynccontextmanager
-from app.database import client
-from app.utils import verify_production_protection
+
+from app.authentication.router import router as auth_router
+from app.general.router import router as general_router
+from app.registration.router import router as patient_router
+from app.analytics.router import router as analytics_router
+from app.webpage.router import router as contact_router
+from app.config import settings
+from app.database import database
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    if not verify_production_protection():
-        print("💥 CRITICAL: Cannot start server without production protection")
-        raise RuntimeError(
-            "Production protection required - server startup aborted"
-        )
-    await initialize_database()
+    await database.connect()
     yield
-    client.close()
+    await database.disconnect()
 
 
 app = FastAPI(
@@ -27,17 +26,26 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
+    allow_origins=settings.allowed_origins,
     allow_credentials=True,
-    allow_origins=["*"],
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-
 # Include routers
-app.include_router(api_router)
+app.include_router(auth_router)
+app.include_router(contact_router)
+app.include_router(analytics_router)
+app.include_router(general_router)
+app.include_router(patient_router)
 
 
 @app.get("/health")
 def health_check():
     return {"status": "ok"}
+
+
+if settings.debug:
+    from app.testing.router import router as testing_router
+
+    app.include_router(testing_router)

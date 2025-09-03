@@ -1,0 +1,63 @@
+name: Run Tests
+
+on:
+  push:
+    branches:
+      - main
+      # - dev
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Run Unit Tests 
+        run: |
+          set -e
+          echo "Running unit tests..."
+          docker compose -f compose.test.yml --profile test_backend_unit up --build --abort-on-container-exit
+          status=$?
+
+          echo "$status"
+          docker compose -f compose.test.yml --profile test_frontend_unit up --build --abort-on-container-exit 
+
+      - name: Run Backend Integration Tests
+        if: success()  
+        run: |
+          echo "Running integration tests..."
+          docker compose -f compose.test.yml --profile database  up --build -d
+            
+          # backend tests
+          docker compose -f compose.test.yml --profile test_backend_integration up --build --abort-on-container-exit
+          
+          # start backend 
+          docker compose -f compose.test.yml --profile backend up --build -d
+          
+          #frontend tests 
+          docker compose -f compose.test.yml --profile test_frontend_integration up --build --abort-on-container-exit
+
+          # Clean up db and backend 
+          docker compose -f compose.test.yml --profile backend down
+          docker compose -f compose.test.yml --profile database down
+      
+      # - name: Run E2E Tests
+      #   if: success()  
+      #   run: |
+      #     echo "Running end-to-end tests..."
+      #     # Initialize database and backend 
+      #     docker compose -f compose.staging.yml --profile database  up --build -d
+      #     docker compose -f compose.staging.yml --profile backend up --build -d
+      #     docker compose -f compose.staging.yml --profile frontend up --build -d       
+      #    
+      #     docker compose -f compose.staging.yml --profile test_e2e up --build --abort-on-container-exit
+      #
+      #     # Clean up db and backend 
+      #     docker compose -f compose.staging.yml --profile frontend down
+      #     docker compose -f compose.staging.yml --profile backend down
+      #     docker compose -f compose.staging.yml --profile database down

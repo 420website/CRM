@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Verify Your Email</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background-color: #ffffff;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        }
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 40px 20px;
+            text-align: center;
+        }
+        .logo {
+            color: #ffffff;
+            font-size: 28px;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        .icon-container {
+            background-color: rgba(255,255,255,0.1);
+            border-radius: 50%;
+            width: 80px;
+            height: 80px;
+            margin: 0 auto 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .content {
+            padding: 40px 30px;
+            text-align: center;
+        }
+        .title {
+            color: #333333;
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        .subtitle {
+            color: #666666;
+            font-size: 14px;
+            margin-bottom: 30px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .description {
+            color: #555555;
+            font-size: 16px;
+            line-height: 1.6;
+            margin-bottom: 30px;
+        }
+        .verify-button {
+            display: inline-block;
+            background: linear-gradient(45deg, #ff6b6b, #ee5a52);
+            color: #ffffff;
+            text-decoration: none;
+            padding: 15px 40px;
+            border-radius: 50px;
+            font-size: 16px;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            transition: transform 0.2s;
+        }
+        .verify-button:hover {
+            transform: translateY(-2px);
+        }
+        .help-section {
+            background-color: #f8f9fa;
+            padding: 30px;
+            margin-top: 30px;
+            border-radius: 8px;
+        }
+        .help-title {
+            color: #333333;
+            font-size: 16px;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        .help-link {
+            color: #ff6b6b;
+            text-decoration: none;
+        }
+        .footer {
+            padding: 30px;
+            text-align: center;
+            color: #888888;
+            font-size: 12px;
+            border-top: 1px solid #eeeeee;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="logo">WORKLOG</div>
+            <div class="icon-container">
+                <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+                    <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+                    <polyline points="22,6 12,13 2,6"/>
+                </svg>
+            </div>
+        </div>
+        
+        <div class="content">
+            <div class="subtitle">YOU'RE ONE STEP AWAY</div>
+            <h1 class="title">Verify your email address</h1>
+            <p class="description">
+                To complete your profile and start using WorkLog, you'll need to verify your email address.
+            </p>
+            
+            <a href="{{VERIFICATION_URL}}" class="verify-button">VERIFY</a>
+            
+            <div class="help-section">
+                <div class="help-title">Have a question?</div>
+                <a href="mailto:info@worklog.ca" class="help-link">Reach out to our team</a>
+            </div>
+        </div>
+        
+        <div class="footer">
+            <p>This verification link will expire in 24 hours.</p>
+            <p>If you didn't create an account, please ignore this email.</p>
+            <p>© 2025 WorkLog, Inc.</p>
+        </div>
+    </div>
+</body>
+</html>

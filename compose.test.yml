@@ -1,0 +1,271 @@
+# Backend
+x-backend-base: &backend_base 
+  build: 
+    context: ./backend
+    dockerfile: Dockerfile.test
+  env_file:
+      - .env
+  environment:
+    - PSQL_HOST=postgres_test
+    - PSQL_PORT=5432
+    - PSQL_DATABASE=appdb 
+    - PSQL_USER=root 
+    - PSQL_PASSWORD=example
+    - DATABASE_URL=postgres://root:example@postgres_test:5432/appdb
+    - ALLOWED_ORIGINS=["http://localhost:8000", "http://localhost:3000"]
+    - JWT_ALGORITHM=HS256
+    - JWT_ACCESS_SECRET=STUFRZH-MKLFj4j-6c9Z50WNWkvd9uqiWQJOpeCtI9Q
+    - JWT_REFRESH_SECRET=STUFRZH-MKLFj4j-6c9Z50WNWkvd9uqiWQJOpeCtI9Q
+    - MFA_ENCRYPTION_KEY=7CrUl1rG4NBNk4bSV2uU7RW79Z_dRdvrrZn3Eqgytqg=
+    - APP_NAME=testing
+    - APP_URL=http://localhost:8001 
+    - SMTP_EMAIL=email@exmaple.com
+    - SMTP_EMAIL_PASSWORD=password
+  networks:
+      - frontend-net 
+      - backend-net 
+
+# Frontend
+x-frontend-base: &frontend_base 
+    build: 
+      context: ./frontend
+      dockerfile: Dockerfile.test
+    networks:
+      - frontend-net
+
+services:
+  postgres_test:
+    image: postgres:16
+    restart: unless-stopped
+    volumes:
+      - postgres_test_data:/var/lib/postgresql/data
+    environment:
+      POSTGRES_USER: root
+      POSTGRES_PASSWORD: example
+      POSTGRES_DB: appdb
+    networks:
+      - backend-net
+      - db-net
+    profiles:
+      - test
+      - database
+      - test_backend_integration_watch
+      - test_frontend_integration_watch
+      - test_e2e_watch
+
+  dbmate_dev:
+    image: amacneil/dbmate
+    depends_on:
+      - postgres_test
+    environment:
+      - DATABASE_URL=postgres://root:example@postgres_test:5432/appdb?sslmode=disable
+    volumes:
+      - ./db/migrations:/db/migrations
+    networks:
+      - db-net
+    profiles:
+      - test
+      - database
+      - test_backend_integration_watch
+      - test_frontend_integration_watch
+      - test_e2e_watch
+    command: ["--wait","up"]
+
+  mongodb:
+    image: mongodb/mongodb-community-server:latest
+    container_name: mongodb
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+    profiles:
+      - dev 
+      - backend 
+    environment:
+      MONGODB_INITDB_ROOT_USERNAME: root
+      MONGODB_INITDB_ROOT_PASSWORD: example
+    networks:
+      - backend-net
+
+  backend_dummy: 
+    build: 
+      context: ./backend
+      dockerfile : Dockerfile.test
+    env_file:
+      - .env
+    environment:
+      - PSQL_HOST=postgres_test
+      - PSQL_PORT=5432
+      - PSQL_DATABASE=appdb 
+      - PSQL_USER=root 
+      - PSQL_PASSWORD=example
+      - DATABASE_URL=postgres://root:example@postgres_test:5432/appdb
+      - ALLOWED_ORIGINS=["http://localhost:3000"]
+      - JWT_ALGORITHM=HS256
+      - JWT_ACCESS_SECRET=STUFRZH-MKLFj4j-6c9Z50WNWkvd9uqiWQJOpeCtI9Q
+      - JWT_REFRESH_SECRET=STUFRZH-MKLFj4j-6c9Z50WNWkvd9uqiWQJOpeCtI9Q
+      - MFA_ENCRYPTION_KEY=7CrUl1rG4NBNk4bSV2uU7RW79Z_dRdvrrZn3Eqgytqg=
+      - SUPPORT_EMAIL=email@exmaple.com
+      - SUPPORT_EMAIL_PASSWORD=password
+      - APP_NAME=dummy
+      - APP_URL=http://localhost:5174 
+      - DEBUG=True
+      - MONGO_URL=mongodb://root:example@mongodb:27017
+      - DB_NAME=my420_ca_db
+      - ENVIRONMENT=dev
+    volumes:
+      - ./scripts/wait-for-db.sh:/scripts/wait-for-db.sh
+      - ./backend:/backend 
+    profiles:
+      - backend
+      - test_frontend_integration_watch
+    networks:
+      - frontend-net 
+      - backend-net 
+    ports:
+      - 8002:8000
+    entrypoint: ["/scripts/wait-for-db.sh"]
+    command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+
+  # Unit tests
+  backend_unit_tests: 
+    <<: *backend_base
+    profiles:
+      - test
+      - test_unit 
+      - test_backend 
+      - test_backend_unit
+    volumes:
+      - ./backend/app:/backend/app 
+      - ./backend/tests:/backend/tests
+    command: "python -m unittest discover tests.unit"
+
+  backend_unit_tests_watch: 
+    <<: *backend_base
+    profiles:
+      - test_backend_unit_watch
+    volumes:
+      - ./backend/app:/backend/app 
+      - ./backend/tests:/backend/tests
+    command: >
+      sh -c "while true; do
+               python -m unittest discover tests.unit;
+               inotifywait -e modify,create,delete -r /backend/app /backend/tests;
+             done"
+
+  frontend_unit_tests: 
+    <<: *frontend_base
+    profiles:
+      - test
+      - test_unit 
+      - test_frontend
+      - test_frontend_unit
+    volumes:
+      - ./frontend:/frontend
+      - node_modules:/frontend/node_modules
+    command: sh -c  "npm run test:unit"
+
+  frontend_unit_tests_watch: 
+    <<: *frontend_base
+    profiles:
+      - test_frontend_unit_watch
+    volumes:
+      - ./frontend:/frontend
+      - node_modules:/frontend/node_modules
+    command: >
+      sh -c "while true; do
+              npm run test:unit:watch; 
+              inotifywait -e modify,create,delete -r /frontend/src /frontend/tests;
+             done"
+
+  # Integration tests 
+  backend_integration_tests: 
+    <<: *backend_base
+    volumes:
+      - ./scripts/wait-for-db.sh:/scripts/wait-for-db.sh
+      - ./backend/app:/backend/app 
+      - ./backend/tests:/backend/tests
+    profiles:
+      - test
+      - test_integration 
+      - test_backend 
+      - test_backend_integration
+    ports:
+      - 8001:8000
+    entrypoint: ["/scripts/wait-for-db.sh"]
+    command: "python -m unittest discover tests.integration"
+
+  backend_integration_tests_watch: 
+    <<: *backend_base
+    volumes:
+      - ./scripts/wait-for-db.sh:/scripts/wait-for-db.sh
+      - ./backend/app:/backend/app 
+      - ./backend/tests:/backend/tests 
+    profiles:
+      - test_backend_integration_watch
+    ports:
+      - 8001:8000
+    entrypoint: ["/scripts/wait-for-db.sh"]
+    command: >
+      sh -c "while true; do
+               python -m unittest discover tests.integration;
+               inotifywait -e modify,create,delete -r /backend/app /backend/tests;
+             done"
+
+  frontend_integration_tests: 
+    <<: *frontend_base
+    environment:
+      - BACKEND_URL=http://backend_dummy:8000
+      - VITE_API_BASE_URL=http://backend_dummy:8000
+    profiles:
+      - test
+      - test_integration 
+      - test_frontend
+      - test_frontend_integration
+    ports:
+      - 5174:5173
+    volumes:
+      - ./scripts/wait-for-backend.sh:/scripts/wait-for-backend.sh
+      - ./frontend:/frontend
+      - node_modules:/frontend/node_modules
+    entrypoint: ["/scripts/wait-for-backend.sh"]
+    command: sh -c  "npm run test:integration"
+
+
+  frontend_integration_tests_watch: 
+    <<: *frontend_base
+    environment:
+      - BACKEND_URL=http://backend_dummy:8000
+      - VITE_API_BASE_URL=http://backend_dummy:8000
+    profiles:
+      - test_frontend_integration_watch
+    ports:
+      - 5174:5173
+    volumes:
+      - ./scripts/wait-for-backend.sh:/scripts/wait-for-backend.sh
+      - ./frontend:/frontend
+      - node_modules:/frontend/node_modules
+    entrypoint: ["/scripts/wait-for-backend.sh"]
+    command: > 
+       sh -c "while true; do
+                npm run test:integration:watch; 
+                inotifywait -e modify,create,delete -r /frontend/src /frontend/tests;
+              done"
+
+volumes:
+  postgres_test_data:
+  node_modules:
+
+networks:
+  frontend-net:
+    driver: bridge
+ 
+  db-net:
+    driver: bridge
+
+  backend-net:
+    driver: bridge
+
+
+

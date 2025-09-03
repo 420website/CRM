@@ -1,0 +1,7 @@
+PatientID,Phone,DOB,FileNo,HC,Disposition,RegDate,Site,Type,Month,Address,City,PostalCode,Province,Gender,Reward,Consultation,Amount
+1001,555-123-4567,1985-04-12,FN001,HC12345,Completed,2024-05-10,ClinicA,Consultation,May,123 Main St,Toronto,M1A1A1,ON,Male,Yes,General,150
+1002,555-987-6543,1990-07-22,FN002,HC67890,Pending,2024-06-15,ClinicB,Treatment,June,456 Oak Ave,Ottawa,K2B2B2,ON,Female,No,Surgery,1200
+1003,555-555-1212,1975-12-05,FN003,HC54321,Cancelled,2024-07-01,ClinicC,Follow-up,July,789 Pine Rd,Montreal,H3C3C3,QC,Male,Yes,Follow-up,75
+1004,555-444-3333,2000-03-30,FN004,HC11111,Completed,2024-08-20,ClinicA,Treatment,August,321 Elm St,Calgary,T2T2T2,AB,Female,No,Surgery,800
+1005,555-222-1111,1982-11-11,FN005,HC22222,Pending,2024-09-05,ClinicB,Consultation,September,654 Birch Blvd,Vancouver,V5V5V5,BC,Other,Yes,General,200
+
