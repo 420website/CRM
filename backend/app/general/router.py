@@ -20,7 +20,7 @@ from app.general.schemas import (
     ReferralSiteUpdate,
 )
 
-router = APIRouter(prefix="/general")
+router = APIRouter(prefix="/general", tags=["General"])
 
 
 ###############

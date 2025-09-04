@@ -1,6 +1,4 @@
 # /app/analytics/prompts
-
-
 def legacy_context_prompt(
     legacy_upload,
     total_records,

@@ -8,6 +8,7 @@ from motor.motor_asyncio import AsyncIOMotorClient
 
 client = AsyncIOMotorClient(settings.mongo_url)
 mongo_db = client[settings.db_name]
+# mongo_db.legacy_data.create_index("user_id")
 
 
 class Database:

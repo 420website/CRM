@@ -12,7 +12,7 @@ const AdminAnalytics = () => {
   const [inputMessage, setInputMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [sessionId] = useState(
-    () => `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+    () => `session_${Date.now()}_${Math.random().toString(36)}`,
   );
   const [isTyping, setIsTyping] = useState(true);
   const [typedText, setTypedText] = useState("");
@@ -24,6 +24,14 @@ const AdminAnalytics = () => {
   const [legacyDataSummary, setLegacyDataSummary] = useState(null);
   const [showUploadSection, setShowUploadSection] = useState(false);
 
+  const welcomeMessage =
+    "Welcome to the Analytics dashboard powered by 420 AI. I can help you analyze enrollment statistics, dispositions, trends, and other data insights about the program's performance.";
+
+  // Scroll to top when component mounts
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
+
   // Handle scroll to top when upload status changes (same pattern as client registration)
   useEffect(() => {
     if (uploadStatus?.type === "success") {
@@ -33,8 +41,17 @@ const AdminAnalytics = () => {
     }
   }, [uploadStatus]);
 
-  const welcomeMessage =
-    "Welcome to the Analytics dashboard powered by 420 AI. I can help you analyze enrollment statistics, dispositions, trends, and other data insights about the program's performance.";
+  useEffect(() => {
+    // Only scroll to bottom when not typing to prevent page jumping
+    if (!isTyping) {
+      scrollToBottom();
+    }
+  }, [messages, isTyping]);
+
+  // Check for existing legacy data on load
+  useEffect(() => {
+    loadLegacyDataSummary();
+  }, []);
 
   // Typewriter effect for welcome message
   useEffect(() => {
@@ -75,22 +92,11 @@ const AdminAnalytics = () => {
     }
   };
 
-  useEffect(() => {
-    // Only scroll to bottom when not typing to prevent page jumping
-    if (!isTyping) {
-      scrollToBottom();
-    }
-  }, [messages, isTyping]);
-
-  // Check for existing legacy data on load
-  useEffect(() => {
-    loadLegacyDataSummary();
-  }, []);
-
+  // Load Data
   const loadLegacyDataSummary = async () => {
     const result = await AnalyticsServices.get_legacy_data();
     if (result.success) {
-      setLegacyDataSummary(result.data?.summary);
+      setLegacyDataSummary(result.data);
     }
   };
 
@@ -112,10 +118,8 @@ const AdminAnalytics = () => {
 
     const formData = new FormData();
     formData.append("file", file);
-    console.log(formData);
 
     const result = await AnalyticsServices.upload_legacy_data(formData);
-    console.log(result);
 
     if (result.success) {
       setUploadStatus({
@@ -143,21 +147,15 @@ const AdminAnalytics = () => {
     event.target.value = "";
   };
 
-  // Scroll to top when component mounts
-  useEffect(() => {
-    window.scrollTo(0, 0);
-  }, []);
-
   const promptClaude = async (query) => {
     if (!isLoading && !isTyping) {
-      // Add user message first
       const userMessage = {
         role: "user",
         content: query,
         timestamp: new Date().toISOString(),
       };
-      setMessages((prev) => [...prev, userMessage]);
 
+      setMessages((prev) => [...prev, userMessage]);
       setIsLoading(true);
       setError("");
 
@@ -166,20 +164,17 @@ const AdminAnalytics = () => {
         session_id: sessionId,
       };
 
-      console.log(data);
-
       const result = await AnalyticsServices.prompt_claude(data);
-      console.log(result);
 
       if (result.success) {
         const assistantMessage = {
           role: "assistant",
-          content: data.response,
-          timestamp: data.timestamp,
-          chart_html: data.chart_html,
-          chart_image_url: data.chart_image_url,
+          content: result.data?.response,
+          // timestamp: data.timestamp,
+          // chart_html: data.chart_html,
+          // chart_image_url: data.chart_image_url,
         };
-        // setActivityData(result.data);
+
         setMessages((prev) => [...prev, assistantMessage]);
       } else {
         const errorMessage = {
@@ -210,7 +205,6 @@ const AdminAnalytics = () => {
       e.preventDefault();
       handleSubmit(e);
     }
-    // Allow Shift+Enter for new lines
   };
 
   const clearChat = () => {
@@ -470,7 +464,7 @@ const AdminAnalytics = () => {
                               : "text-gray-500"
                           }`}
                         >
-                          {new Date(message.timestamp).toLocaleTimeString()}
+                          {new Date().toLocaleTimeString()}
                         </div>
                       </div>
                     </div>
