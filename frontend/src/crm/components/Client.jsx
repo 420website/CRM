@@ -45,7 +45,7 @@ export default function Client({
   };
 
   // Handle Google Places address selection
-  const handlePlaceSelected = (addressData) => {
+  const getProvince = (code) => {
     // Map Google Places province codes to full province names
     const provinceMap = {
       ON: "Ontario",
@@ -64,16 +64,7 @@ export default function Client({
     };
 
     // Get full province name from code or use as-is if already full name
-    const fullProvince =
-      provinceMap[addressData.province] || addressData.province || "";
-
-    setFormData((prev) => ({
-      ...prev,
-      address: addressData.address,
-      city: addressData.city,
-      province: fullProvince,
-      postal_code: addressData.postal_code,
-    }));
+    return provinceMap[code] || code;
   };
 
   // Auto-fill form fields directly from voice text or clear if already filled
@@ -446,6 +437,16 @@ export default function Client({
     }
 
     setFormData(newFormData);
+  };
+
+  const onPlaceSelected = (place) => {
+    setFormData((prev) => ({
+      ...prev,
+      address: place.displayName,
+      city: place.city,
+      postal_code: place.postal_code,
+      province: getProvince(place.province),
+    }));
   };
 
   return (
@@ -874,7 +875,11 @@ export default function Client({
             <h2 className="text-lg font-medium text-gray-900 mb-4">
               Address Information
             </h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <AddressAutocomplete
+              onPlaceSelected={onPlaceSelected}
+              initialAddress={formData.address}
+            />
+            <div className="py-2 grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <label
                   htmlFor="address"
@@ -882,13 +887,13 @@ export default function Client({
                 >
                   Address
                 </label>
-                <AddressAutocomplete
+                <input
                   id="address"
                   name="address"
                   value={formData.address}
                   onChange={handleChange}
-                  onPlaceSelected={handlePlaceSelected}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  // onPlaceSelected={handlePlaceSelected}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black"
                   placeholder="Start typing address..."
                 />
               </div>
