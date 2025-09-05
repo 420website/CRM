@@ -3,8 +3,7 @@ name: Run Tests
 on:
   push:
     branches:
-      # - main
-      - backend_auth
+      - main
   pull_request:
     branches:
       - main
