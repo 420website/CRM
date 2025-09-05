@@ -30,15 +30,21 @@ jobs:
       - name: Run Backend Integration Tests
         if: success()  
         run: |
-          echo "Running integration tests..."
+          echo "Running backend integration tests..."
           docker compose -f compose.test.yml --profile database  up --build -d
             
           # backend tests
           docker compose -f compose.test.yml --profile test_backend_integration up --build --abort-on-container-exit
           
-          # start backend 
+          docker compose -f compose.test.yml --profile database down
+
+      - name: Run Frontend Integration Tests
+        if: success()  
+        run: |
+          echo "Running frontend integration tests..."
+          docker compose -f compose.test.yml --profile database  up --build -d
           docker compose -f compose.test.yml --profile backend up --build -d
-          
+            
           #frontend tests 
           docker compose -f compose.test.yml --profile test_frontend_integration up --build --abort-on-container-exit
 

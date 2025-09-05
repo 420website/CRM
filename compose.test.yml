@@ -80,8 +80,11 @@ services:
     volumes:
       - mongo_data:/data/db
     profiles:
-      - dev 
-      - backend 
+      - test
+      - database
+      - test_backend_integration_watch
+      - test_frontend_integration_watch
+      - test_e2e_watch
     environment:
       MONGODB_INITDB_ROOT_USERNAME: root
       MONGODB_INITDB_ROOT_PASSWORD: example
@@ -258,6 +261,7 @@ services:
               done"
 
 volumes:
+  mongo_data:
   postgres_test_data:
   node_modules:
 
