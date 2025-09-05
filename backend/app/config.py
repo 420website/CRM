@@ -49,7 +49,7 @@ class Settings:
 
     # Email
     email: str = get_env("SMTP_EMAIL")
-    email_pw: str = get_env("SMTP_EMAIL_PASSWORD")
+    email_pw: str = get_env("SMTP_PASSWORD")
 
     # database
     mongo_url: str = os.getenv("MONGO_URL", "mongodb://localhost:27017")

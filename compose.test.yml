@@ -19,7 +19,7 @@ x-backend-base: &backend_base
     - APP_NAME=testing
     - APP_URL=http://localhost:8001 
     - SMTP_EMAIL=email@exmaple.com
-    - SMTP_EMAIL_PASSWORD=password
+    - SMTP_PASSWORD=password
     - SUPPORT_EMAIL=example@email.com
   networks:
       - frontend-net 
@@ -120,7 +120,7 @@ services:
       # - SUPPORT_EMAIL_PASSWORD=password
       # - SUPPORT_EMAIL=example@email.com
       - SMTP_EMAIL=email@exmaple.com
-      - SMTP_EMAIL_PASSWORD=password
+      - SMTP_PASSWORD=password
     volumes:
       - ./scripts/wait-for-db.sh:/scripts/wait-for-db.sh
       - ./backend:/backend 
