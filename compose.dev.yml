@@ -1,4 +1,39 @@
 services:
+  postgres_dev:
+    image: postgres:16
+    restart: unless-stopped
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    environment:
+      POSTGRES_USER: root
+      POSTGRES_PASSWORD: example
+      POSTGRES_DB: appdb
+    networks:
+      - backend-net
+      - db-net
+    profiles:
+      - dev
+      - dev_backend 
+      - dev_frontend 
+      - db
+
+  dbmate_dev:
+    image: amacneil/dbmate
+    depends_on:
+      - postgres_dev
+    environment:
+      - DATABASE_URL=postgres://root:example@postgres_dev:5432/appdb?sslmode=disable
+    volumes:
+      - ./db/migrations:/db/migrations
+    networks:
+      - db-net
+    profiles:
+      - dev
+      - dev_backend 
+      - dev_frontend 
+      - db
+    command: ["--wait","up"]
+
   mongodb:
     image: mongodb/mongodb-community-server:latest
     container_name: mongodb
@@ -20,32 +55,39 @@ services:
     build:
       context: ./backend
       dockerfile: Dockerfile.dev 
-    env_file:
-      - .env
     environment:
+      - PSQL_HOST=postgres_dev
+      - PSQL_PORT=5432
+      - PSQL_DATABASE=appdb 
+      - PSQL_USER=root 
+      - PSQL_PASSWORD=example
+      - DATABASE_URL=postgres://root:example@postgres_dev:5432/appdb
+      - ALLOWED_ORIGINS=[http://localhost:5173]
+      - JWT_ALGORITHM=HS256
+      - JWT_ACCESS_SECRET=STUFRZH-MKLFj4j-6c9Z50WNWkvd9uqiWQJOpeCtI9Q
+      - JWT_REFRESH_SECRET=STUFRZH-MKLFj4j-6c9Z50WNWkvd9uqiWQJOpeCtI9Q
+      - MFA_ENCRYPTION_KEY=7CrUl1rG4NBNk4bSV2uU7RW79Z_dRdvrrZn3Eqgytqg=
+      - APP_URL=http://localhost:5173 
+      - APP_NAME=testing 
+      - DEBUG=True
       - MONGO_URL=mongodb://root:example@mongodb:27017
       - DB_NAME=my420_ca_db
       - ENVIRONMENT=dev
+    env_file:
+      - .env
     volumes:
-      - ./persistent-data:/app/persistent-data
-      - ./production-protected:/app/.production-protected
-      - ./scripts:/app/scripts
-      - ./backend:/backend
-    depends_on:
-      - mongodb
+      - ./scripts/wait-for-db.sh:/scripts/wait-for-db.sh
+      - ./backend/app:/backend/app
     networks:
-      - backend-net
+      - backend-net 
       - frontend-net
     profiles:
-      - dev 
-      - backend 
+      - dev
+      - dev_backend 
     ports:
-      - "8000:8000"
-    command: > 
-      sh -c "
-        cd /app/scripts && npm install && \
-        cd /backend && uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
-      "
+      - 8000:8000
+    entrypoint: ["/scripts/wait-for-db.sh"]
+    command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000" , "--reload"]
 
   frontend:
     build:
@@ -54,20 +96,25 @@ services:
     env_file:
       - .env
     environment: 
-      - REACT_APP_BACKEND_URL=http://localhost:8000
-      - REACT_APP_DEV_MODE=true
+      - VITE_API_BASE_URL=http://localhost:8000
     networks:
       - frontend-net
     ports:
-      - "3000:3000"
+      - 5173:5173
     profiles:
       - dev 
       - frontend
     volumes:
       - ./frontend:/frontend
-    command: yarn start
+      - node_modules:/frontend/node_modules
+    command: > 
+      sh -c " 
+        npm run dev -- --host 0.0.0.0 --port 5173
+      "
 
 volumes:
+  postgres_data:
+  node_modules:
   mongo_data:
 
 networks:

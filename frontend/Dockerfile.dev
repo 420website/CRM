@@ -5,21 +5,12 @@ FROM node:23-slim
 # Create/Set dir
 WORKDIR /frontend 
 
-# Get yarn 
-RUN corepack enable && corepack prepare yarn@stable --activate
+RUN apt-get update && apt-get install -y curl && apt-get clean
 
 # Copy only package files first
-COPY package.json yarn.lock ./
+COPY package.json package-lock.json ./
 
 # Install dependencies 
-RUN yarn install --frozen-lockfile
-
-# Copy source
-# COPY . .
-
-# RUN npm install react-router-dom
-# RUN npm run build
-
-
+RUN npm install
 
 

@@ -1,4 +1,35 @@
 services:
+  postgres:
+    image: postgres:16
+    restart: unless-stopped
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    env_file: 
+      - .env
+    networks:
+      - backend-net
+      - db-net
+    profiles:
+      - dev 
+      - prod
+
+  dbmate:
+    image: amacneil/dbmate
+    depends_on:
+      - mysql_db
+    env_file: 
+      - .env
+    environment:
+      - DATABASE_URL=${DBMATE_DATABASE_URL}
+    networks:
+      - db-net
+    profiles:
+      - dev 
+      - prod
+    volumes:
+      - ./db/migrations:/db/migrations
+    command: ["--wait","up"]
+
   mongodb:
     image: mongodb/mongodb-community-server:latest
     container_name: mongodb
@@ -19,6 +50,7 @@ services:
       - .env
     depends_on:
       - mongodb
+      - postgres
     networks:
       - backend-net 
       - frontend-net
@@ -26,15 +58,9 @@ services:
       - dev 
       - prod
     volumes:
-      - ./persistent-data:/app/persistent-data
-      - ./production-protected:/app/.production-protected
-      - ./scripts:/app/scripts
-    # command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "5000"]
-    command: > 
-      sh -c "
-        cd /app/scripts && npm install && \
-        cd /backend && uvicorn app.main:app --host 0.0.0.0 --port 5000 
-      "
+      - ./scripts/wait-for-db.sh:/scripts/wait-for-db.sh
+    entrypoint: ["/scripts/wait-for-db.sh"]
+    command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "5000"]
 
   frontend-builder:
     build: ./frontend
@@ -117,6 +143,7 @@ services:
 volumes: 
   frontend_dist:
   mongo_data:
+  postgres_data:
   certbot-etc:
   certbot-var:
   certbot-www:
@@ -128,7 +155,7 @@ networks:
   backend-net:
     driver: bridge
 
-  # db-net:
-  #   driver: bridge
-  #
+  db-net:
+    driver: bridge
+
 

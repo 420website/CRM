@@ -1,0 +1,115 @@
+import { useEffect, useState } from "react";
+import { AuthServices } from "../../services/authService";
+import { useNavigate, useSearchParams } from "react-router-dom";
+
+export function SuccessfullyVerified() {
+  const navigate = useNavigate();
+
+  return (
+    <div className="bg-white py-8 px-6 shadow sm:rounded-lg sm:px-10 flex flex-col items-center space-y-6">
+      <h2 className="text-2xl font-bold text-center text-black-700">
+        Email Successfully Verified!
+      </h2>
+      <p className="text-sm text-gray-600 text-center">
+        Your email has been verified.
+      </p>
+
+      <button
+        type="button"
+        onClick={() => navigate("/")}
+        className="w-full py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-black hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-black"
+      >
+        Go to Home
+      </button>
+    </div>
+  );
+}
+
+function UnsuccessfullyVerified() {
+  const [email, setEmail] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  const sendEmail = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setError("");
+
+    try {
+      const response = await AuthServices.send_verification_email(email);
+    } catch (err) {
+      setError("Invalid email");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="bg-white py-8 px-6 shadow sm:rounded-lg sm:px-10 flex flex-col items-center space-y-6">
+      <h2 className="text-2xl font-bold text-center text-black-600">
+        Email Not Verified!
+      </h2>
+      <p className="text-sm text-gray-600 text-center">
+        Enter your email to resend the verification code.
+      </p>
+
+      <form className="w-full space-y-4" onSubmit={sendEmail}>
+        <div>
+          <input
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+            placeholder="Email"
+            maxLength="50"
+            disabled={loading}
+            className="appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-black focus:border-black sm:text-sm"
+          />
+        </div>
+
+        {error && (
+          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-2 rounded text-sm text-center">
+            {error}
+          </div>
+        )}
+
+        <button
+          type="submit"
+          disabled={loading}
+          className="w-full py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-black hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-black"
+        >
+          {loading ? "Sending..." : "Send Email"}
+        </button>
+      </form>
+    </div>
+  );
+}
+
+export default function VerifyEmail() {
+  const [searchParams] = useSearchParams();
+  const [result, setResult] = useState(false);
+  const token = searchParams.get("token");
+
+  useEffect(() => {
+    const verify_email = async () => {
+      const response = await AuthServices.verify_email(token);
+
+      if (response.success) {
+        setResult(true);
+      } else {
+        setResult(false);
+      }
+    };
+    verify_email();
+  }, []);
+
+  return (
+    <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-8 sm:px-6 lg:px-8">
+      <div className="sm:mx-auto sm:w-full sm:max-w-md">
+        <div className="auth-header">
+          {result ? <SuccessfullyVerified /> : <UnsuccessfullyVerified />}
+        </div>
+      </div>
+    </div>
+  );
+}

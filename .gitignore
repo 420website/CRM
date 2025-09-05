@@ -5,6 +5,8 @@
 .vscode/
 *.env
 
+# database 
+db/migrations/*_seed_admin.sql
 
 # Dependencies
 node_modules/
@@ -18,6 +20,7 @@ node_modules/
 !.yarn/releases
 !.yarn/versions
 *build/
+
 # Testing
 /coverage
 

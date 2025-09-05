@@ -1,0 +1,19 @@
+#syntax=docker/dockerfile:1 
+
+FROM node:23-slim
+
+# Create/Set dir
+WORKDIR /frontend 
+
+RUN apt-get update && apt-get install -y curl &&  apt-get install -y inotify-tools && apt-get clean
+
+# Copy only package files first
+COPY package.json package-lock.json ./
+
+# Install dependencies 
+RUN npm install 
+
+
+
+
+
