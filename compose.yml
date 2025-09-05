@@ -16,11 +16,11 @@ services:
   dbmate:
     image: amacneil/dbmate
     depends_on:
-      - mysql_db
+      - postgres
     env_file: 
       - .env
-    environment:
-      - DATABASE_URL=${DBMATE_DATABASE_URL}
+    # environment:
+    #   - DATABASE_URL=${DBMATE_DATABASE_URL}
     networks:
       - db-net
     profiles:

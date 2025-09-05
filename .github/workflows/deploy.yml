@@ -45,17 +45,23 @@ jobs:
             # Import application/ TLS envrionment varibles
             cat > .env << 'EOF'
             # Backend 
-            SUPPORT_EMAIL=${{ secrets.SUPPORT_EMAIL }} 
-            SMTP_SERVER=${{ secrets.SMTP_SERVER }}
             SMTP_PORT=${{ secrets.SMTP_PORT }}
+            SMTP_SERVER=${{ secrets.SMTP_SERVER }}
             SMTP_USERNAME=${{ secrets.SMTP_USERNAME }}
             SMTP_PASSWORD=${{ secrets.SMTP_PASSWORD }}
+            ALLOWED_ORIGINS=${{ secrets.ALLOWED_ORIGINS }}
+            JWT_ALGORITHM=${{ secrets.JWT_ALGORITHM }}
+            JWT_ACCESS_SECRET=${{ secrets.JWT_ACCESS_SECRET }}
+            JWT_REFRESH_SECRET=${{ secrets.JWT_REFRESH_SECRET }}
+            MFA_ENCRYPTION_KEY=${{ secrets.MFA_ENCRYPTION_KEY }}
+            APP_NAME=${{ secrets.APP_NAME }}
+            APP_URL=${{ secrets.APP_URL }}
             ANTHROPIC_API_KEY=${{ secrets.ANTHROPIC_API_KEY }}
-            ADMIN_2FA_EMAIL=${{ secrets.ADMIN_2FA_EMAIL }}
+            SUPPORT_EMAIL=${{ secrets.SUPPORT_EMAIL }} 
 
             # Frontend 
-            REACT_APP_BACKEND_URL=${{ secrets. REACT_APP_BACKEND_URL }}
-            REACT_APP_GOOGLE_PLACES_API_KEY=${{ secrets.REACT_APP_GOOGLE_PLACES_API_KEY }}
+            VITE_API_BACKEND_URL=${{ secrets.VITE_API_BACKEND_URL }}
+            VITE_APP_GOOGLE_PLACES_API_KEY=${{ secrets.VITE_APP_GOOGLE_PLACES_API_KEY }}
 
             # Database 
             MONGO_URL=${{ secrets.MONGO_URL }}
@@ -65,6 +71,13 @@ jobs:
             DB_ROOT_PASSWORD=${{ secrets.DB_ROOT_PASSWORD }}
             DB_HOST=${{ secrets.DB_HOST }} 
             DB_PORT=${{ secrets.DB_PORT }}
+
+            PSQL_HOST=${{ secrets.PSQL_HOST }}
+            PSQL_PORT=${{ secrets.PSQL_PORT }}
+            PSQL_DATABASE=${{ secrets.PSQL_DATABASE }}
+            PSQL_USER=${{ secrets.PSQL_USER }}
+            PSQL_PASSWORD=${{ secrets.PSQL_PASSWORD }}
+            DATABASE_URL=${{ secrets.DATABASE_URL }}
 
             # Nginx
             DOMAIN_ROOT=${{ secrets.DOMAIN_ROOT }}
