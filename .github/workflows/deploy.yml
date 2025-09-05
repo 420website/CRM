@@ -47,7 +47,7 @@ jobs:
             # Backend 
             SMTP_PORT=${{ secrets.SMTP_PORT }}
             SMTP_SERVER=${{ secrets.SMTP_SERVER }}
-            SMTP_USERNAME=${{ secrets.SMTP_USERNAME }}
+            SMTP_EMAIL=${{ secrets.SMTP_EMAIL }}
             SMTP_PASSWORD=${{ secrets.SMTP_PASSWORD }}
             ALLOWED_ORIGINS=${{ secrets.ALLOWED_ORIGINS }}
             JWT_ALGORITHM=${{ secrets.JWT_ALGORITHM }}
