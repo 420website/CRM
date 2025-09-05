@@ -1,10 +1,10 @@
 #!/bin/bash
 set -e
 
-echo "Waiting for PostgreSQL at $PSQL_HOST:$PSQL_PORT..."
+echo "Waiting for PostgreSQL at $POSTGRES_HOST:$POSTGRES_PORT..."
 
 # Wait for PostgreSQL to be available
-until pg_isready -h "$PSQL_HOST" -p "$PSQL_PORT" -U "$PSQL_USER" -d "$PSQL_DATABASE"; do
+until pg_isready -h "$POSTGRES_HOST" -p "$POSTGRES_PORT" -U "$POSTGRES_USER" -d "$POSTGRES_DB"; do
   echo "PostgreSQL is unavailable - sleeping"
   sleep 2
 done

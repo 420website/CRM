@@ -72,11 +72,11 @@ jobs:
             DB_HOST=${{ secrets.DB_HOST }} 
             DB_PORT=${{ secrets.DB_PORT }}
 
-            PSQL_HOST=${{ secrets.PSQL_HOST }}
-            PSQL_PORT=${{ secrets.PSQL_PORT }}
-            PSQL_DATABASE=${{ secrets.PSQL_DATABASE }}
-            PSQL_USER=${{ secrets.PSQL_USER }}
-            PSQL_PASSWORD=${{ secrets.PSQL_PASSWORD }}
+            POSTGRES_HOST=${{ secrets.POSTGRES_HOST }}
+            POSTGRES_PORT=${{ secrets.POSTGRES_PORT }}
+            POSTGRES_DATABASE=${{ secrets.POSTGRES_DATABASE }}
+            POSTGRES_USER=${{ secrets.POSTGRES_USER }}
+            POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}
             POSTGRESQL_PASSWORD=${{ secrets.POSTGRESQL_PASSWORD }}
             DATABASE_URL=${{ secrets.DATABASE_URL }}
 

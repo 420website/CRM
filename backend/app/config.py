@@ -34,10 +34,10 @@ class Settings:
 
     # Database
     database_url: str = get_env("DATABASE_URL")
-    host: str = get_env("PSQL_HOST")
-    user: str = get_env("PSQL_USER")
-    password: str = get_env("PSQL_PASSWORD")
-    db: str = get_env("PSQL_DATABASE")
+    host: str = get_env("POSTGRES_HOST")
+    user: str = get_env("POSTGRES_USER")
+    password: str = get_env("POSTGRES_PASSWORD")
+    db: str = get_env("POSTGRES_DB")
 
     # CORS
     allowed_origins: List[str] = get_env("ALLOWED_ORIGINS")

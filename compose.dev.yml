@@ -56,11 +56,11 @@ services:
       context: ./backend
       dockerfile: Dockerfile.dev 
     environment:
-      - PSQL_HOST=postgres_dev
-      - PSQL_PORT=5432
-      - PSQL_DATABASE=appdb 
-      - PSQL_USER=root 
-      - PSQL_PASSWORD=example
+      - POSTGRES_HOST=postgres_dev
+      - POSTGRES_PORT=5432
+      - POSTGRES_DATABASE=appdb 
+      - POSTGRES_USER=root 
+      - POSTGRES_PASSWORD=example
       - DATABASE_URL=postgres://root:example@postgres_dev:5432/appdb
       - ALLOWED_ORIGINS=[http://localhost:5173]
       - JWT_ALGORITHM=HS256
