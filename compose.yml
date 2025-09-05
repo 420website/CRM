@@ -19,8 +19,6 @@ services:
       - postgres
     env_file: 
       - .env
-    # environment:
-    #   - DATABASE_URL=${DBMATE_DATABASE_URL}
     networks:
       - db-net
     profiles:
@@ -74,7 +72,7 @@ services:
     command: >
       sh -c "
         npm run build &&
-        cp -r build/. /dist
+        cp -r dist/. /dist
       "
 
   nginx-dev:

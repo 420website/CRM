@@ -16,10 +16,6 @@ docker compose --profile staging up -d --build
 
 echo "Waiting for certbot container to finish..."
 
-# # Name of your certbot container
-# CERTBOT_CONTAINER="worklog-certbot-setup-1"
-# CERTBOT_VOLUME="worklog_certbot-etc"
-
 timeout=120
 interval=5
 elapsed=0
