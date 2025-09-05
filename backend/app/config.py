@@ -3,7 +3,6 @@ import logging
 from typing import Any, List
 import os
 from dotenv import load_dotenv
-from cryptography.fernet import Fernet
 from anthropic import AsyncAnthropic
 
 load_dotenv()
@@ -62,24 +61,6 @@ class Settings:
     anthropic_model = os.getenv("ANTHROPIC_MODEL", "claude-sonnet-4-20250514")
 
     support_email = get_env("SUPPORT_EMAIL")
-    ######### OLD ######
-    #
-    # # environment
-    # environment = os.getenv("ENVIRONMENT", "production").lower()
-    #
-    # # authentication
-    # TOTP_ENCRYPTION_KEY = os.getenv(
-    #     "TOTP_ENCRYPTION_KEY",
-    #     Fernet.generate_key(),
-    # )
-    # cipher_suite = Fernet(TOTP_ENCRYPTION_KEY)
-    # admin_2fa_email = os.getenv("ADMIN_2FA_EMAIL", "support@my420.ca")
-    #
-    # # smtp
-    # smtp_server = os.getenv("SMTP_SERVER", "smtp.gmail.com")
-    # smtp_port = int(os.getenv("SMTP_PORT", "587"))
-    # smtp_username = os.getenv("SMTP_USERNAME", "")
-    # smtp_password = os.getenv("SMTP_PASSWORD", "")
 
 
 settings = Settings()

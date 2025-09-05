@@ -7,10 +7,6 @@ import datetime as dt
 
 # Shared attributes - all optional for maximum flexibility
 class PatientBase(BaseModel):
-    # first_name: Optional[str] = None
-    # last_name: Optional[str] = None
-    # dob: Optional[date] = None
-    # status: Optional[str] = None
     age: Optional[int] = None
     gender: Optional[str] = None
     aka: Optional[str] = None

@@ -3,8 +3,6 @@ from email.message import EmailMessage
 from typing import Self, overload
 from app.config import settings
 
-# from app.email.messages import Message, HtmlMessage, PlainMessage
-
 
 class Message:
     def __init__(self) -> None:
@@ -63,15 +61,3 @@ class EmailService:
         with smtplib.SMTP_SSL("mail.privateemail.com", 465) as smtp:
             smtp.login(settings.email, settings.email_pw)
             smtp.send_message(self.msg)
-
-
-# class ResetPasswordEmail(EmailService):
-#     def __init__(self, reset_url: str) -> None:
-#         super().__init__()
-#
-#
-#         html_template = load_email_template(
-#             "app/email/templates/reset_password.html"
-#         )
-#         body = html_template.replace("{{RESET_URL}}", reset_url)
-#         self.msg = body

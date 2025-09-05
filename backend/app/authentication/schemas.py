@@ -153,53 +153,6 @@ class UserResponse(BaseModel):
         from_attributes = True
 
 
-#
-#     first_name: Optional[str] = None
-#     last_name: Optional[str] = None
-#     email: Optional[str] = None
-#     phone_number: Optional[str] = None
-#     password: Optional[str] = None
-#     authenticator_mfa_enabled: Optional[bool] = None
-#     mfa_secret: Optional[str] = None
-#     is_verified: Optional[bool] = None
-#     role: Optional[str] = None
-#     permissions: Optional[List[str]] = None
-#
-#
-# class UpdateUserHashed(BaseModel):
-#     first_name: Optional[str] = None
-#     last_name: Optional[str] = None
-#     email: Optional[str] = None
-#     phone_number: Optional[str] = None
-#     password_hash: Optional[str] = None  # hashed password
-#     authenticator_mfa_enabled: Optional[bool] = None
-#     mfa_secret: Optional[str] = None
-#     is_verified: Optional[bool] = None
-#     role: Optional[str] = None
-#     permissions: Optional[List[str]] = None
-
-# @classmethod
-# def from_update_user(cls, user: UpdateUser) -> "UpdateUserHashed":
-#     """Convert UpdateUser (plain password) into UpdateUserHashed"""
-#     data = user.dict()
-#     password = data.pop("password", None)
-#
-#     if password:
-#         password_hash = SecurityService.hash_password(password)
-#     return cls(**data)
-
-
-# class UserUpdate(BaseModel):
-#     email: Optional[str] = None
-#     password_hash: Optional[str] = None
-#     authenticator_mfa_enabled: Optional[bool] = None
-#     mfa_secret: Optional[str] = None
-#     is_verified: Optional[bool] = None
-#     created_at: Optional[datetime] = None
-#     updated_at: Optional[datetime] = None
-#     last_login: Optional[datetime] = None
-
-
 # Refresh tokens
 class RefreshToken(BaseModel):
     id: Optional[int] = None

@@ -1,39 +1,10 @@
 from app.email.service import HtmlMessage
 from datetime import datetime
 
-# from typing import Self, overload
-
 
 def load_email_template(template_path):
     with open(template_path, "r") as f:
         return f.read()
-
-
-# class Message:
-#     def __init__(self) -> None:
-#         self.msg = ""
-#
-#     def greeting(self, text: str) -> Self:
-#         self.msg += text + "\n\n"
-#         return self
-#
-#     def body(self, text: str) -> Self:
-#         self.msg += text + "\n\n"
-#         return self
-#
-#     def salutation(self, text: str) -> Self:
-#         self.msg += text + "\n"
-#         return self
-#
-#
-# class PlainMessage(Message):
-#     def __init__(self) -> None:
-#         super().__init__()
-#
-#
-# class HtmlMessage(Message):
-#     def __init__(self) -> None:
-#         super().__init__()
 
 
 class ResetPasswordMessage(HtmlMessage):

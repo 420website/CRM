@@ -95,8 +95,6 @@ services:
     build: 
       context: ./backend
       dockerfile : Dockerfile.test
-    # env_file:
-    #   - .env
     environment:
       - POSTGRES_HOST=postgres_test
       - POSTGRES_PORT=5432
@@ -117,8 +115,6 @@ services:
       - ENVIRONMENT=dev
       - ANTHROPIC_API_KEY=7CrUl1rG4NBNk4bSV2uU7RW79Z_dRdvrrZn3Eqgytqg
       - SUPPORT_EMAIL=email@exmaple.com
-      # - SUPPORT_EMAIL_PASSWORD=password
-      # - SUPPORT_EMAIL=example@email.com
       - SMTP_EMAIL=email@exmaple.com
       - SMTP_PASSWORD=password
     volumes:
