@@ -6,7 +6,7 @@ x-backend-base: &backend_base
   environment:
     - POSTGRES_HOST=postgres_test
     - POSTGRES_PORT=5432
-    - POSTGRES_DATABASE=appdb 
+    - POSTGRES_DB=appdb 
     - POSTGRES_USER=root 
     - POSTGRES_PASSWORD=example
     - DATABASE_URL=postgres://root:example@postgres_test:5432/appdb
@@ -100,7 +100,7 @@ services:
     environment:
       - POSTGRES_HOST=postgres_test
       - POSTGRES_PORT=5432
-      - POSTGRES_DATABASE=appdb 
+      - POSTGRES_DB=appdb 
       - POSTGRES_USER=root 
       - POSTGRES_PASSWORD=example
       - DATABASE_URL=postgres://root:example@postgres_test:5432/appdb
