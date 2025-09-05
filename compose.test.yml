@@ -3,8 +3,6 @@ x-backend-base: &backend_base
   build: 
     context: ./backend
     dockerfile: Dockerfile.test
-  env_file:
-      - .env
   environment:
     - PSQL_HOST=postgres_test
     - PSQL_PORT=5432
@@ -17,10 +15,12 @@ x-backend-base: &backend_base
     - JWT_ACCESS_SECRET=STUFRZH-MKLFj4j-6c9Z50WNWkvd9uqiWQJOpeCtI9Q
     - JWT_REFRESH_SECRET=STUFRZH-MKLFj4j-6c9Z50WNWkvd9uqiWQJOpeCtI9Q
     - MFA_ENCRYPTION_KEY=7CrUl1rG4NBNk4bSV2uU7RW79Z_dRdvrrZn3Eqgytqg=
+    - ANTHROPIC_API_KEY=7CrUl1rG4NBNk4bSV2uU7RW79Z_dRdvrrZn3Eqgytqg
     - APP_NAME=testing
     - APP_URL=http://localhost:8001 
     - SMTP_EMAIL=email@exmaple.com
     - SMTP_EMAIL_PASSWORD=password
+    - SUPPORT_EMAIL=example@email.com
   networks:
       - frontend-net 
       - backend-net 
@@ -92,8 +92,8 @@ services:
     build: 
       context: ./backend
       dockerfile : Dockerfile.test
-    env_file:
-      - .env
+    # env_file:
+    #   - .env
     environment:
       - PSQL_HOST=postgres_test
       - PSQL_PORT=5432
@@ -106,14 +106,18 @@ services:
       - JWT_ACCESS_SECRET=STUFRZH-MKLFj4j-6c9Z50WNWkvd9uqiWQJOpeCtI9Q
       - JWT_REFRESH_SECRET=STUFRZH-MKLFj4j-6c9Z50WNWkvd9uqiWQJOpeCtI9Q
       - MFA_ENCRYPTION_KEY=7CrUl1rG4NBNk4bSV2uU7RW79Z_dRdvrrZn3Eqgytqg=
-      - SUPPORT_EMAIL=email@exmaple.com
-      - SUPPORT_EMAIL_PASSWORD=password
       - APP_NAME=dummy
       - APP_URL=http://localhost:5174 
       - DEBUG=True
       - MONGO_URL=mongodb://root:example@mongodb:27017
       - DB_NAME=my420_ca_db
       - ENVIRONMENT=dev
+      - ANTHROPIC_API_KEY=7CrUl1rG4NBNk4bSV2uU7RW79Z_dRdvrrZn3Eqgytqg
+      - SUPPORT_EMAIL=email@exmaple.com
+      # - SUPPORT_EMAIL_PASSWORD=password
+      # - SUPPORT_EMAIL=example@email.com
+      - SMTP_EMAIL=email@exmaple.com
+      - SMTP_EMAIL_PASSWORD=password
     volumes:
       - ./scripts/wait-for-db.sh:/scripts/wait-for-db.sh
       - ./backend:/backend 

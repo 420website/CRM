@@ -1,3 +1,4 @@
+from asyncpg.exceptions import UniqueViolationError
 from app.authentication.services import (
     EmailMfaCodeService,
     TokenService,
@@ -7,6 +8,7 @@ from app.authentication.schemas import (
     Email,
     ForgotPassword,
     RegisterRequest,
+    UserCreate,
     UserRead,
     UserResponse,
     VerificationToken,
@@ -17,6 +19,9 @@ from app.authentication.utils import SecurityService
 from app.config import settings
 from app.dependencies import get_current_user
 import datetime as dt
+
+from app.webpage.schema import ContactMessageCreate, RegistrationMessageCreate
+from app.webpage.services import ContactService, RegisterService
 
 router = APIRouter(prefix="/testing", tags=["Testing"])
 
@@ -45,6 +50,80 @@ async def test_register(data: RegisterRequest):
     await TokenService.create_verification_token(verification_token)
 
     return {"message": "Registration successful.", "token": token}
+
+
+@router.post("/users")
+async def create_user(
+    new_user: UserCreate,
+    user: UserRead = Depends(get_current_user),
+):
+    if await UserService.check_user_exists(new_user.email):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Email already registered",
+        )
+    # Create user
+    id = await UserService.create_user(new_user)
+
+    if not id:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Error creating user.",
+        )
+
+    return {
+        "id": id,
+        "message": "Registration successful. Check your email to verify.",
+    }
+
+
+@router.post("/contact-message", response_model=dict)
+async def submit_contact_message(message: ContactMessageCreate):
+
+    id = await ContactService.create_contact_message(message)
+
+    if not id:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Contact message not created.",
+        )
+
+    return {
+        "message": "Contact successful sent.",
+        "contact_id": id,
+        "status": "pending",
+    }
+
+
+@router.post("/register-message", response_model=dict)
+async def register_for_testing(registration: RegistrationMessageCreate):
+    # Send contact email to support team
+
+    try:
+        id = await RegisterService.create_register_message(registration)
+
+        if not id:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Register message not created.",
+            )
+
+        return {
+            "message": "Registration successful",
+            "registration_id": id,
+            "status": "pending",
+        }
+    except UniqueViolationError:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=f"Health card number {registration.health_card_number} already registered.",
+        )
+    except Exception as e:
+        # Catch any other exception
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"An unexpected error occurred: {str(e)}",
+        )
 
 
 @router.post("/forgot-password")

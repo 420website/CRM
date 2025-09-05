@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import { WebpageServices } from "../../src/services/webpageService";
+import { TestServices } from "../setup";
 
 ////////////////
 // WebpageServices
@@ -26,11 +27,23 @@ describe("WebpageServices", () => {
     message: "I have a question about services.",
   };
 
+  beforeEach(async () => {
+    if (createdRegisterId) {
+      await WebpageServices.delete_register_message(createdRegisterId);
+      createdRegisterId = null;
+    }
+
+    if (createdContactId) {
+      await WebpageServices.delete_contact_message(createdContactId);
+      createdContactId = null;
+    }
+  });
+
   // -------------------
   // Register tests
   // -------------------
   it("should create a registration successfully", async () => {
-    const result = await WebpageServices.send_register_message(registerForm);
+    const result = await TestServices.send_register_message(registerForm);
 
     expect(result.success).toBe(true);
 
@@ -48,7 +61,7 @@ describe("WebpageServices", () => {
   // Contact tests
   // -------------------
   it("should create a contact message successfully", async () => {
-    const result = await WebpageServices.send_contact_message(contactForm);
+    const result = await TestServices.send_contact_message(contactForm);
 
     expect(result.success).toBe(true);
 

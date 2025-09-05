@@ -109,8 +109,8 @@ class AnalyticsService:
             system_msg = system_message(context)
 
             message = await settings.anthropic_client.messages.create(
-                model="claude-sonnet-4-20250514",
-                max_tokens=10,
+                model=settings.anthropic_model,
+                max_tokens=settings.anthropic_max_tokens,
                 system=system_msg,
                 messages=[{"role": "user", "content": request.message}],
             )

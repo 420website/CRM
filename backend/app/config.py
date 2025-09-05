@@ -58,6 +58,8 @@ class Settings:
     # claude
     anthropic_key = get_env("ANTHROPIC_API_KEY")
     anthropic_client = AsyncAnthropic(api_key=anthropic_key)
+    anthropic_max_tokens = os.getenv("MAX_TOKENS", 1024)
+    anthropic_model = os.getenv("ANTHROPIC_MODEL", "claude-sonnet-4-20250514")
 
     support_email = get_env("SUPPORT_EMAIL")
     ######### OLD ######

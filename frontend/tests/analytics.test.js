@@ -7,11 +7,9 @@ import FormData from "form-data";
 //   it("register_successful", async () => {
 //     const formData = new FormData();
 //     formData.append("file", fs.createReadStream("tests/test_data.csv")); // "test_data.csv");
-//     console.log(formData);
 //
 //     // Test
 //     const result = await AnalyticsServices.upload_legacy_data(formData);
-//     console.log(result);
 //
 //     expect(result.success).toBe(true);
 //     expect(result.status).toBe(200);

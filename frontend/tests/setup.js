@@ -11,6 +11,12 @@ export const TestServices = {
       "Error Registrating testing user.",
     );
   },
+  create_user: async (data) => {
+    return apiCall(
+      () => api.post("/testing/users", data),
+      "Create user failed.",
+    );
+  },
 
   send_email_mfa: async (email) => {
     return apiCall(
@@ -57,5 +63,17 @@ export const TestServices = {
     return apiCall(() => {
       (api.get("/testing/me"), "Error getting test user.");
     });
+  },
+  send_contact_message: async (data) => {
+    return apiCall(
+      () => api.post("/testing/contact-message", data),
+      "Sending contact message failed.",
+    );
+  },
+  send_register_message: async (data) => {
+    return apiCall(
+      () => api.post("/testing/register-message", data),
+      "Sending register message failed.",
+    );
   },
 };

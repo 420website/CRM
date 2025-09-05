@@ -48,7 +48,8 @@ describe("UserServices.users", () => {
   });
 
   it("should create a user successfully", async () => {
-    const result = await UserServices.create_user(userForm);
+    const result = await TestServices.create_user(userForm);
+    createdUserId = result.data?.id;
 
     expect(result.success).toBe(true);
     expect(result.data?.message).toBe(
@@ -60,10 +61,11 @@ describe("UserServices.users", () => {
   });
 
   it("should fetch users and include created one", async () => {
-    const createRes = await UserServices.create_user(userForm);
-    createdUserId = createRes.data?.id;
+    const result = await TestServices.create_user(userForm);
+    createdUserId = result.data?.id;
 
     const listRes = await UserServices.get_users();
+
     expect(listRes.success).toBe(true);
     expect(Array.isArray(listRes.data)).toBe(true);
 
@@ -76,8 +78,8 @@ describe("UserServices.users", () => {
   });
 
   it("should update a user successfully", async () => {
-    const createRes = await UserServices.create_user(userForm);
-    createdUserId = createRes.data?.id;
+    const result = await TestServices.create_user(userForm);
+    createdUserId = result.data?.id;
 
     const updateData = { phone_number: "416-555-0000" };
     const updateRes = await UserServices.update_user(createdUserId, updateData);
@@ -93,8 +95,8 @@ describe("UserServices.users", () => {
   });
 
   it("should delete a user by ID", async () => {
-    const createRes = await UserServices.create_user(userForm);
-    createdUserId = createRes.data?.id;
+    const result = await TestServices.create_user(userForm);
+    createdUserId = result.data?.id;
 
     const deleteRes = await UserServices.delete_user(createdUserId);
     expect(deleteRes.success).toBe(true);

@@ -53,6 +53,7 @@ async def register_for_testing(registration: RegistrationMessageCreate):
     # Send contact email to support team
 
     try:
+        send_registration_email(registration.model_dump())
 
         id = await RegisterService.create_register_message(registration)
 
@@ -61,8 +62,6 @@ async def register_for_testing(registration: RegistrationMessageCreate):
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Register message not created.",
             )
-
-        send_registration_email(registration.model_dump())
 
         return {
             "message": "Registration successful",
