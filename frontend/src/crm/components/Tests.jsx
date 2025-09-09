@@ -65,6 +65,11 @@ export default function Tests({
         hiv_tester: "CM",
         hcv_result: "negative",
         hcv_tester: "CM",
+        bloodwork_type: "",
+        bloodwork_circles: "",
+        bloodwork_result: "Pending",
+        bloodwork_date_submitted: new Date().toISOString().split("T")[0],
+        bloodwork_tester: "CM",
       });
       setEditingTestId(null);
     } else {
@@ -113,6 +118,11 @@ export default function Tests({
         hiv_tester: "CM",
         hcv_result: "negative",
         hcv_tester: "CM",
+        bloodwork_type: "",
+        bloodwork_circles: "",
+        bloodwork_result: "Pending",
+        bloodwork_date_submitted: new Date().toISOString().split("T")[0],
+        bloodwork_tester: "CM",
       });
       setEditingTestId(null);
     } else {
@@ -154,6 +164,8 @@ export default function Tests({
   };
 
   const editTest = (test) => {
+    console.log(test);
+
     setTestFormData({
       test_type: test.test_type,
       test_date: test.test_date,
@@ -162,6 +174,12 @@ export default function Tests({
       hiv_tester: test.hiv_tester || "CM",
       hcv_result: test.hcv_result || "negative",
       hcv_tester: test.hcv_tester || "CM",
+      bloodwork_type: test.bloodwork_type || "",
+      bloodwork_circles: test.bloodwork_circles || "",
+      bloodwork_result: test.bloodwork_result || "Pending",
+      bloodwork_date_submitted:
+        test.bloodwork_date_submitted || new Date().toISOString().split("T")[0],
+      bloodwork_tester: test.bloodwork_tester || "CM",
     });
     setEditingTestId(test.id);
   };
@@ -175,6 +193,11 @@ export default function Tests({
       hiv_tester: "CM",
       hcv_result: "negative",
       hcv_tester: "CM",
+      bloodwork_type: "",
+      bloodwork_circles: "",
+      bloodwork_result: "Pending",
+      bloodwork_date_submitted: new Date().toISOString().split("T")[0],
+      bloodwork_tester: "CM",
     });
     setEditingTestId(null);
   };
@@ -410,14 +433,14 @@ export default function Tests({
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
                     <label
-                      htmlFor="bloodworkTestDate"
+                      htmlFor="bloodwork_test_date"
                       className="block text-sm font-medium text-gray-700 mb-2"
                     >
                       Test Date
                     </label>
                     <input
                       type="date"
-                      id="bloodworkTestDate"
+                      id="bloodwork_test_date"
                       name="test_date"
                       value={testFormData.test_date}
                       onChange={handleTestChange}
@@ -431,13 +454,13 @@ export default function Tests({
 
                   <div>
                     <label
-                      htmlFor="bloodworkType"
+                      htmlFor="bloodwork_type"
                       className="block text-sm font-medium text-gray-700 mb-2"
                     >
                       Type
                     </label>
                     <select
-                      id="bloodworkType"
+                      id="bloodwork_type"
                       name="bloodwork_type"
                       value={testFormData.bloodwork_type}
                       onChange={handleTestChange}
@@ -452,13 +475,13 @@ export default function Tests({
                   {testFormData.bloodwork_type === "DBS" && (
                     <div>
                       <label
-                        htmlFor="bloodworkCircles"
+                        htmlFor="bloodwork_circles"
                         className="block text-sm font-medium text-gray-700 mb-2"
                       >
                         Circles
                       </label>
                       <select
-                        id="bloodworkCircles"
+                        id="bloodwork_circles"
                         name="bloodwork_circles"
                         value={testFormData.bloodwork_circles}
                         onChange={handleTestChange}
@@ -476,13 +499,13 @@ export default function Tests({
 
                   <div>
                     <label
-                      htmlFor="bloodworkResult"
+                      htmlFor="bloodwork_result"
                       className="block text-sm font-medium text-gray-700 mb-2"
                     >
                       Results
                     </label>
                     <select
-                      id="bloodworkResult"
+                      id="bloodwork_result"
                       name="bloodwork_result"
                       value={testFormData.bloodwork_result}
                       onChange={handleTestChange}
@@ -497,14 +520,14 @@ export default function Tests({
 
                   <div>
                     <label
-                      htmlFor="bloodworkDateSubmitted"
+                      htmlFor="bloodwork_date_submitted"
                       className="block text-sm font-medium text-gray-700 mb-2"
                     >
                       Date Submitted
                     </label>
                     <input
                       type="date"
-                      id="bloodworkDateSubmitted"
+                      id="bloodwork_date_submitted"
                       name="bloodwork_date_submitted"
                       value={testFormData.bloodwork_date_submitted}
                       onChange={handleTestChange}
@@ -518,13 +541,13 @@ export default function Tests({
 
                   <div>
                     <label
-                      htmlFor="bloodworkTester"
+                      htmlFor="bloodwork_tester"
                       className="block text-sm font-medium text-gray-700 mb-2"
                     >
                       Tester
                     </label>
                     <select
-                      id="bloodworkTester"
+                      id="bloodwork_tester"
                       name="bloodwork_tester"
                       value={testFormData.bloodwork_tester}
                       onChange={handleTestChange}
