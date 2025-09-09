@@ -60,7 +60,7 @@ jobs:
             SUPPORT_EMAIL=${{ secrets.SUPPORT_EMAIL }} 
 
             # Frontend 
-            VITE_API_BACKEND_URL=${{ secrets.VITE_API_BACKEND_URL }}
+            VITE_API_BASE_URL=${{ secrets.VITE_API_BASE_URL }}
             VITE_APP_GOOGLE_PLACES_API_KEY=${{ secrets.VITE_APP_GOOGLE_PLACES_API_KEY }}
 
             # Database 
