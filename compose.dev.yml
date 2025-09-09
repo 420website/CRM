@@ -73,11 +73,9 @@ services:
       - MONGO_URL=mongodb://root:example@mongodb:27017
       - DB_NAME=my420_ca_db
       - ENVIRONMENT=dev
+      - PYTHONPATH=/backend
     env_file:
       - .env
-    volumes:
-      - ./scripts/wait-for-db.sh:/scripts/wait-for-db.sh
-      - ./backend/app:/backend/app
     networks:
       - backend-net 
       - frontend-net
@@ -86,7 +84,12 @@ services:
       - dev_backend 
     ports:
       - 8000:8000
-    entrypoint: ["/scripts/wait-for-db.sh"]
+    volumes:
+      - ./scripts/wait-for-db.sh:/scripts/wait-for-db.sh
+      - ./scripts/create_admin.sh:/scripts/create_admin.sh
+      - ./backend/app:/backend/app
+      - ./backend/scripts:/backend/scripts 
+    entrypoint: ["/scripts/create_admin.sh"]
     command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000" , "--reload"]
 
   frontend:

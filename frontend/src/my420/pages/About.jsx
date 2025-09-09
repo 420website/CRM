@@ -5,11 +5,12 @@ const About = () => {
   // Force scroll to top on fresh navigation
   useEffect(() => {
     // Check if this is marked as fresh navigation from a button click
-    const isFreshNavigation = sessionStorage.getItem('freshNavigation') === 'true';
-    
+    const isFreshNavigation =
+      sessionStorage.getItem("freshNavigation") === "true";
+
     // Clear the fresh navigation flag immediately
-    sessionStorage.removeItem('freshNavigation');
-    
+    sessionStorage.removeItem("freshNavigation");
+
     if (isFreshNavigation) {
       // Force immediate scroll to top for button clicks
       window.scrollTo(0, 0);
@@ -19,12 +20,12 @@ const About = () => {
       }, 10);
       return;
     }
-    
+
     // For any other navigation that's not back/forward, also scroll to top
     const isBackForwardNavigation = () => {
       if (window.performance && window.performance.getEntriesByType) {
-        const navEntries = window.performance.getEntriesByType('navigation');
-        if (navEntries.length > 0 && navEntries[0].type === 'back_forward') {
+        const navEntries = window.performance.getEntriesByType("navigation");
+        if (navEntries.length > 0 && navEntries[0].type === "back_forward") {
           return true;
         }
       }
@@ -47,13 +48,13 @@ const About = () => {
 
   // Additional effect to ensure scroll to top happens after page load
   useEffect(() => {
-    const isFreshNavigation = sessionStorage.getItem('wasClicked') === 'true';
+    const isFreshNavigation = sessionStorage.getItem("wasClicked") === "true";
     if (isFreshNavigation) {
-      sessionStorage.removeItem('wasClicked');
+      sessionStorage.removeItem("wasClicked");
       const forceScroll = () => {
         window.scrollTo(0, 0);
       };
-      
+
       // Force scroll multiple times to ensure it works
       forceScroll();
       setTimeout(forceScroll, 1);
@@ -73,8 +74,9 @@ const About = () => {
               About Our Program
             </h1>
             <p className="text-xl text-gray-200 max-w-3xl mx-auto">
-              We provide accessible, confidential testing and treatment services for 
-              individuals at risk of Hepatitis C<br />and HIV infection.
+              We provide accessible, confidential testing and treatment services
+              for individuals at risk of Hepatitis C<br />
+              and HIV infection.
             </p>
           </div>
         </div>
@@ -89,16 +91,18 @@ const About = () => {
                 Our Mission
               </h2>
               <p className="text-lg text-gray-700 mb-4 leading-relaxed">
-                We believe everyone in Ontario deserves access to quality healthcare, regardless of their 
-                circumstances.
+                We believe everyone in Ontario deserves access to quality
+                healthcare, regardless of their circumstances.
               </p>
               <p className="text-lg text-gray-700 mb-4 leading-relaxed">
-                Our program specifically serves individuals who may face barriers 
-                to accessing traditional healthcare services, including those with a history of substance use.
+                Our program specifically serves individuals who may face
+                barriers to accessing traditional healthcare services, including
+                those with a history of substance use.
               </p>
               <p className="text-lg text-gray-700 mb-4 leading-relaxed">
-                We provide testing, treatment, and support services across Ontario in a judgment-free environment 
-                that prioritizes dignity, respect, and confidentiality.
+                We provide testing, treatment, and support services across
+                Ontario in a judgment-free environment that prioritizes dignity,
+                respect, and confidentiality.
               </p>
               <div className="flex flex-col sm:flex-row gap-4">
                 <Link
@@ -124,29 +128,53 @@ const About = () => {
                   <div className="flex items-start space-x-3">
                     <span className="text-black text-xl">🤝</span>
                     <div>
-                      <h4 className="font-semibold text-gray-900">Compassion</h4>
-                      <p className="text-gray-600">Treating everyone with<br />dignity and respect</p>
+                      <h4 className="font-semibold text-gray-900">
+                        Compassion
+                      </h4>
+                      <p className="text-gray-600">
+                        Treating everyone with
+                        <br />
+                        dignity and respect
+                      </p>
                     </div>
                   </div>
                   <div className="flex items-start space-x-3">
                     <span className="text-black text-xl">🔒</span>
                     <div>
-                      <h4 className="font-semibold text-gray-900">Confidentiality</h4>
-                      <p className="text-gray-600">Protecting your privacy<br />and personal information</p>
+                      <h4 className="font-semibold text-gray-900">
+                        Confidentiality
+                      </h4>
+                      <p className="text-gray-600">
+                        Protecting your privacy
+                        <br />
+                        and personal information
+                      </p>
                     </div>
                   </div>
                   <div className="flex items-start space-x-3">
                     <span className="text-black text-xl">🎯</span>
                     <div>
-                      <h4 className="font-semibold text-gray-900">Accessibility</h4>
-                      <p className="text-gray-600">Removing barriers to<br />essential healthcare</p>
+                      <h4 className="font-semibold text-gray-900">
+                        Accessibility
+                      </h4>
+                      <p className="text-gray-600">
+                        Removing barriers to
+                        <br />
+                        essential healthcare
+                      </p>
                     </div>
                   </div>
                   <div className="flex items-start space-x-3">
                     <span className="text-black text-xl">💪</span>
                     <div>
-                      <h4 className="font-semibold text-gray-900">Empowerment</h4>
-                      <p className="text-gray-600">Supporting informed<br />health decisions</p>
+                      <h4 className="font-semibold text-gray-900">
+                        Empowerment
+                      </h4>
+                      <p className="text-gray-600">
+                        Supporting informed
+                        <br />
+                        health decisions
+                      </p>
                     </div>
                   </div>
                 </div>
@@ -164,13 +192,17 @@ const About = () => {
               Patient Stories
             </h2>
             <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-              Hear from real people whose<br />lives have been changed through<br />our testing and support services.
+              Hear from real people whose
+              <br />
+              lives have been changed through
+              <br />
+              our testing and support services.
             </p>
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
             <div className="bg-gray-100 rounded-lg p-6 shadow-lg">
-              <video 
+              <video
                 className="w-full h-auto rounded-lg"
                 controls
                 preload="metadata"
@@ -179,10 +211,10 @@ const About = () => {
                 controlsList="nodownload nofullscreen noremoteplayback"
                 poster="/testimonial-poster.jpg"
                 style={{
-                  aspectRatio: '3/4',
-                  objectFit: 'cover',
-                  maxWidth: '100%',
-                  maxHeight: '400px'
+                  aspectRatio: "3/4",
+                  objectFit: "cover",
+                  maxWidth: "100%",
+                  maxHeight: "400px",
                 }}
               >
                 <source src="/testimonial-video.mov" type="video/mp4" />
@@ -195,7 +227,7 @@ const About = () => {
             </div>
 
             <div className="bg-gray-100 rounded-lg p-6 shadow-lg">
-              <video 
+              <video
                 className="w-full h-auto rounded-lg"
                 controls
                 preload="metadata"
@@ -204,17 +236,19 @@ const About = () => {
                 controlsList="nodownload nofullscreen noremoteplayback"
                 poster="/testimonial-poster-2.jpg"
                 style={{
-                  aspectRatio: '3/4',
-                  objectFit: 'cover',
-                  maxWidth: '100%',
-                  maxHeight: '400px'
+                  aspectRatio: "3/4",
+                  objectFit: "cover",
+                  maxWidth: "100%",
+                  maxHeight: "400px",
                 }}
               >
                 <source src="/testimonial-video-2-final.mp4" type="video/mp4" />
                 Your browser does not support the video tag.
               </video>
               <p className="text-center text-sm text-gray-600 mt-4">
-                Patient's journey to better<br />health with our program
+                Patient's journey to better
+                <br />
+                health with our program
               </p>
             </div>
           </div>
@@ -238,8 +272,8 @@ const About = () => {
               Why Testing Matters
             </h2>
             <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-              Early detection and treatment can dramatically improve health outcomes 
-              and prevent transmission to others.
+              Early detection and treatment can dramatically improve health
+              outcomes and prevent transmission to others.
             </p>
           </div>
 
@@ -250,16 +284,31 @@ const About = () => {
               </h3>
               <div className="space-y-2 text-gray-700">
                 <div>
-                  <h4 className="font-semibold text-gray-900">The Silent Epidemic</h4>
-                  <p>Often called the "silent killer" because most people don't know they have it.</p>
+                  <h4 className="font-semibold text-gray-900">
+                    The Silent Epidemic
+                  </h4>
+                  <p>
+                    Often called the "silent killer" because most people don't
+                    know they have it.
+                  </p>
                 </div>
                 <div>
-                  <h4 className="font-semibold text-gray-900">Highly Treatable</h4>
-                  <p>New medications can cure Hepatitis C<br />in 8-12 weeks with minimal side effects.</p>
+                  <h4 className="font-semibold text-gray-900">
+                    Highly Treatable
+                  </h4>
+                  <p>
+                    New medications can cure Hepatitis C<br />
+                    in 8-12 weeks with minimal side effects.
+                  </p>
                 </div>
                 <div>
-                  <h4 className="font-semibold text-gray-900">Prevention is Key</h4>
-                  <p>Without treatment, it can lead to liver damage, cirrhosis, and liver cancer.</p>
+                  <h4 className="font-semibold text-gray-900">
+                    Prevention is Key
+                  </h4>
+                  <p>
+                    Without treatment, it can lead to liver damage, cirrhosis,
+                    and liver cancer.
+                  </p>
                 </div>
               </div>
             </div>
@@ -270,16 +319,33 @@ const About = () => {
               </h3>
               <div className="space-y-2 text-gray-700">
                 <div>
-                  <h4 className="font-semibold text-gray-900">Early Detection</h4>
-                  <p>Early treatment leads to better<br />outcomes and normal life expectancy.</p>
+                  <h4 className="font-semibold text-gray-900">
+                    Early Detection
+                  </h4>
+                  <p>
+                    Early treatment leads to better
+                    <br />
+                    outcomes and normal life expectancy.
+                  </p>
                 </div>
                 <div>
-                  <h4 className="font-semibold text-gray-900">Manageable Condition</h4>
-                  <p>Modern treatments can reduce<br />viral load to undetectable levels.</p>
+                  <h4 className="font-semibold text-gray-900">
+                    Manageable Condition
+                  </h4>
+                  <p>
+                    Modern treatments can reduce
+                    <br />
+                    viral load to undetectable levels.
+                  </p>
                 </div>
                 <div>
-                  <h4 className="font-semibold text-gray-900">Prevention Strategies</h4>
-                  <p>Undetectable = Untransmittable (U=U) - treatment prevents transmission.</p>
+                  <h4 className="font-semibold text-gray-900">
+                    Prevention Strategies
+                  </h4>
+                  <p>
+                    Undetectable = Untransmittable (U=U) - treatment prevents
+                    transmission.
+                  </p>
                 </div>
               </div>
             </div>
@@ -295,8 +361,8 @@ const About = () => {
               Our Harm Reduction Approach
             </h2>
             <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-              We meet people where they are, without judgment, and focus on reducing 
-              risks and improving health outcomes.
+              We meet people where they are, without judgment, and focus on
+              reducing risks and improving health outcomes.
             </p>
           </div>
 
@@ -309,7 +375,9 @@ const About = () => {
                 Risk Reduction
               </h3>
               <p className="text-gray-600">
-                Practical strategies to minimize health<br />risks while respecting personal choices.
+                Practical strategies to minimize health
+                <br />
+                risks while respecting personal choices.
               </p>
             </div>
 
@@ -321,7 +389,8 @@ const About = () => {
                 Healthcare Access
               </h3>
               <p className="text-gray-600">
-                Connecting people to essential healthcare services and ongoing support.
+                Connecting people to essential healthcare services and ongoing
+                support.
               </p>
             </div>
 
@@ -333,7 +402,9 @@ const About = () => {
                 Education & Support
               </h3>
               <p className="text-gray-600">
-                Providing information and resources<br />to make informed health decisions.
+                Providing information and resources
+                <br />
+                to make informed health decisions.
               </p>
             </div>
           </div>
@@ -344,10 +415,14 @@ const About = () => {
       <section className="pt-4 pb-4 bg-white text-black">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h2 className="text-3xl font-bold mb-4">
-            Ready to Take<br />the First Step?
+            Ready to Take
+            <br />
+            the First Step?
           </h2>
           <p className="text-xl mb-4 text-gray-700">
-            Our team is here to support you<br />through every step of the process.
+            Our team is here to support you
+            <br />
+            through every step of the process.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link

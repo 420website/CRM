@@ -88,6 +88,11 @@ jobs:
             CERTBOT_CONTAINER=${{ secrets.CERTBOT_CONTAINER }}
             CERTBOT_VOLUME=${{ secrets.CERTBOT_VOLUME }}
 
+            # Admin 
+            ADMIN_EMAIL=${{ secrets.ADMIN_EMAIL }}
+            ADMIN_PASSWORD=${{ secrets.ADMIN_PASSWORD }}
+            ADMIN_PHONE=${{ secrets.ADMIN_PHONE }}
+
             EOF
 
             # Make deploy script executable and run it

@@ -9,5 +9,5 @@ until pg_isready -h "$POSTGRES_HOST" -p "$POSTGRES_PORT" -U "$POSTGRES_USER" -d 
   sleep 2
 done
 
-echo "PostgreSQL is up. Starting backend..."
+echo "PostgreSQL is up..."
 exec "$@"
