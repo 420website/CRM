@@ -273,12 +273,12 @@ function AppRoutes() {
             <Route element={<StandardRoute />}>
               <Route path="/admin-register" element={<AdminRegister />} />
               <Route path="/admin-dashboard" element={<AdminDashboard />} />
+              <Route
+                path="/admin-edit/:registrationId"
+                element={<AdminEdit />}
+              />
               <Route element={<AdminRoute />}>
                 <Route path="/admin-users" element={<UserManagement />} />
-                <Route
-                  path="/admin-edit/:registrationId"
-                  element={<AdminEdit />}
-                />
               </Route>
             </Route>
           </Route>
