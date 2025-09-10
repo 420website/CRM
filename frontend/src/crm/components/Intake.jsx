@@ -1,7 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import React, { useState } from "react";
 import { HealthServices } from "../../services/healthService";
-import { compressImage } from "../../utils/utils";
+import { compressImage } from "../../utils/compressImage";
 
 export default function Intake({ submitStatus, setFormData }) {
   const navigate = useNavigate();

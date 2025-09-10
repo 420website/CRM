@@ -12,13 +12,9 @@ import DispositionManager from "../components/DispositionManager";
 import ReferralSiteManager from "../components/ReferralSiteManager";
 import VoiceDataModal from "../components/VoiceDateModal";
 import { useAuth } from "../../context/AuthContext";
-import {
-  calculateAge,
-  copyFormData,
-  copyLabelsData,
-  getFormattedLabelsData,
-  parseDateFromSpeech,
-} from "../../utils/utils";
+import { calculateAge } from "../../utils/formatData";
+import { copyFormData, copyLabelsData } from "../../utils/labelData";
+import { parseDateFromSpeech } from "../../utils/parseFromSpeech";
 import { GeneralServices } from "../../services/generalService";
 import { PatientServices } from "../../services/patientServices";
 import EditPhoto from "../components/EditPhoto";
@@ -46,6 +42,7 @@ const AdminEdit = () => {
   const [availableClinicalTemplates, setAvailableClinicalTemplates] = useState(
     [],
   );
+  const [currentVoiceDateField, setCurrentVoiceDateField] = useState("");
   const [voiceDateInput, setVoiceDateInput] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [currentRegistrationId, setCurrentRegistrationId] =
@@ -69,6 +66,44 @@ const AdminEdit = () => {
   });
 
   const [formData, setFormData] = useState(getDefaultForm());
+
+  const openVoiceDateInput = (dateField) => {
+    setCurrentVoiceDateField(dateField);
+    setVoiceDateInput("");
+    setShowVoiceDateModal(true);
+  };
+
+  const handleVoiceDateSubmit = () => {
+    const parsedDate = parseDateFromSpeech(voiceDateInput);
+    console.log(parsedDate);
+    console.log(currentVoiceDateField);
+
+    if (parsedDate) {
+      setFormData((prev) => {
+        const newData = {
+          ...prev,
+          [currentVoiceDateField]: parsedDate,
+        };
+
+        // Calculate age if DOB
+        if (currentVoiceDateField === "dob") {
+          const age = calculateAge(parsedDate);
+          if (age) {
+            newData.age = age.toString();
+          }
+        }
+
+        return newData;
+      });
+
+      setShowVoiceDateModal(false);
+      setVoiceDateInput("");
+    } else {
+      alert(
+        `❌ Could not understand date: "${voiceDateInput}". Try saying it like "January 15th 2024" or "today"`,
+      );
+    }
+  };
 
   const getRegistration = async () => {
     setLoading(true);
@@ -126,35 +161,35 @@ const AdminEdit = () => {
     }
   }, [registrationId]);
 
-  const handleVoiceDateSubmit = () => {
-    const parsedDate = parseDateFromSpeech(voiceDateInput);
-
-    if (parsedDate) {
-      setFormData((prev) => {
-        const newData = {
-          ...prev,
-          [currentVoiceDateField]: parsedDate,
-        };
-
-        // Calculate age if DOB
-        if (currentVoiceDateField === "dob") {
-          const age = calculateAge(parsedDate);
-          if (age) {
-            newData.age = age.toString();
-          }
-        }
-
-        return newData;
-      });
-
-      setShowVoiceDateModal(false);
-      setVoiceDateInput("");
-    } else {
-      alert(
-        `❌ Could not understand date: "${voiceDateInput}". Try saying it like "January 15th 2024" or "today"`,
-      );
-    }
-  };
+  // const handleVoiceDateSubmit = () => {
+  //   const parsedDate = parseDateFromSpeech(voiceDateInput);
+  //
+  //   if (parsedDate) {
+  //     setFormData((prev) => {
+  //       const newData = {
+  //         ...prev,
+  //         [currentVoiceDateField]: parsedDate,
+  //       };
+  //
+  //       // Calculate age if DOB
+  //       if (currentVoiceDateField === "dob") {
+  //         const age = calculateAge(parsedDate);
+  //         if (age) {
+  //           newData.age = age.toString();
+  //         }
+  //       }
+  //
+  //       return newData;
+  //     });
+  //
+  //     setShowVoiceDateModal(false);
+  //     setVoiceDateInput("");
+  //   } else {
+  //     alert(
+  //       `❌ Could not understand date: "${voiceDateInput}". Try saying it like "January 15th 2024" or "today"`,
+  //     );
+  //   }
+  // };
 
   const getTests = async (registrationId) => {
     setLoading(true);
@@ -300,6 +335,9 @@ const AdminEdit = () => {
         templates={templates}
         selectedTemplate={selectedTemplate}
         setSelectedTemplate={setSelectedTemplate}
+        openVoiceDateInput={openVoiceDateInput}
+        currentVoiceDateField={currentVoiceDateField}
+        setCurrentVoiceDateField={setCurrentVoiceDateField}
       />
     ),
     tests: (

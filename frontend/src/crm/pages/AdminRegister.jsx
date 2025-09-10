@@ -13,13 +13,9 @@ import DispositionManager from "../components/DispositionManager";
 import ReferralSiteManager from "../components/ReferralSiteManager";
 import VoiceDataModal from "../components/VoiceDateModal";
 import { useAuth } from "../../context/AuthContext";
-import {
-  calculateAge,
-  copyFormData,
-  copyLabelsData,
-  getFormattedLabelsData,
-  parseDateFromSpeech,
-} from "../../utils/utils";
+import { calculateAge } from "../../utils/formatData";
+import { copyFormData, copyLabelsData } from "../../utils/labelData";
+import { parseDateFromSpeech } from "../../utils/parseFromSpeech";
 import { GeneralServices } from "../../services/generalService";
 import { PatientServices } from "../../services/patientServices";
 import RegistrationSaved from "../components/RegistrationSaved";
@@ -56,20 +52,29 @@ const AdminRegister = () => {
   const [savedActivities, setSavedActivities] = useState([]);
   const [photoPreview, setPhotoPreview] = useState(null);
   const [photoUploadStatus, setPhotoUploadStatus] = useState(null);
+  const [currentVoiceDateField, setCurrentVoiceDateField] = useState("");
 
   const [dispositionSearch, setDispositionSearch] = useState("");
 
   const getDefaultForm = () => ({
     ...DEFAULT_FORM,
-    regDate: new Date().toISOString().split("T")[0],
-    hivDate: new Date().toISOString().split("T")[0],
-    rnaSample: new Date().toISOString().split("T")[0],
+    reg_date: new Date().toISOString().split("T")[0],
+    hiv_date: new Date().toISOString().split("T")[0],
+    rna_sample_date: new Date().toISOString().split("T")[0],
   });
 
   const [formData, setFormData] = useState(getDefaultForm());
 
+  const openVoiceDateInput = (dateField) => {
+    setCurrentVoiceDateField(dateField);
+    setVoiceDateInput("");
+    setShowVoiceDateModal(true);
+  };
+
   const handleVoiceDateSubmit = () => {
     const parsedDate = parseDateFromSpeech(voiceDateInput);
+    console.log(parsedDate);
+    console.log(currentVoiceDateField);
 
     if (parsedDate) {
       setFormData((prev) => {
@@ -242,6 +247,9 @@ const AdminRegister = () => {
         templates={templates}
         selectedTemplate={selectedTemplate}
         setSelectedTemplate={setSelectedTemplate}
+        openVoiceDateInput={openVoiceDateInput}
+        currentVoiceDateField={currentVoiceDateField}
+        setCurrentVoiceDateField={setCurrentVoiceDateField}
       />
     ),
     tests: (

@@ -4,7 +4,8 @@ import {
   calculateAge,
   formatPhoneNumber,
   formatPostalCode,
-} from "../../utils/utils";
+} from "../../utils/formatData";
+import VoiceInput from "./VoiceInput";
 
 export default function Client({
   formData,
@@ -20,6 +21,9 @@ export default function Client({
   templates,
   selectedTemplate,
   setSelectedTemplate,
+  openVoiceDateInput,
+  currentVoiceDateField,
+  setCurrentVoiceDateField,
 }) {
   const [error, setError] = useState("");
 
@@ -33,16 +37,9 @@ export default function Client({
   const [activeTab, setActiveTab] = useState("client");
   const [showTemplateManager, setShowTemplateManager] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [currentVoiceDateField, setCurrentVoiceDateField] = useState("");
+  // const [currentVoiceDateField, setCurrentVoiceDateField] = useState("");
   const [isEditingTemplate, setIsEditingTemplate] = useState(false);
   const [voiceAssistantStatus, setVoiceAssistantStatus] = useState("");
-
-  // Open voice date input modal
-  const openVoiceDateInput = (dateField) => {
-    setCurrentVoiceDateField(dateField);
-    setVoiceDateInput("");
-    setShowVoiceDateModal(true);
-  };
 
   // Handle Google Places address selection
   const getProvince = (code) => {
@@ -209,61 +206,6 @@ export default function Client({
       `✅ Registration information auto-populated successfully.`,
     );
     setHasAutoFilledData(true);
-  };
-
-  // Define fields for auto voice assistant (starting with First Name and Last Name)
-  const autoVoiceFields = [
-    { name: "first_name", label: "First Name", required: true },
-    { name: "last_name", label: "Last Name", required: true },
-  ];
-
-  // Start the auto voice assistant with upfront permission request
-  const startAutoVoiceAssistant = () => {
-    if (!recognition || !speechSupported) {
-      setVoiceAssistantStatus(
-        "❌ Speech recognition not supported. Please use Chrome, Edge, or Safari.",
-      );
-      return;
-    }
-
-    // Request microphone permission ONCE at the start
-    if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-      navigator.mediaDevices
-        .getUserMedia({ audio: true })
-        .then(() => {
-          setIsAutoVoiceActive(true);
-          setCurrentFieldIndex(0);
-          setVoiceAssistantStatus(
-            "🎤 Microphone permission granted! Starting automatic voice assistant...",
-          );
-
-          setTimeout(() => {
-            focusAndPromptCurrentField(0);
-          }, 1000);
-        })
-        .catch((error) => {
-          setError("Microphone permission denied:", error);
-          setVoiceAssistantStatus(
-            "❌ Microphone permission required. Please grant permission and try again.",
-          );
-        });
-    } else {
-      // Fallback - try to start directly
-      setIsAutoVoiceActive(true);
-      setCurrentFieldIndex(0);
-      setVoiceAssistantStatus("Starting voice assistant...");
-
-      setTimeout(() => {
-        focusAndPromptCurrentField(0);
-      }, 1000);
-    }
-  };
-
-  // Stop the auto voice assistant
-  const stopAutoVoiceAssistant = () => {
-    setIsAutoVoiceActive(false);
-    setCurrentFieldIndex(0);
-    setVoiceAssistantStatus("");
   };
 
   const updateClinicalSummary = async (formData) => {
@@ -460,64 +402,35 @@ export default function Client({
             </h2>
 
             {/* Verbal Registration Input */}
-            <div className="mb-6 p-4 bg-gray-50 border border-gray-200 rounded-md">
-              <h3 className="text-sm font-medium text-gray-700 mb-3">
-                🎤 Verbal Registration: Record all details at once, then
-                auto-populate fields
-              </h3>
+            <VoiceInput
+              voiceInputText={voiceInputText}
+              setVoiceInputText={setVoiceInputText}
+            />
 
-              {/* Voice Text Area (Blank) */}
-              <div className="mb-3">
-                <textarea
-                  value={voiceInputText}
-                  onChange={(e) => setVoiceInputText(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 resize-y"
-                  rows="4"
-                  placeholder=""
-                  style={{ whiteSpace: "pre-wrap" }}
-                />
-              </div>
-
-              {/* Auto-Fill/Clear Button */}
-              <div className="mb-3">
-                <button
-                  type="button"
-                  onClick={autoFillFromVoiceText}
-                  disabled={!voiceInputText.trim() && !hasAutoFilledData}
-                  className={`w-full px-4 py-2 rounded-md font-medium transition-colors ${
-                    !voiceInputText.trim() && !hasAutoFilledData
-                      ? "bg-gray-100 text-gray-400 cursor-not-allowed"
-                      : hasAutoFilledData
-                        ? "bg-red-600 text-white hover:bg-red-700"
-                        : "bg-black text-white hover:bg-gray-800"
-                  }`}
-                >
-                  {hasAutoFilledData
-                    ? "🗑️ Clear Auto-Filled Data"
-                    : "✨ Auto-Fill Fields"}
-                </button>
-              </div>
-
-              {/* Voice Status - Only show success messages, not detection messages */}
-              {voiceInputStatus && !voiceInputStatus.includes("Detected:") && (
-                <div
-                  className={`text-sm mt-2 p-2 rounded-md ${
-                    voiceInputStatus.includes("❌")
-                      ? "bg-red-50 text-red-700 border border-red-200"
-                      : voiceInputStatus.includes("✅")
-                        ? "bg-green-50 text-green-700 border border-green-200"
-                        : "bg-blue-50 text-blue-700 border border-blue-200"
-                  }`}
-                >
-                  {voiceInputStatus}
-                </div>
-              )}
+            {/* Auto-Fill/Clear Button */}
+            <div className="mb-3">
+              <button
+                type="button"
+                onClick={autoFillFromVoiceText}
+                disabled={!voiceInputText.trim() && !hasAutoFilledData}
+                className={`w-full px-4 py-2 rounded-md font-medium transition-colors ${
+                  !voiceInputText.trim() && !hasAutoFilledData
+                    ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                    : hasAutoFilledData
+                      ? "bg-red-600 text-white hover:bg-red-700"
+                      : "bg-black text-white hover:bg-gray-800"
+                }`}
+              >
+                {hasAutoFilledData
+                  ? "🗑️ Clear Auto-Filled Data"
+                  : "✨ Auto-Fill Fields"}
+              </button>
             </div>
 
             {/* Registration Date Field */}
             <div className="mb-6">
               <label
-                htmlFor="regDate"
+                htmlFor="reg_date"
                 className="block text-sm font-medium text-gray-700 mb-2"
               >
                 Registration Date
@@ -526,8 +439,8 @@ export default function Client({
                 <div className="relative">
                   <input
                     type="text"
-                    id="regDate"
-                    name="regDate"
+                    id="reg_date"
+                    name="reg_date"
                     value={
                       formData.reg_date
                         ? (() => {
@@ -561,14 +474,14 @@ export default function Client({
                     id="regDatePicker"
                     value={formData.reg_date}
                     onChange={handleChange}
-                    name="regDate"
+                    name="reg_date"
                     className="absolute inset-0 opacity-0 cursor-pointer"
                     style={{ width: "160px" }}
                   />
                 </div>
                 <button
                   type="button"
-                  onClick={() => openVoiceDateInput("regDate")}
+                  onClick={() => openVoiceDateInput("reg_date")}
                   className="p-2 text-gray-600 hover:text-black transition-colors rounded-md hover:bg-gray-100 border border-black"
                   title="Voice input for date"
                 >

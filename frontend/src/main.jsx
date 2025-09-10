@@ -1,9 +1,8 @@
 import "./index.css";
-import React from "react";
 import App from "./App";
 import { BrowserRouter } from "react-router-dom";
 import { createRoot } from "react-dom/client";
-import { loadGoogleMaps } from "./utils/utils";
+import { loadGoogleMaps } from "./utils/loadGoogleMaps";
 
 loadGoogleMaps();
 
