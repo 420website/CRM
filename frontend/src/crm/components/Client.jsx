@@ -1,10 +1,10 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import AddressAutocomplete from "./AddressAutocomplete";
 import {
   calculateAge,
   formatPhoneNumber,
   formatPostalCode,
-} from "../../utils/utils";
+} from "../../utils/formatData";
 
 export default function Client({
   formData,
@@ -20,6 +20,10 @@ export default function Client({
   templates,
   selectedTemplate,
   setSelectedTemplate,
+  openVoiceDateInput,
+  openVoiceFillInput,
+  currentVoiceDateField,
+  setCurrentVoiceDateField,
 }) {
   const [error, setError] = useState("");
 
@@ -33,16 +37,9 @@ export default function Client({
   const [activeTab, setActiveTab] = useState("client");
   const [showTemplateManager, setShowTemplateManager] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [currentVoiceDateField, setCurrentVoiceDateField] = useState("");
+  // const [currentVoiceDateField, setCurrentVoiceDateField] = useState("");
   const [isEditingTemplate, setIsEditingTemplate] = useState(false);
   const [voiceAssistantStatus, setVoiceAssistantStatus] = useState("");
-
-  // Open voice date input modal
-  const openVoiceDateInput = (dateField) => {
-    setCurrentVoiceDateField(dateField);
-    setVoiceDateInput("");
-    setShowVoiceDateModal(true);
-  };
 
   // Handle Google Places address selection
   const getProvince = (code) => {
@@ -65,205 +62,6 @@ export default function Client({
 
     // Get full province name from code or use as-is if already full name
     return provinceMap[code] || code;
-  };
-
-  // Auto-fill form fields directly from voice text or clear if already filled
-  const autoFillFromVoiceText = () => {
-    // If data has been auto-filled, clear it
-    if (hasAutoFilledData) {
-      setVoiceInputText("");
-      setVoiceInputStatus("");
-      setHasAutoFilledData(false);
-      // Clear the form fields that were auto-filled
-      setFormData((prev) => ({
-        ...prev,
-        first_name: "",
-        last_name: "",
-        dob: "",
-        gender: "",
-        health_card: "",
-        health_card_version: "",
-        disposition: "",
-        age: "",
-      }));
-      return;
-    }
-
-    if (!voiceInputText.trim()) {
-      setVoiceInputStatus(
-        "❌ No text to process. Please record some voice input first.",
-      );
-      return;
-    }
-
-    const text = voiceInputText.toLowerCase();
-
-    // Process all fields directly without phonetic spelling
-    processAllFields(text);
-  };
-
-  // Process all fields from voice text
-  const processAllFields = (text) => {
-    const updates = {};
-
-    // Extract names from voice text (handle accented characters)
-    const namePattern = text.match(
-      /^([a-zA-ZÀ-ÿ\u0100-\u017F]+)\s+([a-zA-ZÀ-ÿ\u0100-\u017F\s]+)/,
-    );
-    if (namePattern) {
-      const first_name =
-        namePattern[1].charAt(0).toUpperCase() +
-        namePattern[1].slice(1).toLowerCase();
-      const last_name =
-        namePattern[2].charAt(0).toUpperCase() +
-        namePattern[2].slice(1).toLowerCase();
-      updates.first_name = first_name;
-      updates.last_name = last_name;
-    } else {
-      setError("No names found in voice text:", text);
-    }
-
-    // Extract date of birth
-    const dobPattern1 = text.match(
-      /(?:date of birth|dob|born)\s+([a-zA-Z]+\s+\d{1,2},?\s+\d{4})/i,
-    );
-    const dobPattern2 = text.match(/([a-zA-Z]+\s+\d{1,2},?\s+\d{4})/i);
-
-    if (dobPattern1) {
-      try {
-        const dateStr = dobPattern1[1];
-        const date = new Date(dateStr);
-        if (!isNaN(date.getTime())) {
-          updates.dob = date.toISOString().split("T")[0];
-        }
-      } catch (error) {
-        setError("Error parsing date:", error);
-      }
-    } else if (dobPattern2) {
-      try {
-        const dateStr = dobPattern2[1];
-        const date = new Date(dateStr);
-        if (!isNaN(date.getTime())) {
-          updates.dob = date.toISOString().split("T")[0];
-        }
-      } catch (error) {
-        setError("Error parsing date:", error);
-      }
-    }
-
-    // Extract gender
-    if (
-      text.includes(" mail ") ||
-      text.includes(" male ") ||
-      text.includes("man ") ||
-      text.includes(" mail") ||
-      text.includes(" male")
-    ) {
-      updates.gender = "Male";
-    } else if (
-      text.includes("female") ||
-      text.includes("woman") ||
-      text.includes("femail")
-    ) {
-      updates.gender = "Female";
-    }
-
-    // Extract health card
-    const health_card_pattern = text.match(
-      /health card number\s+(\d+)\s*([a-zA-Z]+)?/i,
-    );
-    if (health_card_pattern) {
-      updates.health_card = health_card_pattern[1];
-      if (health_card_pattern[2]) {
-        updates.health_card_version = health_card_pattern[2].toUpperCase();
-      }
-    }
-
-    // Extract disposition
-    if (text.includes("pending")) {
-      updates.disposition = "PENDING";
-    } else if (text.includes("active")) {
-      updates.disposition = "ACTIVE";
-    } else if (text.includes("dispensing")) {
-      updates.disposition = "DISPENSING";
-    } else if (text.includes("delivery")) {
-      updates.disposition = "DELIVERY";
-    }
-
-    // Update form data
-    setFormData((prev) => {
-      const newFormData = { ...prev, ...updates };
-      return newFormData;
-    });
-
-    // Calculate age if DOB was updated
-    if (updates.dob) {
-      const calculatedAge = calculateAge(updates.dob);
-      if (calculatedAge !== null) {
-        setFormData((prev) => ({ ...prev, age: calculatedAge.toString() }));
-      }
-    }
-
-    // Show success message
-    setVoiceInputStatus(
-      `✅ Registration information auto-populated successfully.`,
-    );
-    setHasAutoFilledData(true);
-  };
-
-  // Define fields for auto voice assistant (starting with First Name and Last Name)
-  const autoVoiceFields = [
-    { name: "first_name", label: "First Name", required: true },
-    { name: "last_name", label: "Last Name", required: true },
-  ];
-
-  // Start the auto voice assistant with upfront permission request
-  const startAutoVoiceAssistant = () => {
-    if (!recognition || !speechSupported) {
-      setVoiceAssistantStatus(
-        "❌ Speech recognition not supported. Please use Chrome, Edge, or Safari.",
-      );
-      return;
-    }
-
-    // Request microphone permission ONCE at the start
-    if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-      navigator.mediaDevices
-        .getUserMedia({ audio: true })
-        .then(() => {
-          setIsAutoVoiceActive(true);
-          setCurrentFieldIndex(0);
-          setVoiceAssistantStatus(
-            "🎤 Microphone permission granted! Starting automatic voice assistant...",
-          );
-
-          setTimeout(() => {
-            focusAndPromptCurrentField(0);
-          }, 1000);
-        })
-        .catch((error) => {
-          setError("Microphone permission denied:", error);
-          setVoiceAssistantStatus(
-            "❌ Microphone permission required. Please grant permission and try again.",
-          );
-        });
-    } else {
-      // Fallback - try to start directly
-      setIsAutoVoiceActive(true);
-      setCurrentFieldIndex(0);
-      setVoiceAssistantStatus("Starting voice assistant...");
-
-      setTimeout(() => {
-        focusAndPromptCurrentField(0);
-      }, 1000);
-    }
-  };
-
-  // Stop the auto voice assistant
-  const stopAutoVoiceAssistant = () => {
-    setIsAutoVoiceActive(false);
-    setCurrentFieldIndex(0);
-    setVoiceAssistantStatus("");
   };
 
   const updateClinicalSummary = async (formData) => {
@@ -459,65 +257,26 @@ export default function Client({
               Registration Information
             </h2>
 
-            {/* Verbal Registration Input */}
-            <div className="mb-6 p-4 bg-gray-50 border border-gray-200 rounded-md">
-              <h3 className="text-sm font-medium text-gray-700 mb-3">
-                🎤 Verbal Registration: Record all details at once, then
-                auto-populate fields
-              </h3>
-
-              {/* Voice Text Area (Blank) */}
-              <div className="mb-3">
-                <textarea
-                  value={voiceInputText}
-                  onChange={(e) => setVoiceInputText(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 resize-y"
-                  rows="4"
-                  placeholder=""
-                  style={{ whiteSpace: "pre-wrap" }}
-                />
-              </div>
-
-              {/* Auto-Fill/Clear Button */}
-              <div className="mb-3">
+            <div>
+              <div className="flex items-center space-x-2">
+                <div className="relative">
+                  <p> Click to fill with audio </p>
+                </div>
                 <button
                   type="button"
-                  onClick={autoFillFromVoiceText}
-                  disabled={!voiceInputText.trim() && !hasAutoFilledData}
-                  className={`w-full px-4 py-2 rounded-md font-medium transition-colors ${
-                    !voiceInputText.trim() && !hasAutoFilledData
-                      ? "bg-gray-100 text-gray-400 cursor-not-allowed"
-                      : hasAutoFilledData
-                        ? "bg-red-600 text-white hover:bg-red-700"
-                        : "bg-black text-white hover:bg-gray-800"
-                  }`}
+                  onClick={() => openVoiceFillInput()}
+                  className="p-2 text-gray-600 hover:text-black transition-colors rounded-md hover:bg-gray-100 border border-black"
+                  title="Voice input for date of birth"
                 >
-                  {hasAutoFilledData
-                    ? "🗑️ Clear Auto-Filled Data"
-                    : "✨ Auto-Fill Fields"}
+                  🎤
                 </button>
               </div>
-
-              {/* Voice Status - Only show success messages, not detection messages */}
-              {voiceInputStatus && !voiceInputStatus.includes("Detected:") && (
-                <div
-                  className={`text-sm mt-2 p-2 rounded-md ${
-                    voiceInputStatus.includes("❌")
-                      ? "bg-red-50 text-red-700 border border-red-200"
-                      : voiceInputStatus.includes("✅")
-                        ? "bg-green-50 text-green-700 border border-green-200"
-                        : "bg-blue-50 text-blue-700 border border-blue-200"
-                  }`}
-                >
-                  {voiceInputStatus}
-                </div>
-              )}
             </div>
 
             {/* Registration Date Field */}
             <div className="mb-6">
               <label
-                htmlFor="regDate"
+                htmlFor="reg_date"
                 className="block text-sm font-medium text-gray-700 mb-2"
               >
                 Registration Date
@@ -526,8 +285,8 @@ export default function Client({
                 <div className="relative">
                   <input
                     type="text"
-                    id="regDate"
-                    name="regDate"
+                    id="reg_date"
+                    name="reg_date"
                     value={
                       formData.reg_date
                         ? (() => {
@@ -561,14 +320,14 @@ export default function Client({
                     id="regDatePicker"
                     value={formData.reg_date}
                     onChange={handleChange}
-                    name="regDate"
+                    name="reg_date"
                     className="absolute inset-0 opacity-0 cursor-pointer"
                     style={{ width: "160px" }}
                   />
                 </div>
                 <button
                   type="button"
-                  onClick={() => openVoiceDateInput("regDate")}
+                  onClick={() => openVoiceDateInput("reg_date")}
                   className="p-2 text-gray-600 hover:text-black transition-colors rounded-md hover:bg-gray-100 border border-black"
                   title="Voice input for date"
                 >

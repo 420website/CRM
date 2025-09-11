@@ -1,17 +1,13 @@
-import React, { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { PatientServices } from "../../services/patientServices";
 
-export default function Dispensing({
-  setActiveTab,
-  currentRegistrationId,
-  savedDispensing,
-  setSavedDispensing,
-  getDispensing,
-}) {
+export default function Dispensing({ setActiveTab, currentRegistrationId }) {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [editingDispensingId, setEditingDispensingId] = useState(null);
   const [isSavingDispensing, setIsSavingDispensing] = useState(false);
+  const [savedDispensing, setSavedDispensing] = useState([]);
+
   const [dispensingData, setDispensingData] = useState({
     medication: "",
     rx: "",
@@ -20,6 +16,24 @@ export default function Dispensing({
     product_type: "Commercial",
     expiry_date: "",
   });
+
+  const getDispensing = async (registrationId) => {
+    setLoading(true);
+    setError("");
+
+    const result =
+      await PatientServices.get_dispensings_by_patient(registrationId);
+    if (result.success) {
+      setSavedDispensing(result.data || []);
+    } else {
+      if (result.status === 400 || result.status === 409) {
+        setError(result.message || "Error getting dispositions.");
+      } else {
+        setError("Error getting dispositions. Please try again.");
+      }
+    }
+    setLoading(false);
+  };
 
   const saveDispensing = async () => {
     editingDispensingId ? updateDispensing() : createDispensing();

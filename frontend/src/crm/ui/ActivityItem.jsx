@@ -1,7 +1,5 @@
-import React from "react";
 import { useNavigate } from "react-router-dom";
 
-// Item is a regesitraion item.
 export default function ActivityItem({ item }) {
   const navigate = useNavigate();
 

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import Client from "../components/Client";
 import Tests from "../components/Tests";
 import Dispensing from "../components/Dispensing";
@@ -12,22 +12,20 @@ import DispositionManager from "../components/DispositionManager";
 import ReferralSiteManager from "../components/ReferralSiteManager";
 import VoiceDataModal from "../components/VoiceDateModal";
 import { useAuth } from "../../context/AuthContext";
-import {
-  calculateAge,
-  copyFormData,
-  copyLabelsData,
-  getFormattedLabelsData,
-  parseDateFromSpeech,
-} from "../../utils/utils";
+import { calculateAge } from "../../utils/formatData";
+import { copyFormData, copyLabelsData } from "../../utils/labelData";
+import { parseDateFromSpeech, parseFields } from "../../utils/parseFromSpeech";
 import { GeneralServices } from "../../services/generalService";
 import { PatientServices } from "../../services/patientServices";
 import EditPhoto from "../components/EditPhoto";
 import { useParams } from "react-router-dom";
 import { DEFAULT_FORM } from "../forms/Registration";
+import VoiceFillModal from "../components/VoiceInput";
 
 const AdminEdit = () => {
   const { registrationId } = useParams();
   const [error, setError] = useState("");
+  const [voiceInputText, setVoiceInputText] = useState("");
   const [loading, setLoading] = useState(false);
   const [submitStatus, setSubmitStatus] = useState(null);
   const [saveStatus, setSaveStatus] = useState(null);
@@ -36,6 +34,7 @@ const AdminEdit = () => {
   const [activeTab, setActiveTab] = useState("client");
   const { userRole, userPermissions } = useAuth();
   const [showVoiceDateModal, setShowVoiceDateModal] = useState(false);
+  const [showVoiceFillModal, setShowVoiceFillModal] = useState(false);
   const [showDispositionManager, setShowDispositionManager] = useState(false);
   const [showReferralSiteManager, setShowReferralSiteManager] = useState(false);
   const [showClinicalTemplateManager, setShowClinicalTemplateManager] =
@@ -46,17 +45,11 @@ const AdminEdit = () => {
   const [availableClinicalTemplates, setAvailableClinicalTemplates] = useState(
     [],
   );
+  const [currentVoiceDateField, setCurrentVoiceDateField] = useState("");
   const [voiceDateInput, setVoiceDateInput] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [currentRegistrationId, setCurrentRegistrationId] =
     useState(registrationId);
-  const [savedTests, setSavedTests] = useState([]);
-  const [savedNotes, setSavedNotes] = useState([]);
-  const [savedAttachments, setSavedAttachments] = useState([]);
-  const [savedMedications, setSavedMedications] = useState([]);
-  const [savedDispensing, setSavedDispensing] = useState([]);
-  const [savedInteractions, setSavedInteractions] = useState([]);
-  const [savedActivities, setSavedActivities] = useState([]);
   const [photoPreview, setPhotoPreview] = useState(null);
   const [photoUploadStatus, setPhotoUploadStatus] = useState(null);
   const [dispositionSearch, setDispositionSearch] = useState("");
@@ -69,6 +62,76 @@ const AdminEdit = () => {
   });
 
   const [formData, setFormData] = useState(getDefaultForm());
+
+  const openVoiceDateInput = (dateField) => {
+    setCurrentVoiceDateField(dateField);
+    setVoiceDateInput("");
+    setShowVoiceDateModal(true);
+  };
+
+  const openVoiceFillInput = () => {
+    setVoiceInputText("");
+    setShowVoiceFillModal(true);
+    console.log("should be opening");
+  };
+
+  const handleVoiceDateSubmit = () => {
+    const parsedDate = parseDateFromSpeech(voiceDateInput);
+
+    if (parsedDate) {
+      setFormData((prev) => {
+        const newData = {
+          ...prev,
+          [currentVoiceDateField]: parsedDate,
+        };
+
+        // Calculate age if DOB
+        if (currentVoiceDateField === "dob") {
+          const age = calculateAge(parsedDate);
+          if (age) {
+            newData.age = age.toString();
+          }
+        }
+
+        return newData;
+      });
+
+      setShowVoiceDateModal(false);
+      setVoiceDateInput("");
+    } else {
+      alert(
+        `❌ Could not understand date: "${voiceDateInput}". Try saying it like "January 15th 2024" or "today"`,
+      );
+    }
+  };
+
+  const handleVoiceFillSubmit = () => {
+    const text = voiceInputText.toLowerCase();
+    const parsed = parseFields(text);
+
+    if (parsed) {
+      const updatedData = { ...parsed };
+
+      // Calculate age if DOB was parsed
+      if (parsed.dob) {
+        const calculatedAge = calculateAge(parsed.dob);
+        if (calculatedAge !== null) {
+          updatedData.age = calculatedAge.toString();
+        }
+      }
+
+      // Merge into formData
+      setFormData((prev) => ({ ...prev, ...updatedData }));
+
+      // Clear voice input & close modal
+      setShowVoiceFillModal(false);
+      setVoiceInputText("");
+    } else {
+      alert(
+        `❌ Could not understand date: "${voiceDateInput}". Try saying it like "January 15 2024" or "today"`,
+      );
+    }
+  };
 
   const getRegistration = async () => {
     setLoading(true);
@@ -101,15 +164,6 @@ const AdminEdit = () => {
       } else {
         setSelectedTemplate("Select");
       }
-
-      // Load attachments, tests, medications, interactions, dispensing, and notes
-      getAttachments(registrationId);
-      getTests(registrationId);
-      getMedications(registrationId);
-      getInteractions(registrationId);
-      getDispensing(registrationId);
-      getNotes(registrationId);
-      getActivities(registrationId);
     } else {
       if (result.status === 400 || result.status === 409) {
         setError(result.message || "Invalid credentials.");
@@ -125,164 +179,6 @@ const AdminEdit = () => {
       getRegistration();
     }
   }, [registrationId]);
-
-  const handleVoiceDateSubmit = () => {
-    const parsedDate = parseDateFromSpeech(voiceDateInput);
-
-    if (parsedDate) {
-      setFormData((prev) => {
-        const newData = {
-          ...prev,
-          [currentVoiceDateField]: parsedDate,
-        };
-
-        // Calculate age if DOB
-        if (currentVoiceDateField === "dob") {
-          const age = calculateAge(parsedDate);
-          if (age) {
-            newData.age = age.toString();
-          }
-        }
-
-        return newData;
-      });
-
-      setShowVoiceDateModal(false);
-      setVoiceDateInput("");
-    } else {
-      alert(
-        `❌ Could not understand date: "${voiceDateInput}". Try saying it like "January 15th 2024" or "today"`,
-      );
-    }
-  };
-
-  const getTests = async (registrationId) => {
-    setLoading(true);
-    setError("");
-
-    const result = await PatientServices.get_tests_by_patient(registrationId);
-
-    if (result.success) {
-      setSavedTests(result.data || []);
-    } else {
-      if (result.status === 400 || result.status === 409) {
-        setError(result.message || "Error getting dispositions.");
-      } else {
-        setError("Error getting dispositions. Please try again.");
-      }
-    }
-    setLoading(false);
-  };
-
-  const getAttachments = async (registrationId) => {
-    setLoading(true);
-    setError("");
-
-    const result =
-      await PatientServices.get_attachments_by_patient(registrationId);
-
-    if (result.success) {
-      setSavedAttachments(result.data || []);
-    } else {
-      if (result.status === 400 || result.status === 409) {
-        setError(result.message || "Error getting dispositions.");
-      } else {
-        setError("Error getting dispositions. Please try again.");
-      }
-    }
-    setLoading(false);
-  };
-
-  const getNotes = async (registrationId) => {
-    setLoading(true);
-    setError("");
-
-    const result = await PatientServices.get_notes_by_patient(registrationId);
-
-    if (result.success) {
-      setSavedNotes(result.data || []);
-    } else {
-      if (result.status === 400 || result.status === 409) {
-        setError(result.message || "Error getting dispositions.");
-      } else {
-        setError("Error getting dispositions. Please try again.");
-      }
-    }
-    setLoading(false);
-  };
-
-  const getMedications = async (registrationId) => {
-    setLoading(true);
-    setError("");
-
-    const result =
-      await PatientServices.get_medications_by_patient(registrationId);
-
-    if (result.success) {
-      setSavedMedications(result.data || []);
-    } else {
-      if (result.status === 400 || result.status === 409) {
-        setError(result.message || "Error getting dispositions.");
-      } else {
-        setError("Error getting dispositions. Please try again.");
-      }
-    }
-    setLoading(false);
-  };
-
-  const getInteractions = async (registrationId) => {
-    setLoading(true);
-    setError("");
-
-    const result =
-      await PatientServices.get_interactions_by_patient(registrationId);
-    if (result.success) {
-      setSavedInteractions(result.data || []);
-    } else {
-      if (result.status === 400 || result.status === 409) {
-        setError(result.message || "Error getting dispositions.");
-      } else {
-        setError("Error getting dispositions. Please try again.");
-      }
-    }
-    setLoading(false);
-  };
-
-  const getDispensing = async (registrationId) => {
-    setLoading(true);
-    setError("");
-
-    const result =
-      await PatientServices.get_dispensings_by_patient(registrationId);
-    if (result.success) {
-      setSavedDispensing(result.data || []);
-    } else {
-      if (result.status === 400 || result.status === 409) {
-        setError(result.message || "Error getting dispositions.");
-      } else {
-        setError("Error getting dispositions. Please try again.");
-      }
-    }
-    setLoading(false);
-  };
-
-  const getActivities = async (registrationId) => {
-    setLoading(true);
-    setError("");
-
-    const result =
-      await PatientServices.get_activities_by_patient(registrationId);
-    if (result.success) {
-      setSavedActivities(result.data || []);
-    } else {
-      if (result.status === 400 || result.status === 409) {
-        setError(result.message || "Error getting dispositions.");
-      } else {
-        setError("Error getting dispositions. Please try again.");
-      }
-    }
-    setLoading(false);
-  };
 
   const tabComponents = {
     client: (
@@ -300,69 +196,52 @@ const AdminEdit = () => {
         templates={templates}
         selectedTemplate={selectedTemplate}
         setSelectedTemplate={setSelectedTemplate}
+        openVoiceDateInput={openVoiceDateInput}
+        openVoiceFillInput={openVoiceFillInput}
+        currentVoiceDateField={currentVoiceDateField}
+        setCurrentVoiceDateField={setCurrentVoiceDateField}
       />
     ),
     tests: (
       <Tests
         setActiveTab={setActiveTab}
         currentRegistrationId={currentRegistrationId}
-        savedTests={savedTests}
-        setSavedTests={setSavedTests}
-        getTests={getTests}
       />
     ),
     medication: (
       <Medications
         setActiveTab={setActiveTab}
         currentRegistrationId={currentRegistrationId}
-        setSavedMedications={setSavedMedications}
-        savedMedications={savedMedications}
-        getMedications={getMedications}
       />
     ),
     dispensing: (
       <Dispensing
         setActiveTab={setActiveTab}
         currentRegistrationId={currentRegistrationId}
-        setSavedDispensing={setSavedDispensing}
-        savedDispensing={savedDispensing}
-        getDispensing={getDispensing}
       />
     ),
     notes: (
       <Notes
         setActiveTab={setActiveTab}
         currentRegistrationId={currentRegistrationId}
-        setSavedNotes={setSavedNotes}
-        savedNotes={savedNotes}
-        getNotes={getNotes}
       />
     ),
     activities: (
       <Activities
         setActiveTab={setActiveTab}
         currentRegistrationId={currentRegistrationId}
-        setSavedActivities={setSavedActivities}
-        savedActivities={savedActivities}
-        getActivities={getActivities}
       />
     ),
     interactions: (
       <Interactions
         setActiveTab={setActiveTab}
         currentRegistrationId={currentRegistrationId}
-        setSavedInteractions={setSavedInteractions}
-        savedInteractions={savedInteractions}
-        getInteractions={getInteractions}
       />
     ),
     attachments: (
       <Attachments
         setActiveTab={setActiveTab}
         currentRegistrationId={currentRegistrationId}
-        setSavedAttachments={setSavedAttachments}
-        savedAttachments={savedAttachments}
-        getAttachments={getAttachments}
       />
     ),
   };
@@ -689,6 +568,15 @@ const AdminEdit = () => {
           </form>
         </div>
       </div>
+
+      {showVoiceFillModal && (
+        <VoiceFillModal
+          setShowVoiceFillModal={setShowVoiceFillModal}
+          voiceInputText={voiceInputText}
+          setVoiceInputText={setVoiceInputText}
+          handleVoiceFillSubmit={handleVoiceFillSubmit}
+        />
+      )}
 
       {showVoiceDateModal && (
         <VoiceDataModal

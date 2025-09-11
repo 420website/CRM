@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import EmailTwoFactorVerify from "../components/EmailTwoFactorVerify";
 import { AuthServices } from "../../services/authService";
 import { tokenManager } from "../../tokenManager";

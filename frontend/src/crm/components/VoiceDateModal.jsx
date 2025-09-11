@@ -1,9 +1,23 @@
+import { useEffect } from "react";
+import { useVoiceInput } from "../hooks/useVoiceInput";
+
 export default function VoiceDateModal({
   voiceDateInput,
   setVoiceDateInput,
   handleVoiceDateSubmit,
   setShowVoiceDateModal,
 }) {
+  const { transcript, isListening, speechSupported, toggleListening } =
+    useVoiceInput();
+
+  if (!speechSupported) {
+    // TODO: update to propogate error
+    return <span>Your browser does not support speech recognition.</span>;
+  }
+  useEffect(() => {
+    setVoiceDateInput(transcript);
+  }, [transcript]);
+
   return (
     <div className="fixed inset-0 bg-black/50 bg-opacity-50 flex items-center justify-center z-50">
       <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4 shadow-lg">
@@ -32,10 +46,25 @@ export default function VoiceDateModal({
           </button>
         </div>
 
+        {/* Microphone Control Button */}
+        <div className="mb-4 text-center">
+          <button
+            type="button"
+            onClick={toggleListening}
+            disabled={!speechSupported}
+            className={`px-6 py-3 rounded-full font-medium transition-all ${
+              isListening
+                ? "bg-red-500 text-white hover:bg-red-600 animate-pulse"
+                : "bg-blue-500 text-white hover:bg-blue-600"
+            } disabled:bg-gray-400 disabled:cursor-not-allowed`}
+          >
+            {isListening ? "⏹️ Stop Recording" : "🎤 Start Recording"}
+          </button>
+        </div>
+
         <div className="mb-4">
           <p className="text-sm text-gray-600 mb-2">
-            Tap the text field below and use your phone's microphone to speak
-            the date:
+            Click the microphone button above or edit the text below:
           </p>
           <input
             type="text"
@@ -43,7 +72,7 @@ export default function VoiceDateModal({
             onChange={(e) => setVoiceDateInput(e.target.value)}
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             placeholder="Say: 'August third nineteen sixty five' or 'today'"
-            autoFocus
+            autoFocus={!speechSupported}
           />
         </div>
 

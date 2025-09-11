@@ -1,13 +1,7 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { PatientServices } from "../../services/patientServices";
 
-export default function Interactions({
-  setActiveTab,
-  currentRegistrationId,
-  savedInteractions,
-  setSavedInteractions,
-  getInteractions,
-}) {
+export default function Interactions({ setActiveTab, currentRegistrationId }) {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [interactionsFilter, setInteractionsFilter] = useState("all");
@@ -16,6 +10,8 @@ export default function Interactions({
   const [isSavingInteraction, setIsSavingInteraction] = useState(false);
   const [interactionsPerPage, setInteractionsPerPage] = useState(10);
   const [interactionsPage, setInteractionsPage] = useState(1);
+  const [savedInteractions, setSavedInteractions] = useState([]);
+
   const [interactionData, setInteractionData] = useState({
     date: new Date().toISOString().split("T")[0], // Default to current date
     description: "",
@@ -24,6 +20,23 @@ export default function Interactions({
     payment_type: "",
     issued: "Select",
   });
+  const getInteractions = async (registrationId) => {
+    setLoading(true);
+    setError("");
+
+    const result =
+      await PatientServices.get_interactions_by_patient(registrationId);
+    if (result.success) {
+      setSavedInteractions(result.data || []);
+    } else {
+      if (result.status === 400 || result.status === 409) {
+        setError(result.message || "Error getting dispositions.");
+      } else {
+        setError("Error getting dispositions. Please try again.");
+      }
+    }
+    setLoading(false);
+  };
 
   const saveInteraction = async () => {
     editingInteractionId ? updateInteraction() : createInteraction();

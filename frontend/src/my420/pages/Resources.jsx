@@ -1,4 +1,3 @@
-import React from "react";
 import { Link } from "react-router-dom";
 
 const Resources = () => {
@@ -12,8 +11,9 @@ const Resources = () => {
               Resources & Education
             </h1>
             <p className="text-xl text-gray-200 max-w-3xl mx-auto">
-              Knowledge is power. Learn about prevention, testing, treatment, and living well 
-              with Hepatitis C and HIV for people who have been exposed.
+              Knowledge is power. Learn about prevention, testing, treatment,
+              and living well with Hepatitis C and HIV for people who have been
+              exposed.
             </p>
           </div>
         </div>
@@ -81,7 +81,8 @@ const Resources = () => {
                 🚨 Overdose Prevention
               </h3>
               <p className="text-yellow-700 mb-4">
-                Overdoses can happen to anyone. Know the signs and how to respond.
+                Overdoses can happen to anyone. Know the signs and how to
+                respond.
               </p>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-yellow-700">
                 <div>
@@ -116,7 +117,8 @@ const Resources = () => {
               📚 Understanding the Diseases
             </h2>
             <p className="text-xl text-gray-600">
-              Learn about Hepatitis C and HIV - knowledge helps reduce stigma and fear.
+              Learn about Hepatitis C and HIV - knowledge helps reduce stigma
+              and fear.
             </p>
           </div>
 
@@ -126,18 +128,23 @@ const Resources = () => {
               <h3 className="text-2xl font-bold text-red-600 mb-4">
                 🦠 Hepatitis C (HCV)
               </h3>
-              
+
               <div className="space-y-3">
                 <div>
-                  <h4 className="text-lg font-semibold text-gray-900 mb-2">What is it?</h4>
+                  <h4 className="text-lg font-semibold text-gray-900 mb-2">
+                    What is it?
+                  </h4>
                   <p className="text-gray-700">
-                    A viral infection that affects the liver. It's often called the "silent epidemic" 
-                    because many people don't know they have it.
+                    A viral infection that affects the liver. It's often called
+                    the "silent epidemic" because many people don't know they
+                    have it.
                   </p>
                 </div>
 
                 <div>
-                  <h4 className="text-lg font-semibold text-gray-900 mb-2">How is it spread?</h4>
+                  <h4 className="text-lg font-semibold text-gray-900 mb-2">
+                    How is it spread?
+                  </h4>
                   <ul className="text-gray-700 space-y-1 text-sm">
                     <li>• Blood-to-blood contact</li>
                     <li>• Sharing injection equipment</li>
@@ -148,18 +155,24 @@ const Resources = () => {
                 </div>
 
                 <div>
-                  <h4 className="text-lg font-semibold text-gray-900 mb-2">Symptoms</h4>
+                  <h4 className="text-lg font-semibold text-gray-900 mb-2">
+                    Symptoms
+                  </h4>
                   <p className="text-gray-700 text-sm">
-                    Often no symptoms for years. When symptoms do occur: fatigue, nausea, 
-                    abdominal pain, dark urine, jaundice (yellowing of eyes/skin).
+                    Often no symptoms for years. When symptoms do occur:
+                    fatigue, nausea, abdominal pain, dark urine, jaundice
+                    (yellowing of eyes/skin).
                   </p>
                 </div>
 
                 <div>
-                  <h4 className="text-lg font-semibold text-gray-900 mb-2">Treatment</h4>
+                  <h4 className="text-lg font-semibold text-gray-900 mb-2">
+                    Treatment
+                  </h4>
                   <p className="text-gray-700 text-sm">
-                    Highly curable with new direct-acting antiviral (DAA) medications. 
-                    Treatment is usually 8-12 weeks with cure rates over 95%.
+                    Highly curable with new direct-acting antiviral (DAA)
+                    medications. Treatment is usually 8-12 weeks with cure rates
+                    over 95%.
                   </p>
                 </div>
               </div>
@@ -170,39 +183,53 @@ const Resources = () => {
               <h3 className="text-2xl font-bold text-purple-600 mb-4">
                 🩸 HIV (Human Immunodeficiency Virus)
               </h3>
-              
+
               <div className="space-y-3">
                 <div>
-                  <h4 className="text-lg font-semibold text-gray-900 mb-2">What is it?</h4>
+                  <h4 className="text-lg font-semibold text-gray-900 mb-2">
+                    What is it?
+                  </h4>
                   <p className="text-gray-700">
-                    A virus that attacks the immune system. Without treatment, it can lead to AIDS, 
-                    but with treatment, people with HIV can live normal lifespans.
+                    A virus that attacks the immune system. Without treatment,
+                    it can lead to AIDS, but with treatment, people with HIV can
+                    live normal lifespans.
                   </p>
                 </div>
 
                 <div>
-                  <h4 className="text-lg font-semibold text-gray-900 mb-2">How is it spread?</h4>
+                  <h4 className="text-lg font-semibold text-gray-900 mb-2">
+                    How is it spread?
+                  </h4>
                   <ul className="text-gray-700 space-y-1 text-sm">
                     <li>• Unprotected sexual contact</li>
                     <li>• Sharing injection equipment</li>
-                    <li>• From mother to child during pregnancy/birth/breastfeeding</li>
+                    <li>
+                      • From mother to child during
+                      pregnancy/birth/breastfeeding
+                    </li>
                     <li>• Blood transfusions (very rare in Canada)</li>
                   </ul>
                 </div>
 
                 <div>
-                  <h4 className="text-lg font-semibold text-gray-900 mb-2">Symptoms</h4>
+                  <h4 className="text-lg font-semibold text-gray-900 mb-2">
+                    Symptoms
+                  </h4>
                   <p className="text-gray-700 text-sm">
-                    Early symptoms may include flu-like illness. Many people have no symptoms 
-                    for years. Regular testing is the only way to know.
+                    Early symptoms may include flu-like illness. Many people
+                    have no symptoms for years. Regular testing is the only way
+                    to know.
                   </p>
                 </div>
 
                 <div>
-                  <h4 className="text-lg font-semibold text-gray-900 mb-2">Treatment</h4>
+                  <h4 className="text-lg font-semibold text-gray-900 mb-2">
+                    Treatment
+                  </h4>
                   <p className="text-gray-700 text-sm">
-                    Antiretroviral therapy (ART) can reduce viral load to undetectable levels. 
-                    Undetectable = Untransmittable (U=U). People can live normal, healthy lives.
+                    Antiretroviral therapy (ART) can reduce viral load to
+                    undetectable levels. Undetectable = Untransmittable (U=U).
+                    People can live normal, healthy lives.
                   </p>
                 </div>
               </div>
@@ -264,7 +291,9 @@ const Resources = () => {
                   </li>
                   <li className="flex items-start space-x-2">
                     <span className="text-teal-600">•</span>
-                    <span>Quick blood test (finger prick or small blood draw)</span>
+                    <span>
+                      Quick blood test (finger prick or small blood draw)
+                    </span>
                   </li>
                   <li className="flex items-start space-x-2">
                     <span className="text-teal-600">•</span>
@@ -304,10 +333,13 @@ const Resources = () => {
                 Contact Support
               </h3>
               <p className="text-gray-600 mb-4 text-sm">
-                Call us for information, support, and to schedule testing appointments.
+                Call us for information, support, and to schedule testing
+                appointments.
               </p>
               <div className="space-y-2 text-sm">
-                <p><strong>Phone, Text & Fax:</strong> 1-833-420-3733</p>
+                <p>
+                  <strong>Phone, Text & Fax:</strong> 1-833-420-3733
+                </p>
               </div>
             </div>
 
@@ -347,11 +379,15 @@ const Resources = () => {
                 CATIE (Canadian AIDS Treatment Information Exchange)
               </h3>
               <p className="text-gray-600 mb-4 text-sm">
-                Canada's source for HIV and Hepatitis C information and treatment.
+                Canada's source for HIV and Hepatitis C information and
+                treatment.
               </p>
-              <a href="https://www.catie.ca" 
+              <a
+                href="https://www.catie.ca"
                 className="text-teal-600 hover:text-teal-800 text-sm font-medium"
-                target="_blank" rel="noopener noreferrer">
+                target="_blank"
+                rel="noopener noreferrer"
+              >
                 Visit CATIE.ca →
               </a>
             </div>
@@ -363,9 +399,12 @@ const Resources = () => {
               <p className="text-gray-600 mb-4 text-sm">
                 Research and knowledge exchange for HIV care in Ontario.
               </p>
-              <a href="https://www.ohtn.on.ca" 
+              <a
+                href="https://www.ohtn.on.ca"
                 className="text-teal-600 hover:text-teal-800 text-sm font-medium"
-                target="_blank" rel="noopener noreferrer">
+                target="_blank"
+                rel="noopener noreferrer"
+              >
                 Visit OHTN →
               </a>
             </div>
@@ -380,7 +419,8 @@ const Resources = () => {
             Knowledge + Action = Better Health
           </h2>
           <p className="text-xl mb-4 text-gray-700">
-            Now that you have information, take the next step toward protecting your health.
+            Now that you have information, take the next step toward protecting
+            your health.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link

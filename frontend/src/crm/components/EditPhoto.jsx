@@ -1,6 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import React, { useEffect, useState } from "react";
-import { compressImage } from "../../utils/utils";
+import { compressImage } from "../../utils/compressImage";
 
 export default function EditPhoto({
   saveStatus,

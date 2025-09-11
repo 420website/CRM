@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useMemo } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { PatientServices } from "../../services/patientServices";
 import PaginationControls from "../ui/PaginationControls";

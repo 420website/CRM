@@ -1,13 +1,8 @@
-import React, { useState } from "react";
+import { useEffect, useState } from "react";
 import { PatientServices } from "../../services/patientServices";
 
-export default function Tests({
-  setActiveTab,
-  currentRegistrationId,
-  savedTests,
-  setSavedTests,
-  getTests,
-}) {
+export default function Tests({ setActiveTab, currentRegistrationId }) {
+  const [savedTests, setSavedTests] = useState([]);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [editingTestId, setEditingTestId] = useState(null);
@@ -25,6 +20,24 @@ export default function Tests({
     bloodwork_date_submitted: new Date().toISOString().split("T")[0],
     bloodwork_tester: "CM",
   });
+
+  const getTests = async (registrationId) => {
+    setLoading(true);
+    setError("");
+
+    const result = await PatientServices.get_tests_by_patient(registrationId);
+
+    if (result.success) {
+      setSavedTests(result.data || []);
+    } else {
+      if (result.status === 400 || result.status === 409) {
+        setError(result.message || "Error getting dispositions.");
+      } else {
+        setError("Error getting dispositions. Please try again.");
+      }
+    }
+    setLoading(false);
+  };
 
   const saveTest = async () => {
     editingTestId ? updateTests() : createTests();
@@ -164,8 +177,6 @@ export default function Tests({
   };
 
   const editTest = (test) => {
-    console.log(test);
-
     setTestFormData({
       test_type: test.test_type,
       test_date: test.test_date,
@@ -232,6 +243,12 @@ export default function Tests({
 
     setTestFormData(newTestData);
   };
+
+  useEffect(() => {
+    if (currentRegistrationId) {
+      getTests(currentRegistrationId);
+    }
+  }, [currentRegistrationId]);
 
   return (
     <div>

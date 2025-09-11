@@ -1,13 +1,7 @@
-import React, { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { PatientServices } from "../../services/patientServices";
 
-export default function Attachments({
-  setActiveTab,
-  currentRegistrationId,
-  savedAttachments,
-  setSavedAttachments,
-  getAttachments,
-}) {
+export default function Attachments({ setActiveTab, currentRegistrationId }) {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [documentType, setDocumentType] = useState("");
@@ -15,7 +9,27 @@ export default function Attachments({
   const [isLoadingDocument, setIsLoadingDocument] = useState(false);
   const [documentPreview, setDocumentPreview] = useState(null);
   const [documentFile, setDocumentFile] = useState(null);
+  const [savedAttachments, setSavedAttachments] = useState([]);
   const [isFullScreenPreview, setIsFullScreenPreview] = useState(false);
+
+  const getAttachments = async (registrationId) => {
+    setLoading(true);
+    setError("");
+
+    const result =
+      await PatientServices.get_attachments_by_patient(registrationId);
+
+    if (result.success) {
+      setSavedAttachments(result.data || []);
+    } else {
+      if (result.status === 400 || result.status === 409) {
+        setError(result.message || "Error getting dispositions.");
+      } else {
+        setError("Error getting dispositions. Please try again.");
+      }
+    }
+    setLoading(false);
+  };
 
   const saveAttachment = async () => {
     setLoading(true);
@@ -275,6 +289,12 @@ export default function Attachments({
       setIsLoadingDocument(false);
     }
   };
+
+  useEffect(() => {
+    if (currentRegistrationId) {
+      getAttachments(currentRegistrationId);
+    }
+  }, [currentRegistrationId]);
 
   return (
     <div className="tab-content">
