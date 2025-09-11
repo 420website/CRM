@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 
 const Header = () => {
@@ -23,14 +23,16 @@ const Header = () => {
           {/* Logo */}
           <div className="flex items-center">
             <Link to="/" className="flex items-center space-x-3">
-              <img 
-                src="/logo-white.svg" 
-                alt="420 Logo" 
+              <img
+                src="/logo-white.svg"
+                alt="420 Logo"
                 className="h-12 w-auto"
               />
               <div className="text-white">
                 <h1 className="text-lg font-bold text-white">my420.ca</h1>
-                <p className="text-gray-300 text-xs font-medium whitespace-nowrap">4 Steps in 20 Minutes</p>
+                <p className="text-gray-300 text-xs font-medium whitespace-nowrap">
+                  4 Steps in 20 Minutes
+                </p>
               </div>
             </Link>
           </div>
@@ -58,11 +60,26 @@ const Header = () => {
               onClick={() => setIsMenuOpen(!isMenuOpen)}
               className="text-gray-200 hover:text-white focus:outline-none focus:text-white"
             >
-              <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <svg
+                className="h-6 w-6"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
                 {isMenuOpen ? (
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M6 18L18 6M6 6l12 12"
+                  />
                 ) : (
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M4 6h16M4 12h16M4 18h16"
+                  />
                 )}
               </svg>
             </button>

@@ -1,23 +1,38 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { PatientServices } from "../../services/patientServices";
 
-export default function Medications({
-  setActiveTab,
-  currentRegistrationId,
-  savedMedications,
-  setSavedMedications,
-  getMedications,
-}) {
+export default function Medications({ setActiveTab, currentRegistrationId }) {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [editingMedicationId, setEditingMedicationId] = useState(null);
   const [isSavingMedication, setIsSavingMedication] = useState(false);
+  const [savedMedications, setSavedMedications] = useState([]);
+
   const [medicationData, setMedicationData] = useState({
     medication: "",
     start_date: "",
     end_date: "",
     outcome: "",
   });
+
+  const getMedications = async (registrationId) => {
+    setLoading(true);
+    setError("");
+
+    const result =
+      await PatientServices.get_medications_by_patient(registrationId);
+
+    if (result.success) {
+      setSavedMedications(result.data || []);
+    } else {
+      if (result.status === 400 || result.status === 409) {
+        setError(result.message || "Error getting dispositions.");
+      } else {
+        setError("Error getting dispositions. Please try again.");
+      }
+    }
+    setLoading(false);
+  };
 
   const saveMedication = async () => {
     editingMedicationId ? updateMedications() : createMedications();

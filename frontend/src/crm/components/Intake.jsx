@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import React, { useState } from "react";
+import { useState } from "react";
 import { HealthServices } from "../../services/healthService";
 import { compressImage } from "../../utils/compressImage";
 

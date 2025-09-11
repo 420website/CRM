@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { GeneralServices } from "../../services/generalService";
 
 function EditReferralSiteModal({

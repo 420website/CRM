@@ -1,17 +1,13 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { PatientServices } from "../../services/patientServices";
 
-export default function Activities({
-  setActiveTab,
-  currentRegistrationId,
-  savedActivities,
-  setSavedActivities,
-  getActivities,
-}) {
+export default function Activities({ setActiveTab, currentRegistrationId }) {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [editingActivityId, setEditingActivityId] = useState(null);
   const [isSavingActivity, setIsSavingActivity] = useState(false);
+  const [savedActivities, setSavedActivities] = useState([]);
+
   const [activityData, setActivityData] = useState({
     date: new Date().toISOString().split("T")[0], // Default to today
     time: "",
@@ -20,6 +16,24 @@ export default function Activities({
 
   const saveActivity = async () => {
     editingActivityId ? updateActivities() : createActivities();
+  };
+
+  const getActivities = async (registrationId) => {
+    setLoading(true);
+    setError("");
+
+    const result =
+      await PatientServices.get_activities_by_patient(registrationId);
+    if (result.success) {
+      setSavedActivities(result.data || []);
+    } else {
+      if (result.status === 400 || result.status === 409) {
+        setError(result.message || "Error getting dispositions.");
+      } else {
+        setError("Error getting dispositions. Please try again.");
+      }
+    }
+    setLoading(false);
   };
 
   const createActivities = async () => {
