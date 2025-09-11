@@ -1,7 +1,6 @@
 // Parse spoken date into YYYY-MM-DD format
 export const parseDateFromSpeech = (spokenText) => {
   const text = spokenText.toLowerCase().trim();
-  console.log("🎤 Parsing spoken date:", text);
 
   // Common date patterns people might say
   const patterns = [
@@ -108,28 +107,11 @@ export const parseDateFromSpeech = (spokenText) => {
         }
 
         if (year && month && day) {
-          const parsedDate = `${year}-${month}-${day}`;
-          console.log("✅ Parsed date:", parsedDate);
-
           const date = new Date(Date.UTC(year, month - 1, day))
             .toISOString()
             .split("T")[0];
-          console.log(date);
 
           return date;
-
-          // Validate the date
-          const dateObj = new Date(parsedDate);
-          console.log(dateObj);
-
-          if (
-            // !isNaN(dateObj.getTime()) &&
-            dateObj.getFullYear() == year &&
-            dateObj.getMonth() + 1 == parseInt(month) &&
-            dateObj.getDate() == parseInt(day)
-          ) {
-            return parsedDate;
-          }
         }
       } catch (error) {
         console.warn("Error parsing date:", error);
@@ -139,4 +121,112 @@ export const parseDateFromSpeech = (spokenText) => {
 
   console.warn("❌ Could not parse date from:", text);
   return null;
+};
+
+function capitalize(word) {
+  if (!word) return "";
+  return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
+}
+
+const parseName = (text) => {
+  const regex =
+    /name\s+(?:is\s+)?([A-Za-zÀ-ÿ\u0100-\u017F]+)\s+([A-Za-zÀ-ÿ\u0100-\u017F]+)/i;
+
+  const result = text.match(regex);
+  return result;
+};
+
+// Match "born August 3 1990", "dob August 3 1990", or "date of birth August 3 1990"
+const parseDob = (text) => {
+  const regex =
+    /(?:date of birth|dob|born)\s+([a-zA-Z]+\s+\d{1,2}(?:st|nd|rd|th)?\s+\d{4})/i;
+
+  const match = text.match(regex);
+  if (match) {
+    return parseDateFromSpeech(match[1]);
+  }
+
+  return null;
+};
+
+const parseGender = (text) => {
+  if (
+    text.includes(" mail ") ||
+    text.includes(" male ") ||
+    text.includes("man ") ||
+    text.includes(" mail") ||
+    text.includes(" male")
+  ) {
+    return "Male";
+  } else if (
+    text.includes("female") ||
+    text.includes("woman") ||
+    text.includes("femail")
+  ) {
+    return "Female";
+  }
+};
+
+const parseHealthCard = (text) => {
+  // Match "health card" optionally followed by "number"
+  // Capture digits/spaces/hyphens first, then optional trailing letters
+  const regex = /health card(?: number)?\s+([\d\s-]+)\s*([a-zA-Z\s]*)$/i;
+
+  const match = text.match(regex);
+  if (!match) return { number: null, version: null };
+
+  // Clean the number: remove spaces and hyphens
+  const number = match[1].replace(/[\s-]/g, "");
+
+  // Clean version: remove spaces, make uppercase
+  const version = match[2]
+    ? match[2].replace(/\s+/g, "").toUpperCase().slice(0, 2)
+    : null;
+
+  return { number, version };
+};
+
+// Process all fields from voice text
+export const parseFields = (text) => {
+  const updates = {};
+
+  // Name
+  const nameMatch = parseName(text);
+  if (nameMatch) {
+    updates.first_name = capitalize(nameMatch[1]);
+    updates.last_name = capitalize(nameMatch[2]);
+  }
+
+  // Dob
+  const dobMatch = parseDob(text);
+  if (dobMatch) {
+    updates.dob = dobMatch;
+  }
+
+  // Gender
+  const gender = parseGender(text);
+  if (gender) {
+    updates.gender = gender;
+  }
+
+  const healthCard = parseHealthCard(text);
+  if (healthCard.number) {
+    updates.health_card = healthCard.number;
+  }
+
+  if (healthCard.version) {
+    updates.health_card_version = healthCard.version;
+  }
+
+  // Extract disposition
+  if (text.includes("pending")) {
+    updates.disposition = "PENDING";
+  } else if (text.includes("active")) {
+    updates.disposition = "ACTIVE";
+  } else if (text.includes("dispensing")) {
+    updates.disposition = "DISPENSING";
+  } else if (text.includes("delivery")) {
+    updates.disposition = "DELIVERY";
+  }
+  return updates;
 };

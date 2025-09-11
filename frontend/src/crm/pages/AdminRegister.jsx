@@ -15,19 +15,22 @@ import VoiceDataModal from "../components/VoiceDateModal";
 import { useAuth } from "../../context/AuthContext";
 import { calculateAge } from "../../utils/formatData";
 import { copyFormData, copyLabelsData } from "../../utils/labelData";
-import { parseDateFromSpeech } from "../../utils/parseFromSpeech";
+import { parseDateFromSpeech, parseFields } from "../../utils/parseFromSpeech";
 import { GeneralServices } from "../../services/generalService";
 import { PatientServices } from "../../services/patientServices";
 import RegistrationSaved from "../components/RegistrationSaved";
 import { DEFAULT_FORM } from "../forms/Registration";
+import VoiceFillModal from "../components/VoiceInput";
 
 const AdminRegister = () => {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [voiceInputText, setVoiceInputText] = useState("");
   const [submitStatus, setSubmitStatus] = useState(null);
   const [activeTab, setActiveTab] = useState("client");
   const { userRole, userPermissions } = useAuth();
   const [showVoiceDateModal, setShowVoiceDateModal] = useState(false);
+  const [showVoiceFillModal, setShowVoiceFillModal] = useState(false);
   const [showDispositionManager, setShowDispositionManager] = useState(false);
   const [showReferralSiteManager, setShowReferralSiteManager] = useState(false);
   const [showClinicalTemplateManager, setShowClinicalTemplateManager] =
@@ -63,6 +66,12 @@ const AdminRegister = () => {
     setShowVoiceDateModal(true);
   };
 
+  const openVoiceFillInput = () => {
+    setVoiceInputText("");
+    setShowVoiceFillModal(true);
+    console.log("should be opening");
+  };
+
   const handleVoiceDateSubmit = () => {
     const parsedDate = parseDateFromSpeech(voiceDateInput);
     console.log(parsedDate);
@@ -95,6 +104,34 @@ const AdminRegister = () => {
     }
   };
 
+  const handleVoiceFillSubmit = () => {
+    const text = voiceInputText.toLowerCase();
+    const parsed = parseFields(text);
+
+    if (parsed) {
+      const updatedData = { ...parsed };
+
+      // Calculate age if DOB was parsed
+      if (parsed.dob) {
+        const calculatedAge = calculateAge(parsed.dob);
+        if (calculatedAge !== null) {
+          updatedData.age = calculatedAge.toString();
+        }
+      }
+
+      // Merge into formData
+      setFormData((prev) => ({ ...prev, ...updatedData }));
+
+      // Clear voice input & close modal
+      setShowVoiceFillModal(false);
+      setVoiceInputText("");
+    } else {
+      alert(
+        `❌ Could not understand date: "${voiceDateInput}". Try saying it like "January 15 2024" or "today"`,
+      );
+    }
+  };
+
   const tabComponents = {
     client: (
       <Client
@@ -112,6 +149,7 @@ const AdminRegister = () => {
         selectedTemplate={selectedTemplate}
         setSelectedTemplate={setSelectedTemplate}
         openVoiceDateInput={openVoiceDateInput}
+        openVoiceFillInput={openVoiceFillInput}
         currentVoiceDateField={currentVoiceDateField}
         setCurrentVoiceDateField={setCurrentVoiceDateField}
       />
@@ -463,6 +501,15 @@ const AdminRegister = () => {
           </form>
         </div>
       </div>
+
+      {showVoiceFillModal && (
+        <VoiceFillModal
+          setShowVoiceFillModal={setShowVoiceFillModal}
+          voiceInputText={voiceInputText}
+          setVoiceInputText={setVoiceInputText}
+          handleVoiceFillSubmit={handleVoiceFillSubmit}
+        />
+      )}
 
       {showVoiceDateModal && (
         <VoiceDataModal

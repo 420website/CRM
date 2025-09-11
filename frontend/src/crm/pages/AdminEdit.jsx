@@ -14,16 +14,18 @@ import VoiceDataModal from "../components/VoiceDateModal";
 import { useAuth } from "../../context/AuthContext";
 import { calculateAge } from "../../utils/formatData";
 import { copyFormData, copyLabelsData } from "../../utils/labelData";
-import { parseDateFromSpeech } from "../../utils/parseFromSpeech";
+import { parseDateFromSpeech, parseFields } from "../../utils/parseFromSpeech";
 import { GeneralServices } from "../../services/generalService";
 import { PatientServices } from "../../services/patientServices";
 import EditPhoto from "../components/EditPhoto";
 import { useParams } from "react-router-dom";
 import { DEFAULT_FORM } from "../forms/Registration";
+import VoiceFillModal from "../components/VoiceInput";
 
 const AdminEdit = () => {
   const { registrationId } = useParams();
   const [error, setError] = useState("");
+  const [voiceInputText, setVoiceInputText] = useState("");
   const [loading, setLoading] = useState(false);
   const [submitStatus, setSubmitStatus] = useState(null);
   const [saveStatus, setSaveStatus] = useState(null);
@@ -32,6 +34,7 @@ const AdminEdit = () => {
   const [activeTab, setActiveTab] = useState("client");
   const { userRole, userPermissions } = useAuth();
   const [showVoiceDateModal, setShowVoiceDateModal] = useState(false);
+  const [showVoiceFillModal, setShowVoiceFillModal] = useState(false);
   const [showDispositionManager, setShowDispositionManager] = useState(false);
   const [showReferralSiteManager, setShowReferralSiteManager] = useState(false);
   const [showClinicalTemplateManager, setShowClinicalTemplateManager] =
@@ -66,10 +69,14 @@ const AdminEdit = () => {
     setShowVoiceDateModal(true);
   };
 
+  const openVoiceFillInput = () => {
+    setVoiceInputText("");
+    setShowVoiceFillModal(true);
+    console.log("should be opening");
+  };
+
   const handleVoiceDateSubmit = () => {
     const parsedDate = parseDateFromSpeech(voiceDateInput);
-    console.log(parsedDate);
-    console.log(currentVoiceDateField);
 
     if (parsedDate) {
       setFormData((prev) => {
@@ -94,6 +101,34 @@ const AdminEdit = () => {
     } else {
       alert(
         `❌ Could not understand date: "${voiceDateInput}". Try saying it like "January 15th 2024" or "today"`,
+      );
+    }
+  };
+
+  const handleVoiceFillSubmit = () => {
+    const text = voiceInputText.toLowerCase();
+    const parsed = parseFields(text);
+
+    if (parsed) {
+      const updatedData = { ...parsed };
+
+      // Calculate age if DOB was parsed
+      if (parsed.dob) {
+        const calculatedAge = calculateAge(parsed.dob);
+        if (calculatedAge !== null) {
+          updatedData.age = calculatedAge.toString();
+        }
+      }
+
+      // Merge into formData
+      setFormData((prev) => ({ ...prev, ...updatedData }));
+
+      // Clear voice input & close modal
+      setShowVoiceFillModal(false);
+      setVoiceInputText("");
+    } else {
+      alert(
+        `❌ Could not understand date: "${voiceDateInput}". Try saying it like "January 15 2024" or "today"`,
       );
     }
   };
@@ -162,6 +197,7 @@ const AdminEdit = () => {
         selectedTemplate={selectedTemplate}
         setSelectedTemplate={setSelectedTemplate}
         openVoiceDateInput={openVoiceDateInput}
+        openVoiceFillInput={openVoiceFillInput}
         currentVoiceDateField={currentVoiceDateField}
         setCurrentVoiceDateField={setCurrentVoiceDateField}
       />
@@ -532,6 +568,15 @@ const AdminEdit = () => {
           </form>
         </div>
       </div>
+
+      {showVoiceFillModal && (
+        <VoiceFillModal
+          setShowVoiceFillModal={setShowVoiceFillModal}
+          voiceInputText={voiceInputText}
+          setVoiceInputText={setVoiceInputText}
+          handleVoiceFillSubmit={handleVoiceFillSubmit}
+        />
+      )}
 
       {showVoiceDateModal && (
         <VoiceDataModal
