@@ -19,7 +19,7 @@ CREATE TABLE patients (
     language VARCHAR(20),
 
     -- Health info
-    health_card VARCHAR(20),
+    health_card VARCHAR(20) ,
     health_card_version VARCHAR(5),
     coverage_type VARCHAR(50),
     disposition VARCHAR(50),                -- ACTIVE, INACTIVE, etc.
@@ -59,6 +59,12 @@ CREATE TABLE patients (
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
+
+-- Prevent duplicate health cards except when it's '000000'
+CREATE UNIQUE INDEX unique_health_card
+    ON patients (health_card)
+    WHERE health_card <> '0000000000';
+
 
 -- Create test_results table that references the patients table
 CREATE TABLE tests (

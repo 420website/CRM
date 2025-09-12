@@ -1,6 +1,6 @@
 from datetime import datetime, timezone
 from typing import List, Optional, Union
-
+import datetime as dt
 from app.registration.schemas import (
     ActivityCreate,
     ActivityRead,
@@ -55,54 +55,57 @@ class PatientService:
         RETURNING id;
         """
         # Insert patient and get the generated ID
-        async with database.get_transaction() as conn:
-            row = await conn.fetchrow(
-                query,
-                patient.first_name,
-                patient.last_name,
-                patient.dob,
-                patient.age,
-                patient.gender,
-                patient.aka,
-                patient.address,
-                patient.unit_number,
-                patient.city,
-                patient.province,
-                patient.postal_code,
-                patient.phone1,
-                patient.phone2,
-                patient.email,
-                patient.language,
-                patient.health_card,
-                patient.health_card_version,
-                patient.coverage_type,
-                patient.disposition,
-                patient.physician,
-                patient.patient_consent,
-                patient.leave_message,
-                patient.voicemail,
-                patient.text,
-                patient.preferred_time,
-                patient.hiv_date,
-                patient.hiv_result,
-                patient.hiv_tester,
-                patient.hiv_type,
-                patient.rna_available,
-                patient.rna_result,
-                patient.rna_sample_date,
-                patient.referral_site,
-                patient.referral_person,
-                patient.reg_date,
-                patient.special_attention,
-                patient.instructions,
-                patient.selected_template,
-                patient.summary_template,
-                patient.test_type,
-                patient.photo,
-            )
-            if row and "id" in row:
-                return row["id"]
-            return None
+        try:
+            async with database.get_transaction() as conn:
+                row = await conn.fetchrow(
+                    query,
+                    patient.first_name,
+                    patient.last_name,
+                    patient.dob,
+                    patient.age,
+                    patient.gender,
+                    patient.aka,
+                    patient.address,
+                    patient.unit_number,
+                    patient.city,
+                    patient.province,
+                    patient.postal_code,
+                    patient.phone1,
+                    patient.phone2,
+                    patient.email,
+                    patient.language,
+                    patient.health_card,
+                    patient.health_card_version,
+                    patient.coverage_type,
+                    patient.disposition,
+                    patient.physician,
+                    patient.patient_consent,
+                    patient.leave_message,
+                    patient.voicemail,
+                    patient.text,
+                    patient.preferred_time,
+                    patient.hiv_date,
+                    patient.hiv_result,
+                    patient.hiv_tester,
+                    patient.hiv_type,
+                    patient.rna_available,
+                    patient.rna_result,
+                    patient.rna_sample_date,
+                    patient.referral_site,
+                    patient.referral_person,
+                    patient.reg_date,
+                    patient.special_attention,
+                    patient.instructions,
+                    patient.selected_template,
+                    patient.summary_template,
+                    patient.test_type,
+                    patient.photo,
+                )
+                if row and "id" in row:
+                    return row["id"]
+                return None
+        except Exception as e:
+            raise e
 
     @staticmethod
     async def get_patients() -> List[PatientBase]:
@@ -130,6 +133,50 @@ class PatientService:
 
         if row:
             return PatientRead(**dict(row)) if row else None
+
+    @staticmethod
+    async def get_patient_by_name_dob(
+        first_name: str,
+        last_name: str,
+        dob: dt.date,
+    ) -> Union[int, None]:
+        query = """
+        SELECT id 
+        FROM patients
+        WHERE first_name=$1 
+          AND last_name=$2 
+          AND dob=$3; 
+        """
+        async with database.get_connection() as conn:
+            row = await conn.fetchrow(query, first_name, last_name, dob)
+
+        if row and "id" in row:
+            return row["id"]
+
+        return None
+
+    @staticmethod
+    async def get_other_patient_name_dob(
+        id: int,
+        first_name: str,
+        last_name: str,
+        dob: dt.date,
+    ) -> Union[int, None]:
+        query = """
+        SELECT id 
+        FROM patients
+        WHERE first_name=$1 
+          AND last_name=$2 
+          AND dob=$3
+          AND id !=$4; 
+        """
+        async with database.get_connection() as conn:
+            row = await conn.fetchrow(query, first_name, last_name, dob, id)
+
+        if row and "id" in row:
+            return row["id"]
+
+        return None
 
     @staticmethod
     async def get_patient_status(id: int) -> Union[str, None]:
@@ -168,18 +215,25 @@ class PatientService:
         patient_id: int,
         patient_updates: PatientUpdate,
     ) -> bool:
-        updates = patient_updates.model_dump(exclude_unset=True)
-        if not updates:
-            return False
+        try:
+            updates = patient_updates.model_dump(
+                exclude_unset=True,
+                exclude={"force_update"},
+            )
 
-        set_clauses = [
-            f"{field} = ${i+1}" for i, field in enumerate(updates.keys())
-        ]
-        query = f"UPDATE patients SET {', '.join(set_clauses)} WHERE id = ${len(updates)+1} RETURNING id;"
-        values = list(updates.values()) + [patient_id]
-        async with database.get_transaction() as conn:
-            row = await conn.fetchrow(query, *values)
-            return bool(row)
+            if not updates:
+                return False
+
+            set_clauses = [
+                f"{field} = ${i+1}" for i, field in enumerate(updates.keys())
+            ]
+            query = f"UPDATE patients SET {', '.join(set_clauses)} WHERE id = ${len(updates)+1} RETURNING id;"
+            values = list(updates.values()) + [patient_id]
+            async with database.get_transaction() as conn:
+                row = await conn.fetchrow(query, *values)
+                return bool(row)
+        except Exception as e:
+            raise e
 
     @staticmethod
     async def update_patient_status(

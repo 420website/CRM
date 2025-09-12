@@ -2,6 +2,8 @@
 import asyncio
 from decimal import Decimal
 from unittest import IsolatedAsyncioTestCase
+
+from asyncpg import UniqueViolationError
 from app.database import database
 from app.registration.schemas import (
     ActivityCreate,
@@ -40,7 +42,12 @@ class TestPatientService(IsolatedAsyncioTestCase):
     async def _cleanup_test_data(self):
         """Helper method to clean up test data"""
         # Clean up test patients
-        test_names = [("John", "Doe"), ("Tim", "Tom"), ("Jane", "Smith")]
+        test_names = [
+            ("John", "Doe"),
+            ("Bobby", "Doe"),
+            ("Tim", "Tom"),
+            ("Jane", "Smith"),
+        ]
         for first, last in test_names:
             try:
                 await PatientService.delete_patient(first, last)
@@ -108,11 +115,16 @@ class TestPatientService(IsolatedAsyncioTestCase):
             first_name="John",
             last_name="Doe",
             dob=date(1990, 3, 22),
+            health_card="1234567890",
+            health_card_version="AB",
         )
+
         self.minimal_patient2 = PatientCreate(
             first_name="Jane",
             last_name="Smith",
             dob=date(1990, 3, 22),
+            health_card="0987654321",
+            health_card_version="AB",
         )
 
         # PatientCreate for testing edge cases
@@ -120,6 +132,8 @@ class TestPatientService(IsolatedAsyncioTestCase):
             first_name="María José",
             last_name="García-González",
             dob=date(2000, 1, 1),
+            health_card="1234567890",
+            health_card_version="AB",
             # Testing optional fields with various data types
             age=24,
             gender="Female",
@@ -161,6 +175,66 @@ class TestPatientService(IsolatedAsyncioTestCase):
             patients[0].first_name, self.minimal_patient.first_name
         )
         self.assertIsNotNone(patients[0].id)
+
+    async def test_create_patient_duplicate_healthcard(self):
+        """Test creation of a default patient"""
+
+        result = await PatientService.create_patient(self.minimal_patient)
+        self.assertTrue(result)
+
+        # Test
+        with self.assertRaises(Exception) as cm:
+            await PatientService.create_patient(self.minimal_patient)
+
+        self.assertIsInstance(cm.exception, UniqueViolationError)
+        self.assertEqual(
+            cm.exception.detail,
+            "Key (health_card)=(1234567890) already exists.",
+        )
+
+    async def test_create_patient_duplicate_healthcard_exception(self):
+        """Test creation of a default patient"""
+
+        self.minimal_patient.health_card = "0000000000"
+        self.minimal_patient.health_card_version = "AB"
+
+        result = await PatientService.create_patient(self.minimal_patient)
+        self.assertTrue(result)
+
+        # Test
+        self.minimal_patient.first_name = "Bobby"
+        result = await PatientService.create_patient(self.minimal_patient)
+        self.assertTrue(result)
+
+        patients = await PatientService.get_patients()
+        self.assertEqual(len(patients), 2)
+
+    async def test_get_patient_name_dob(self):
+        """Test creation of a default patient"""
+
+        result = await PatientService.create_patient(self.minimal_patient)
+        self.assertTrue(result)
+
+        # Test
+        result = await PatientService.get_patient_by_name_dob(
+            self.minimal_patient.first_name,
+            self.minimal_patient.last_name,
+            self.minimal_patient.dob,
+        )
+
+        assert isinstance(result, int)
+        self.assertTrue(result > 0)
+
+    async def test_get_patient_name_dob_none(self):
+        """Test creation of a default patient"""
+
+        # Test
+        result = await PatientService.get_patient_by_name_dob(
+            "noname",
+            self.minimal_patient.last_name,
+            self.minimal_patient.dob,
+        )
+        self.assertIsNone(result)
 
     ### Get
     async def test_get_patient_empty(self):
@@ -294,6 +368,39 @@ class TestPatientService(IsolatedAsyncioTestCase):
 
         self.assertFalse(result)
 
+    async def test_get_patient_other(self):
+        patient = PatientCreate(
+            first_name="John",
+            last_name="Doe",
+            dob=date(1990, 3, 22),
+            health_card="0000000000",
+            health_card_version="AB",
+        )
+
+        id1 = await PatientService.create_patient(patient)
+        id2 = await PatientService.create_patient(patient)
+
+        patients = await PatientService.get_other_patient_name_dob(
+            id1,
+            patient.first_name,
+            patient.last_name,
+            patient.dob,
+        )
+
+        self.assertEqual(id2, patients)
+
+    async def test_get_patient_no_other(self):
+        id = await PatientService.create_patient(self.minimal_patient)
+
+        patients = await PatientService.get_other_patient_name_dob(
+            id,
+            self.minimal_patient.first_name,
+            self.minimal_patient.last_name,
+            self.minimal_patient.dob,
+        )
+
+        self.assertIsNone(patients)
+
 
 class TestTestsService(IsolatedAsyncioTestCase):
     async def asyncSetUp(self) -> None:
@@ -306,6 +413,8 @@ class TestTestsService(IsolatedAsyncioTestCase):
             first_name="Jim",
             last_name="Doe",
             dob=date(1990, 3, 22),
+            health_card="1234567890",
+            health_card_version="AB",
         )
         await PatientService.create_patient(self.minimal_patient)
         patients = await PatientService.get_patients()
@@ -427,6 +536,8 @@ class TestNotesService(IsolatedAsyncioTestCase):
             first_name="Jim",
             last_name="Doe",
             dob=date(1990, 3, 22),
+            health_card="1234567890",
+            health_card_version="AB",
         )
         await PatientService.create_patient(self.minimal_patient)
         patients = await PatientService.get_patients()
@@ -533,6 +644,8 @@ class TestAttachmentsService(IsolatedAsyncioTestCase):
             first_name="Jim",
             last_name="Doe",
             dob=date(1990, 3, 22),
+            health_card="1234567890",
+            health_card_version="AB",
         )
         await PatientService.create_patient(self.minimal_patient)
         patients = await PatientService.get_patients()
@@ -667,6 +780,8 @@ class TestInteractionsService(IsolatedAsyncioTestCase):
             first_name="Jim",
             last_name="Doe",
             dob=date(1990, 3, 22),
+            health_card="1234567890",
+            health_card_version="AB",
         )
         await PatientService.create_patient(self.minimal_patient)
         patients = await PatientService.get_patients()
@@ -801,6 +916,8 @@ class TestMedicationsService(IsolatedAsyncioTestCase):
             first_name="Jim",
             last_name="Doe",
             dob=date(1990, 3, 22),
+            health_card="1234567890",
+            health_card_version="AB",
         )
         await PatientService.create_patient(self.minimal_patient)
         patients = await PatientService.get_patients()
@@ -910,7 +1027,11 @@ class TestDispensingService(IsolatedAsyncioTestCase):
 
         await PatientService.delete_patient("Jim", "Doe")
         self.minimal_patient = PatientCreate(
-            first_name="Jim", last_name="Doe", dob=date(1990, 3, 22)
+            first_name="Jim",
+            last_name="Doe",
+            dob=date(1990, 3, 22),
+            health_card="1234567890",
+            health_card_version="AB",
         )
         await PatientService.create_patient(self.minimal_patient)
         patients = await PatientService.get_patients()
@@ -1014,7 +1135,11 @@ class TestActivitiesService(IsolatedAsyncioTestCase):
 
         await PatientService.delete_patient("Jim", "Doe")
         self.minimal_patient = PatientCreate(
-            first_name="Jim", last_name="Doe", dob=date(1990, 3, 22)
+            first_name="Jim",
+            last_name="Doe",
+            dob=date(1990, 3, 22),
+            health_card="1234567890",
+            health_card_version="AB",
         )
         await PatientService.create_patient(self.minimal_patient)
         patients = await PatientService.get_patients()

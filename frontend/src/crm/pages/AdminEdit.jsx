@@ -53,12 +53,13 @@ const AdminEdit = () => {
   const [photoPreview, setPhotoPreview] = useState(null);
   const [photoUploadStatus, setPhotoUploadStatus] = useState(null);
   const [dispositionSearch, setDispositionSearch] = useState("");
+  const [showForceButton, setShowForceButton] = useState(false);
 
   const getDefaultForm = () => ({
     ...DEFAULT_FORM,
-    regDate: new Date().toISOString().split("T")[0],
-    hivDate: new Date().toISOString().split("T")[0],
-    rnaSample: new Date().toISOString().split("T")[0],
+    reg_date: new Date().toISOString().split("T")[0],
+    hiv_date: new Date().toISOString().split("T")[0],
+    rna_sample_date: new Date().toISOString().split("T")[0],
   });
 
   const [formData, setFormData] = useState(getDefaultForm());
@@ -387,17 +388,26 @@ const AdminEdit = () => {
     return true;
   }
 
-  const handleSubmit = async (e) => {
+  const handleForceSubmit = async (e) => {
+    const forcedData = { ...formData, force_update: true };
+    await handleSubmit(e, forcedData);
+  };
+
+  const handleSubmit = async (e, dataOverride = formData) => {
     e.preventDefault();
     setIsSubmitting(true);
     setSubmitStatus(null);
+    setError("");
+    setShowForceButton(false);
+
+    const payload = dataOverride || formData;
 
     // if (!validateForm()) {
     //   return;
     // }
 
     // Clean the form data - remove empty strings for optional fields and convert to null
-    const cleanedFormData = { ...formData };
+    const cleanedFormData = { ...payload };
 
     // Add selectedTemplate to form data for database storage
     // cleanedFormData.selectedTemplate = selectedTemplate; // Handle clincial template
@@ -406,8 +416,8 @@ const AdminEdit = () => {
     if (cleanedFormData.dob === "") {
       cleanedFormData.dob = null;
     }
-    if (cleanedFormData.regDate === "") {
-      cleanedFormData.regDate = null;
+    if (cleanedFormData.reg_date === "") {
+      cleanedFormData.reg_date = null;
     }
 
     // Convert empty strings to null for optional fields
@@ -430,6 +440,11 @@ const AdminEdit = () => {
       });
     } else {
       if (result.status === 400 || result.status === 409) {
+        if (
+          result.message === "Patient with that name and dob already exists."
+        ) {
+          setShowForceButton(true);
+        }
         setError(result.message || "Invalid credentials.");
       } else {
         setError("Login failed. Please try again.");
@@ -469,30 +484,6 @@ const AdminEdit = () => {
               photoPreview={photoPreview}
               setPhotoPreview={setPhotoPreview}
             />
-            {error && (
-              <div className="mb-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
-                {error}
-              </div>
-            )}
-            {submitStatus && (
-              <div
-                className={`mb-6 p-4 rounded-md ${
-                  submitStatus.type === "success"
-                    ? "bg-green-50 border border-green-200"
-                    : "bg-red-50 border border-red-200"
-                }`}
-              >
-                <p
-                  className={
-                    submitStatus.type === "success"
-                      ? "text-green-800"
-                      : "text-red-800"
-                  }
-                >
-                  {submitStatus.message}
-                </p>
-              </div>
-            )}
 
             {/* Tabs Navigation */}
             <div className="border-b border-gray-200 mb-6 relative">
@@ -533,6 +524,39 @@ const AdminEdit = () => {
 
             {/* Tab Content  */}
             <div className="tab-content">
+              {error && (
+                <div className="mb-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
+                  {error}
+                </div>
+              )}
+              {submitStatus && (
+                <div
+                  className={`mb-6 p-4 rounded-md ${
+                    submitStatus.type === "success"
+                      ? "bg-green-50 border border-green-200"
+                      : "bg-red-50 border border-red-200"
+                  }`}
+                >
+                  <p
+                    className={
+                      submitStatus.type === "success"
+                        ? "text-green-800"
+                        : "text-red-800"
+                    }
+                  >
+                    {submitStatus.message}
+                  </p>
+                </div>
+              )}
+              {showForceButton && (
+                <button
+                  type="button"
+                  onClick={handleForceSubmit}
+                  className="bg-black text-white py-3 px-6 rounded-md hover:bg-gray-800 disabled:bg-gray-400 transition-colors text-lg font-semibold"
+                >
+                  Force Save
+                </button>
+              )}
               {tabComponents[activeTab] || null}
             </div>
 
