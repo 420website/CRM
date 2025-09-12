@@ -21,8 +21,8 @@ class PatientBase(BaseModel):
     language: Optional[str] = None
 
     # Health info
-    health_card: Optional[str] = None
-    health_card_version: Optional[str] = None
+    # health_card: Optional[str] = None
+    # health_card_version: Optional[str] = None
     coverage_type: Optional[str] = None
     disposition: Optional[str] = None
     physician: Optional[str] = None
@@ -59,6 +59,9 @@ class PatientCreate(PatientBase):
     first_name: str
     last_name: str
     dob: dt.date
+    health_card: str
+    health_card_version: str
+    force_create: bool = False
     status: Optional[str] = None
 
 
@@ -67,7 +70,10 @@ class PatientUpdate(PatientBase):
     first_name: Optional[str] = None
     last_name: Optional[str] = None
     dob: Optional[dt.date] = None
+    health_card: Optional[str] = None
+    health_card_version: Optional[str] = None
     status: Optional[str] = None
+    force_update: bool = False
 
 
 class PatientStatus(BaseModel):

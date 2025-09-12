@@ -13,6 +13,7 @@ from app.authentication.router import (
     verify_authenticator_mfa,
     verify_email,
 )
+
 from app.authentication.schemas import (
     LoginRequest,
     MFAVerifiactionCode,
@@ -190,6 +191,8 @@ class TestPatientRouter(IsolatedAsyncioTestCase):
             email="jim.doe@example.com",
             phone1="416-555-0123",
             status="pending",
+            health_card="1234567890",
+            health_card_version="AB",
         )
 
     async def asyncTearDown(self):
@@ -206,6 +209,8 @@ class TestPatientRouter(IsolatedAsyncioTestCase):
             email="jim.doe@example.com",
             phone1="416-555-0123",
             status="pending",
+            health_card="1234567890",
+            health_card_version="AB",
         )
 
         result = await create_patient(patient_data, self.user)
@@ -221,10 +226,103 @@ class TestPatientRouter(IsolatedAsyncioTestCase):
             first_name="Jane",
             last_name="Smith",
             dob=date(1985, 5, 15),
+            health_card="1234567890",
+            health_card_version="AB",
         )
 
         result = await create_patient(patient_data, self.user)
         self.assertIn("patient_id", result)
+
+        # Cleanup
+        await PatientService.delete_patient_by_id(result["patient_id"])
+
+    async def test_create_patient_with_duplicate_health_card(self):
+        patient_data = PatientCreate(
+            first_name="Jane",
+            last_name="Smith",
+            dob=date(1985, 5, 15),
+            health_card="1234567890",
+            health_card_version="AB",
+        )
+
+        result = await create_patient(patient_data, self.user)
+        self.assertIn("patient_id", result)
+
+        patient_data.first_name = "John"
+        with self.assertRaises(HTTPException) as cm:
+            await create_patient(patient_data, self.user)
+
+        self.assertEqual(cm.exception.status_code, 409)
+        self.assertIn(
+            "Health card already exists.",
+            str(cm.exception.detail),
+        )
+
+        # Cleanup
+        await PatientService.delete_patient_by_id(result["patient_id"])
+
+    async def test_create_patient_with_duplicate_health_card_exception(self):
+        patient_data = PatientCreate(
+            first_name="Jane",
+            last_name="Smith",
+            dob=date(1985, 5, 15),
+            health_card="0000000000",
+            health_card_version="NA",
+        )
+
+        result = await create_patient(patient_data, self.user)
+        self.assertIn("patient_id", result)
+
+        # with self.assertRaises(HTTPException) as cm:
+        patient_data.first_name = "John"
+        result2 = await create_patient(patient_data, self.user)
+        self.assertIn("patient_id", result2)
+
+        # Cleanup
+        await PatientService.delete_patient_by_id(result["patient_id"])
+        await PatientService.delete_patient_by_id(result2["patient_id"])
+
+    async def test_create_patient_with_duplicate_name_dob_force(self):
+        patient_data = PatientCreate(
+            first_name="Jane",
+            last_name="Smith",
+            dob=date(1985, 5, 15),
+            health_card="0000000000",
+            health_card_version="NA",
+        )
+
+        result = await create_patient(patient_data, self.user)
+        self.assertIn("patient_id", result)
+
+        patient_data.force_create = True
+        result2 = await create_patient(patient_data, self.user)
+        self.assertIn("patient_id", result2)
+
+        # Cleanup
+        await PatientService.delete_patient_by_id(result["patient_id"])
+        await PatientService.delete_patient_by_id(result2["patient_id"])
+
+    async def test_create_patient_with_duplicate_dob_name(self):
+        patient_data = PatientCreate(
+            first_name="Jane",
+            last_name="Smith",
+            dob=date(1985, 5, 15),
+            health_card="1234567890",
+            health_card_version="AB",
+        )
+
+        result = await create_patient(patient_data, self.user)
+        self.assertIn("patient_id", result)
+
+        # patient_data.first_name = "John"
+        with self.assertRaises(HTTPException) as cm:
+            await create_patient(patient_data, self.user)
+
+        self.assertEqual(cm.exception.status_code, 400)
+        self.assertIn(
+            "Patient with that name and dob already exists.",
+            str(cm.exception.detail),
+        )
 
         # Cleanup
         await PatientService.delete_patient_by_id(result["patient_id"])
@@ -318,6 +416,147 @@ class TestPatientRouter(IsolatedAsyncioTestCase):
 
         # Cleanup
         await PatientService.delete_patient_by_id(patient_id)
+
+    async def test_update_duplicate_health_card(self):
+        patient1 = PatientCreate(
+            first_name="Tim",
+            last_name="Doe",
+            dob=date(1990, 1, 1),
+            age=33,
+            gender="Male",
+            email="jim.doe@example.com",
+            phone1="416-555-0123",
+            status="pending",
+            health_card="1234567890",
+            health_card_version="AB",
+        )
+
+        patient2 = PatientCreate(
+            first_name="Timmy",
+            last_name="Doe",
+            dob=date(1990, 1, 1),
+            age=33,
+            gender="Male",
+            email="jim.doe@example.com",
+            phone1="416-555-0123",
+            status="pending",
+            health_card="1234567898",
+            health_card_version="AB",
+        )
+
+        result = await create_patient(patient1, self.user)
+        patient_id1 = result["patient_id"]
+
+        result = await create_patient(patient2, self.user)
+        patient_id2 = result["patient_id"]
+
+        update_data = PatientUpdate(health_card=patient1.health_card)
+
+        with self.assertRaises(HTTPException) as cm:
+            await update_patient(patient_id2, update_data, self.user)
+
+        self.assertEqual(cm.exception.status_code, 409)
+        self.assertIn(
+            "Health card already exists.",
+            str(cm.exception.detail),
+        )
+        # Cleanup
+        await PatientService.delete_patient_by_id(patient_id1)
+        await PatientService.delete_patient_by_id(patient_id2)
+
+    async def test_update_patient_duplicate_name_dob(self):
+        patient1 = PatientCreate(
+            first_name="Tim",
+            last_name="Doe",
+            dob=date(1990, 1, 1),
+            age=33,
+            gender="Male",
+            email="jim.doe@example.com",
+            phone1="416-555-0123",
+            status="pending",
+            health_card="1234567890",
+            health_card_version="AB",
+        )
+
+        patient2 = PatientCreate(
+            first_name="Timmy",
+            last_name="Doe",
+            dob=date(1990, 1, 1),
+            age=33,
+            gender="Male",
+            email="jim.doe@example.com",
+            phone1="416-555-0123",
+            status="pending",
+            health_card="1234567898",
+            health_card_version="AB",
+        )
+
+        result = await create_patient(patient1, self.user)
+        patient_id1 = result["patient_id"]
+
+        result = await create_patient(patient2, self.user)
+        patient_id2 = result["patient_id"]
+
+        update_data = PatientUpdate(first_name=patient1.first_name)
+
+        with self.assertRaises(HTTPException) as cm:
+            await update_patient(patient_id2, update_data, self.user)
+
+        self.assertEqual(cm.exception.status_code, 400)
+        self.assertIn(
+            "Patient with that name and dob already exists.",
+            str(cm.exception.detail),
+        )
+
+        # Cleanup
+        await PatientService.delete_patient_by_id(patient_id1)
+        await PatientService.delete_patient_by_id(patient_id2)
+
+    async def test_update_patient_duplicate_name_dob_force(self):
+        patient1 = PatientCreate(
+            first_name="Tim",
+            last_name="Doe",
+            dob=date(1990, 1, 1),
+            age=33,
+            gender="Male",
+            email="jim.doe@example.com",
+            phone1="416-555-0123",
+            status="pending",
+            health_card="1234567890",
+            health_card_version="AB",
+        )
+
+        patient2 = PatientCreate(
+            first_name="Timmy",
+            last_name="Doe",
+            dob=date(1990, 1, 1),
+            age=33,
+            gender="Male",
+            email="jim.doe@example.com",
+            phone1="416-555-0123",
+            status="pending",
+            health_card="1234567898",
+            health_card_version="AB",
+        )
+
+        result = await create_patient(patient1, self.user)
+        patient_id1 = result["patient_id"]
+
+        result = await create_patient(patient2, self.user)
+        patient_id2 = result["patient_id"]
+
+        update_data = PatientUpdate(
+            first_name=patient1.first_name,
+            force_update=True,
+        )
+
+        result = await update_patient(patient_id2, update_data, self.user)
+
+        self.assertEqual(result["message"], "Patient updated successfully.")
+
+        # Cleanup
+        await PatientService.delete_patient_by_id(patient_id1)
+        await PatientService.delete_patient_by_id(patient_id2)
 
     async def test_update_patient_not_found(self):
         update_data = PatientUpdate(phone1="416-555-9999")
@@ -438,10 +677,10 @@ class TestPatientTestsRouter(IsolatedAsyncioTestCase):
     def user(self):
         return self.__class__.user
 
-    async def mock_create_patient(self):
+    async def mock_create_patient(self, name: str):
         """Helper to create a test patient using class user"""
         patient_data = PatientCreate(
-            first_name="Jim",
+            first_name=name,
             last_name="Doe",
             dob=date(1990, 1, 1),
             age=33,
@@ -449,6 +688,8 @@ class TestPatientTestsRouter(IsolatedAsyncioTestCase):
             email="jim.doe@example.com",
             phone1="416-555-0123",
             status="pending",
+            health_card="0000000000",
+            health_card_version="AB",
         )
 
         result = await create_patient(patient_data, self.user)
@@ -483,6 +724,8 @@ class TestPatientTestsRouter(IsolatedAsyncioTestCase):
             email="jim.doe@example.com",
             phone1="416-555-0123",
             status="pending",
+            health_card="1234567890",
+            health_card_version="AB",
         )
 
         self.test_data = TestCreate(
@@ -502,7 +745,7 @@ class TestPatientTestsRouter(IsolatedAsyncioTestCase):
 
     # create test
     async def test_create_test_success(self):
-        patient_id = await self.mock_create_patient()
+        patient_id = await self.mock_create_patient("John")
         result = await create_test(patient_id, self.test_data, self.user)
 
         self.assertEqual(result["message"], "Test created successfully.")
@@ -518,7 +761,7 @@ class TestPatientTestsRouter(IsolatedAsyncioTestCase):
     #     self.assertIn("Test not created.", str(cm.exception.detail))
 
     async def test_create_test_with_all_fields(self):
-        patient_id = await self.mock_create_patient()
+        patient_id = await self.mock_create_patient("John")
 
         comprehensive_test_data = TestCreate(
             test_type="Comprehensive",
@@ -548,7 +791,7 @@ class TestPatientTestsRouter(IsolatedAsyncioTestCase):
 
     # get tests by patient
     async def test_get_tests_by_patient_success(self):
-        patient_id = await self.mock_create_patient()
+        patient_id = await self.mock_create_patient("John")
         await self.mock_create_test(patient_id)
 
         result = await get_tests_by_patient(patient_id, self.user)
@@ -561,7 +804,7 @@ class TestPatientTestsRouter(IsolatedAsyncioTestCase):
         await PatientService.delete_patient_by_id(patient_id)
 
     async def test_get_tests_by_patient_empty_list(self):
-        patient_id = await self.mock_create_patient()
+        patient_id = await self.mock_create_patient("John")
 
         result = await get_tests_by_patient(patient_id, self.user)
 
@@ -578,7 +821,7 @@ class TestPatientTestsRouter(IsolatedAsyncioTestCase):
 
     # get test by id
     async def test_get_test_by_id_success(self):
-        patient_id = await self.mock_create_patient()
+        patient_id = await self.mock_create_patient("John")
         test_id = await self.mock_create_test(patient_id)
 
         result = await get_test_by_id(patient_id, test_id, self.user)
@@ -591,7 +834,7 @@ class TestPatientTestsRouter(IsolatedAsyncioTestCase):
         await PatientService.delete_patient_by_id(patient_id)
 
     async def test_get_test_by_id_not_found(self):
-        patient_id = await self.mock_create_patient()
+        patient_id = await self.mock_create_patient("John")
 
         with self.assertRaises(HTTPException) as cm:
             await get_test_by_id(patient_id, 99999, self.user)
@@ -603,8 +846,8 @@ class TestPatientTestsRouter(IsolatedAsyncioTestCase):
         await PatientService.delete_patient_by_id(patient_id)
 
     async def test_get_test_by_id_wrong_patient(self):
-        patient_id1 = await self.mock_create_patient()
-        patient_id2 = await self.mock_create_patient()
+        patient_id1 = await self.mock_create_patient("Tim")
+        patient_id2 = await self.mock_create_patient("John")
         test_id = await self.mock_create_test(patient_id1)
 
         # Try to get test from patient1 using patient2's ID
@@ -619,7 +862,7 @@ class TestPatientTestsRouter(IsolatedAsyncioTestCase):
 
     # delete test by id
     async def test_delete_test_by_id_success(self):
-        patient_id = await self.mock_create_patient()
+        patient_id = await self.mock_create_patient("Tim")
         test_id = await self.mock_create_test(patient_id)
 
         result = await delete_test_by_id(patient_id, test_id, self.user)
@@ -629,7 +872,7 @@ class TestPatientTestsRouter(IsolatedAsyncioTestCase):
         await PatientService.delete_patient_by_id(patient_id)
 
     async def test_delete_test_by_id_not_found(self):
-        patient_id = await self.mock_create_patient()
+        patient_id = await self.mock_create_patient("John")
 
         with self.assertRaises(HTTPException) as cm:
             await delete_test_by_id(patient_id, 99999, self.user)
@@ -641,8 +884,8 @@ class TestPatientTestsRouter(IsolatedAsyncioTestCase):
         await PatientService.delete_patient_by_id(patient_id)
 
     async def test_delete_test_by_id_wrong_patient(self):
-        patient_id1 = await self.mock_create_patient()
-        patient_id2 = await self.mock_create_patient()
+        patient_id1 = await self.mock_create_patient("Tim")
+        patient_id2 = await self.mock_create_patient("John")
         test_id = await self.mock_create_test(patient_id1)
 
         # Try to delete test from patient1 using patient2's ID
@@ -658,7 +901,7 @@ class TestPatientTestsRouter(IsolatedAsyncioTestCase):
 
     # update test
     async def test_update_test_success(self):
-        patient_id = await self.mock_create_patient()
+        patient_id = await self.mock_create_patient("John")
         test_id = await self.mock_create_test(patient_id)
 
         result = await update_test(
@@ -676,7 +919,7 @@ class TestPatientTestsRouter(IsolatedAsyncioTestCase):
         await PatientService.delete_patient_by_id(patient_id)
 
     async def test_update_test_not_found(self):
-        patient_id = await self.mock_create_patient()
+        patient_id = await self.mock_create_patient("John")
 
         with self.assertRaises(HTTPException) as cm:
             await update_test(
@@ -690,8 +933,8 @@ class TestPatientTestsRouter(IsolatedAsyncioTestCase):
         await PatientService.delete_patient_by_id(patient_id)
 
     async def test_update_test_wrong_patient(self):
-        patient_id1 = await self.mock_create_patient()
-        patient_id2 = await self.mock_create_patient()
+        patient_id1 = await self.mock_create_patient("Tim")
+        patient_id2 = await self.mock_create_patient("John")
         test_id = await self.mock_create_test(patient_id1)
 
         # Try to update test from patient1 using patient2's ID
@@ -764,10 +1007,10 @@ class TestPatientNotesRouter(IsolatedAsyncioTestCase):
     def user(self):
         return self.__class__.user
 
-    async def mock_create_patient(self):
+    async def mock_create_patient(self, name: str):
         """Helper to create a test patient using class user"""
         patient_data = PatientCreate(
-            first_name="Jim",
+            first_name=name,
             last_name="Doe",
             dob=date(1990, 1, 1),
             age=33,
@@ -775,6 +1018,8 @@ class TestPatientNotesRouter(IsolatedAsyncioTestCase):
             email="jim.doe@example.com",
             phone1="416-555-0123",
             status="pending",
+            health_card="1234567890",
+            health_card_version="AB",
         )
 
         result = await create_patient(patient_data, self.user)
@@ -807,6 +1052,8 @@ class TestPatientNotesRouter(IsolatedAsyncioTestCase):
             email="jim.doe@example.com",
             phone1="416-555-0123",
             status="pending",
+            health_card="1234567890",
+            health_card_version="AB",
         )
 
         self.note_data = NoteCreate(
@@ -823,7 +1070,7 @@ class TestPatientNotesRouter(IsolatedAsyncioTestCase):
         await database.disconnect()
 
     async def test_create_note_success(self):
-        patient_id = await self.mock_create_patient()
+        patient_id = await self.mock_create_patient("Jim")
         result = await create_note(patient_id, self.note_data, self.user)
 
         self.assertEqual(result["message"], "Note created successfully.")
@@ -832,7 +1079,7 @@ class TestPatientNotesRouter(IsolatedAsyncioTestCase):
         await PatientService.delete_patient_by_id(patient_id)
 
     async def test_get_notes_by_patient_success(self):
-        patient_id = await self.mock_create_patient()
+        patient_id = await self.mock_create_patient("Jim")
         await self.mock_create_note(patient_id)
 
         result = await get_notes_by_patient(patient_id, self.user)
@@ -845,7 +1092,7 @@ class TestPatientNotesRouter(IsolatedAsyncioTestCase):
         await PatientService.delete_patient_by_id(patient_id)
 
     async def test_get_note_by_id_success(self):
-        patient_id = await self.mock_create_patient()
+        patient_id = await self.mock_create_patient("Jim")
         note_id = await self.mock_create_note(patient_id)
 
         result = await get_note_by_id(patient_id, note_id, self.user)
@@ -858,7 +1105,7 @@ class TestPatientNotesRouter(IsolatedAsyncioTestCase):
         await PatientService.delete_patient_by_id(patient_id)
 
     async def test_update_note_success(self):
-        patient_id = await self.mock_create_patient()
+        patient_id = await self.mock_create_patient("Jim")
         note_id = await self.mock_create_note(patient_id)
 
         result = await update_note(
@@ -875,7 +1122,7 @@ class TestPatientNotesRouter(IsolatedAsyncioTestCase):
         await PatientService.delete_patient_by_id(patient_id)
 
     async def test_delete_note_by_id_success(self):
-        patient_id = await self.mock_create_patient()
+        patient_id = await self.mock_create_patient("Jim")
         note_id = await self.mock_create_note(patient_id)
 
         result = await delete_note_by_id(patient_id, note_id, self.user)
@@ -886,8 +1133,7 @@ class TestPatientNotesRouter(IsolatedAsyncioTestCase):
         await PatientService.delete_patient_by_id(patient_id)
 
     async def test_get_note_by_id_not_found(self):
-        patient_id = await self.mock_create_patient()
-
+        patient_id = await self.mock_create_patient("Jim")
         with self.assertRaises(HTTPException) as cm:
             await get_note_by_id(patient_id, 99999, self.user)
 
@@ -954,10 +1200,10 @@ class TestPatientAttachmentsRouter(IsolatedAsyncioTestCase):
     def user(self):
         return self.__class__.user
 
-    async def mock_create_patient(self):
+    async def mock_create_patient(self, name: str):
         """Helper to create a test patient using class user"""
         patient_data = PatientCreate(
-            first_name="Jim",
+            first_name=name,
             last_name="Doe",
             dob=date(1990, 1, 1),
             age=33,
@@ -965,6 +1211,8 @@ class TestPatientAttachmentsRouter(IsolatedAsyncioTestCase):
             email="jim.doe@example.com",
             phone1="416-555-0123",
             status="pending",
+            health_card="1234567890",
+            health_card_version="AB",
         )
 
         result = await create_patient(patient_data, self.user)
@@ -998,6 +1246,8 @@ class TestPatientAttachmentsRouter(IsolatedAsyncioTestCase):
             email="jim.doe@example.com",
             phone1="416-555-0123",
             status="pending",
+            health_card="1234567890",
+            health_card_version="AB",
         )
 
         # Attachment test data
@@ -1016,7 +1266,7 @@ class TestPatientAttachmentsRouter(IsolatedAsyncioTestCase):
         await database.disconnect()
 
     async def test_create_attachment_success(self):
-        patient_id = await self.mock_create_patient()
+        patient_id = await self.mock_create_patient("Jim")
         result = await create_attachment(
             patient_id, self.attachment_data, self.user
         )
@@ -1027,7 +1277,7 @@ class TestPatientAttachmentsRouter(IsolatedAsyncioTestCase):
         await PatientService.delete_patient_by_id(patient_id)
 
     async def test_get_attachments_by_patient_success(self):
-        patient_id = await self.mock_create_patient()
+        patient_id = await self.mock_create_patient("Jim")
         await self.mock_create_attachment(patient_id)
 
         result = await get_attachments_by_patient(patient_id, self.user)
@@ -1040,7 +1290,7 @@ class TestPatientAttachmentsRouter(IsolatedAsyncioTestCase):
         await PatientService.delete_patient_by_id(patient_id)
 
     async def test_get_attachment_by_id_success(self):
-        patient_id = await self.mock_create_patient()
+        patient_id = await self.mock_create_patient("Jim")
         attachment_id = await self.mock_create_attachment(patient_id)
 
         result = await get_attachment_by_id(
@@ -1055,7 +1305,7 @@ class TestPatientAttachmentsRouter(IsolatedAsyncioTestCase):
         await PatientService.delete_patient_by_id(patient_id)
 
     async def test_update_attachment_success(self):
-        patient_id = await self.mock_create_patient()
+        patient_id = await self.mock_create_patient("Jim")
         attachment_id = await self.mock_create_attachment(patient_id)
 
         result = await update_attachment(
@@ -1074,7 +1324,7 @@ class TestPatientAttachmentsRouter(IsolatedAsyncioTestCase):
         await PatientService.delete_patient_by_id(patient_id)
 
     async def test_delete_attachment_by_id_success(self):
-        patient_id = await self.mock_create_patient()
+        patient_id = await self.mock_create_patient("Jim")
         attachment_id = await self.mock_create_attachment(patient_id)
 
         result = await delete_attachment_by_id(
@@ -1087,7 +1337,7 @@ class TestPatientAttachmentsRouter(IsolatedAsyncioTestCase):
         await PatientService.delete_patient_by_id(patient_id)
 
     async def test_get_attachment_by_id_not_found(self):
-        patient_id = await self.mock_create_patient()
+        patient_id = await self.mock_create_patient("Jim")
 
         with self.assertRaises(HTTPException) as cm:
             await get_attachment_by_id(patient_id, 99999, self.user)
@@ -1155,7 +1405,7 @@ class TestPatientInteractionsRouter(IsolatedAsyncioTestCase):
     def user(self):
         return self.__class__.user
 
-    async def mock_create_patient(self):
+    async def mock_create_patient(self, name: str):
         """Helper to create a test patient using class user"""
         patient_data = PatientCreate(
             first_name="Jim",
@@ -1166,6 +1416,8 @@ class TestPatientInteractionsRouter(IsolatedAsyncioTestCase):
             email="jim.doe@example.com",
             phone1="416-555-0123",
             status="pending",
+            health_card="1234567890",
+            health_card_version="AB",
         )
 
         result = await create_patient(patient_data, self.user)
@@ -1200,6 +1452,8 @@ class TestPatientInteractionsRouter(IsolatedAsyncioTestCase):
             email="jim.doe@example.com",
             phone1="416-555-0123",
             status="pending",
+            health_card="1234567890",
+            health_card_version="AB",
         )
 
         # Interaction test data
@@ -1219,7 +1473,7 @@ class TestPatientInteractionsRouter(IsolatedAsyncioTestCase):
         await database.disconnect()
 
     async def test_create_interaction_success(self):
-        patient_id = await self.mock_create_patient()
+        patient_id = await self.mock_create_patient("Jim")
         result = await create_interaction(
             patient_id, self.interaction_data, self.user
         )
@@ -1232,7 +1486,7 @@ class TestPatientInteractionsRouter(IsolatedAsyncioTestCase):
         await PatientService.delete_patient_by_id(patient_id)
 
     async def test_get_interactions_by_patient_success(self):
-        patient_id = await self.mock_create_patient()
+        patient_id = await self.mock_create_patient("Jim")
         await self.mock_create_interaction(patient_id)
 
         result = await get_interactions_by_patient(patient_id, self.user)
@@ -1245,7 +1499,7 @@ class TestPatientInteractionsRouter(IsolatedAsyncioTestCase):
         await PatientService.delete_patient_by_id(patient_id)
 
     async def test_get_interaction_by_id_success(self):
-        patient_id = await self.mock_create_patient()
+        patient_id = await self.mock_create_patient("Jim")
         interaction_id = await self.mock_create_interaction(patient_id)
 
         result = await get_interaction_by_id(
@@ -1260,7 +1514,7 @@ class TestPatientInteractionsRouter(IsolatedAsyncioTestCase):
         await PatientService.delete_patient_by_id(patient_id)
 
     async def test_update_interaction_success(self):
-        patient_id = await self.mock_create_patient()
+        patient_id = await self.mock_create_patient("Jim")
         interaction_id = await self.mock_create_interaction(patient_id)
 
         result = await update_interaction(
@@ -1284,7 +1538,7 @@ class TestPatientInteractionsRouter(IsolatedAsyncioTestCase):
         await PatientService.delete_patient_by_id(patient_id)
 
     async def test_delete_interaction_by_id_success(self):
-        patient_id = await self.mock_create_patient()
+        patient_id = await self.mock_create_patient("Jim")
         interaction_id = await self.mock_create_interaction(patient_id)
 
         result = await delete_interaction_by_id(
@@ -1299,7 +1553,7 @@ class TestPatientInteractionsRouter(IsolatedAsyncioTestCase):
         await PatientService.delete_patient_by_id(patient_id)
 
     async def test_get_interaction_by_id_not_found(self):
-        patient_id = await self.mock_create_patient()
+        patient_id = await self.mock_create_patient("Jim")
 
         with self.assertRaises(HTTPException) as cm:
             await get_interaction_by_id(patient_id, 99999, self.user)
@@ -1367,10 +1621,10 @@ class TestPatienMedicationsRouter(IsolatedAsyncioTestCase):
     def user(self):
         return self.__class__.user
 
-    async def mock_create_patient(self):
+    async def mock_create_patient(self, name: str):
         """Helper to create a test patient using class user"""
         patient_data = PatientCreate(
-            first_name="Jim",
+            first_name=name,
             last_name="Doe",
             dob=date(1990, 1, 1),
             age=33,
@@ -1378,6 +1632,8 @@ class TestPatienMedicationsRouter(IsolatedAsyncioTestCase):
             email="jim.doe@example.com",
             phone1="416-555-0123",
             status="pending",
+            health_card="1234567890",
+            health_card_version="AB",
         )
 
         result = await create_patient(patient_data, self.user)
@@ -1411,6 +1667,8 @@ class TestPatienMedicationsRouter(IsolatedAsyncioTestCase):
             email="jim.doe@example.com",
             phone1="416-555-0123",
             status="pending",
+            health_card="1234567890",
+            health_card_version="AB",
         )
 
         self.medication_data = MedicationCreate(
@@ -1428,7 +1686,7 @@ class TestPatienMedicationsRouter(IsolatedAsyncioTestCase):
         await database.disconnect()
 
     async def test_create_medication_success(self):
-        patient_id = await self.mock_create_patient()
+        patient_id = await self.mock_create_patient("Jim")
         result = await create_medication(
             patient_id, self.medication_data, self.user
         )
@@ -1439,7 +1697,7 @@ class TestPatienMedicationsRouter(IsolatedAsyncioTestCase):
         await PatientService.delete_patient_by_id(patient_id)
 
     async def test_get_medications_by_patient_success(self):
-        patient_id = await self.mock_create_patient()
+        patient_id = await self.mock_create_patient("Jim")
         await self.mock_create_medication(patient_id)
 
         result = await get_medications_by_patient(patient_id, self.user)
@@ -1452,7 +1710,7 @@ class TestPatienMedicationsRouter(IsolatedAsyncioTestCase):
         await PatientService.delete_patient_by_id(patient_id)
 
     async def test_get_medication_by_id_success(self):
-        patient_id = await self.mock_create_patient()
+        patient_id = await self.mock_create_patient("Jim")
         medication_id = await self.mock_create_medication(patient_id)
 
         result = await get_medication_by_id(
@@ -1467,7 +1725,7 @@ class TestPatienMedicationsRouter(IsolatedAsyncioTestCase):
         await PatientService.delete_patient_by_id(patient_id)
 
     async def test_update_medication_success(self):
-        patient_id = await self.mock_create_patient()
+        patient_id = await self.mock_create_patient("Jim")
         medication_id = await self.mock_create_medication(patient_id)
 
         result = await update_medication(
@@ -1487,7 +1745,7 @@ class TestPatienMedicationsRouter(IsolatedAsyncioTestCase):
         await PatientService.delete_patient_by_id(patient_id)
 
     async def test_delete_medication_by_id_success(self):
-        patient_id = await self.mock_create_patient()
+        patient_id = await self.mock_create_patient("Jim")
         medication_id = await self.mock_create_medication(patient_id)
 
         result = await delete_medication_by_id(
@@ -1500,7 +1758,7 @@ class TestPatienMedicationsRouter(IsolatedAsyncioTestCase):
         await PatientService.delete_patient_by_id(patient_id)
 
     async def test_get_medication_by_id_not_found(self):
-        patient_id = await self.mock_create_patient()
+        patient_id = await self.mock_create_patient("Jim")
 
         with self.assertRaises(HTTPException) as cm:
             await get_medication_by_id(patient_id, 99999, self.user)
@@ -1568,10 +1826,10 @@ class TestPatientDispensingRouter(IsolatedAsyncioTestCase):
     def user(self):
         return self.__class__.user
 
-    async def mock_create_patient(self):
+    async def mock_create_patient(self, name: str):
         """Helper to create a test patient using class user"""
         patient_data = PatientCreate(
-            first_name="Jim",
+            first_name=name,
             last_name="Doe",
             dob=date(1990, 1, 1),
             age=33,
@@ -1579,6 +1837,8 @@ class TestPatientDispensingRouter(IsolatedAsyncioTestCase):
             email="jim.doe@example.com",
             phone1="416-555-0123",
             status="pending",
+            health_card="1234567890",
+            health_card_version="AB",
         )
 
         result = await create_patient(patient_data, self.user)
@@ -1614,6 +1874,8 @@ class TestPatientDispensingRouter(IsolatedAsyncioTestCase):
             email="jim.doe@example.com",
             phone1="416-555-0123",
             status="pending",
+            health_card="1234567890",
+            health_card_version="AB",
         )
 
         # Dispensing test data
@@ -1634,7 +1896,7 @@ class TestPatientDispensingRouter(IsolatedAsyncioTestCase):
         await database.disconnect()
 
     async def test_create_dispensing_success(self):
-        patient_id = await self.mock_create_patient()
+        patient_id = await self.mock_create_patient("Jim")
         result = await create_dispensing(
             patient_id, self.dispensing_data, self.user
         )
@@ -1645,7 +1907,7 @@ class TestPatientDispensingRouter(IsolatedAsyncioTestCase):
         await PatientService.delete_patient_by_id(patient_id)
 
     async def test_get_dispensings_by_patient_success(self):
-        patient_id = await self.mock_create_patient()
+        patient_id = await self.mock_create_patient("Jim")
         await self.mock_create_dispensing(patient_id)
 
         result = await get_dispensings_by_patient(patient_id, self.user)
@@ -1658,7 +1920,7 @@ class TestPatientDispensingRouter(IsolatedAsyncioTestCase):
         await PatientService.delete_patient_by_id(patient_id)
 
     async def test_get_dispensing_by_id_success(self):
-        patient_id = await self.mock_create_patient()
+        patient_id = await self.mock_create_patient("Jim")
         dispensing_id = await self.mock_create_dispensing(patient_id)
 
         result = await get_dispensing_by_id(
@@ -1673,7 +1935,7 @@ class TestPatientDispensingRouter(IsolatedAsyncioTestCase):
         await PatientService.delete_patient_by_id(patient_id)
 
     async def test_update_dispensing_success(self):
-        patient_id = await self.mock_create_patient()
+        patient_id = await self.mock_create_patient("Jim")
         dispensing_id = await self.mock_create_dispensing(patient_id)
 
         result = await update_dispensing(
@@ -1693,7 +1955,7 @@ class TestPatientDispensingRouter(IsolatedAsyncioTestCase):
         await PatientService.delete_patient_by_id(patient_id)
 
     async def test_delete_dispensing_by_id_success(self):
-        patient_id = await self.mock_create_patient()
+        patient_id = await self.mock_create_patient("Jim")
         dispensing_id = await self.mock_create_dispensing(patient_id)
 
         result = await delete_dispensing_by_id(
@@ -1706,7 +1968,7 @@ class TestPatientDispensingRouter(IsolatedAsyncioTestCase):
         await PatientService.delete_patient_by_id(patient_id)
 
     async def test_get_dispensing_by_id_not_found(self):
-        patient_id = await self.mock_create_patient()
+        patient_id = await self.mock_create_patient("Jim")
 
         with self.assertRaises(HTTPException) as cm:
             await get_dispensing_by_id(patient_id, 99999, self.user)
@@ -1774,10 +2036,10 @@ class TestPatientActivityRouter(IsolatedAsyncioTestCase):
     def user(self):
         return self.__class__.user
 
-    async def mock_create_patient(self):
+    async def mock_create_patient(self, name: str):
         """Helper to create a test patient using class user"""
         patient_data = PatientCreate(
-            first_name="Jim",
+            first_name=name,
             last_name="Doe",
             dob=date(1990, 1, 1),
             age=33,
@@ -1785,6 +2047,8 @@ class TestPatientActivityRouter(IsolatedAsyncioTestCase):
             email="jim.doe@example.com",
             phone1="416-555-0123",
             status="pending",
+            health_card="1234567890",
+            health_card_version="AB",
         )
 
         result = await create_patient(patient_data, self.user)
@@ -1817,6 +2081,8 @@ class TestPatientActivityRouter(IsolatedAsyncioTestCase):
             email="jim.doe@example.com",
             phone1="416-555-0123",
             status="pending",
+            health_card="1234567890",
+            health_card_version="AB",
         )
 
         # Activity test data
@@ -1834,7 +2100,7 @@ class TestPatientActivityRouter(IsolatedAsyncioTestCase):
         await database.disconnect()
 
     async def test_create_activity_success(self):
-        patient_id = await self.mock_create_patient()
+        patient_id = await self.mock_create_patient("Jim")
         result = await create_activity(
             patient_id, self.activity_data, self.user
         )
@@ -1845,7 +2111,7 @@ class TestPatientActivityRouter(IsolatedAsyncioTestCase):
         await PatientService.delete_patient_by_id(patient_id)
 
     async def test_get_activities_by_patient_success(self):
-        patient_id = await self.mock_create_patient()
+        patient_id = await self.mock_create_patient("Jim")
         await self.mock_create_activity(patient_id)
 
         result = await get_activities_by_patient(patient_id, self.user)
@@ -1858,7 +2124,7 @@ class TestPatientActivityRouter(IsolatedAsyncioTestCase):
         await PatientService.delete_patient_by_id(patient_id)
 
     async def test_get_activity_by_id_success(self):
-        patient_id = await self.mock_create_patient()
+        patient_id = await self.mock_create_patient("Jim")
         activity_id = await self.mock_create_activity(patient_id)
 
         result = await get_activity_by_id(patient_id, activity_id, self.user)
@@ -1871,7 +2137,7 @@ class TestPatientActivityRouter(IsolatedAsyncioTestCase):
         await PatientService.delete_patient_by_id(patient_id)
 
     async def test_update_activity_success(self):
-        patient_id = await self.mock_create_patient()
+        patient_id = await self.mock_create_patient("Jim")
         activity_id = await self.mock_create_activity(patient_id)
 
         result = await update_activity(
@@ -1892,7 +2158,7 @@ class TestPatientActivityRouter(IsolatedAsyncioTestCase):
         await PatientService.delete_patient_by_id(patient_id)
 
     async def test_delete_activity_by_id_success(self):
-        patient_id = await self.mock_create_patient()
+        patient_id = await self.mock_create_patient("Jim")
         activity_id = await self.mock_create_activity(patient_id)
 
         result = await delete_activity_by_id(
@@ -1905,7 +2171,7 @@ class TestPatientActivityRouter(IsolatedAsyncioTestCase):
         await PatientService.delete_patient_by_id(patient_id)
 
     async def test_get_activity_by_id_not_found(self):
-        patient_id = await self.mock_create_patient()
+        patient_id = await self.mock_create_patient("Jim")
 
         with self.assertRaises(HTTPException) as cm:
             await get_activity_by_id(patient_id, 99999, self.user)

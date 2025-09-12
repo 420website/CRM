@@ -1,6 +1,5 @@
 export const loadGoogleMaps = () => {
   if (window.google && window.google.maps) {
-    console.log("Google Maps already available");
     return;
   }
 

@@ -1,4 +1,5 @@
 from typing import List
+from asyncpg import UniqueViolationError
 from fastapi import (
     APIRouter,
     Depends,
@@ -61,16 +62,39 @@ async def create_patient(
     data: PatientCreate,
     user: UserRead = Depends(get_current_user),
 ):
-    id = await PatientService.create_patient(data)
+    try:
+        if not data.force_create:
+            if await PatientService.get_patient_by_name_dob(
+                data.first_name, data.last_name, data.dob
+            ):
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Patient with that name and dob already exists.",
+                )
 
-    if not id:
+        id = await PatientService.create_patient(data)
+
+        if not id:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Patient not created.",
+            )
+        return {"patient_id": id}
+
+    except UniqueViolationError:
+        # Example: health card must be unique
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Patient not created.",
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Health card already exists.",
         )
-
-    return {"patient_id": id}
-    # return {"message": "Patient created successfully."}
+    except HTTPException:
+        raise
+    except Exception as e:
+        # Fallback for unexpected errors
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Unexpected error: {str(e)}",
+        )
 
 
 @router.get("", response_model=List[PatientRead])
@@ -118,12 +142,53 @@ async def update_patient(
     data: PatientUpdate,
     user: UserRead = Depends(get_current_user),
 ):
-    if not await PatientService.update_patient(id, data):
+
+    try:
+        if not data.force_update:
+            patient = await PatientService.get_patient_by_id(id)
+
+            if not patient:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail="Patient not found or could not be updated.",
+                )
+
+            # Update any null values with the current values
+            first_name = data.first_name or patient.first_name
+            last_name = data.last_name or patient.last_name
+            dob = data.dob or patient.dob
+
+            if await PatientService.get_other_patient_name_dob(
+                id,
+                first_name,
+                last_name,
+                dob,
+            ):
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Patient with that name and dob already exists.",
+                )
+        if not await PatientService.update_patient(id, data):
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Patient not found or could not be updated.",
+            )
+        return {"message": "Patient updated successfully."}
+
+    except UniqueViolationError:
+        # Example: health card must be unique
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Patient not found or could not be updated.",
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Health card already exists.",
         )
-    return {"message": "Patient updated successfully."}
+    except HTTPException:
+        raise
+    except Exception as e:
+        # Fallback for unexpected errors
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Unexpected error: {str(e)}",
+        )
 
 
 @router.patch("/{id}/status")
