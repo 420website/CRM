@@ -22,6 +22,7 @@ class Settings:
     jwt_refresh_secret: str = get_env("JWT_REFRESH_SECRET")
     jwt_algorithm: str = get_env("JWT_ALGORITHM")
     access_token_expire_minutes: int = 30
+    share_link_expire_minutes: int = 30
     refresh_token_expire_days: int = 7
     temp_login_expire_minutes: int = 5
     reset_pw_expire_hours: int = 1

@@ -87,6 +87,8 @@ class PatientRead(PatientBase):
     first_name: str
     last_name: str
     dob: dt.date
+    health_card: str
+    health_card_version: str
     created_at: datetime
     updated_at: datetime
 
@@ -165,9 +167,7 @@ class NoteRead(NoteBase):
 class AttachmentBase(BaseModel):
     type: Optional[str] = None
     url: Optional[str] = None
-    document_type: Optional[str] = None
     is_local: Optional[bool] = None
-    original_url: Optional[str] = None
     file_size: Optional[int] = None
     mime_type: Optional[str] = None
 
@@ -175,17 +175,23 @@ class AttachmentBase(BaseModel):
 class AttachmentCreate(AttachmentBase):
     # patient_id: int  # Required for creation
     filename: str  # Required for creation
+    document_type: str
+    original_url: str
 
 
 class AttachmentUpdate(AttachmentBase):
     patient_id: Optional[int] = None
     filename: Optional[str] = None
+    document_type: Optional[str] = None
+    original_url: Optional[str] = None
 
 
 class AttachmentRead(AttachmentBase):
     id: int
     patient_id: int
     filename: str
+    document_type: Optional[str] = None
+    original_url: Optional[str] = None
     created_at: datetime
     updated_at: datetime
 

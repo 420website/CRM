@@ -1,26 +1,26 @@
 import { useEffect, useRef, useState } from "react";
-import { ShareLinkServices } from "../../services/shareLinkService";
+import { useSearchParams } from "react-router-dom";
 import { Document, Page, pdfjs } from "react-pdf";
+import { ShareLinkServices } from "../../services/shareLinkService";
 
 pdfjs.GlobalWorkerOptions.workerSrc = new URL(
   "pdfjs-dist/build/pdf.worker.min.mjs",
   import.meta.url,
 ).toString();
 
-export default function DocumentPreviewModal({
-  documentPreview,
-  totalPages,
-  closeFullScreenPreview,
-}) {
-  // Sharing functionality state
+export default function ShareViewer() {
+  const [searchParams] = useSearchParams();
+  const token = searchParams.get("token");
+
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [shareUrl, setShareUrl] = useState("");
-  const [isSharing, setIsSharing] = useState(false);
-  const [shareStatus, setShareStatus] = useState("");
+  const [totalPages, setTotalPages] = useState(1);
+  const [documentPreview, setDocumentPreview] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [pdfScale, setPdfScale] = useState(1.0);
+  const [pdfLoading, setPdfLoading] = useState(false);
   const [pdfError, setPdfError] = useState(null);
+
   const [containerWidth, setContainerWidth] = useState(0);
   const [hasSetDefaultScale, setHasSetDefaultScale] = useState(false);
   const [defaultScale, setDefaultScale] = useState(1.0);
@@ -81,6 +81,12 @@ export default function DocumentPreviewModal({
     }
   };
 
+  const goToPage = (pageNum) => {
+    if (pageNum >= 1 && pageNum <= totalPages) {
+      setCurrentPage(pageNum);
+    }
+  };
+
   // Zoom functions
   const zoomIn = () => {
     setPdfScale((prev) => Math.min(prev + 0.2, 3.0));
@@ -95,71 +101,78 @@ export default function DocumentPreviewModal({
     // setPdfScale(1.0);
   };
 
-  // Generate shareable link for attachment
-  const generateShareLink = async () => {
-    if (!documentPreview) return;
+  // PDF event handlers
+  const onDocumentLoadSuccess = ({ numPages }) => {
+    setTotalPages(numPages);
+    setPdfScale(1.0);
 
-    setIsSharing(true);
-    const result = await ShareLinkServices.get_share_link(documentPreview.id);
-
-    if (result.success) {
-      setShareUrl(result.data?.share_url);
-      setShareStatus("Temporary link generated! Expires in 30 minutes.");
-
-      // Auto-clear status after 5 seconds
-      setTimeout(() => setShareStatus(""), 5000);
-    } else {
-      if (result.status === 400 || result.status === 409) {
-        setError(result.message || "Error getting dispositions.");
-        setShareStatus("Error generating shareable link");
-        setTimeout(() => setShareStatus(""), 3000);
-      } else {
-        setError("Error getting dispositions. Please try again.");
-        setShareStatus("Error generating shareable link");
-        setTimeout(() => setShareStatus(""), 3000);
-      }
-    }
-    setIsSharing(false);
+    setPdfLoading(false);
+    setPdfError(null);
   };
 
-  // Copy share link to clipboard or trigger native sharing
-  const copyShareLink = async () => {
-    if (!shareUrl) {
-      await generateShareLink();
-      return;
-    }
+  const onDocumentLoadError = (error) => {
+    setPdfError("Failed to load PDF document");
+    setPdfLoading(false);
+  };
 
-    // Try native sharing first (like Emergent platform)
-    if (navigator.share) {
+  const onPageLoadError = (error) => {
+    console.error("Error loading page:", error);
+  };
+
+  useEffect(() => {
+    setLoading(true);
+    const fetchAttachment = async () => {
       try {
-        await navigator.share({
-          title: `Shared Document: ${documentPreview?.filename || "Document"}`,
-          text: "View this document (expires in 30 minutes)",
-          url: shareUrl,
-        });
-        setShareStatus("Shared successfully!");
-        setTimeout(() => setShareStatus(""), 3000);
-        return;
-      } catch (error) {
-        if (error.name === "AbortError") {
-          return; // User cancelled, don't show error
-        }
-        console.log("Native sharing failed, falling back to clipboard");
+        const response = await ShareLinkServices.access_link(token);
+        await viewAttachment(response.data);
+      } catch (err) {
+        setError("Invalid or expired link.");
+      } finally {
+        setLoading(false);
       }
+    };
+    fetchAttachment();
+  }, [token]);
+
+  const viewAttachment = async (attachment) => {
+    // Clear file input
+    const fileInput = document.getElementById("documentFile");
+    if (fileInput) fileInput.value = "";
+
+    if (attachment.document_type === "pdf") {
+      setCurrentPage(1);
+      // setPdfScale(1.2);
+      setPdfLoading(true);
     }
 
-    // Fallback to clipboard
-    try {
-      await navigator.clipboard.writeText(shareUrl);
-      setShareStatus("Link copied to clipboard!");
-      setTimeout(() => setShareStatus(""), 3000);
-    } catch (error) {
-      setShareStatus("Failed to copy link");
-      setTimeout(() => setShareStatus(""), 3000);
-    }
+    // Use a setTimeout to ensure state is cleared before setting new preview
+    setTimeout(() => {
+      let previewUrl = attachment.url;
+
+      // For images, ensure they have the proper base64 data URI format
+      if (
+        attachment.document_type === "image" &&
+        previewUrl &&
+        !previewUrl.startsWith("data:image/")
+      ) {
+        // If it's a raw base64 string, add the proper prefix
+        if (!previewUrl.startsWith("data:")) {
+          previewUrl = `data:image/jpeg;base64,${previewUrl}`;
+        }
+      }
+
+      // Set the document preview
+      setDocumentPreview({
+        id: attachment.id,
+        type: attachment.document_type,
+        url: previewUrl,
+        filename: attachment.filename,
+        is_local: attachment.is_local || false,
+      });
+    }, 50);
   };
 
-  // if (loading) return <div className="p-4">Loading...</div>;
+  if (loading) return <div className="p-4">Loading...</div>;
   if (error) return <div className="p-4 text-red-600">{error}</div>;
   if (!documentPreview) return <div className="p-4">Loading document...</div>;
 
@@ -169,14 +182,14 @@ export default function DocumentPreviewModal({
       className="fixed inset-0 z-50 bg-neutral-800 overflow-hidden"
     >
       {/* Top Control Bar */}
-      <div className="fixed top-0 left-0 right-0 z-60 bg-[#3C3C3C] bg-opacity-70 p-4">
+      <div className="absolute top-0 left-0 right-0 z-60 bg-[#3C3C3C] bg-opacity-70 p-4">
         <div className="flex justify-between items-center max-w-full">
           {/* Document Info */}
-          <div className="bg-white px-3 py-2 rounded-md shadow-lg flex-shrink mr-3">
+          <div className="bg-white px-3 py-2 rounded-md shadow-lg flex-shrink-0 mr-3">
             <div className="flex items-center text-black">
               {documentPreview?.type === "pdf" ? (
                 <svg
-                  className="h-4 w-4 mr-2 text-red-600 flex-shrink"
+                  className="h-4 w-4 mr-2 text-red-600 flex-shrink-0"
                   fill="currentColor"
                   viewBox="0 0 20 20"
                 >
@@ -188,7 +201,7 @@ export default function DocumentPreviewModal({
                 </svg>
               ) : (
                 <svg
-                  className="h-4 w-4 mr-2 text-green-600 flex-shrink"
+                  className="h-4 w-4 mr-2 text-green-600 flex-shrink-0"
                   fill="currentColor"
                   viewBox="0 0 20 20"
                 >
@@ -204,79 +217,8 @@ export default function DocumentPreviewModal({
               </span>
             </div>
           </div>
-
-          {/* Control Buttons */}
-          <div className="flex space-x-2 flex-shrink">
-            {/* Share Button */}
-            <button
-              type="button"
-              onClick={copyShareLink}
-              disabled={isSharing}
-              className="bg-black text-white px-3 py-2 rounded-md hover:bg-gray-800 disabled:bg-gray-400 transition-colors font-semibold shadow-lg flex items-center text-xs"
-            >
-              {isSharing ? (
-                <>
-                  <svg
-                    className="animate-spin h-3 w-3 mr-1"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                  >
-                    <circle
-                      className="opacity-25"
-                      cx="12"
-                      cy="12"
-                      r="10"
-                      stroke="currentColor"
-                      strokeWidth="4"
-                    ></circle>
-                    <path
-                      className="opacity-75"
-                      fill="currentColor"
-                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                    ></path>
-                  </svg>
-                  Generating...
-                </>
-              ) : (
-                <>
-                  <svg
-                    className="h-3 w-3 mr-1"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth="2"
-                      d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.367 2.684 3 3 0 00-5.367-2.684z"
-                    />
-                  </svg>
-                  {shareUrl ? "Copy Link" : "Share"}
-                </>
-              )}
-            </button>
-
-            {/* Close Button */}
-            <button
-              type="button"
-              onClick={closeFullScreenPreview}
-              className="bg-white text-black px-3 py-2 rounded-md hover:bg-gray-100 transition-colors font-semibold shadow-lg text-xs"
-            >
-              ✕ Close
-            </button>
-          </div>
         </div>
       </div>
-
-      {/* Share Status Message */}
-      {shareStatus && (
-        <div className="absolute top-20 left-1/2 transform -translate-x-1/2 z-60">
-          <div className="bg-green-600 text-white px-4 py-2 rounded-md shadow-lg text-sm">
-            {shareStatus}
-          </div>
-        </div>
-      )}
 
       {/* Document Viewer */}
       <div className="absolute top-16 left-0 right-0 bottom-0 overflow-auto">
@@ -291,8 +233,8 @@ export default function DocumentPreviewModal({
               ) : (
                 <Document
                   file={documentPreview.url}
-                  // onLoadSuccess={onDocumentLoadSuccess}
-                  // onLoadError={onDocumentLoadError}
+                  onLoadSuccess={onDocumentLoadSuccess}
+                  onLoadError={onDocumentLoadError}
                   loading={
                     <div className="p-8 text-center">
                       <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
@@ -311,7 +253,7 @@ export default function DocumentPreviewModal({
                     height={undefined} // Let height auto-scale
                     width={undefined}
                     className="max-h-full max-w-full object-contain"
-                    // onLoadError={onPageLoadError}
+                    onLoadError={onPageLoadError}
                     onLoadSuccess={onPageLoadSuccess}
                     loading={
                       <div className="p-4 text-center">
@@ -334,7 +276,6 @@ export default function DocumentPreviewModal({
             />
           </div>
         )}
-
         {/* Bottom Control Bar */}
         <div className="fixed bottom-0 left-0 right-0 z-60 bg-[#3C3C3C] bg-opacity-70 p-4">
           <div className="flex justify-between items-center max-w-full">
@@ -345,7 +286,6 @@ export default function DocumentPreviewModal({
                 <div className="bg-white px-3 py-2 rounded-md shadow-lg flex-shrink mr-3">
                   <div className="flex items-center space-x-2">
                     <button
-                      type="button"
                       onClick={prevPage}
                       disabled={currentPage <= 1}
                       className="p-1 bg-gray-600 text-white rounded hover:bg-gray-700 disabled:bg-gray-300 disabled:cursor-not-allowed"
@@ -378,7 +318,6 @@ export default function DocumentPreviewModal({
                       </span>
                     </div>
                     <button
-                      type="button"
                       onClick={nextPage}
                       disabled={currentPage >= totalPages}
                       className="p-1 bg-gray-600 text-white rounded hover:bg-gray-700 disabled:bg-gray-300 disabled:cursor-not-allowed"
@@ -404,7 +343,6 @@ export default function DocumentPreviewModal({
                 <div className="bg-white px-3 py-2 rounded-md shadow-lg flex-shrink">
                   <div className="flex items-center space-x-2">
                     <button
-                      type="button"
                       onClick={zoomOut}
                       className="p-1 bg-gray-600 text-white rounded hover:bg-gray-700"
                       title="Zoom Out"
@@ -427,7 +365,6 @@ export default function DocumentPreviewModal({
                       {Math.round(pdfScale * 100)}%
                     </span>
                     <button
-                      type="button"
                       onClick={zoomIn}
                       className="p-1 bg-gray-600 text-white rounded hover:bg-gray-700"
                       title="Zoom In"
@@ -447,7 +384,6 @@ export default function DocumentPreviewModal({
                       </svg>
                     </button>
                     <button
-                      type="button"
                       onClick={resetZoom}
                       className="px-2 py-1 text-xs bg-gray-600 text-white rounded hover:bg-gray-700"
                       title="Reset Zoom"
@@ -460,34 +396,6 @@ export default function DocumentPreviewModal({
             )}
           </div>
         </div>
-
-        {/* Share URL Display - Bottom overlay */}
-        {shareUrl && shareStatus && (
-          <div className="absolute bottom-4 left-4 right-4 z-60">
-            <div className="bg-white px-4 py-3 rounded-md shadow-lg">
-              <div className="flex items-center justify-between">
-                <div className="flex-1 mr-3">
-                  <label className="block text-xs font-medium text-gray-700 mb-1">
-                    Shareable Link:
-                  </label>
-                  <input
-                    type="text"
-                    value={shareUrl}
-                    readOnly
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-xs"
-                  />
-                </div>
-                <button
-                  type="button"
-                  onClick={copyShareLink}
-                  className="bg-black text-white px-3 py-2 rounded-md hover:bg-gray-800 transition-colors text-xs font-medium flex-shrink"
-                >
-                  Copy
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
       </div>
     </div>
   );

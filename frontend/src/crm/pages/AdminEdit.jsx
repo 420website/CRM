@@ -73,7 +73,6 @@ const AdminEdit = () => {
   const openVoiceFillInput = () => {
     setVoiceInputText("");
     setShowVoiceFillModal(true);
-    console.log("should be opening");
   };
 
   const handleVoiceDateSubmit = () => {
@@ -513,6 +512,7 @@ const AdminEdit = () => {
                     You don't have permission to access any registration tabs.
                   </p>
                   <button
+                    type="button"
                     onClick={() => navigate("/admin-menu")}
                     className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
                   >

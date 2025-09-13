@@ -8,7 +8,9 @@ from app.authentication.services import UserService
 from app.authentication.utils import SecurityService
 
 
-async def register_admin_user(email: str, password: str, phone: str):
+async def register_admin_user(
+    name: str, email: str, password: str, phone: str
+):
     await database.connect()
 
     if await UserService.check_user_exists(email):
@@ -28,7 +30,7 @@ async def register_admin_user(email: str, password: str, phone: str):
     async with database.get_transaction() as conn:
         row = await conn.fetchrow(
             query,
-            "admin",
+            name,
             "",
             email,
             phone,
@@ -61,7 +63,16 @@ async def main():
     admin_password: str = get_env("ADMIN_PASSWORD")
     admin_phone: str = get_env("ADMIN_PHONE")
 
-    await register_admin_user(admin_email, admin_password, admin_phone)
+    await register_admin_user(
+        "admin1", admin_email, admin_password, admin_phone
+    )
+
+    admin_email2: str = get_env("ADMIN_EMAIL2")
+    admin_phone2: str = get_env("ADMIN_PHONE2")
+
+    await register_admin_user(
+        "admin2", admin_email2, admin_password, admin_phone2
+    )
 
 
 if __name__ == "__main__":

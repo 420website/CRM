@@ -102,6 +102,7 @@ export default function EditPhoto({
       </h1>
       <div className="flex gap-2 mb-4">
         <button
+          type="button"
           onClick={() => navigate("/admin-menu")}
           className="inline-flex items-center gap-1 px-3 py-1 bg-black text-white rounded-md hover:bg-gray-800 transition-colors text-xs font-medium"
         >
@@ -121,6 +122,7 @@ export default function EditPhoto({
           Admin Menu
         </button>
         <button
+          type="button"
           onClick={() => navigate("/admin-dashboard")}
           className="inline-flex items-center gap-1 px-3 py-1 bg-black text-white rounded-md hover:bg-gray-800 transition-colors text-xs font-medium"
         >
@@ -140,6 +142,7 @@ export default function EditPhoto({
           Back to Dashboard
         </button>
         <button
+          type="button"
           onClick={() => navigate("/")}
           className="inline-flex items-center gap-1 px-3 py-1 bg-white text-black border border-black rounded-md hover:bg-gray-100 transition-colors text-xs font-medium"
         >
