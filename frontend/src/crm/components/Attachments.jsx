@@ -1,5 +1,12 @@
 import { useState, useEffect } from "react";
 import { PatientServices } from "../../services/patientServices";
+import {
+  getPdfPageCount,
+  loadImage,
+  loadPDF,
+  loadWord,
+} from "../../utils/loadFile";
+import DocumentPreviewModal from "./DocumentPreview";
 
 export default function Attachments({ setActiveTab, currentRegistrationId }) {
   const [error, setError] = useState("");
@@ -11,6 +18,22 @@ export default function Attachments({ setActiveTab, currentRegistrationId }) {
   const [documentFile, setDocumentFile] = useState(null);
   const [savedAttachments, setSavedAttachments] = useState([]);
   const [isFullScreenPreview, setIsFullScreenPreview] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize] = useState(20); // Fixed page size for optimal performance
+  const [totalPages, setTotalPages] = useState(1);
+
+  // Page navigation functions
+  const nextPage = () => {
+    if (currentPage < totalPages) {
+      setCurrentPage(currentPage + 1);
+    }
+  };
+
+  const prevPage = () => {
+    if (currentPage > 1) {
+      setCurrentPage(currentPage - 1);
+    }
+  };
 
   const getAttachments = async (registrationId) => {
     setLoading(true);
@@ -113,15 +136,23 @@ export default function Attachments({ setActiveTab, currentRegistrationId }) {
     setDocumentUrl("");
     setDocumentPreview(null);
     setDocumentType(attachment.type);
+    console.log(attachment);
 
     // Clear file input
     const fileInput = document.getElementById("documentFile");
     if (fileInput) fileInput.value = "";
 
+    if (attachment.document_type === "pdf") {
+      const totalPages = await getPdfPageCount(attachment.url);
+      setTotalPages(totalPages);
+      setCurrentPage(1);
+    }
+
     // Use a setTimeout to ensure state is cleared before setting new preview
     setTimeout(() => {
       // Ensure proper URL format for images
       let previewUrl = attachment.url;
+
       // For images, ensure they have the proper base64 data URI format
       if (
         attachment.document_type === "image" &&
@@ -136,6 +167,7 @@ export default function Attachments({ setActiveTab, currentRegistrationId }) {
 
       // Set the document preview with the exact same structure as upload
       setDocumentPreview({
+        id: attachment.id,
         type: attachment.document_type,
         url: previewUrl,
         filename: attachment.filename,
@@ -164,21 +196,46 @@ export default function Attachments({ setActiveTab, currentRegistrationId }) {
   };
 
   const openFullScreenPreview = () => {
+    console.log("foo");
     if (
       documentPreview &&
       (documentPreview.type === "pdf" || documentPreview.type === "image")
     ) {
+      console.log("bar");
       setIsFullScreenPreview(true);
     }
   };
 
   const closeFullScreenPreview = () => {
+    console.log("top");
     setIsFullScreenPreview(false);
+  };
+
+  const loadDocument = (
+    file,
+    setDocumentPreview,
+    setCurrentPage,
+    setTotalPages,
+  ) => {
+    if (file.type.startsWith("image/")) {
+      loadImage(file, setDocumentPreview);
+    } else if (file.type === "application/pdf") {
+      loadPDF(file, setDocumentPreview, setCurrentPage, setTotalPages);
+    } else if (
+      file.type ===
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document" ||
+      file.type === "application/msword"
+    ) {
+      loadWord(file, setDocumentPreview);
+    } else {
+      console.warn("Unsupported file type:", file.type);
+    }
   };
 
   // Document handling functions
   const handleDocumentFileChange = async (e) => {
     const file = e.target.files[0];
+
     if (file) {
       // Validate file type
       const allowedTypes = [
@@ -203,46 +260,8 @@ export default function Attachments({ setActiveTab, currentRegistrationId }) {
         return;
       }
 
+      loadDocument(file, setDocumentPreview, setCurrentPage, setTotalPages);
       setDocumentFile(file);
-
-      // Generate preview for images and PDFs
-      if (file.type.startsWith("image/")) {
-        const reader = new FileReader();
-        reader.onload = (e) => {
-          setDocumentPreview({
-            type: "image",
-            url: e.target.result, // This is already a proper base64 data URI
-            filename: file.name,
-          });
-        };
-        reader.readAsDataURL(file);
-      } else if (file.type === "application/pdf") {
-        // Create blob URL for proper PDF navigation support
-        const blobUrl = URL.createObjectURL(file);
-
-        // Also convert to base64 for storage
-        const reader = new FileReader();
-        reader.onload = (e) => {
-          const base64Data = e.target.result;
-          setDocumentPreview({
-            type: "pdf",
-            url: blobUrl, // Use blob URL for viewing
-            base64: base64Data, // Store base64 for saving
-            filename: file.name,
-            is_local: true,
-          });
-          // Reset page navigation for new PDF
-          setCurrentPage(1);
-          setTotalPages(50); // User can navigate to check actual pages
-        };
-        reader.readAsDataURL(file);
-      } else {
-        setDocumentPreview({
-          type: "document",
-          url: null,
-          filename: file.name,
-        });
-      }
     }
   };
 
@@ -475,6 +494,7 @@ export default function Attachments({ setActiveTab, currentRegistrationId }) {
                       <div className="bg-gray-50 border rounded-lg p-4">
                         <div className="flex items-center justify-between max-w-md mx-auto">
                           <button
+                            type="button"
                             onClick={prevPage}
                             disabled={currentPage <= 1}
                             className="px-4 py-2 bg-gray-600 text-white rounded text-sm hover:bg-gray-700 disabled:bg-gray-300 disabled:cursor-not-allowed"
@@ -503,6 +523,7 @@ export default function Attachments({ setActiveTab, currentRegistrationId }) {
                           </div>
 
                           <button
+                            type="button"
                             onClick={nextPage}
                             disabled={currentPage >= totalPages}
                             className="px-4 py-2 bg-gray-600 text-white rounded text-sm hover:bg-gray-700 disabled:bg-gray-300 disabled:cursor-not-allowed"
@@ -515,6 +536,7 @@ export default function Attachments({ setActiveTab, currentRegistrationId }) {
                       {/* Full Screen Button */}
                       <div className="text-center mt-4">
                         <button
+                          type="button"
                           onClick={openFullScreenPreview}
                           className="px-6 py-2 bg-black text-white rounded hover:bg-gray-800 text-sm"
                         >
@@ -693,6 +715,19 @@ export default function Attachments({ setActiveTab, currentRegistrationId }) {
             </div>
           )}
         </div>
+      </div>
+
+      <div>
+        {isFullScreenPreview &&
+          documentPreview &&
+          (documentPreview.type === "pdf" ||
+            documentPreview.type === "image") && (
+            <DocumentPreviewModal
+              documentPreview={documentPreview}
+              totalPages={totalPages}
+              closeFullScreenPreview={closeFullScreenPreview}
+            />
+          )}
       </div>
     </div>
   );

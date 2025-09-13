@@ -1223,7 +1223,9 @@ class TestPatientAttachmentsRouter(IsolatedAsyncioTestCase):
         attachment_data = AttachmentCreate(
             filename="test_document.pdf",
             type="document",
-            document_type="lab_report",
+            url="https://example.com/test_document.pdf",
+            document_type="Lab Report",
+            original_url="https://example.com/test_document.pdf",
             is_local=True,
         )
 
@@ -1256,6 +1258,8 @@ class TestPatientAttachmentsRouter(IsolatedAsyncioTestCase):
             type="document",
             document_type="lab_report",
             is_local=True,
+            url="https://example.com/test_document.pdf",
+            original_url="https://example.com/test_document.pdf",
         )
 
         self.attachment_update_data = AttachmentUpdate(

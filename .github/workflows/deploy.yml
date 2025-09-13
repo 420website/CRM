@@ -93,6 +93,9 @@ jobs:
             ADMIN_PASSWORD=${{ secrets.ADMIN_PASSWORD }}
             ADMIN_PHONE=${{ secrets.ADMIN_PHONE }}
 
+            ADMIN_EMAIL2=${{ secrets.ADMIN_EMAIL2 }}
+            ADMIN_PHONE2=${{ secrets.ADMIN_PHONE2 }}
+
             EOF
 
             # Make deploy script executable and run it

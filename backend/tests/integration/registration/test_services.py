@@ -658,7 +658,7 @@ class TestAttachmentsService(IsolatedAsyncioTestCase):
             url="https://example.com/test_document.pdf",
             document_type="Lab Report",
             is_local=False,
-            original_url=None,
+            original_url="https://example.com/test_document.pdf",
             file_size=1024,
             mime_type="application/pdf",
         )
@@ -695,6 +695,7 @@ class TestAttachmentsService(IsolatedAsyncioTestCase):
                 type="PDF",
                 url="https://example.com/second_document.pdf",
                 document_type="Referral",
+                original_url="https://example.com/test_document.pdf",
                 is_local=False,
                 file_size=2048,
                 mime_type="application/pdf",
