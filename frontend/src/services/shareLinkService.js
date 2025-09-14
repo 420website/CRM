@@ -10,7 +10,7 @@ export const ShareLinkServices = {
 
   access_link: async (token) => {
     return apiCall(
-      () => api.get(`/share-links?token=${token}`),
+      () => api.get(`/share-links/${token}`),
       "Uploading legacy data failed.",
     );
   },

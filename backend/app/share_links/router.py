@@ -58,11 +58,11 @@ async def create_share_link(
     user: UserRead = Depends(get_current_user),
 ):
     token = generate_jwt(body.attachment_id)
-    share_url = f"{settings.app_url}/share-link?token={token}"
+    share_url = f"{settings.app_url}/share-links?token={token}"
     return {"share_url": share_url}
 
 
-@router.get("/", response_model=AttachmentRead)
+@router.get("/{token}", response_model=AttachmentRead)
 async def access_share_link(token: str):
     payload = decode_jwt(token)
 

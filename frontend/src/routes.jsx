@@ -78,7 +78,7 @@ function AppRoutes() {
           {/* CRM */}
           <Route path="/admin-pin" element={<AdminPIN />} />
           <Route path="/verify-email" element={<VerifyEmail />} />
-          <Route path="/share-link" element={<ShareViewer />} />
+          <Route path="/share-links" element={<ShareViewer />} />
 
           <Route element={<AuthenticatedRoute />}>
             <Route path="/admin-menu" element={<AdminMenu />} />
