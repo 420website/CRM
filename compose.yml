@@ -138,6 +138,7 @@ services:
       - certbot-www:/var/www/certbot
       - frontend_dist:/usr/share/nginx/html:ro
       - ./nginx/nginx.prod.conf:/etc/nginx/templates/nginx.conf.template
+      - ./nginx/main-nginx.conf:/etc/nginx/nginx.conf       
 
 volumes: 
   frontend_dist:
