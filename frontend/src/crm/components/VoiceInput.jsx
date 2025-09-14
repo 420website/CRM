@@ -81,16 +81,10 @@ export default function VoiceFillModal({
               <strong>Gender:</strong> "gender Male" or "gender Female"
             </li>
             <li>
-              <strong>Health Card Number:</strong> "health card 1234567890"
-            </li>
-            <li>
-              <strong>Health Card Version:</strong> "version A"
+              <strong>Health Card Number:</strong> "health card 1234567890 AY"
             </li>
             <li>
               <strong>Disposition:</strong> "disposition Active"
-            </li>
-            <li>
-              <strong>Age:</strong> "age 35"
             </li>
           </ol>
           <p className="mt-2 text-xs text-gray-500">

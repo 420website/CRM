@@ -8,13 +8,22 @@ export function useVoiceInput() {
     listening,
     resetTranscript,
     browserSupportsSpeechRecognition,
+    isMicrophoneAvailable,
   } = useSpeechRecognition();
 
-  const toggleListening = () => {
+  if (!browserSupportsSpeechRecognition) {
+    alert("Your browser does not support speech recognition.");
+  }
+
+  if (!isMicrophoneAvailable) {
+    alert("Microphone not available please update permissions.");
+  }
+
+  const toggleListening = async () => {
     if (listening) {
-      SpeechRecognition.stopListening();
+      await SpeechRecognition.stopListening();
     } else {
-      SpeechRecognition.startListening({
+      await SpeechRecognition.startListening({
         continuous: true,
         language: "en-US",
       });
