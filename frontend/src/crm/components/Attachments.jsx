@@ -137,7 +137,6 @@ export default function Attachments({ setActiveTab, currentRegistrationId }) {
     setDocumentUrl("");
     setDocumentPreview(null);
     setDocumentType(attachment.type);
-    console.log(attachment);
 
     // Clear file input
     const fileInput = document.getElementById("documentFile");
@@ -197,18 +196,15 @@ export default function Attachments({ setActiveTab, currentRegistrationId }) {
   };
 
   const openFullScreenPreview = () => {
-    console.log("foo");
     if (
       documentPreview &&
       (documentPreview.type === "pdf" || documentPreview.type === "image")
     ) {
-      console.log("bar");
       setIsFullScreenPreview(true);
     }
   };
 
   const closeFullScreenPreview = () => {
-    console.log("top");
     setIsFullScreenPreview(false);
   };
 
