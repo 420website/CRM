@@ -353,7 +353,7 @@ export default function Client({
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   placeholder="Enter first name"
                   autoComplete="given-name"
-                  required
+                  // required
                 />
               </div>
 
@@ -373,7 +373,7 @@ export default function Client({
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   placeholder="Enter last name"
                   autoComplete="family-name"
-                  required
+                  // required
                 />
               </div>
 
@@ -382,7 +382,7 @@ export default function Client({
                   htmlFor="dob"
                   className="block text-sm font-medium text-gray-700 mb-2"
                 >
-                  Date of Birth
+                  Date of Birth<span className="text-red-500">*</span>
                 </label>
                 <div className="flex items-center space-x-2">
                   <div className="relative">
@@ -390,6 +390,7 @@ export default function Client({
                       type="text"
                       id="dob"
                       name="dob"
+                      required
                       value={
                         formData.dob
                           ? (() => {
@@ -547,7 +548,7 @@ export default function Client({
                     htmlFor="health_card"
                     className="block text-sm font-medium text-gray-700 mb-2"
                   >
-                    Health Card Number
+                    Health Card Number<span className="text-red-500">*</span>
                   </label>
                   <input
                     type="text"
@@ -565,12 +566,13 @@ export default function Client({
                     htmlFor="health_card_version"
                     className="block text-sm font-medium text-gray-700 mb-2"
                   >
-                    Version Code
+                    Version Code<span className="text-red-500">*</span>
                   </label>
                   <input
                     type="text"
                     id="health_card_version"
                     name="health_card_version"
+                    // required
                     value={formData.health_card_version}
                     onChange={handleChange}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black"

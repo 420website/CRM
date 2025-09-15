@@ -16,8 +16,6 @@ router = APIRouter(prefix="/my420", tags=["Webpage"])
 
 @router.post("/contact", response_model=dict)
 async def submit_contact_message(message: ContactMessageCreate):
-    # Send contact email to support team
-    send_contact_email(message.model_dump())
 
     id = await ContactService.create_contact_message(message)
 
@@ -26,6 +24,9 @@ async def submit_contact_message(message: ContactMessageCreate):
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Contact message not created.",
         )
+
+    # Send contact email to support team
+    send_contact_email(message.model_dump())
 
     return {
         "message": "Contact successful sent.",
@@ -50,10 +51,7 @@ async def delete_contact_message(contact_id: int):
 
 @router.post("/register", response_model=dict)
 async def register_for_testing(registration: RegistrationMessageCreate):
-    # Send contact email to support team
-
     try:
-        send_registration_email(registration.model_dump())
 
         id = await RegisterService.create_register_message(registration)
 
@@ -63,6 +61,7 @@ async def register_for_testing(registration: RegistrationMessageCreate):
                 detail="Register message not created.",
             )
 
+        send_registration_email(registration.model_dump())
         return {
             "message": "Registration successful",
             "registration_id": id,
