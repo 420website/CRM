@@ -50,6 +50,7 @@ from app.authentication.router import (
     verify_email_mfa,
     verify_recovery_code,
 )
+from app.testing.router import register_user
 
 email = "test4@example.com"
 password = "securepassword123"
@@ -188,8 +189,9 @@ async def mock_register(mock_email_service_class) -> str:
 
 
 async def get_validated_user():
-    token = await mock_register()
-    await verify_email(token)
+    # token = await mock_register()
+    # await verify_email(token)
+    await register_user(user_create)
     response = await login(login_request)
 
     credentials = HTTPAuthorizationCredentials(
@@ -1004,7 +1006,7 @@ class TestAuthRouter(unittest.IsolatedAsyncioTestCase):
         new_user = UserCreate(
             first_name="Alice",
             last_name="Johnson",
-            email="alice.johnson2@example.com",
+            email="alice.johnson22@example.com",
             phone_number="+14165550123",
             password="StrongPassw0rd!",
             authenticator_mfa_enabled=False,
@@ -1018,7 +1020,7 @@ class TestAuthRouter(unittest.IsolatedAsyncioTestCase):
         response = await get_users(user)
         id = [r.id for r in response if r.first_name == "Alice"][0]
 
-        response = await delete_user(id)
+        response = await delete_user(id, user)
         self.assertEqual(response["message"], "Successfully deleted user.")
 
         await UserService.delete_user(new_user.email, new_user.password)

@@ -547,8 +547,6 @@ async def update_users(
     if update.password:
         update.password_hash = SecurityService.hash_password(update.password)
 
-    # update.password = None
-
     if not await UserService.update_user(id, update):
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,

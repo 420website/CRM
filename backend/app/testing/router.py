@@ -19,11 +19,40 @@ from app.authentication.utils import SecurityService
 from app.config import settings
 from app.dependencies import get_current_user
 import datetime as dt
+from app.database import database
 
 from app.webpage.schema import ContactMessageCreate, RegistrationMessageCreate
 from app.webpage.services import ContactService, RegisterService
 
 router = APIRouter(prefix="/testing", tags=["Testing"])
+
+
+async def register_user(data: RegisterRequest) -> UserResponse:
+    password_hash = SecurityService.hash_password(data.password)
+
+    insert_query = """
+    INSERT INTO users (email, password_hash, is_verified, role)
+    VALUES ($1, $2, $3, 'admin')
+    RETURNING id;
+    """
+
+    select_query = """
+    SELECT id, email, authenticator_mfa_enabled, created_at, last_login
+    FROM users
+    WHERE id = $1;
+    """
+
+    # Insert user and get the generated ID
+    async with database.get_transaction() as conn:
+        row = await conn.fetchrow(
+            insert_query, data.email, password_hash, True
+        )
+        user_id = row["id"]
+
+    # Fetch the full user record
+    async with database.get_connection() as conn:
+        user_row = await conn.fetchrow(select_query, user_id)
+        return UserResponse(**dict(user_row))
 
 
 @router.post("/register")
@@ -35,6 +64,7 @@ async def test_register(data: RegisterRequest):
         )
     # Create user
     user = await UserService.register_user(data.email, data.password)
+    # user = await register_user(data.email, data.password)
 
     # Token to verify
     token = SecurityService.generate_secure_token()
