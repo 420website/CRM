@@ -318,8 +318,8 @@ class PatientActivity(ActivityBase):
     patient_id: int
     first_name: str
     last_name: str
-    phone1: str
-    disposition: str
+    phone1: Optional[str] = None
+    disposition: Optional[str] = None
     description: str
     created_at: datetime
     updated_at: datetime
