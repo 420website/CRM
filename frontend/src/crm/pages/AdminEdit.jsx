@@ -21,6 +21,7 @@ import EditPhoto from "../components/EditPhoto";
 import { useParams } from "react-router-dom";
 import { DEFAULT_FORM } from "../forms/Registration";
 import VoiceFillModal from "../components/VoiceInput";
+import ForceRegisterModal from "../components/ForcePopupModal";
 
 const AdminEdit = () => {
   const { registrationId } = useParams();
@@ -392,6 +393,11 @@ const AdminEdit = () => {
     await handleSubmit(e, forcedData);
   };
 
+  const cancelForceSubmit = async () => {
+    setError("");
+    setShowForceButton(false);
+  };
+
   const handleSubmit = async (e, dataOverride = formData) => {
     e.preventDefault();
     setIsSubmitting(true);
@@ -548,15 +554,7 @@ const AdminEdit = () => {
                   </p>
                 </div>
               )}
-              {showForceButton && (
-                <button
-                  type="button"
-                  onClick={handleForceSubmit}
-                  className="bg-black text-white py-3 px-6 rounded-md hover:bg-gray-800 disabled:bg-gray-400 transition-colors text-lg font-semibold"
-                >
-                  Force Save
-                </button>
-              )}
+
               {tabComponents[activeTab] || null}
             </div>
 
@@ -629,6 +627,13 @@ const AdminEdit = () => {
           setShowClinicalTemplateManager={setShowClinicalTemplateManager}
           availableClinicalTemplates={availableClinicalTemplates}
           getClinicalTemplates={getClinicalTemplates}
+        />
+      )}
+      {showForceButton && (
+        <ForceRegisterModal
+          handleForceSubmit={handleForceSubmit}
+          cancelForceSubmit={cancelForceSubmit}
+          errorMessage={error}
         />
       )}
     </div>
