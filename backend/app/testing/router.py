@@ -63,8 +63,8 @@ async def test_register(data: RegisterRequest):
             detail="Email already registered",
         )
     # Create user
-    user = await UserService.register_user(data.email, data.password)
-    # user = await register_user(data.email, data.password)
+    # user = await UserService.register_user(data.email, data.password)
+    user = await register_user(data)
 
     # Token to verify
     token = SecurityService.generate_secure_token()
