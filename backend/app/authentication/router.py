@@ -460,9 +460,17 @@ async def logout(
     return {"message": "Successfully logged out."}
 
 
-# CRUD
+#################
+# User management
+#################
 @router.get("/users", response_model=List[UserRead])
 async def get_users(user: UserRead = Depends(get_current_user)):
+    if user.role != "admin":
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Admin user required.",
+        )
+
     result = await UserService.get_users()
 
     if len(result) == 0:
@@ -479,6 +487,12 @@ async def create_user(
     new_user: UserCreate,
     user: UserRead = Depends(get_current_user),
 ):
+    if user.role != "admin":
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Admin user required.",
+        )
+
     if await UserService.check_user_exists(new_user.email):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -503,6 +517,12 @@ async def create_user(
 
 @router.delete("/users/{id}")
 async def delete_user(id: int, user: UserRead = Depends(get_current_user)):
+    if user.role != "admin":
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Admin user required.",
+        )
+
     if not await UserService.delete_user_by_id(id):
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -518,6 +538,12 @@ async def update_users(
     update: UserUpdate,
     user: UserRead = Depends(get_current_user),
 ):
+    if user.role != "admin":
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Admin user required.",
+        )
+
     if update.password:
         update.password_hash = SecurityService.hash_password(update.password)
 

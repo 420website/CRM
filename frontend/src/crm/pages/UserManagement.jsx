@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { UserServices } from "../../services/userServices";
+import PasswordInput from "../ui/PasswordInput";
 
 function EditUser({
   editingUser,
@@ -91,26 +92,10 @@ function EditUser({
           </div>
         </div>
 
-        <div className="mb-4">
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Password
-          </label>
-          <input
-            type="password"
-            name="password"
-            value={formData.password}
-            onChange={handleInputChange}
-            required
-            // maxLength="10"
-            // pattern="[0-9]{10}"
-            className="w-full md:w-1/2 px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-            style={{ height: "40px" }}
-            // placeholder="0000000000"
-          />
-          <p className="text-xs text-gray-600 mt-1">
-            Must be exactly 10 digits
-          </p>
-        </div>
+        <PasswordInput
+          formData={formData}
+          handleInputChange={handleInputChange}
+        />
 
         {/* Role Selection Section */}
         <div className="mb-6">
@@ -338,7 +323,7 @@ const UserManagement = () => {
     setShowAddUser(false);
   };
 
-  const validateForm = () => {
+  const validateAddForm = () => {
     setError("");
 
     if (
@@ -347,6 +332,23 @@ const UserManagement = () => {
       !formData.email ||
       !formData.phone_number ||
       !formData.password
+    ) {
+      setError("Please fill in all required fields");
+      return false;
+    }
+
+    return true;
+  };
+
+  const validateEditForm = () => {
+    setError("");
+
+    if (
+      !formData.first_name ||
+      !formData.last_name ||
+      !formData.email ||
+      !formData.phone_number
+      // !formData.password
     ) {
       setError("Please fill in all required fields");
       return false;
@@ -384,7 +386,7 @@ const UserManagement = () => {
     setError("");
     setLoading(true);
 
-    if (validateForm()) {
+    if (validateAddForm()) {
       const response = await UserServices.create_user(formData);
 
       if (response.success) {
@@ -407,7 +409,7 @@ const UserManagement = () => {
     setError("");
     setLoading(true);
 
-    if (validateForm()) {
+    if (validateEditForm()) {
       const response = await UserServices.update_user(editingUser.id, formData);
 
       if (response.success) {
