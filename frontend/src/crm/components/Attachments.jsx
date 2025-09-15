@@ -6,7 +6,8 @@ import {
   loadPDF,
   loadWord,
 } from "../../utils/loadFile";
-import DocumentPreviewModal from "./DocumentPreview";
+import DocumentFullScreen from "./DocumentFullScreen";
+import DocumentPreview from "./DocumentPreview";
 
 export default function Attachments({ setActiveTab, currentRegistrationId }) {
   const [error, setError] = useState("");
@@ -475,75 +476,11 @@ export default function Attachments({ setActiveTab, currentRegistrationId }) {
                     </div>
                   )}
                   {documentPreview.type === "pdf" && (
-                    <div className="space-y-4">
-                      {/* PDF Preview */}
-                      <div
-                        className="border-2 border-gray-300 rounded-lg overflow-hidden shadow-md"
-                        style={{ height: "600px" }}
-                      >
-                        <iframe
-                          key={`pdf-preview-${currentPage}-${documentPreview.filename}`}
-                          src={`${documentPreview.url}#page=${currentPage}&view=FitV&zoom=85&toolbar=0`}
-                          className="w-full h-full"
-                          title="PDF Preview"
-                          style={{ border: "none" }}
-                        />
-                      </div>
-
-                      {/* Navigation Controls - Clean Layout */}
-                      <div className="bg-gray-50 border rounded-lg p-4">
-                        <div className="flex items-center justify-between max-w-md mx-auto">
-                          <button
-                            type="button"
-                            onClick={prevPage}
-                            disabled={currentPage <= 1}
-                            className="px-4 py-2 bg-gray-600 text-white rounded text-sm hover:bg-gray-700 disabled:bg-gray-300 disabled:cursor-not-allowed"
-                          >
-                            ← Prev
-                          </button>
-
-                          <div className="flex items-center space-x-2">
-                            <span className="text-sm text-gray-600">Page</span>
-                            <input
-                              type="number"
-                              value={currentPage}
-                              onChange={(e) => {
-                                const page = parseInt(e.target.value);
-                                if (page >= 1 && page <= totalPages) {
-                                  setCurrentPage(page);
-                                }
-                              }}
-                              min="1"
-                              max={totalPages}
-                              className="w-16 px-2 py-1 border border-gray-300 rounded text-center text-sm"
-                            />
-                            <span className="text-sm text-gray-600">
-                              of {totalPages}
-                            </span>
-                          </div>
-
-                          <button
-                            type="button"
-                            onClick={nextPage}
-                            disabled={currentPage >= totalPages}
-                            className="px-4 py-2 bg-gray-600 text-white rounded text-sm hover:bg-gray-700 disabled:bg-gray-300 disabled:cursor-not-allowed"
-                          >
-                            Next →
-                          </button>
-                        </div>
-                      </div>
-
-                      {/* Full Screen Button */}
-                      <div className="text-center mt-4">
-                        <button
-                          type="button"
-                          onClick={openFullScreenPreview}
-                          className="px-6 py-2 bg-black text-white rounded hover:bg-gray-800 text-sm"
-                        >
-                          📄 View Full Screen
-                        </button>
-                      </div>
-                    </div>
+                    <DocumentPreview
+                      documentPreview={documentPreview}
+                      totalPages={totalPages}
+                      openFullScreenPreview={openFullScreenPreview}
+                    />
                   )}
                   {documentPreview.type === "document" && (
                     <div className="text-gray-600">
@@ -722,7 +659,7 @@ export default function Attachments({ setActiveTab, currentRegistrationId }) {
           documentPreview &&
           (documentPreview.type === "pdf" ||
             documentPreview.type === "image") && (
-            <DocumentPreviewModal
+            <DocumentFullScreen
               documentPreview={documentPreview}
               totalPages={totalPages}
               closeFullScreenPreview={closeFullScreenPreview}
