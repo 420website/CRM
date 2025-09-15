@@ -297,29 +297,49 @@ const AdminRegister = () => {
   function validateForm() {
     // Client-side validation for required fields
     if (!formData.first_name.trim()) {
-      setSubmitStatus({
-        type: "error",
-        message: "First Name is required.",
-      });
+      setError("First Name is required.");
       setIsSubmitting(false);
+      window.scrollTo({ top: 0, behavior: "smooth" });
       return false;
     }
 
     if (!formData.last_name.trim()) {
-      setSubmitStatus({
-        type: "error",
-        message: "Last Name is required.",
-      });
+      setError("Last Name is required.");
       setIsSubmitting(false);
+      window.scrollTo({ top: 0, behavior: "smooth" });
       return false;
     }
 
     if (!formData.patient_consent) {
-      setSubmitStatus({
-        type: "error",
-        message: "Patient Consent is required.",
-      });
+      setError("Patient Consent is required.");
       setIsSubmitting(false);
+      window.scrollTo({ top: 0, behavior: "smooth" });
+      return false;
+    }
+    if (!formData.dob) {
+      setError("Date of birth is required.");
+      setIsSubmitting(false);
+      window.scrollTo({ top: 0, behavior: "smooth" });
+      return false;
+    }
+
+    if (!formData.health_card) {
+      setError("Health Card Number is required.");
+      setIsSubmitting(false);
+      window.scrollTo({ top: 0, behavior: "smooth" });
+      return false;
+    }
+    if (formData.health_card.length != 10) {
+      setError("Health Card Number must be 10 digits exactly.");
+      setIsSubmitting(false);
+      window.scrollTo({ top: 0, behavior: "smooth" });
+      return false;
+    }
+
+    if (!formData.health_card_version) {
+      setError("Health Card Version is required.");
+      setIsSubmitting(false);
+      window.scrollTo({ top: 0, behavior: "smooth" });
       return false;
     }
 
@@ -356,9 +376,9 @@ const AdminRegister = () => {
 
     const payload = dataOverride || formData;
 
-    // if (!validateForm()) {
-    //   return;
-    // }
+    if (!validateForm()) {
+      return;
+    }
 
     // Clean the form data - remove empty strings for optional fields and convert to null
     const cleanedFormData = { ...payload };
@@ -382,6 +402,7 @@ const AdminRegister = () => {
     });
 
     const result = await PatientServices.create_patient(cleanedFormData);
+    console.log(result);
 
     if (result.success) {
       const id = result.data?.patient_id;
