@@ -81,12 +81,21 @@ export const loadImage = (file, setDocumentPreview) => {
 };
 
 export const loadWord = (file, setDocumentPreview) => {
-  setDocumentPreview({
-    type: "document",
-    url: null, // cannot preview directly
-    filename: file.name,
-    // is_local: true,
-  });
+  const blobUrl = URL.createObjectURL(file);
+
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    const base64Data = e.target.result;
+
+    setDocumentPreview({
+      type: "document",
+      url: blobUrl,
+      filename: file.name,
+      base64: base64Data,
+      is_local: true,
+    });
+  };
+  reader.readAsDataURL(file);
 };
 // import mammoth from "mammoth";
 //
