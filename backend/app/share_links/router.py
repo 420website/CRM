@@ -1,9 +1,6 @@
 from datetime import datetime, timedelta
 import datetime as dt
 from fastapi import APIRouter, Depends, HTTPException, status
-
-# from fastapi.responses import FileResponse
-from fastapi.responses import FileResponse
 from jose import JWTError, jwt
 from pydantic import BaseModel
 from app.authentication.schemas import UserRead
@@ -57,6 +54,12 @@ async def create_share_link(
     body: AttachmentId,
     user: UserRead = Depends(get_current_user),
 ):
+    if not await AttachmentService.get_attachment_by_id(body.attachment_id):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Attachment not found.",
+        )
+
     token = generate_jwt(body.attachment_id)
     share_url = f"{settings.app_url}/share-links?token={token}"
     return {"share_url": share_url}
@@ -69,7 +72,7 @@ async def access_share_link(token: str):
     if payload is None:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid authentication credentials",
+            detail="Url has expired.",
         )
 
     attachment = await AttachmentService.get_attachment_by_id(

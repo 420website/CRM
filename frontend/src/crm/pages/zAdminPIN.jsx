@@ -99,7 +99,6 @@ const AdminPIN = () => {
     setError("");
 
     const result = await AuthServices.login_pin(formData.password);
-    console.log(result);
 
     if (result.success) {
       tokenManager.setAccessToken(result.data?.access_token);

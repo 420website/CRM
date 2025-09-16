@@ -460,7 +460,7 @@ class AttachmentService:
     @staticmethod
     async def create_attachment(
         patient_id: int, attachment: AttachmentCreate
-    ) -> bool:
+    ) -> int | None:
         query = """
         INSERT INTO attachments (
             patient_id, type, filename, url, document_type, is_local,
@@ -484,7 +484,9 @@ class AttachmentService:
                 attachment.file_size,
                 attachment.mime_type,
             )
-            return bool(row)
+        if row and "id" in row:
+            return row["id"]
+        return None
 
     @staticmethod
     async def get_attachments() -> List[AttachmentRead]:

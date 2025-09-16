@@ -42,17 +42,12 @@ export const loadPDF = async (
   setTotalPages,
 ) => {
   const blobUrl = URL.createObjectURL(file);
-  console.log(blobUrl);
+
   const reader = new FileReader();
   reader.onload = async (e) => {
     const base64Data = e.target.result;
     const arrayBuffer = await file.arrayBuffer();
     const pdfDoc = await PDFDocument.load(arrayBuffer);
-    console.log("hello");
-    console.log(pdfDoc.getPageCount());
-
-    // Load PDF with pdf.js
-    // console.log(pdf);
 
     setDocumentPreview({
       type: "pdf",

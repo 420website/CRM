@@ -402,7 +402,6 @@ const AdminRegister = () => {
     });
 
     const result = await PatientServices.create_patient(cleanedFormData);
-    console.log(result);
 
     if (result.success) {
       const id = result.data?.patient_id;

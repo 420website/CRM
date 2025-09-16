@@ -413,13 +413,14 @@ async def create_attachment(
     data: AttachmentCreate,
     user: UserRead = Depends(get_current_user),
 ):
-    # Ensure the patient_id in the URL matches the data
-    if not await AttachmentService.create_attachment(patient_id, data):
+    id = await AttachmentService.create_attachment(patient_id, data)
+
+    if not id:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Attachment not created.",
         )
-    return {"message": "Attachment created successfully."}
+    return {"id": id, "message": "Attachment created successfully."}
 
 
 @router.get("/{patient_id}/attachments/", response_model=List[AttachmentRead])
