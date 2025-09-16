@@ -4,6 +4,7 @@ services:
     restart: unless-stopped
     volumes:
       - postgres_data:/var/lib/postgresql/data
+      - ./scripts/db-entrypoint.sh:/docker-entrypoint-initdb.d/db-entrypoint.sh:ro
     env_file: 
       - .env
     networks:
@@ -12,21 +13,8 @@ services:
     profiles:
       - dev 
       - prod
-    entrypoint: >
-      bash -c "
-        if [ ! -f /var/lib/postgresql/data/server.key ]; then
-          openssl req -new -x509 -days 365 -nodes -text \
-            -out /var/lib/postgresql/data/server.crt \
-            -keyout /var/lib/postgresql/data/server.key \
-            -subj '/CN=postgres';
-          chown postgres:postgres /var/lib/postgresql/data/server.*;
-          chmod 600 /var/lib/postgresql/data/server.key;
-          chmod 644 /var/lib/postgresql/data/server.crt;
-        fi;
-        exec postgres -c ssl=on \
-          -c ssl_cert_file=/var/lib/postgresql/data/server.crt \
-          -c ssl_key_file=/var/lib/postgresql/data/server.key
-        "
+    user: postgres
+    entrypoint: /docker-entrypoint-initdb.d/db-entrypoint.sh
 
   dbmate:
     image: amacneil/dbmate
