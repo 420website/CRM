@@ -1,17 +1,51 @@
 #!/bin/bash
 set -e
 
+#!/bin/bash
+set -e
+
+echo "Stoppping services..."
+docker compose --profile prod stop
+
+echo "Starting vault agent..."
+docker compose --profile vault-agent up -d --build
+
+echo "Waiting for vault agent to complete current cycle..."
+timeout=60
+interval=5
+elapsed=0
+while true; do
+  # Check if vault agent has successfully rendered all templates
+  logs=$(docker logs crm-vault-agent-1 --tail 50 2>&1)
+
+  if echo "$logs" | grep -q "rendered.*secrets.tpl.*\.env" &&
+    echo "$logs" | grep -q "rendered.*cert.tpl.*server.crt" &&
+    echo "$logs" | grep -q "rendered.*key.tpl.*server.key"; then
+    echo "Vault agent has successfully rendered all templates."
+    break
+  fi
+
+  # Check for errors
+  if echo "$logs" | grep -q "ERROR.*permission denied\|ERROR.*exceeded maximum retries"; then
+    echo "Vault agent encountered errors."
+    exit 1
+  fi
+
+  if [ "$elapsed" -ge "$timeout" ]; then
+    echo "Timeout waiting for vault agent."
+    exit 1
+  fi
+
+  echo "Waiting for vault agent templates... ($elapsed/$timeout seconds elapsed)"
+  sleep $interval
+  elapsed=$((elapsed + interval))
+done
+
 set -a
 source .env
 set +a
 
-export ROOT_PASSWORD="${ROOT_PASSWORD}"
-export DATABASE_NAME="${DATABASE_NAME}"
-export DATABASE_USER="${DATABASE_USER}"
-export DATABASE_PASSWORD="${DATABASE_PASSWORD}"
-
 echo "Starting staging services..."
-docker compose --profile prod stop
 docker compose --profile staging up -d --build
 
 echo "Waiting for certbot container to finish..."

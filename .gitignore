@@ -5,6 +5,9 @@
 .vscode/
 *.env
 /certs
+ca.cert 
+role_id 
+secret_id
 
 # database 
 db/migrations/*_seed_admin.sql

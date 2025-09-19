@@ -3,33 +3,36 @@ services:
     image: hashicorp/vault
     command: agent -config=/vault/config/agent-config.hcl
     env_file:
-      - /etc/vault-agent/.env 
+      - /etc/vault/.env
     volumes:
       - ./vault/agent-config.hcl:/vault/config/agent-config.hcl:ro
-      - ./vault/templates:/vault/templates:ro
-      - /etc/vault-agent:/vault/vault-agent:ro
-      - vault-token:/vault/token
-      - secrets:/secrets
-      - certs:/certs
-
+      - /etc/vault:/etc/vault
+      - ./vault/templates:/etc/vault/templates
+    cap_add:
+      - IPC_LOCK
+    profiles:
+      - vault-agent
+      - prod
+  
   postgres:
     image: postgres:16
     restart: unless-stopped
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - certs:/certs:ro
-      - secrets:/secrets:ro
+      - /etc/vault/certs:/certs:ro
+      - /etc/vault/secrets:/secrets:ro
     env_file: 
       - /secrets/.env
     environment:
-      - POSTGRES_INITDB_ARGS: "--auth-host=md5"
-      - POSTGRES_HOST_AUTH_METHOD: md5
+      - POSTGRES_INITDB_ARGS="--auth-host=md5"
+      - POSTGRES_HOST_AUTH_METHOD=md5
     networks:
       - backend-net
       - db-net
     profiles:
       - dev 
       - prod
+    # entrypoint: ["/wait-for-env.sh"]
     command: |
       postgres 
         -c ssl=on 
@@ -38,147 +41,147 @@ services:
         -c ssl_ca_file=/certs/ca-chain.crt 
         -c ssl_min_protocol_version=TLSv1.2
 
-  dbmate:
-    image: amacneil/dbmate
-    volumes:
-      - ./db/migrations:/db/migrations
-      - certs:/certs:ro
-      - secrets:/secrets:ro
-    depends_on:
-      - postgres
-    env_file: 
-      - /secrets/.env
-    networks:
-      - db-net
-    profiles:
-      - dev 
-      - prod
-    command: ["--wait","up"]
-
-  mongodb:
-    image: mongodb/mongodb-community-server:latest
-    container_name: mongodb
-    restart: unless-stopped
-    volumes:
-      - mongo_data:/data/db
-      - certs:/certs:ro
-      - secrets:/secrets:ro
-    env_file: 
-      - /secrets/.env
-    networks:
-      - backend-net
-    profiles:
-      - dev 
-      - prod 
-
-  backend: 
-    build: ./backend
-    volumes:
-      - ./scripts/wait-for-db.sh:/scripts/wait-for-db.sh
-      - ./scripts/create_admin.sh:/scripts/create_admin.sh
-      - certs:/certs:ro
-      - secrets:/secrets:ro
-    env_file: 
-      - /secrets/.env
-    depends_on:
-      - mongodb
-      - postgres
-    networks:
-      - backend-net 
-      - frontend-net
-    profiles:
-      - dev 
-      - prod
-    entrypoint: ["/scripts/create_admin.sh"]
-    command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "5000"]
-
-  frontend-builder:
-    build: ./frontend
-    volumes:
-      - frontend_dist:/dist
-      - certs:/certs:ro
-      - secrets:/secrets:ro
-    env_file: 
-      - /secrets/.env
-    profiles:
-      - dev 
-      - prod
-    command: >
-      sh -c "
-        npm run build &&
-        cp -r dist/. /dist
-      "
-
-  nginx-dev:
-    image: nginx:stable-alpine
-    ports:
-      - 8000:80
-    profiles:
-      - dev
-    networks:
-      - frontend-net
-    volumes:
-      - frontend_dist:/usr/share/nginx/html:ro
-      - ./nginx/nginx.dev.conf:/etc/nginx/conf.d/default.conf:ro
-
-  nginx-setup:
-    image: nginx:alpine
-    ports:
-      - 80:80
-    env_file: 
-      - /secrets/.env
-    profiles:
-      - staging
-    volumes:
-      - certbot-etc:/etc/letsencrypt
-      - certbot-var:/var/lib/letsencrypt
-      - certbot-www:/var/www/certbot
-      - frontend_dist:/usr/share/nginx/html:ro
-      - ./nginx/nginx.setup.conf:/etc/nginx/templates/nginx.conf.template
-      - certs:/certs:ro
-      - secrets:/secrets:ro
-
-  certbot-setup:
-    image: certbot/certbot
-    env_file: 
-      - /secrets/.env
-    depends_on: 
-      - nginx-setup
-    profiles:
-      - staging
-    volumes:
-      - certbot-etc:/etc/letsencrypt
-      - certbot-var:/var/lib/letsencrypt
-      - certbot-www:/var/www/certbot
-      - ./scripts/cert_check.sh:/scripts/cert_check.sh:ro
-      - certs:/certs:ro
-      - secrets:/secrets:ro
-    entrypoint: ["sh"]
-    command: ["/scripts/cert_check.sh"]
-  
-  nginx-prod:
-    image: nginx:alpine 
-    ports:
-      - 80:80
-      - 443:443
-    env_file: 
-      - /secrets/.env
-    profiles:
-      - prod
-    networks:
-      - frontend-net
-    depends_on:
-      - backend
-    volumes:
-      - certbot-etc:/etc/letsencrypt
-      - certbot-var:/var/lib/letsencrypt
-      - certbot-www:/var/www/certbot
-      - frontend_dist:/usr/share/nginx/html:ro
-      - ./nginx/nginx.prod.conf:/etc/nginx/templates/nginx.conf.template
-      - ./nginx/nginx.conf:/etc/nginx/nginx.conf       
-      - certs:/certs:ro
-      - secrets:/secrets:ro
-
+  # dbmate:
+  #   image: amacneil/dbmate
+  #   volumes:
+  #     - ./db/migrations:/db/migrations
+  #     - certs:/certs:ro
+  #     - secrets:/secrets:ro
+  #   depends_on:
+  #     - postgres
+  #   env_file: 
+  #     - /secrets/.env
+  #   networks:
+  #     - db-net
+  #   profiles:
+  #     - dev 
+  #     - prod
+  #   command: ["--wait","up"]
+  #
+  # mongodb:
+  #   image: mongodb/mongodb-community-server:latest
+  #   container_name: mongodb
+  #   restart: unless-stopped
+  #   volumes:
+  #     - mongo_data:/data/db
+  #     - certs:/certs:ro
+  #     - secrets:/secrets:ro
+  #   env_file: 
+  #     - /secrets/.env
+  #   networks:
+  #     - backend-net
+  #   profiles:
+  #     - dev 
+  #     - prod 
+  #
+  # backend: 
+  #   build: ./backend
+  #   volumes:
+  #     - ./scripts/wait-for-db.sh:/scripts/wait-for-db.sh
+  #     - ./scripts/create_admin.sh:/scripts/create_admin.sh
+  #     - certs:/certs:ro
+  #     - secrets:/secrets:ro
+  #   env_file: 
+  #     - /secrets/.env
+  #   depends_on:
+  #     - mongodb
+  #     - postgres
+  #   networks:
+  #     - backend-net 
+  #     - frontend-net
+  #   profiles:
+  #     - dev 
+  #     - prod
+  #   entrypoint: ["/scripts/create_admin.sh"]
+  #   command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "5000"]
+  #
+  # frontend-builder:
+  #   build: ./frontend
+  #   volumes:
+  #     - frontend_dist:/dist
+  #     - certs:/certs:ro
+  #     - secrets:/secrets:ro
+  #   env_file: 
+  #     - /secrets/.env
+  #   profiles:
+  #     - dev 
+  #     - prod
+  #   command: >
+  #     sh -c "
+  #       npm run build &&
+  #       cp -r dist/. /dist
+  #     "
+  #
+  # nginx-dev:
+  #   image: nginx:stable-alpine
+  #   ports:
+  #     - 8000:80
+  #   profiles:
+  #     - dev
+  #   networks:
+  #     - frontend-net
+  #   volumes:
+  #     - frontend_dist:/usr/share/nginx/html:ro
+  #     - ./nginx/nginx.dev.conf:/etc/nginx/conf.d/default.conf:ro
+  #
+  # nginx-setup:
+  #   image: nginx:alpine
+  #   ports:
+  #     - 80:80
+  #   env_file: 
+  #     - /secrets/.env
+  #   profiles:
+  #     - staging
+  #   volumes:
+  #     - certbot-etc:/etc/letsencrypt
+  #     - certbot-var:/var/lib/letsencrypt
+  #     - certbot-www:/var/www/certbot
+  #     - frontend_dist:/usr/share/nginx/html:ro
+  #     - ./nginx/nginx.setup.conf:/etc/nginx/templates/nginx.conf.template
+  #     - certs:/certs:ro
+  #     - secrets:/secrets:ro
+  #
+  # certbot-setup:
+  #   image: certbot/certbot
+  #   env_file: 
+  #     - /secrets/.env
+  #   depends_on: 
+  #     - nginx-setup
+  #   profiles:
+  #     - staging
+  #   volumes:
+  #     - certbot-etc:/etc/letsencrypt
+  #     - certbot-var:/var/lib/letsencrypt
+  #     - certbot-www:/var/www/certbot
+  #     - ./scripts/cert_check.sh:/scripts/cert_check.sh:ro
+  #     - certs:/certs:ro
+  #     - secrets:/secrets:ro
+  #   entrypoint: ["sh"]
+  #   command: ["/scripts/cert_check.sh"]
+  # 
+  # nginx-prod:
+  #   image: nginx:alpine 
+  #   ports:
+  #     - 80:80
+  #     - 443:443
+  #   env_file: 
+  #     - /secrets/.env
+  #   profiles:
+  #     - prod
+  #   networks:
+  #     - frontend-net
+  #   depends_on:
+  #     - backend
+  #   volumes:
+  #     - certbot-etc:/etc/letsencrypt
+  #     - certbot-var:/var/lib/letsencrypt
+  #     - certbot-www:/var/www/certbot
+  #     - frontend_dist:/usr/share/nginx/html:ro
+  #     - ./nginx/nginx.prod.conf:/etc/nginx/templates/nginx.conf.template
+  #     - ./nginx/nginx.conf:/etc/nginx/nginx.conf       
+  #     - certs:/certs:ro
+  #     - secrets:/secrets:ro
+  #
 volumes: 
   frontend_dist:
   mongo_data:
