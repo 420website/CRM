@@ -38,6 +38,7 @@ class Settings:
     user: str = get_env("POSTGRES_USER")
     password: str = get_env("POSTGRES_PASSWORD")
     db: str = get_env("POSTGRES_DB")
+    ca_file: str = os.getenv("CA_FILE", "/certs/ca-chain.crt")
 
     # CORS
     allowed_origins: List[str] = get_env("ALLOWED_ORIGINS")
@@ -62,6 +63,9 @@ class Settings:
     anthropic_model = os.getenv("ANTHROPIC_MODEL", "claude-sonnet-4-20250514")
 
     support_email = get_env("SUPPORT_EMAIL")
+
+    # env
+    environment: str = os.getenv("ENVIRONMENT", "Production")
 
 
 settings = Settings()

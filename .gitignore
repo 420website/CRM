@@ -4,6 +4,7 @@
 .idea/
 .vscode/
 *.env
+/certs
 
 # database 
 db/migrations/*_seed_admin.sql
@@ -20,6 +21,7 @@ node_modules/
 !.yarn/releases
 !.yarn/versions
 *build/
+env.json 
 
 # Testing
 /coverage

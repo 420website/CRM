@@ -1,54 +1,85 @@
 services:
+  vault-agent:
+    image: hashicorp/vault
+    command: agent -config=/vault/config/agent-config.hcl
+    env_file:
+      - /etc/vault-agent/.env 
+    volumes:
+      - ./vault/agent-config.hcl:/vault/config/agent-config.hcl:ro
+      - ./vault/templates:/vault/templates:ro
+      - /etc/vault-agent:/vault/vault-agent:ro
+      - vault-token:/vault/token
+      - secrets:/secrets
+      - certs:/certs
+
   postgres:
     image: postgres:16
     restart: unless-stopped
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ./scripts/db-entrypoint.sh:/docker-entrypoint-initdb.d/01-ssl.sh:ro
+      - certs:/certs:ro
+      - secrets:/secrets:ro
     env_file: 
-      - .env
+      - /secrets/.env
+    environment:
+      - POSTGRES_INITDB_ARGS: "--auth-host=md5"
+      - POSTGRES_HOST_AUTH_METHOD: md5
     networks:
       - backend-net
       - db-net
     profiles:
       - dev 
       - prod
-    user: postgres
-    entrypoint: /docker-entrypoint-initdb.d/db-entrypoint.sh
+    command: |
+      postgres 
+        -c ssl=on 
+        -c ssl_cert_file=/certs/server.crt 
+        -c ssl_key_file=/certs/server.key 
+        -c ssl_ca_file=/certs/ca-chain.crt 
+        -c ssl_min_protocol_version=TLSv1.2
 
   dbmate:
     image: amacneil/dbmate
+    volumes:
+      - ./db/migrations:/db/migrations
+      - certs:/certs:ro
+      - secrets:/secrets:ro
     depends_on:
       - postgres
     env_file: 
-      - .env
+      - /secrets/.env
     networks:
       - db-net
     profiles:
       - dev 
       - prod
-    volumes:
-      - ./db/migrations:/db/migrations
     command: ["--wait","up"]
 
   mongodb:
     image: mongodb/mongodb-community-server:latest
     container_name: mongodb
     restart: unless-stopped
+    volumes:
+      - mongo_data:/data/db
+      - certs:/certs:ro
+      - secrets:/secrets:ro
     env_file: 
-      - .env
+      - /secrets/.env
     networks:
       - backend-net
     profiles:
       - dev 
       - prod 
-    volumes:
-      - mongo_data:/data/db
 
   backend: 
     build: ./backend
+    volumes:
+      - ./scripts/wait-for-db.sh:/scripts/wait-for-db.sh
+      - ./scripts/create_admin.sh:/scripts/create_admin.sh
+      - certs:/certs:ro
+      - secrets:/secrets:ro
     env_file: 
-      - .env
+      - /secrets/.env
     depends_on:
       - mongodb
       - postgres
@@ -58,21 +89,20 @@ services:
     profiles:
       - dev 
       - prod
-    volumes:
-      - ./scripts/wait-for-db.sh:/scripts/wait-for-db.sh
-      - ./scripts/create_admin.sh:/scripts/create_admin.sh
     entrypoint: ["/scripts/create_admin.sh"]
     command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "5000"]
 
   frontend-builder:
     build: ./frontend
+    volumes:
+      - frontend_dist:/dist
+      - certs:/certs:ro
+      - secrets:/secrets:ro
     env_file: 
-      - .env
+      - /secrets/.env
     profiles:
       - dev 
       - prod
-    volumes:
-      - frontend_dist:/dist
     command: >
       sh -c "
         npm run build &&
@@ -95,8 +125,8 @@ services:
     image: nginx:alpine
     ports:
       - 80:80
-    env_file:
-      - .env
+    env_file: 
+      - /secrets/.env
     profiles:
       - staging
     volumes:
@@ -105,11 +135,13 @@ services:
       - certbot-www:/var/www/certbot
       - frontend_dist:/usr/share/nginx/html:ro
       - ./nginx/nginx.setup.conf:/etc/nginx/templates/nginx.conf.template
+      - certs:/certs:ro
+      - secrets:/secrets:ro
 
   certbot-setup:
     image: certbot/certbot
-    env_file:
-      - .env
+    env_file: 
+      - /secrets/.env
     depends_on: 
       - nginx-setup
     profiles:
@@ -119,6 +151,8 @@ services:
       - certbot-var:/var/lib/letsencrypt
       - certbot-www:/var/www/certbot
       - ./scripts/cert_check.sh:/scripts/cert_check.sh:ro
+      - certs:/certs:ro
+      - secrets:/secrets:ro
     entrypoint: ["sh"]
     command: ["/scripts/cert_check.sh"]
   
@@ -127,8 +161,8 @@ services:
     ports:
       - 80:80
       - 443:443
-    env_file:
-      - .env
+    env_file: 
+      - /secrets/.env
     profiles:
       - prod
     networks:
@@ -142,6 +176,8 @@ services:
       - frontend_dist:/usr/share/nginx/html:ro
       - ./nginx/nginx.prod.conf:/etc/nginx/templates/nginx.conf.template
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf       
+      - certs:/certs:ro
+      - secrets:/secrets:ro
 
 volumes: 
   frontend_dist:
@@ -150,6 +186,9 @@ volumes:
   certbot-etc:
   certbot-var:
   certbot-www:
+  secrets:
+  certs:
+  vault-token:
 
 networks:
   frontend-net:

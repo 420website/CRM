@@ -21,6 +21,7 @@ x-backend-base: &backend_base
     - SMTP_EMAIL=email@exmaple.com
     - SMTP_PASSWORD=password
     - SUPPORT_EMAIL=example@email.com
+    - ENVIRONMENT=Testing
   networks:
       - frontend-net 
       - backend-net 
@@ -117,6 +118,7 @@ services:
       - SUPPORT_EMAIL=email@exmaple.com
       - SMTP_EMAIL=email@exmaple.com
       - SMTP_PASSWORD=password
+      - ENVIRONMENT=Testing
     volumes:
       - ./scripts/wait-for-db.sh:/scripts/wait-for-db.sh
       - ./backend:/backend 
