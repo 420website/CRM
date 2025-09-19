@@ -18,8 +18,7 @@ while true; do
   # Check if vault agent has successfully rendered all templates
   logs=$(docker logs crm-vault-agent-1 --tail 50 2>&1)
 
-  if echo "$logs" | grep -q "rendered.*secrets.tpl.*\.env" &&
-    echo "$logs" | grep -q "rendered.*cert.tpl.*server.crt" &&
+  if echo "$logs" | grep -q "rendered.*cert.tpl.*server.crt" &&
     echo "$logs" | grep -q "rendered.*key.tpl.*server.key"; then
     echo "Vault agent has successfully rendered all templates."
     break

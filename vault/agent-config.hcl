@@ -28,7 +28,7 @@ auto_auth {
 template {
   source      = "/etc/vault/templates/secrets.tpl"
   destination = "/etc/vault/secrets/.env"          # Changed to .env
-  perms       = 0600
+  perms       = 0644
   #command     = "systemctl reload myapp"
 }
 
