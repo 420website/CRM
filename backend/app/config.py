@@ -64,6 +64,9 @@ class Settings:
 
     support_email = get_env("SUPPORT_EMAIL")
 
+    # env
+    environment: str = os.getenv("ENVIRONMENT", "Production")
+
 
 settings = Settings()
 

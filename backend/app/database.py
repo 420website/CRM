@@ -12,15 +12,24 @@ mongo_db = client[settings.db_name]
 # mongo_db.legacy_data.create_index("user_id")
 
 
+def ssl_context():
+    if settings.environment == "testing":
+        ssl_context = ssl.create_default_context()
+        ssl_context.check_hostname = False
+        ssl_context.verify_mode = ssl.CERT_NONE
+        return ssl_context
+    else:
+        ssl_context = ssl.create_default_context(cafile=settings.ca_file)
+        ssl_context.check_hostname = True
+        ssl_context.verify_mode = ssl.CERT_REQUIRED
+        return ssl_context
+
+
 class Database:
     def __init__(self):
         self.pool: Pool
 
     async def connect(self):
-        ssl_context = ssl.create_default_context(cafile=settings.ca_file)
-        ssl_context.check_hostname = True
-        ssl_context.verify_mode = ssl.CERT_REQUIRED
-
         self.pool = await asyncpg.create_pool(
             host=settings.host,
             user=settings.user,
@@ -28,7 +37,7 @@ class Database:
             database=settings.db,
             min_size=5,
             max_size=20,
-            ssl=ssl_context,
+            ssl=ssl_context(),
         )
 
     async def disconnect(self):
