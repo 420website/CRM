@@ -42,7 +42,7 @@ while true; do
 done
 
 set -a
-source .env
+source /etc/vault/secrets/.env
 set +a
 
 echo "Starting staging services..."
