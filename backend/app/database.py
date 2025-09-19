@@ -13,11 +13,8 @@ mongo_db = client[settings.db_name]
 
 
 def ssl_context():
-    if settings.environment == "testing":
-        ssl_context = ssl.create_default_context()
-        ssl_context.check_hostname = False
-        ssl_context.verify_mode = ssl.CERT_NONE
-        return ssl_context
+    if settings.environment == "Testing":
+        return None
     else:
         ssl_context = ssl.create_default_context(cafile=settings.ca_file)
         ssl_context.check_hostname = True
