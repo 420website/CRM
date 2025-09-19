@@ -21,6 +21,7 @@ x-backend-base: &backend_base
     - SMTP_EMAIL=email@exmaple.com
     - SMTP_PASSWORD=password
     - SUPPORT_EMAIL=example@email.com
+    - CA_FILE=""
   networks:
       - frontend-net 
       - backend-net 
