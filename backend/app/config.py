@@ -38,6 +38,7 @@ class Settings:
     user: str = get_env("POSTGRES_USER")
     password: str = get_env("POSTGRES_PASSWORD")
     db: str = get_env("POSTGRES_DB")
+    ca_file: str = os.getenv("CA_FILE", "/certs/ca-chain.crt")
 
     # CORS
     allowed_origins: List[str] = get_env("ALLOWED_ORIGINS")

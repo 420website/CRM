@@ -4,10 +4,13 @@ services:
     restart: unless-stopped
     volumes:
       - postgres_data:/var/lib/postgresql/data
+      - ./certs:/certs:ro
     environment:
-      POSTGRES_USER: root
+      POSTGRES_USER: admin
       POSTGRES_PASSWORD: example
       POSTGRES_DB: appdb
+      POSTGRES_INITDB_ARGS: "--auth-host=md5"
+      POSTGRES_HOST_AUTH_METHOD: md5
     networks:
       - backend-net
       - db-net
@@ -16,13 +19,20 @@ services:
       - dev_backend 
       - dev_frontend 
       - db
+    command: |
+      postgres 
+        -c ssl=on 
+        -c ssl_cert_file=/certs/server.crt 
+        -c ssl_key_file=/certs/server.key 
+        -c ssl_ca_file=/certs/ca.crt 
+        -c ssl_min_protocol_version=TLSv1.2
 
   dbmate_dev:
     image: amacneil/dbmate
     depends_on:
       - postgres_dev
     environment:
-      - DATABASE_URL=postgres://root:example@postgres_dev:5432/appdb?sslmode=disable
+      - DATABASE_URL=postgres://admin:example@postgres_dev:5432/appdb?sslmode=require
     volumes:
       - ./db/migrations:/db/migrations
     networks:
@@ -59,9 +69,9 @@ services:
       - POSTGRES_HOST=postgres_dev
       - POSTGRES_PORT=5432
       - POSTGRES_DATABASE=appdb 
-      - POSTGRES_USER=root 
+      - POSTGRES_USER=admin 
       - POSTGRES_PASSWORD=example
-      - DATABASE_URL=postgres://root:example@postgres_dev:5432/appdb
+      - DATABASE_URL=postgres://admin:example@postgres_dev:5432/appdb?sslmode=require
       - ALLOWED_ORIGINS=[http://localhost:5173]
       - JWT_ALGORITHM=HS256
       - JWT_ACCESS_SECRET=STUFRZH-MKLFj4j-6c9Z50WNWkvd9uqiWQJOpeCtI9Q
@@ -74,6 +84,7 @@ services:
       - DB_NAME=my420_ca_db
       - ENVIRONMENT=dev
       - PYTHONPATH=/backend
+      - CA_FILE=/certs/ca.crt
     env_file:
       - .env
     networks:
@@ -89,6 +100,7 @@ services:
       - ./scripts/create_admin.sh:/scripts/create_admin.sh
       - ./backend/app:/backend/app
       - ./backend/scripts:/backend/scripts 
+      - ./certs:/certs:ro
     entrypoint: ["/scripts/create_admin.sh"]
     command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000" , "--reload"]
 

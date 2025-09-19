@@ -4,6 +4,7 @@ from asyncpg.pool import Pool
 from contextlib import asynccontextmanager
 from app.config import settings
 from motor.motor_asyncio import AsyncIOMotorClient
+import ssl
 
 
 client = AsyncIOMotorClient(settings.mongo_url)
@@ -16,6 +17,10 @@ class Database:
         self.pool: Pool
 
     async def connect(self):
+        ssl_context = ssl.create_default_context(cafile=settings.ca_file)
+        ssl_context.check_hostname = True
+        ssl_context.verify_mode = ssl.CERT_REQUIRED
+
         self.pool = await asyncpg.create_pool(
             host=settings.host,
             user=settings.user,
@@ -23,6 +28,7 @@ class Database:
             database=settings.db,
             min_size=5,
             max_size=20,
+            ssl=ssl_context,
         )
 
     async def disconnect(self):
