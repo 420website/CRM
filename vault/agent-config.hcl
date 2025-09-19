@@ -1,7 +1,5 @@
 # Vault agent config
-
 vault {
-  address = env("VAULT_ADDR") 
   ca_cert = "/etc/vault/ca.crt"
   retry {
     num_retries = 5
