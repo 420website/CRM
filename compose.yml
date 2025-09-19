@@ -20,9 +20,8 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - /etc/vault/certs:/certs:ro
-      - /etc/vault/secrets:/secrets:ro
     env_file: 
-      - /secrets/.env
+      - /etc/vault/secrets/.env
     environment:
       - POSTGRES_INITDB_ARGS="--auth-host=md5"
       - POSTGRES_HOST_AUTH_METHOD=md5
@@ -45,11 +44,10 @@ services:
     volumes:
       - ./db/migrations:/db/migrations
       - /etc/vault/certs:/certs:ro
-      - /etc/vault/secrets:/secrets:ro
     depends_on:
       - postgres
     env_file: 
-      - /secrets/.env
+      - /etc/vault/secrets/.env
     networks:
       - db-net
     profiles:
@@ -64,9 +62,8 @@ services:
     volumes:
       - mongo_data:/data/db
       - /etc/vault/certs:/certs:ro
-      - /etc/vault/secrets:/secrets:ro
     env_file: 
-      - /secrets/.env
+      - /etc/vault/secrets/.env
     networks:
       - backend-net
     profiles:
@@ -79,9 +76,8 @@ services:
       - ./scripts/wait-for-db.sh:/scripts/wait-for-db.sh
       - ./scripts/create_admin.sh:/scripts/create_admin.sh
       - /etc/vault/certs:/certs:ro
-      - /etc/vault/secrets:/secrets:ro
     env_file: 
-      - /secrets/.env
+      - /etc/vault/secrets/.env
     depends_on:
       - mongodb
       - postgres
@@ -98,9 +94,8 @@ services:
     build: ./frontend
     volumes:
       - frontend_dist:/dist
-      - /etc/vault/secrets:/secrets:ro
     env_file: 
-      - /secrets/.env
+      - /etc/vault/secrets/.env
     profiles:
       - dev 
       - prod
@@ -126,10 +121,6 @@ services:
     image: nginx:alpine
     ports:
       - 80:80
-    env_file: 
-      - /secrets/.env
-    profiles:
-      - staging
     volumes:
       - certbot-etc:/etc/letsencrypt
       - certbot-var:/var/lib/letsencrypt
@@ -137,23 +128,25 @@ services:
       - frontend_dist:/usr/share/nginx/html:ro
       - ./nginx/nginx.setup.conf:/etc/nginx/templates/nginx.conf.template
       - /etc/vault/certs:/certs:ro
-      - /etc/vault/secrets:/secrets:ro
+    env_file: 
+      - /etc/vault/secrets/.env
+    profiles:
+      - staging
 
   certbot-setup:
     image: certbot/certbot
-    env_file: 
-      - /secrets/.env
-    depends_on: 
-      - nginx-setup
-    profiles:
-      - staging
     volumes:
       - certbot-etc:/etc/letsencrypt
       - certbot-var:/var/lib/letsencrypt
       - certbot-www:/var/www/certbot
       - ./scripts/cert_check.sh:/scripts/cert_check.sh:ro
       - /etc/vault/certs:/certs:ro
-      - /etc/vault/secrets:/secrets:ro
+    env_file: 
+      - /etc/vault/secrets/.env
+    depends_on: 
+      - nginx-setup
+    profiles:
+      - staging
     entrypoint: ["sh"]
     command: ["/scripts/cert_check.sh"]
 
@@ -162,14 +155,6 @@ services:
     ports:
       - 80:80
       - 443:443
-    env_file: 
-      - /secrets/.env
-    profiles:
-      - prod
-    networks:
-      - frontend-net
-    depends_on:
-      - backend
     volumes:
       - certbot-etc:/etc/letsencrypt
       - certbot-var:/var/lib/letsencrypt
@@ -178,7 +163,14 @@ services:
       - ./nginx/nginx.prod.conf:/etc/nginx/templates/nginx.conf.template
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf       
       - /etc/vault/certs:/certs:ro
-      - /etc/vault/secrets:/secrets:ro
+    env_file: 
+      - /etc/vault/secrets/.env
+    profiles:
+      - prod
+    networks:
+      - frontend-net
+    depends_on:
+      - backend
 
 volumes: 
   frontend_dist:
