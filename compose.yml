@@ -19,9 +19,12 @@ services:
     env_file: 
       - /etc/vault/secrets/.env
     volumes:
-      - ./grafan/config.alloy:/etc/alloy/config.alloy:ro
-      - postgres-data:/var/lib/postgresql/data:ro
+      - ./grafana/config.alloy:/etc/alloy/config.alloy:ro
+      - postgres_data:/var/lib/postgresql/data:ro
     command: run /etc/alloy/config.alloy
+    profiles:
+      - dev 
+      - prod
     networks:
       - alloy-net
     depends_on:
@@ -32,7 +35,8 @@ services:
     restart: unless-stopped
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - /etc/vault/certs:/certs:ro
+      - /etc/vault/certs:/certs
+      - ./scripts/postgres-start.sh:/postgres-start.sh:ro
     env_file: 
       - /etc/vault/secrets/.env
     environment:
@@ -44,22 +48,7 @@ services:
     profiles:
       - dev 
       - prod
-    command: |
-      postgres 
-        -c ssl=on 
-        -c ssl_cert_file=/certs/server.crt 
-        -c ssl_key_file=/certs/server.key 
-        -c ssl_ca_file=/certs/ca-chain.crt 
-        -c ssl_min_protocol_version=TLSv1.2
-        -c logging_collector=on
-        -c log_directory='log'
-        -c log_filename='postgresql.log'
-        -c log_statement='mod'
-        -c log_destination='csvlog,stderr'
-        -c log_min_messages=info
-        -c log_rotation_age=0
-        -c log_rotation_size=0
-        -c log_truncate_on_rotation=off
+    entrypoint: ["/postgres-start.sh"]
 
   dbmate:
     image: amacneil/dbmate

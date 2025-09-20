@@ -31,9 +31,9 @@ loki.write "grafana_loki" {
 		url = env("LOKI_URL")
 
 		tls_config {
-			ca_file              = "/etc/vault/certs/ca-chain.crt"
-			cert_file            = "/etc/vault/certs/server.crt"
-			key_file             = "/etc/vault/certs/server.key"
+			ca_file              = "/certs/ca-chain.crt"
+			cert_file            = "/certs/server.crt"
+			key_file             = "/certs/server.key"
 			insecure_skip_verify = false
 		}
 	}
@@ -63,9 +63,9 @@ prometheus.remote_write "metrics_service" {
 		url = env("PROMETHEUS_URL")
 
 		tls_config {
-			ca_file              = "/etc/vault/certs/ca-chain.crt"
-			cert_file            = "/etc/vault/certs/server.crt"
-			key_file             = "/etc/vault/certs/server.key"
+			ca_file              = "/certs/ca-chain.crt"
+			cert_file            = "/certs/server.crt"
+			key_file             = "/certs/server.key"
 			insecure_skip_verify = false
 		}
 	}
