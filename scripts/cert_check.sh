@@ -27,6 +27,7 @@ update_certificate_staging() {
     --email "$CERTBOT_EMAIL" \
     -d "$DOMAIN_ROOT" -d "$DOMAIN_NAME" \
     --agree-tos --no-eff-email \
+    --non-interactive \
     --force-renewal
   certbot certificates
 }
@@ -37,6 +38,7 @@ update_certificate() {
     --email "$CERTBOT_EMAIL" \
     -d "$DOMAIN_ROOT" -d "$DOMAIN_NAME" \
     --agree-tos --no-eff-email \
+    --non-interactive \
     --force-renewal
   certbot certificates
 }

@@ -1,0 +1,72 @@
+// Debug - check what files exist
+local.file_match "postgres_logs" {
+	path_targets = [
+		{"__path__" = "/var/lib/postgresql/data/log/*.log"},
+		{"__path__" = "/var/lib/postgresql/data/log/postgresql.log"},
+	]
+	sync_period = "5s"
+}
+
+// File source for PostgreSQL logs
+loki.source.file "postgres_file_source" {
+	targets       = local.file_match.postgres_logs.targets
+	forward_to    = [loki.process.add_labels.receiver]
+	tail_from_end = false // Start from beginning to see if logs exist
+}
+
+// Add labels to make logs discoverable
+loki.process "add_labels" {
+	forward_to = [loki.write.grafana_loki.receiver]
+
+	stage.static_labels {
+		values = {
+			job     = "postgres",
+			service = "postgresql",
+		}
+	}
+}
+// Write to Loki
+loki.write "grafana_loki" {
+	endpoint {
+		url = env("LOKI_URL")
+
+		tls_config {
+			ca_file              = "/etc/vault/certs/ca-chain.crt"
+			cert_file            = "/etc/vault/certs/server.crt"
+			key_file             = "/etc/vault/certs/server.key"
+			insecure_skip_verify = false
+		}
+	}
+}
+
+// Prometheus 
+prometheus.exporter.unix "local_system" { }
+
+prometheus.scrape "scrape_metrics" {
+	targets         = prometheus.exporter.unix.local_system.targets
+	forward_to      = [prometheus.relabel.filter_metrics.receiver]
+	scrape_interval = "10s"
+}
+
+prometheus.relabel "filter_metrics" {
+	//	rule {
+	//		action        = "drop"
+	//		source_labels = ["env"]
+	//		regex         = "dev"
+	//	}
+
+	forward_to = [prometheus.remote_write.metrics_service.receiver]
+}
+
+prometheus.remote_write "metrics_service" {
+	endpoint {
+		url = env("PROMETHEUS_URL")
+
+		tls_config {
+			ca_file              = "/etc/vault/certs/ca-chain.crt"
+			cert_file            = "/etc/vault/certs/server.crt"
+			key_file             = "/etc/vault/certs/server.key"
+			insecure_skip_verify = false
+		}
+	}
+}
