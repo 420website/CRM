@@ -21,12 +21,11 @@ services:
     volumes:
       - ./grafana/config.alloy:/etc/alloy/config.alloy:ro
       - postgres_data:/var/lib/postgresql/data:ro
+      - /etc/vault/certs:/certs:ro
     command: run /etc/alloy/config.alloy
     profiles:
       - dev 
       - prod
-    networks:
-      - alloy-net
     depends_on:
       - postgres
   
@@ -193,9 +192,6 @@ volumes:
   certbot-www:
 
 networks:
-  alloy-net:
-    driver: bridge
-
   frontend-net:
     driver: bridge
  
