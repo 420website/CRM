@@ -60,7 +60,7 @@ prometheus.relabel "filter_metrics" {
 
 prometheus.remote_write "metrics_service" {
 	endpoint {
-		url = "https://prometheus.internal/api/v1/write",
+		url = "https://prometheus.internal/api/v1/write"
 
 		tls_config {
 			ca_file              = "/certs/ca-chain.crt"

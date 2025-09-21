@@ -19,8 +19,8 @@ services:
     env_file: 
       - /etc/vault/secrets/.env
     extra_hosts:
-    - "loki.internal:${GRAFANA_IP}"
-    - "prometheus.internal:${GRAFANA_IP}"
+      - "loki.internal:${GRAFANA_IP}"
+      - "prometheus.internal:${GRAFANA_IP}"
     volumes:
       - ./grafana/config.alloy:/etc/alloy/config.alloy:ro
       - postgres_data:/var/lib/postgresql/data:ro
