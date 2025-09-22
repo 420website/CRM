@@ -86,7 +86,7 @@ from app.registration.schemas import (
     TestCreate,
     TestUpdate,
 )
-from app.registration.services import PatientService
+from app.registration.services import MedicationService, PatientService
 
 email = "test4@example.com"
 password = "securepassword123"
@@ -1774,9 +1774,9 @@ class TestPatienMedicationsRouter(IsolatedAsyncioTestCase):
         await PatientService.delete_patient_by_id(patient_id)
 
 
-###############
-# Dispensing
-###############
+# ###############
+# # Dispensing
+# ###############
 email = "test497@example.com"
 password = "securepassword123"
 
@@ -1851,7 +1851,7 @@ class TestPatientDispensingRouter(IsolatedAsyncioTestCase):
     async def mock_create_dispensing(self, patient_id):
         """Helper to create a dispensing record for a patient"""
         dispensing_data = DispensingCreate(
-            medication="Lisinopril 10mg",
+            medication="Lisinopril",
             rx="RX123456",
             quantity=30,
             lot="LOT789",
@@ -1864,6 +1864,16 @@ class TestPatientDispensingRouter(IsolatedAsyncioTestCase):
         # Get the created dispensing to return its ID
         dispensings = await get_dispensings_by_patient(patient_id, self.user)
         return dispensings[0].id if dispensings else None
+
+    async def create_medication(self, patient_id: int):
+        medication_data = MedicationCreate(
+            medication="Lisinopril",
+            start_date=date(2024, 1, 1),
+            end_date=date(2024, 1, 10),
+            outcome="Recovered",
+        )
+
+        await MedicationService.create_medication(patient_id, medication_data)
 
     async def asyncSetUp(self) -> None:
         await database.connect()
@@ -1884,7 +1894,7 @@ class TestPatientDispensingRouter(IsolatedAsyncioTestCase):
 
         # Dispensing test data
         self.dispensing_data = DispensingCreate(
-            medication="Lisinopril 10mg",
+            medication="Lisinopril",
             rx="RX123456",
             quantity=30,
             lot="LOT789",
@@ -1901,8 +1911,12 @@ class TestPatientDispensingRouter(IsolatedAsyncioTestCase):
 
     async def test_create_dispensing_success(self):
         patient_id = await self.mock_create_patient("Jim")
+        await self.create_medication(patient_id)
+
         result = await create_dispensing(
-            patient_id, self.dispensing_data, self.user
+            patient_id,
+            self.dispensing_data,
+            self.user,
         )
 
         self.assertEqual(result["message"], "Dispensing created successfully.")
@@ -1910,21 +1924,40 @@ class TestPatientDispensingRouter(IsolatedAsyncioTestCase):
         # Cleanup
         await PatientService.delete_patient_by_id(patient_id)
 
+    async def test_create_dispensing_no_medication(self):
+        patient_id = await self.mock_create_patient("Jim")
+
+        with self.assertRaises(HTTPException) as cm:
+            await create_dispensing(
+                patient_id, self.dispensing_data, self.user
+            )
+
+        self.assertEqual(cm.exception.status_code, 400)
+        self.assertIn(
+            "Medication none existant for client please create medication entry and retry",
+            str(cm.exception.detail),
+        )
+
+        # Cleanup
+        await PatientService.delete_patient_by_id(patient_id)
+
     async def test_get_dispensings_by_patient_success(self):
         patient_id = await self.mock_create_patient("Jim")
+        await self.create_medication(patient_id)
         await self.mock_create_dispensing(patient_id)
 
         result = await get_dispensings_by_patient(patient_id, self.user)
 
         self.assertIsInstance(result, list)
         self.assertGreaterEqual(len(result), 1)
-        self.assertEqual(result[0].medication, "Lisinopril 10mg")
+        self.assertEqual(result[0].medication, "Lisinopril")
 
         # Cleanup
         await PatientService.delete_patient_by_id(patient_id)
 
     async def test_get_dispensing_by_id_success(self):
         patient_id = await self.mock_create_patient("Jim")
+        await self.create_medication(patient_id)
         dispensing_id = await self.mock_create_dispensing(patient_id)
 
         result = await get_dispensing_by_id(
@@ -1933,15 +1966,16 @@ class TestPatientDispensingRouter(IsolatedAsyncioTestCase):
 
         self.assertEqual(result.id, dispensing_id)
         self.assertEqual(result.patient_id, patient_id)
-        self.assertEqual(result.medication, "Lisinopril 10mg")
+        self.assertEqual(result.medication, "Lisinopril")
 
         # Cleanup
         await PatientService.delete_patient_by_id(patient_id)
 
     async def test_update_dispensing_success(self):
         patient_id = await self.mock_create_patient("Jim")
-        dispensing_id = await self.mock_create_dispensing(patient_id)
+        await self.create_medication(patient_id)
 
+        dispensing_id = await self.mock_create_dispensing(patient_id)
         result = await update_dispensing(
             patient_id, dispensing_id, self.dispensing_update_data, self.user
         )
@@ -1960,8 +1994,9 @@ class TestPatientDispensingRouter(IsolatedAsyncioTestCase):
 
     async def test_delete_dispensing_by_id_success(self):
         patient_id = await self.mock_create_patient("Jim")
-        dispensing_id = await self.mock_create_dispensing(patient_id)
+        await self.create_medication(patient_id)
 
+        dispensing_id = await self.mock_create_dispensing(patient_id)
         result = await delete_dispensing_by_id(
             patient_id, dispensing_id, self.user
         )
@@ -1973,6 +2008,7 @@ class TestPatientDispensingRouter(IsolatedAsyncioTestCase):
 
     async def test_get_dispensing_by_id_not_found(self):
         patient_id = await self.mock_create_patient("Jim")
+        await self.create_medication(patient_id)
 
         with self.assertRaises(HTTPException) as cm:
             await get_dispensing_by_id(patient_id, 99999, self.user)

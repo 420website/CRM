@@ -634,6 +634,13 @@ describe("PatientServices.patient dispensings", () => {
     language: "English",
   };
 
+  const medicationFormData = {
+    medication: "Amoxicillin",
+    start_date: new Date().toISOString().split("T")[0],
+    end_date: "2025-12-31",
+    outcome: "Ongoing",
+  };
+
   const dispensingFormData = {
     medication: "Amoxicillin",
     rx: "RX12345",
@@ -660,6 +667,12 @@ describe("PatientServices.patient dispensings", () => {
     // Create patient
     const patientRes = await PatientServices.create_patient(patientForm);
     createdPatientId = patientRes.data?.patient_id;
+
+    // Create Medication
+    await PatientServices.create_medication(
+      createdPatientId,
+      medicationFormData,
+    );
   });
 
   afterEach(async () => {
