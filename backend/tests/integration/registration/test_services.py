@@ -1038,6 +1038,17 @@ class TestDispensingService(IsolatedAsyncioTestCase):
         patients = await PatientService.get_patients()
         self.patient_id = patients[0].id
 
+        self.medication_data = MedicationCreate(
+            medication="Aspirin",
+            start_date=date(2024, 1, 1),
+            end_date=date(2024, 1, 10),
+            outcome="Recovered",
+        )
+
+        await MedicationService.create_medication(
+            self.patient_id, self.medication_data
+        )
+
         self.dispensing_data = DispensingCreate(
             medication="Aspirin",
             rx="RX123",
@@ -1050,6 +1061,30 @@ class TestDispensingService(IsolatedAsyncioTestCase):
     async def asyncTearDown(self) -> None:
         await PatientService.delete_patient("Jim", "Doe")
         await database.disconnect()
+
+    async def test_check_medication_no_meds(self):
+        medication = "Tylenol"
+
+        # Test
+        result = await DispensingService.check_medication(medication)
+        self.assertFalse(result)
+
+    async def test_check_medication_present(self):
+        medication_data = MedicationCreate(
+            medication="Aspirin",
+            start_date=date(2024, 1, 1),
+            end_date=date(2024, 1, 10),
+            outcome="Recovered",
+        )
+
+        await MedicationService.create_medication(
+            self.patient_id,
+            medication_data,
+        )
+
+        # Test
+        result = await DispensingService.check_medication("Aspirin")
+        self.assertTrue(result)
 
     #### CREATE
     async def test_create_dispensing_success(self):
