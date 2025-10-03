@@ -17,19 +17,22 @@ mongo_db = client[settings.db_name]
 class MinioClient:
     def __init__(self):
         self.session = aioboto3.Session()
-        self._client: Optional[S3Client] = None  # AioBaseClient] = None
-        self._manager = None  # to store the async context manager
+        self._client: Optional[S3Client] = None
+        self._manager = None
 
     async def connect(self):
         # create the context manager
         self._manager = self.session.client(
             "s3",
-            endpoint_url="https://minio:9000",
-            aws_access_key_id="testuser",
-            aws_secret_access_key="password",
-            verify=False,
+            endpoint_url=settings.minio_url,
+            aws_access_key_id=settings.minio_key_id,
+            aws_secret_access_key=settings.minio_access_key,
+            verify=settings.minio_verify,
             config=Config(
-                signature_version="s3v4", s3={"addressing_style": "path"}
+                signature_version=settings.minio_signature_version,
+                s3={
+                    "addressing_style": settings.minio_addressing_style
+                },  # pyright:ignore
             ),
         )
         # actually enter the context

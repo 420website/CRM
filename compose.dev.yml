@@ -130,6 +130,10 @@ services:
       - ENVIRONMENT=dev
       - PYTHONPATH=/backend
       - CA_FILE=/certs/ca.crt
+      - MINIO_SERVER_URL=https://minio:9000
+      - MINIO_KEY_ID=testuser
+      - MINIO_ACCESS_KEY=password
+      - MINIO_VERIFY=False
     env_file:
       - .env
     networks:
