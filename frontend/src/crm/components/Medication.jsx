@@ -26,9 +26,9 @@ export default function Medications({ setActiveTab, currentRegistrationId }) {
       setSavedMedications(result.data || []);
     } else {
       if (result.status === 400 || result.status === 409) {
-        setError(result.message || "Error getting dispositions.");
+        setError(result.message || "Error getting medications.");
       } else {
-        setError("Error getting dispositions. Please try again.");
+        setError("Error getting medications. Please try again.");
       }
     }
     setLoading(false);
@@ -69,9 +69,9 @@ export default function Medications({ setActiveTab, currentRegistrationId }) {
       clearMedicationForm();
     } else {
       if (result.status === 400 || result.status === 409) {
-        setError(result.message || "Error getting dispositions.");
+        setError(result.message || "Error creating medications.");
       } else {
-        setError("Error getting dispositions. Please try again.");
+        setError("Error creating medications. Please try again.");
       }
     }
     setIsSavingMedication(false);
@@ -110,9 +110,9 @@ export default function Medications({ setActiveTab, currentRegistrationId }) {
       clearMedicationForm();
     } else {
       if (result.status === 400 || result.status === 409) {
-        setError(result.message || "Error getting dispositions.");
+        setError(result.message || "Error updating medication.");
       } else {
-        setError("Error getting dispositions. Please try again.");
+        setError("Error updating medication. Please try again.");
       }
     }
     setIsSavingMedication(false);
@@ -136,9 +136,9 @@ export default function Medications({ setActiveTab, currentRegistrationId }) {
       await getMedications(currentRegistrationId);
     } else {
       if (result.status === 400 || result.status === 409) {
-        setError(result.message || "Error getting dispositions.");
+        setError(result.message || "Error deleting medication.");
       } else {
-        setError("Error getting dispositions. Please try again.");
+        setError("Error deleting medication. Please try again.");
       }
     }
     setLoading(false);

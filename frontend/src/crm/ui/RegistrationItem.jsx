@@ -1,4 +1,5 @@
 import { useNavigate } from "react-router-dom";
+import { ObjectServices } from "../../services/objectService";
 
 export default function RegistrationItem({
   activeTab,
@@ -16,6 +17,14 @@ export default function RegistrationItem({
   handleRevertToPending,
 }) {
   const navigate = useNavigate();
+
+  const getPhoto = async (registrationId) => {
+    const result = await ObjectServices.get_photo_base64(registrationId);
+    if (result.success) {
+      return `data:image/jpeg;base64,${result.data?.file}`;
+    }
+  };
+
   // Lazy load photo for a specific registration
   const loadPhoto = async (registrationId) => {
     if (loadingPhotos.has(registrationId)) {
@@ -32,10 +41,14 @@ export default function RegistrationItem({
       patient = pendingData.filter((patient) => patient.id === registrationId);
     }
 
-    setLoadedPhotos((prev) => ({
-      ...prev,
-      [registrationId]: patient[0].photo,
-    }));
+    const photo = await getPhoto(registrationId);
+
+    if (photo) {
+      setLoadedPhotos((prev) => ({
+        ...prev,
+        [registrationId]: photo,
+      }));
+    }
   };
 
   return (

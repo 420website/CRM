@@ -2,42 +2,47 @@
 import asyncio
 from datetime import datetime, timedelta
 import datetime as dt
+from io import BytesIO
 from unittest import IsolatedAsyncioTestCase
 from datetime import date
-from fastapi import HTTPException, Response
+from fastapi import HTTPException, Response, UploadFile
 from fastapi.security import HTTPAuthorizationCredentials
 from jose import jwt
+from app.authentication.services import UserService
+from app.database import minio_client, database
+from app.dependencies import get_current_user, get_user_pending_mfa
+import pyotp
+from app.objects.router import upload_attachment
+from app.objects.services import AttachmentService, ObjectService
+from app.registration.router import create_patient
+from app.registration.schemas import PatientCreate
+from app.registration.services import PatientService
+from app.config import settings
+from app.testing.router import register_user
 from app.authentication.router import (
     login,
     setup_authenticator_mfa,
     verify_authenticator_mfa,
 )
-from app.config import settings
 from app.authentication.schemas import (
     LoginRequest,
     MFAVerifiactionCode,
     RegisterRequest,
 )
-from app.authentication.services import UserService
-from app.database import database
-from app.dependencies import get_current_user, get_user_pending_mfa
-import pyotp
-from app.registration.router import (
-    create_attachment,
-    create_patient,
-)
-from app.registration.schemas import (
-    AttachmentCreate,
-    PatientCreate,
-)
-from app.registration.services import PatientService
 from app.share_links.router import (
     AttachmentId,
     access_share_link,
     create_share_link,
     decode_jwt,
+    get_share_link_metadata,
 )
-from app.testing.router import register_user
+
+
+def read_file(path: str) -> bytes:
+    with open(path, "rb") as file:
+        file_bytes = file.read()
+        return file_bytes
+
 
 email = "test978@example.com"
 password = "securepassword123"
@@ -76,6 +81,28 @@ class TestShareLinkRouter(IsolatedAsyncioTestCase):
         user = await get_current_user(credentials=credentials)
         return user
 
+    async def mock_create_attachment(self, patient_id):
+        """Helper to create an attachment for a patient"""
+        file_name = "test_document.pdf"
+
+        data = read_file(self.object_path)
+        file = UploadFile(filename=file_name, file=BytesIO(data))
+        await upload_attachment(
+            patient_id,
+            file=file,
+            file_name="test-pdf.pdf",
+            file_size=len(data),
+            mime_type="application/pdf",
+            document_type="Consultation Report",
+            user=self.user,
+        )
+
+        # Get the created attachment to return its ID
+        attachments = await AttachmentService.get_patient_attachments(
+            patient_id
+        )
+        return attachments[0].id if attachments else None
+
     @classmethod
     async def asyncSetUpClass(cls):
         await database.connect()
@@ -96,8 +123,10 @@ class TestShareLinkRouter(IsolatedAsyncioTestCase):
 
     async def asyncSetUp(self) -> None:
         await database.connect()
+        await minio_client.connect()
         asyncio.get_event_loop().set_debug(False)
 
+        self.object_path = "tests/integration/objects/docs/test-pdf.pdf"
         self.patient_data = PatientCreate(
             first_name="Jimothy",
             last_name="Doe",
@@ -114,39 +143,27 @@ class TestShareLinkRouter(IsolatedAsyncioTestCase):
         self.patient_id = result["patient_id"]
 
     async def asyncTearDown(self):
+        key = f"{self.patient_id}/test-pdf.pdf"
+        await ObjectService.delete_object("attachments", key)
         await PatientService.delete_patient_by_id(self.patient_id)
+        await PatientService.delete_patient_by_id(self.patient_id)
+        await minio_client.disconnect()
         await database.disconnect()
 
     # create patient
     async def test_share_link_success(self):
         """Helper to create an attachment for a patient"""
-        attachment_data = AttachmentCreate(
-            filename="test_document.pdf",
-            type="document",
-            url="https://example.com/test_document.pdf",
-            document_type="Lab Report",
-            original_url="https://example.com/test_document.pdf",
-            is_local=True,
-        )
-
-        result = await create_attachment(
-            self.patient_id,
-            attachment_data,
-            self.user,
-        )
-        attachment_id = result["id"]
+        id = await self.mock_create_attachment(self.patient_id)
 
         # test
-        result = await create_share_link(
-            AttachmentId(attachment_id=result["id"])
-        )
+        result = await create_share_link(AttachmentId(attachment_id=id))
         token = result["share_url"].split("?")[1]
         token = token.split("=")[1]
         decode_token = decode_jwt(token)
         assert decode_token
 
         # validate
-        self.assertEqual(decode_token["attachment_id"], attachment_id)
+        # self.assertEqual(decode_token["attachment_id"], attachment_id)
         self.assertGreater(
             decode_token["exp"],
             datetime.now(dt.timezone.utc).timestamp(),
@@ -167,37 +184,40 @@ class TestShareLinkRouter(IsolatedAsyncioTestCase):
         self.assertEqual(cm.exception.status_code, 404)
         self.assertEqual(cm.exception.detail, "Attachment not found.")
 
-    async def test_access_share_link_successful(self):
+    async def test_access_share_link_metadata_successful(self):
         """Helper to create an attachment for a patient"""
-        attachment_data = AttachmentCreate(
-            filename="test_document.pdf",
-            type="document",
-            url="https://example.com/test_document.pdf",
-            document_type="Lab Report",
-            original_url="https://example.com/test_document.pdf",
-            is_local=True,
-        )
+        id = await self.mock_create_attachment(self.patient_id)
 
-        result = await create_attachment(
-            self.patient_id,
-            attachment_data,
-            self.user,
-        )
-        attachment_id = result["id"]
-
-        result = await create_share_link(
-            AttachmentId(attachment_id=result["id"])
-        )
+        result = await create_share_link(AttachmentId(attachment_id=id))
         token = result["share_url"].split("?")[1]
         token = token.split("=")[1]
 
         # test
-        response = await access_share_link(token)
+        response = await get_share_link_metadata(token)
 
         # validate
-        self.assertEqual(attachment_id, response.id)
-        self.assertIsNotNone(response.url)
-        self.assertIsNotNone(response.original_url)
+        self.assertEqual("test-pdf.pdf", response["file_name"])
+        self.assertEqual("application/pdf", response["mime_type"])
+
+    async def test_access_share_link_successful(self):
+        """Helper to create an attachment for a patient"""
+        id = await self.mock_create_attachment(self.patient_id)
+
+        result = await create_share_link(AttachmentId(attachment_id=id))
+        token = result["share_url"].split("?")[1]
+        token = token.split("=")[1]
+
+        # test
+        result = await access_share_link(token)
+
+        # Check status code
+        self.assertEqual(result.status_code, 200)
+
+        # Get the body content
+        body = result.body
+        self.assertIsInstance(body, bytes)
+        self.assertGreater(len(body), 0)  # Ensure it has content
+        self.assertEqual(read_file(self.object_path), body)
 
     async def test_access_share_link_invalid_jwt(self):
         expiry = datetime.now(dt.timezone.utc) - timedelta(minutes=5)

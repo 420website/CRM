@@ -4,8 +4,8 @@ import { compressImage } from "../../utils/compressImage";
 
 export default function EditPhoto({
   saveStatus,
-  formData,
-  setFormData,
+  photoData,
+  setPhotoData,
   photoPreview,
   setPhotoPreview,
 }) {
@@ -14,22 +14,23 @@ export default function EditPhoto({
   const [photoUploadStatus, setPhotoUploadStatus] = useState(null);
 
   useEffect(() => {
-    if (formData.photo) {
-      setPhotoPreview(formData.photo);
-      setPhotoUploadStatus({
-        type: "success",
-        message:
-          "Photo loaded successfully. Your photo will be attached to the email when you submit the registration.",
-      });
-    } else {
-      setPhotoPreview(null);
-      setPhotoUploadStatus(null);
-    }
-  }, [formData.photot]);
+    const compressAndSetPreview = async () => {
+      if (photoData.file) {
+        const compressed = await compressImage(photoData.file, 500);
+        setPhotoPreview(compressed);
+        setPhotoUploadStatus({
+          type: "success",
+          message:
+            "Photo loaded successfully. Your photo will be attached to the email when you submit the registration.",
+        });
+      } else {
+        setPhotoPreview(null);
+        setPhotoUploadStatus(null);
+      }
+    };
 
-  const goBack = () => {
-    navigate("/");
-  };
+    compressAndSetPreview();
+  }, [photoData.file]);
 
   const handlePhotoChange = async (e) => {
     const file = e.target.files[0];
@@ -46,30 +47,12 @@ export default function EditPhoto({
         return;
       }
 
+      setPhotoData({
+        name: file.name,
+        file: file,
+      });
+
       try {
-        // Compress the image
-        const compressedImage = await compressImage(file, 500); // Target 500KB
-
-        // Final size check
-        if (compressedImage.length > 800 * 1024) {
-          // 800KB final limit
-          alert(
-            "Photo could not be compressed enough. Please choose a smaller image.",
-          );
-          return;
-        }
-
-        setPhotoPreview(compressedImage);
-        setFormData((prev) => ({
-          ...prev,
-          photo: compressedImage,
-        }));
-
-        // Show success message after compression
-        setPhotoUploadStatus({
-          type: "success",
-          message: `Photo successfully optimized from ${(file.size / 1024).toFixed(1)}KB to ${(compressedImage.length / 1024).toFixed(1)}KB with high quality maintained. Your photo will be attached to the email when you submit the registration.`,
-        });
       } catch (error) {
         setError("Error compressing image:", error);
         alert("Error processing image. Please try again.");
@@ -77,13 +60,15 @@ export default function EditPhoto({
     }
   };
 
+  const goBack = () => {
+    navigate("/");
+  };
+
   const removePhoto = () => {
     setPhotoPreview(null);
     setPhotoUploadStatus(null);
-    setFormData((prev) => ({
-      ...prev,
-      photo: null,
-    }));
+    setPhotoData({});
+
     // Clear both file inputs
     const cameraInput = document.getElementById("photo-camera");
     const uploadInput = document.getElementById("photo-upload");
@@ -226,14 +211,14 @@ export default function EditPhoto({
             </div>
           </div>
 
-          {formData.photo && (
+          {photoPreview && (
             <div className="mt-4">
               <h3 className="text-sm font-medium text-gray-900 mb-2">
                 Photo Preview
               </h3>
               <div className="w-48 h-48 border-2 border-gray-300 rounded-lg overflow-hidden">
                 <img
-                  src={formData.photo} //photoPreview}
+                  src={photoPreview} //photoPreview}
                   alt="Client photo preview"
                   className="w-full h-full object-cover"
                 />

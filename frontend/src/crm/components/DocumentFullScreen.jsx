@@ -110,11 +110,13 @@ export default function DocumentFullScreen({
       setTimeout(() => setShareStatus(""), 5000);
     } else {
       if (result.status === 400 || result.status === 409) {
-        setError(result.message || "Error getting dispositions.");
+        setError(result.message || "Error getting share link.");
         setShareStatus("Error generating shareable link");
         setTimeout(() => setShareStatus(""), 3000);
       } else {
-        setError("Error getting dispositions. Please try again.");
+        setError(
+          "Error getting share link. Please ensure attachment saved first and try again.",
+        );
         setShareStatus("Error generating shareable link");
         setTimeout(() => setShareStatus(""), 3000);
       }
@@ -174,7 +176,7 @@ export default function DocumentFullScreen({
           {/* Document Info */}
           <div className="bg-white px-3 py-2 rounded-md shadow-lg flex-shrink mr-3">
             <div className="flex items-center text-black">
-              {documentPreview?.type === "pdf" ? (
+              {documentPreview?.type === "application/pdf" ? (
                 <svg
                   className="h-4 w-4 mr-2 text-red-600 flex-shrink"
                   fill="currentColor"
@@ -280,7 +282,7 @@ export default function DocumentFullScreen({
 
       {/* Document Viewer */}
       <div className="absolute top-16 left-0 right-0 bottom-0 overflow-auto">
-        {documentPreview.type === "pdf" ? (
+        {documentPreview.type === "application/pdf" ? (
           <div className="flex justify-center items-start min-h-full p-4">
             <div className="bg-white shadow-lg">
               {pdfError ? (
@@ -339,7 +341,7 @@ export default function DocumentFullScreen({
         <div className="fixed bottom-0 left-0 right-0 z-60 bg-[#3C3C3C] bg-opacity-70 p-4">
           <div className="flex justify-between items-center max-w-full">
             {/* PDF Controls */}
-            {documentPreview.type === "pdf" && (
+            {documentPreview.type === "application/pdf" && (
               <>
                 {/* Page Navigation */}
                 <div className="bg-white px-3 py-2 rounded-md shadow-lg flex-shrink mr-3">

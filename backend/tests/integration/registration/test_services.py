@@ -2,14 +2,11 @@
 import asyncio
 from decimal import Decimal
 from unittest import IsolatedAsyncioTestCase
-
 from asyncpg import UniqueViolationError
 from app.database import database
 from app.registration.schemas import (
     ActivityCreate,
     ActivityUpdate,
-    AttachmentCreate,
-    AttachmentUpdate,
     DispensingCreate,
     DispensingUpdate,
     InteractionCreate,
@@ -26,7 +23,6 @@ from app.registration.schemas import (
 )
 from app.registration.services import (
     ActivityService,
-    AttachmentService,
     DispensingService,
     InteractionService,
     MedicationService,
@@ -107,7 +103,6 @@ class TestPatientService(IsolatedAsyncioTestCase):
             selected_template="Standard HIV Template",
             summary_template="Brief Summary",
             test_type="HIV Screening",
-            photo="patient_photo_base64_string_here",
         )
 
         # Minimal PatientCreate instance with only required fields
@@ -628,143 +623,6 @@ class TestNotesService(IsolatedAsyncioTestCase):
 
     async def test_delete_note_not_found(self):
         result = await NoteService.delete_note_by_id(9999)
-        self.assertFalse(result)
-
-
-class TestAttachmentsService(IsolatedAsyncioTestCase):
-    async def asyncSetUp(self) -> None:
-        asyncio.get_event_loop().set_debug(False)
-        await database.connect()
-
-        # Ensure no leftover patients
-        await PatientService.delete_patient("Jim", "Doe")
-
-        # Create a minimal patient for linking attachments
-        self.minimal_patient = PatientCreate(
-            first_name="Jim",
-            last_name="Doe",
-            dob=date(1990, 3, 22),
-            health_card="1234567890",
-            health_card_version="AB",
-        )
-        await PatientService.create_patient(self.minimal_patient)
-        patients = await PatientService.get_patients()
-        self.patient_id = patients[0].id
-
-        # A valid attachment to use
-        self.attachment_data = AttachmentCreate(
-            filename="test_document.pdf",
-            type="PDF",
-            url="https://example.com/test_document.pdf",
-            document_type="Lab Report",
-            is_local=False,
-            original_url="https://example.com/test_document.pdf",
-            file_size=1024,
-            mime_type="application/pdf",
-        )
-
-    async def asyncTearDown(self) -> None:
-        await PatientService.delete_patient("Jim", "Doe")
-        await database.disconnect()
-
-    #### CREATE
-    async def test_create_attachment_success(self):
-        result = await AttachmentService.create_attachment(
-            self.patient_id, self.attachment_data
-        )
-        self.assertTrue(result)
-
-        attachments = await AttachmentService.get_attachments()
-        self.assertGreaterEqual(len(attachments), 1)
-        self.assertEqual(attachments[0].filename, "test_document.pdf")
-
-    #### GET
-    async def test_get_attachments_empty(self):
-        attachments = await AttachmentService.get_attachments()
-        self.assertIsInstance(attachments, list)
-        self.assertEqual(len(attachments), 0)
-
-    async def test_get_attachments_by_patient(self):
-        await AttachmentService.create_attachment(
-            self.patient_id, self.attachment_data
-        )
-        await AttachmentService.create_attachment(
-            self.patient_id,
-            AttachmentCreate(
-                filename="second_document.pdf",
-                type="PDF",
-                url="https://example.com/second_document.pdf",
-                document_type="Referral",
-                original_url="https://example.com/test_document.pdf",
-                is_local=False,
-                file_size=2048,
-                mime_type="application/pdf",
-            ),
-        )
-
-        attachments = await AttachmentService.get_attachments_by_patient(
-            self.patient_id
-        )
-        self.assertGreaterEqual(len(attachments), 2)
-        self.assertEqual(
-            attachments[0].filename, "second_document.pdf"
-        )  # newest first
-
-    #### UPDATE
-    async def test_update_attachment_success(self):
-        await AttachmentService.create_attachment(
-            self.patient_id, self.attachment_data
-        )
-        attachments = await AttachmentService.get_attachments()
-        attachment_id = attachments[0].id
-
-        update_data = AttachmentUpdate(filename="updated_document.pdf")
-        result = await AttachmentService.update_attachment(
-            attachment_id, update_data
-        )
-        self.assertTrue(result)
-
-        updated_attachments = await AttachmentService.get_attachments()
-        self.assertEqual(
-            updated_attachments[0].filename, "updated_document.pdf"
-        )
-
-    async def test_update_attachment_empty_updates(self):
-        await AttachmentService.create_attachment(
-            self.patient_id, self.attachment_data
-        )
-        attachments = await AttachmentService.get_attachments()
-        attachment_id = attachments[0].id
-
-        update_data = AttachmentUpdate()
-        result = await AttachmentService.update_attachment(
-            attachment_id, update_data
-        )
-        self.assertFalse(result)
-
-    async def test_update_attachment_not_found(self):
-        update_data = AttachmentUpdate(filename="nonexistent.pdf")
-        result = await AttachmentService.update_attachment(
-            9999, update_data
-        )  # invalid ID
-        self.assertFalse(result)
-
-    #### DELETE
-    async def test_delete_attachment_success(self):
-        await AttachmentService.create_attachment(
-            self.patient_id, self.attachment_data
-        )
-        attachments = await AttachmentService.get_attachments()
-        attachment_id = attachments[0].id
-
-        result = await AttachmentService.delete_attachment_by_id(attachment_id)
-        self.assertTrue(result)
-
-        remaining = await AttachmentService.get_attachments()
-        self.assertEqual(len(remaining), 0)
-
-    async def test_delete_attachment_not_found(self):
-        result = await AttachmentService.delete_attachment_by_id(9999)
         self.assertFalse(result)
 
 

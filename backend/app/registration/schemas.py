@@ -21,8 +21,6 @@ class PatientBase(BaseModel):
     language: Optional[str] = None
 
     # Health info
-    # health_card: Optional[str] = None
-    # health_card_version: Optional[str] = None
     coverage_type: Optional[str] = None
     disposition: Optional[str] = None
     physician: Optional[str] = None
@@ -50,7 +48,6 @@ class PatientBase(BaseModel):
     selected_template: Optional[str] = None
     summary_template: Optional[str] = None
     test_type: Optional[str] = None
-    photo: Optional[str] = None
     finalized_at: Optional[datetime] = None
 
 
@@ -156,42 +153,6 @@ class NoteRead(NoteBase):
     patient_id: int
     note_text: str
     template_type: Optional[str] = None
-    created_at: datetime
-    updated_at: datetime
-
-    class Config:
-        from_attributes = True
-
-
-# Attachment Models
-class AttachmentBase(BaseModel):
-    type: Optional[str] = None
-    url: Optional[str] = None
-    is_local: Optional[bool] = None
-    file_size: Optional[int] = None
-    mime_type: Optional[str] = None
-
-
-class AttachmentCreate(AttachmentBase):
-    # patient_id: int  # Required for creation
-    filename: str  # Required for creation
-    document_type: str
-    original_url: str
-
-
-class AttachmentUpdate(AttachmentBase):
-    patient_id: Optional[int] = None
-    filename: Optional[str] = None
-    document_type: Optional[str] = None
-    original_url: Optional[str] = None
-
-
-class AttachmentRead(AttachmentBase):
-    id: int
-    patient_id: int
-    filename: str
-    document_type: Optional[str] = None
-    original_url: Optional[str] = None
     created_at: datetime
     updated_at: datetime
 

@@ -40,9 +40,9 @@ export default function ClinicalTemplateManager({
       setMessage("Created clinical-template successfully.");
     } else {
       if (result.status === 400 || result.status === 409) {
-        setError(result.message || "Error getting dispositions.");
+        setError(result.message || "Error creating clinical template.");
       } else {
-        setError("Error getting dispositions. Please try again.");
+        setError("Error creating clinical template. Please try again.");
       }
     }
     setLoading(false);
@@ -69,9 +69,9 @@ export default function ClinicalTemplateManager({
       // setMessage("Created clinical-template successfully.");
     } else {
       if (result.status === 400 || result.status === 409) {
-        setError(result.message || "Error getting dispositions.");
+        setError(result.message || "Error updating clinical template.");
       } else {
-        setError("Error getting dispositions. Please try again.");
+        setError("Error updating clinical template. Please try again.");
       }
     }
     setLoading(false);
@@ -102,9 +102,9 @@ export default function ClinicalTemplateManager({
       }
     } else {
       if (result.status === 400 || result.status === 409) {
-        setError(result.message || "Error getting dispositions.");
+        setError(result.message || "Error delete clinical template.");
       } else {
-        setError("Error getting dispositions. Please try again.");
+        setError("Error delete clinical template. Please try again.");
       }
     }
     setLoading(false);

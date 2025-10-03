@@ -8,15 +8,17 @@ from app.registration.router import router as patient_router
 from app.analytics.router import router as analytics_router
 from app.webpage.router import router as contact_router
 from app.share_links.router import router as share_link_router
-
+from app.objects.router import router as object_router
 from app.config import settings
-from app.database import database
+from app.database import database, minio_client
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     await database.connect()
+    await minio_client.connect()
     yield
+    await minio_client.disconnect()
     await database.disconnect()
 
 
@@ -34,6 +36,12 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
+@app.get("/health")
+def health_check():
+    return {"status": "ok"}
+
+
 # Include routers
 app.include_router(auth_router)
 app.include_router(contact_router)
@@ -41,11 +49,7 @@ app.include_router(analytics_router)
 app.include_router(general_router)
 app.include_router(patient_router)
 app.include_router(share_link_router)
-
-
-@app.get("/health")
-def health_check():
-    return {"status": "ok"}
+app.include_router(object_router)
 
 
 if settings.debug:

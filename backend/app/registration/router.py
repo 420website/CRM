@@ -10,13 +10,11 @@ from app.authentication.schemas import UserRead
 from app.email.messages import FinalizedEmailMessage
 from app.email.service import EmailService
 from app.config import settings
+from app.objects.services import ObjectService
 from app.registration.schemas import (
     ActivityCreate,
     ActivityRead,
     ActivityUpdate,
-    AttachmentCreate,
-    AttachmentRead,
-    AttachmentUpdate,
     DispensingCreate,
     DispensingRead,
     DispensingUpdate,
@@ -40,7 +38,6 @@ from app.registration.schemas import (
 )
 from app.registration.services import (
     ActivityService,
-    AttachmentService,
     DispensingService,
     InteractionService,
     MedicationService,
@@ -114,11 +111,15 @@ async def delete_patient_by_id(
     id: int,
     user: UserRead = Depends(get_current_user),
 ):
+
     if not await PatientService.delete_patient_by_id(id):
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Patient not found.",
         )
+    await ObjectService.delete_objects("photos", str(id))
+    await ObjectService.delete_objects("attachments", str(id))
+
     return {"message": "Patient deleted successfully."}
 
 
@@ -128,11 +129,13 @@ async def delete_patient_by_name(
     last_name: str,
     user: UserRead = Depends(get_current_user),
 ):
+
     if not await PatientService.delete_patient(first_name, last_name):
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Patient not found.",
         )
+
     return {"message": "Patient deleted successfully."}
 
 
@@ -402,94 +405,6 @@ async def update_note(
             detail="Note not found or could not be updated.",
         )
     return {"message": "Note updated successfully."}
-
-
-###############
-# Attachment
-###############
-@router.post("/{patient_id}/attachments/")
-async def create_attachment(
-    patient_id: int,
-    data: AttachmentCreate,
-    user: UserRead = Depends(get_current_user),
-):
-    id = await AttachmentService.create_attachment(patient_id, data)
-
-    if not id:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Attachment not created.",
-        )
-    return {"id": id, "message": "Attachment created successfully."}
-
-
-@router.get("/{patient_id}/attachments/", response_model=List[AttachmentRead])
-async def get_attachments_by_patient(
-    patient_id: int,
-    user: UserRead = Depends(get_current_user),
-):
-    result = await AttachmentService.get_attachments_by_patient(patient_id)
-    return result
-
-
-@router.get(
-    "/{patient_id}/attachments/{attachment_id}", response_model=AttachmentRead
-)
-async def get_attachment_by_id(
-    patient_id: int,
-    attachment_id: int,
-    user: UserRead = Depends(get_current_user),
-):
-    result = await AttachmentService.get_attachment_by_id(attachment_id)
-    if not result or result.patient_id != patient_id:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Attachment not found.",
-        )
-    return result
-
-
-@router.delete("/{patient_id}/attachments/{attachment_id}")
-async def delete_attachment_by_id(
-    patient_id: int,
-    attachment_id: int,
-    user: UserRead = Depends(get_current_user),
-):
-    # Verify the attachment belongs to the patient before deleting
-    attachment = await AttachmentService.get_attachment_by_id(attachment_id)
-    if not attachment or attachment.patient_id != patient_id:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Attachment not found.",
-        )
-    if not await AttachmentService.delete_attachment_by_id(attachment_id):
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Attachment not found.",
-        )
-    return {"message": "Attachment deleted successfully."}
-
-
-@router.patch("/{patient_id}/attachments/{attachment_id}")
-async def update_attachment(
-    patient_id: int,
-    attachment_id: int,
-    data: AttachmentUpdate,
-    user: UserRead = Depends(get_current_user),
-):
-    # Verify the attachment belongs to the patient before updating
-    attachment = await AttachmentService.get_attachment_by_id(attachment_id)
-    if not attachment or attachment.patient_id != patient_id:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Attachment not found.",
-        )
-    if not await AttachmentService.update_attachment(attachment_id, data):
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Attachment not found or could not be updated.",
-        )
-    return {"message": "Attachment updated successfully."}
 
 
 ###############

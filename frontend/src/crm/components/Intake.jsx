@@ -3,7 +3,7 @@ import { useState } from "react";
 import { HealthServices } from "../../services/healthService";
 import { compressImage } from "../../utils/compressImage";
 
-export default function Intake({ submitStatus, setFormData }) {
+export default function Intake({ submitStatus, setPhotoData }) {
   const navigate = useNavigate();
   const [error, setError] = useState(null);
   const [systemTestStatus, setSystemTestStatus] = useState(null);
@@ -54,28 +54,14 @@ export default function Intake({ submitStatus, setFormData }) {
       }
 
       try {
-        // Compress the image
-        const compressedImage = await compressImage(file, 500); // Target 500KB
-
-        // Final size check
-        if (compressedImage.length > 800 * 1024) {
-          // 800KB final limit
-          alert(
-            "Photo could not be compressed enough. Please choose a smaller image.",
-          );
-          return;
-        }
+        // Create compressed preview for display only
+        const compressedImage = await compressImage(file, 500);
 
         setPhotoPreview(compressedImage);
-        setFormData((prev) => ({
-          ...prev,
-          photo: compressedImage,
-        }));
 
-        // Show success message after compression
-        setPhotoUploadStatus({
-          type: "success",
-          message: `Photo successfully optimized from ${(file.size / 1024).toFixed(1)}KB to ${(compressedImage.length / 1024).toFixed(1)}KB with high quality maintained. Your photo will be attached to the email when you submit the registration.`,
+        setPhotoData({
+          name: file.name,
+          file: file,
         });
       } catch (error) {
         setError("Error compressing image:", error);
@@ -87,10 +73,8 @@ export default function Intake({ submitStatus, setFormData }) {
   const removePhoto = () => {
     setPhotoPreview(null);
     setPhotoUploadStatus(null);
-    setFormData((prev) => ({
-      ...prev,
-      photo: null,
-    }));
+    setPhotoData({});
+
     // Clear both file inputs
     const cameraInput = document.getElementById("photo-camera");
     const uploadInput = document.getElementById("photo-upload");
@@ -349,87 +333,86 @@ export default function Intake({ submitStatus, setFormData }) {
                 </button>
               </div>
             )}
-
-            {/* Photo Upload Status */}
-            {photoUploadStatus && (
-              <div
-                className={`mt-4 p-4 rounded-md ${
-                  photoUploadStatus.type === "success"
-                    ? "bg-green-50 border border-green-200"
-                    : photoUploadStatus.type === "error"
-                      ? "bg-red-50 border border-red-200"
-                      : "bg-blue-50 border border-blue-200"
-                }`}
-              >
-                <div className="flex items-center">
-                  {photoUploadStatus.type === "success" && (
-                    <svg
-                      className="w-5 h-5 text-green-600 mr-2"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M5 13l4 4L19 7"
-                      />
-                    </svg>
-                  )}
-                  {photoUploadStatus.type === "error" && (
-                    <svg
-                      className="w-5 h-5 text-red-600 mr-2"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M6 18L18 6M6 6l12 12"
-                      />
-                    </svg>
-                  )}
-                  {photoUploadStatus.type === "testing" && (
-                    <svg
-                      className="w-5 h-5 text-blue-600 mr-2 animate-spin"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                    >
-                      <circle
-                        className="opacity-25"
-                        cx="12"
-                        cy="12"
-                        r="10"
-                        stroke="currentColor"
-                        strokeWidth="4"
-                      ></circle>
-                      <path
-                        className="opacity-75"
-                        fill="currentColor"
-                        d="m4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                      ></path>
-                    </svg>
-                  )}
-                  <p
-                    className={`text-sm ${
-                      photoUploadStatus.type === "success"
-                        ? "text-green-800"
-                        : photoUploadStatus.type === "error"
-                          ? "text-red-800"
-                          : "text-blue-800"
-                    }`}
-                  >
-                    {photoUploadStatus.message}
-                  </p>
-                </div>
-              </div>
-            )}
           </div>
         </div>
       </div>
     </>
   );
 }
+// {/* Photo Upload Status */}
+// {photoUploadStatus && (
+//   <div
+//     className={`mt-4 p-4 rounded-md ${
+//       photoUploadStatus.type === "success"
+//         ? "bg-green-50 border border-green-200"
+//         : photoUploadStatus.type === "error"
+//           ? "bg-red-50 border border-red-200"
+//           : "bg-blue-50 border border-blue-200"
+//     }`}
+//   >
+//     <div className="flex items-center">
+//       {photoUploadStatus.type === "success" && (
+//         <svg
+//           className="w-5 h-5 text-green-600 mr-2"
+//           fill="none"
+//           stroke="currentColor"
+//           viewBox="0 0 24 24"
+//         >
+//           <path
+//             strokeLinecap="round"
+//             strokeLinejoin="round"
+//             strokeWidth={2}
+//             d="M5 13l4 4L19 7"
+//           />
+//         </svg>
+//       )}
+//       {photoUploadStatus.type === "error" && (
+//         <svg
+//           className="w-5 h-5 text-red-600 mr-2"
+//           fill="none"
+//           stroke="currentColor"
+//           viewBox="0 0 24 24"
+//         >
+//           <path
+//             strokeLinecap="round"
+//             strokeLinejoin="round"
+//             strokeWidth={2}
+//             d="M6 18L18 6M6 6l12 12"
+//           />
+//         </svg>
+//       )}
+//       {photoUploadStatus.type === "testing" && (
+//         <svg
+//           className="w-5 h-5 text-blue-600 mr-2 animate-spin"
+//           fill="none"
+//           viewBox="0 0 24 24"
+//         >
+//           <circle
+//             className="opacity-25"
+//             cx="12"
+//             cy="12"
+//             r="10"
+//             stroke="currentColor"
+//             strokeWidth="4"
+//           ></circle>
+//           <path
+//             className="opacity-75"
+//             fill="currentColor"
+//             d="m4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+//           ></path>
+//         </svg>
+//       )}
+//       <p
+//         className={`text-sm ${
+//           photoUploadStatus.type === "success"
+//             ? "text-green-800"
+//             : photoUploadStatus.type === "error"
+//               ? "text-red-800"
+//               : "text-blue-800"
+//         }`}
+//       >
+//         {photoUploadStatus.message}
+//       </p>
+//     </div>
+//   </div>
+// )}

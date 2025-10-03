@@ -22,6 +22,7 @@ import { useParams } from "react-router-dom";
 import { DEFAULT_FORM } from "../forms/Registration";
 import VoiceFillModal from "../components/VoiceInput";
 import ForceRegisterModal from "../components/ForcePopupModal";
+import { ObjectServices } from "../../services/objectService";
 
 const AdminEdit = () => {
   const { registrationId } = useParams();
@@ -55,6 +56,8 @@ const AdminEdit = () => {
   const [photoUploadStatus, setPhotoUploadStatus] = useState(null);
   const [dispositionSearch, setDispositionSearch] = useState("");
   const [showForceButton, setShowForceButton] = useState(false);
+  const [photoData, setPhotoData] = useState({});
+  const [photoChanged, setPhotoChanged] = useState(false);
 
   const getDefaultForm = () => ({
     ...DEFAULT_FORM,
@@ -141,29 +144,30 @@ const AdminEdit = () => {
     const result = await PatientServices.get_patient_by_id(registrationId);
 
     if (result.success) {
-      setFormData(result.data);
+      // Normalize: replace null with default
+      const normalized = Object.fromEntries(
+        Object.entries(result.data).map(([key, value]) => [
+          key,
+          value ?? DEFAULT_FORM[key] ?? "",
+        ]),
+      );
 
-      // Set photo preview if exists
-      if (result.success) {
-        // Normalize: replace null with default
-        const normalized = Object.fromEntries(
-          Object.entries(result.data).map(([key, value]) => [
-            key,
-            value ?? DEFAULT_FORM[key] ?? "",
-          ]),
-        );
-
-        // Also ensure missing keys are filled from DEFAULT_FORM
-        const merged = { ...DEFAULT_FORM, ...normalized };
-
-        setFormData(merged);
-      }
+      // Also ensure missing keys are filled from DEFAULT_FORM
+      const merged = { ...DEFAULT_FORM, ...normalized };
+      setFormData(merged);
 
       // Load selectedTemplate from database instead of guessing
       if (result.data?.selected_template) {
         setSelectedTemplate(result.data?.selected_template);
       } else {
         setSelectedTemplate("Select");
+      }
+
+      // Get Photo
+      const photoRes = await ObjectServices.get_photo_base64(registrationId);
+
+      if (photoRes.success) {
+        setPhotoPreview(`data:image/jpeg;base64,${photoRes.data?.file}`);
       }
     } else {
       if (result.status === 400 || result.status === 409) {
@@ -172,6 +176,7 @@ const AdminEdit = () => {
         setError("Login failed. Please try again.");
       }
     }
+    setPhotoChanged(false);
     setLoading(false);
   };
 
@@ -298,9 +303,9 @@ const AdminEdit = () => {
       setAvailableReferralSites(result.data);
     } else {
       if (result.status === 400 || result.status === 409) {
-        setError(result.message || "Error getting dispositions.");
+        setError(result.message || "Error getting referral sites.");
       } else {
-        setError("Error getting dispositions. Please try again.");
+        setError("Error getting referral sites. Please try again.");
       }
     }
     setLoading(false);
@@ -324,9 +329,9 @@ const AdminEdit = () => {
       setTemplates(templatesObject);
     } else {
       if (result.status === 400 || result.status === 409) {
-        setError(result.message || "Error getting dispositions.");
+        setError(result.message || "Error getting clinical templates.");
       } else {
-        setError("Error getting dispositions. Please try again.");
+        setError("Error getting clinical templates. Please try again.");
       }
     }
     setLoading(false);
@@ -458,11 +463,34 @@ const AdminEdit = () => {
     );
 
     if (result.success) {
-      setSubmitStatus({
-        type: "success",
-        message:
-          "Changes saved successfully! You can continue editing or return to admin menu or dashboard.",
-      });
+      if (photoData.file) {
+        const photoRes = await ObjectServices.upload_photo(
+          registrationId,
+          photoData.name,
+          photoData.file,
+        );
+        if (photoRes.success) {
+          setSubmitStatus({
+            type: "success",
+            message:
+              "Changes saved successfully! You can continue editing or return to admin menu or dashboard.",
+          });
+        } else {
+          setError(result.message || "Error updatign photo.");
+        }
+      } else if (!photoPreview) {
+        const deleteRes = await ObjectServices.delete_photo(registrationId);
+
+        if (deleteRes.success) {
+          setSubmitStatus({
+            type: "success",
+            message:
+              "Changes saved successfully! You can continue editing or return to admin menu or dashboard.",
+          });
+        } else {
+          setError(result.message || "Error updating photo.");
+        }
+      }
     } else {
       if (result.status === 400 || result.status === 409) {
         if (
@@ -504,8 +532,8 @@ const AdminEdit = () => {
           <form onSubmit={handleSubmit} className="space-y-6">
             <EditPhoto
               saveStatus={saveStatus}
-              formData={formData}
-              setFormData={setFormData}
+              photoData={photoData}
+              setPhotoData={setPhotoData}
               photoPreview={photoPreview}
               setPhotoPreview={setPhotoPreview}
             />
@@ -661,4 +689,3 @@ const AdminEdit = () => {
 };
 
 export default AdminEdit;
-// {isFullScreenPreview && documentPreview && <DocumentPreviewModal />}

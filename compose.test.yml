@@ -72,6 +72,55 @@ services:
       - test_e2e_watch
     command: ["--wait","up"]
 
+  minio:
+    image: minio/minio:latest
+    container_name: minio
+    restart: unless-stopped
+    ports:
+      - "9000:9000"   # API & SDK access
+      - "9001:9001"   # Web console
+    environment:
+      MINIO_ROOT_USER: testuser
+      MINIO_ROOT_PASSWORD: password
+      MINIO_SERVER_URL: https://minio:9000
+    volumes:
+      - minio_data:/data
+      - ./certs/server.crt:/root/.minio/certs/public.crt 
+      - ./certs/server.key:/root/.minio/certs/private.key 
+    networks:
+      - backend-net
+      - db-net
+    profiles:
+      - test
+      - database
+      - test_backend_integration_watch
+      - test_frontend_integration_watch
+      - test_e2e_watch
+    command: server /data --console-address ":9001" --address ":9000"
+
+  minio_init:
+    image: minio/mc:latest
+    depends_on:
+      - minio
+    entrypoint: >
+      /bin/sh -c "
+      sleep 5 &&
+      mkdir -p /root/.mc/certs/CAs &&
+      cp /certs/ca.crt /root/.mc/certs/CAs/ &&
+      mc alias set local https://minio:9000 testuser password --api S3v4 
+      "
+    volumes:
+      - ./certs/ca.crt:/certs/ca.crt
+    networks:
+      - backend-net
+      - db-net
+    profiles:
+      - test
+      - database
+      - test_backend_integration_watch
+      - test_frontend_integration_watch
+      - test_e2e_watch
+
   mongodb:
     image: mongodb/mongodb-community-server:latest
     container_name: mongodb
@@ -262,6 +311,7 @@ volumes:
   mongo_data:
   postgres_test_data:
   node_modules:
+  minio_data:
 
 networks:
   frontend-net:

@@ -158,9 +158,9 @@ export default function ReferralSiteManager({
       setMessage("Created referral-site successfully.");
     } else {
       if (result.status === 400 || result.status === 409) {
-        setError(result.message || "Error getting dispositions.");
+        setError(result.message || "Error creating referral site.");
       } else {
-        setError("Error getting dispositions. Please try again.");
+        setError("Error creating referral site. Please try again.");
       }
     }
     setLoading(false);
@@ -187,9 +187,9 @@ export default function ReferralSiteManager({
       getReferralSites();
     } else {
       if (result.status === 400 || result.status === 409) {
-        setError(result.message || "Error getting dispositions.");
+        setError(result.message || "Error updating referral site.");
       } else {
-        setError("Error getting dispositions. Please try again.");
+        setError("Error updating referral site. Please try again.");
       }
     }
     setLoading(false);
@@ -216,9 +216,9 @@ export default function ReferralSiteManager({
       getReferralSites();
     } else {
       if (result.status === 400 || result.status === 409) {
-        setError(result.message || "Error getting dispositions.");
+        setError(result.message || "Error deleting referral site.");
       } else {
-        setError("Error getting dispositions. Please try again.");
+        setError("Error deleting referral site. Please try again.");
       }
     }
     setLoading(false);

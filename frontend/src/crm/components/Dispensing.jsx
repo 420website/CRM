@@ -27,9 +27,9 @@ export default function Dispensing({ setActiveTab, currentRegistrationId }) {
       setSavedDispensing(result.data || []);
     } else {
       if (result.status === 400 || result.status === 409) {
-        setError(result.message || "Error getting dispositions.");
+        setError(result.message || "Error getting dispensing.");
       } else {
-        setError("Error getting dispositions. Please try again.");
+        setError("Error getting dispensing. Please try again.");
       }
     }
     setLoading(false);
@@ -66,9 +66,9 @@ export default function Dispensing({ setActiveTab, currentRegistrationId }) {
       clearDispensingForm();
     } else {
       if (result.status === 400 || result.status === 409) {
-        setError(result.message || "Error getting dispositions.");
+        setError(result.message || "Error creating dispensing.");
       } else {
-        setError("Error getting dispositions. Please try again.");
+        setError("Error getting dispensing. Please try again.");
       }
     }
     setLoading(false);
@@ -103,9 +103,9 @@ export default function Dispensing({ setActiveTab, currentRegistrationId }) {
       clearDispensingForm();
     } else {
       if (result.status === 400 || result.status === 409) {
-        setError(result.message || "Error getting dispositions.");
+        setError(result.message || "Error update dispensing.");
       } else {
-        setError("Error getting dispositions. Please try again.");
+        setError("Error update dispensing. Please try again.");
       }
     }
     setLoading(false);
@@ -131,9 +131,9 @@ export default function Dispensing({ setActiveTab, currentRegistrationId }) {
       await getDispensing(currentRegistrationId);
     } else {
       if (result.status === 400 || result.status === 409) {
-        setError(result.message || "Error getting dispositions.");
+        setError(result.message || "Error deleting dispensing.");
       } else {
-        setError("Error getting dispositions. Please try again.");
+        setError("Error getting dispensing. Please try again.");
       }
     }
     setLoading(false);

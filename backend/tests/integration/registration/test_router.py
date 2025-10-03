@@ -13,19 +13,17 @@ from app.authentication.router import (
     verify_authenticator_mfa,
     verify_email,
 )
-
+from app.database import minio_client, database
 from app.authentication.schemas import (
     LoginRequest,
     MFAVerifiactionCode,
     RegisterRequest,
 )
 from app.authentication.services import UserService
-from app.database import database
 from app.dependencies import get_current_user, get_user_pending_mfa
 import pyotp
 from app.registration.router import (
     create_activity,
-    create_attachment,
     create_dispensing,
     create_interaction,
     create_medication,
@@ -33,7 +31,6 @@ from app.registration.router import (
     create_patient,
     create_test,
     delete_activity_by_id,
-    delete_attachment_by_id,
     delete_dispensing_by_id,
     delete_interaction_by_id,
     delete_medication_by_id,
@@ -43,8 +40,6 @@ from app.registration.router import (
     delete_test_by_id,
     get_activities_by_patient,
     get_activity_by_id,
-    get_attachment_by_id,
-    get_attachments_by_patient,
     get_dispensing_by_id,
     get_dispensings_by_patient,
     get_interaction_by_id,
@@ -58,7 +53,6 @@ from app.registration.router import (
     get_test_by_id,
     get_tests_by_patient,
     update_activity,
-    update_attachment,
     update_dispensing,
     update_interaction,
     update_medication,
@@ -70,8 +64,6 @@ from app.registration.router import (
 from app.registration.schemas import (
     ActivityCreate,
     ActivityUpdate,
-    AttachmentCreate,
-    AttachmentUpdate,
     DispensingCreate,
     DispensingUpdate,
     InteractionCreate,
@@ -171,6 +163,7 @@ class TestPatientRouter(IsolatedAsyncioTestCase):
     @classmethod
     async def asyncTearDownClass(cls):
         await database.connect()
+
         await UserService.delete_user(email, password)
         await database.disconnect()
 
@@ -180,6 +173,8 @@ class TestPatientRouter(IsolatedAsyncioTestCase):
 
     async def asyncSetUp(self) -> None:
         await database.connect()
+        await minio_client.connect()
+
         asyncio.get_event_loop().set_debug(False)
 
         self.patient_data = PatientCreate(
@@ -196,6 +191,7 @@ class TestPatientRouter(IsolatedAsyncioTestCase):
         )
 
     async def asyncTearDown(self):
+        await minio_client.disconnect()
         await database.disconnect()
 
     # create patient
@@ -1139,215 +1135,6 @@ class TestPatientNotesRouter(IsolatedAsyncioTestCase):
 
         self.assertEqual(cm.exception.status_code, 404)
         self.assertIn("Note not found.", str(cm.exception.detail))
-
-        # Cleanup
-        await PatientService.delete_patient_by_id(patient_id)
-
-
-###############
-# Attachments
-###############
-email = "test497@example.com"
-password = "securepassword123"
-
-
-class TestPatientAttachmentsRouter(IsolatedAsyncioTestCase):
-    @classmethod
-    async def get_validated_user(cls):
-        token = await mock_register()
-        await verify_email(token)
-        response = await login(login_request)
-
-        credentials = HTTPAuthorizationCredentials(
-            scheme="Bearer",
-            credentials=response.access_token,
-        )
-
-        user = await get_user_pending_mfa(credentials=credentials)
-        response = await setup_authenticator_mfa(user)
-        totp = pyotp.TOTP(response.secret)
-        code = totp.now()
-
-        user = await get_user_pending_mfa(credentials=credentials)
-        response = Response()
-        result = await verify_authenticator_mfa(
-            MFAVerifiactionCode(code=code), response, user
-        )
-
-        credentials = HTTPAuthorizationCredentials(
-            scheme="Bearer",
-            credentials=result.access_token,
-        )
-
-        user = await get_current_user(credentials=credentials)
-        return user
-
-    @classmethod
-    async def asyncSetUpClass(cls):
-        await database.connect()
-
-        await UserService.delete_user(email, password)
-        cls.user = await cls.get_validated_user()
-        await database.disconnect()
-
-    @classmethod
-    async def asyncTearDownClass(cls):
-        await database.connect()
-        await UserService.delete_user(email, password)
-        await database.disconnect()
-
-    @property
-    def user(self):
-        return self.__class__.user
-
-    async def mock_create_patient(self, name: str):
-        """Helper to create a test patient using class user"""
-        patient_data = PatientCreate(
-            first_name=name,
-            last_name="Doe",
-            dob=date(1990, 1, 1),
-            age=33,
-            gender="Male",
-            email="jim.doe@example.com",
-            phone1="416-555-0123",
-            status="pending",
-            health_card="1234567890",
-            health_card_version="AB",
-        )
-
-        result = await create_patient(patient_data, self.user)
-        return result["patient_id"]
-
-    async def mock_create_attachment(self, patient_id):
-        """Helper to create an attachment for a patient"""
-        attachment_data = AttachmentCreate(
-            filename="test_document.pdf",
-            type="document",
-            url="https://example.com/test_document.pdf",
-            document_type="Lab Report",
-            original_url="https://example.com/test_document.pdf",
-            is_local=True,
-        )
-
-        await create_attachment(patient_id, attachment_data, self.user)
-
-        # Get the created attachment to return its ID
-        attachments = await get_attachments_by_patient(patient_id, self.user)
-        return attachments[0].id if attachments else None
-
-    async def asyncSetUp(self) -> None:
-        await database.connect()
-        asyncio.get_event_loop().set_debug(False)
-
-        self.patient_data = PatientCreate(
-            first_name="Jim",
-            last_name="Doe",
-            dob=date(1990, 1, 1),
-            age=33,
-            gender="Male",
-            email="jim.doe@example.com",
-            phone1="416-555-0123",
-            status="pending",
-            health_card="1234567890",
-            health_card_version="AB",
-        )
-
-        # Attachment test data
-        self.attachment_data = AttachmentCreate(
-            filename="test_document.pdf",
-            type="document",
-            document_type="lab_report",
-            is_local=True,
-            url="https://example.com/test_document.pdf",
-            original_url="https://example.com/test_document.pdf",
-        )
-
-        self.attachment_update_data = AttachmentUpdate(
-            filename="updated_document.pdf", type="image"
-        )
-
-    async def asyncTearDown(self):
-        await database.disconnect()
-
-    async def test_create_attachment_success(self):
-        patient_id = await self.mock_create_patient("Jim")
-        result = await create_attachment(
-            patient_id, self.attachment_data, self.user
-        )
-
-        self.assertEqual(result["message"], "Attachment created successfully.")
-
-        # Cleanup
-        await PatientService.delete_patient_by_id(patient_id)
-
-    async def test_get_attachments_by_patient_success(self):
-        patient_id = await self.mock_create_patient("Jim")
-        await self.mock_create_attachment(patient_id)
-
-        result = await get_attachments_by_patient(patient_id, self.user)
-
-        self.assertIsInstance(result, list)
-        self.assertGreaterEqual(len(result), 1)
-        self.assertEqual(result[0].filename, "test_document.pdf")
-
-        # Cleanup
-        await PatientService.delete_patient_by_id(patient_id)
-
-    async def test_get_attachment_by_id_success(self):
-        patient_id = await self.mock_create_patient("Jim")
-        attachment_id = await self.mock_create_attachment(patient_id)
-
-        result = await get_attachment_by_id(
-            patient_id, attachment_id, self.user
-        )
-
-        self.assertEqual(result.id, attachment_id)
-        self.assertEqual(result.patient_id, patient_id)
-        self.assertEqual(result.filename, "test_document.pdf")
-
-        # Cleanup
-        await PatientService.delete_patient_by_id(patient_id)
-
-    async def test_update_attachment_success(self):
-        patient_id = await self.mock_create_patient("Jim")
-        attachment_id = await self.mock_create_attachment(patient_id)
-
-        result = await update_attachment(
-            patient_id, attachment_id, self.attachment_update_data, self.user
-        )
-
-        self.assertEqual(result["message"], "Attachment updated successfully.")
-
-        # Verify update
-        updated_attachment = await get_attachment_by_id(
-            patient_id, attachment_id, self.user
-        )
-        self.assertEqual(updated_attachment.filename, "updated_document.pdf")
-
-        # Cleanup
-        await PatientService.delete_patient_by_id(patient_id)
-
-    async def test_delete_attachment_by_id_success(self):
-        patient_id = await self.mock_create_patient("Jim")
-        attachment_id = await self.mock_create_attachment(patient_id)
-
-        result = await delete_attachment_by_id(
-            patient_id, attachment_id, self.user
-        )
-
-        self.assertEqual(result["message"], "Attachment deleted successfully.")
-
-        # Cleanup
-        await PatientService.delete_patient_by_id(patient_id)
-
-    async def test_get_attachment_by_id_not_found(self):
-        patient_id = await self.mock_create_patient("Jim")
-
-        with self.assertRaises(HTTPException) as cm:
-            await get_attachment_by_id(patient_id, 99999, self.user)
-
-        self.assertEqual(cm.exception.status_code, 404)
-        self.assertIn("Attachment not found.", str(cm.exception.detail))
 
         # Cleanup
         await PatientService.delete_patient_by_id(patient_id)

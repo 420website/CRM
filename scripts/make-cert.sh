@@ -11,7 +11,7 @@ if ! command -v mkcert &>/dev/null; then
 fi
 
 # Generate CA and server certificates
-mkcert -cert-file ./certs/server.crt -key-file ./certs/server.key postgres_dev localhost 127.0.0.1
+mkcert -cert-file ./certs/server.crt -key-file ./certs/server.key postgres_dev localhost minio 127.0.0.1
 cp "$(mkcert -CAROOT)/rootCA.pem" ./certs/ca.crt
 
 # Set proper permissions

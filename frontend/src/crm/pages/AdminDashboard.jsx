@@ -6,6 +6,7 @@ import RegistrationItem from "../ui/RegistrationItem";
 import ActivityItem from "../ui/ActivityItem";
 import { useAuth } from "../../context/AuthContext";
 import { GeneralServices } from "../../services/generalService";
+import { ObjectServices } from "../../services/objectService";
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
@@ -87,9 +88,9 @@ const AdminDashboard = () => {
       setAvailableReferralSites(result.data);
     } else {
       if (result.status === 400 || result.status === 409) {
-        setError(result.message || "Error getting dispositions.");
+        setError(result.message || "Error getting referral sites.");
       } else {
-        setError("Error getting dispositions. Please try again.");
+        setError("Error getting referral sites. Please try again.");
       }
     }
     setLoading(false);
@@ -256,9 +257,9 @@ const AdminDashboard = () => {
       await fetchDashboardStats();
     } else {
       if (result.status === 400 || result.status === 409) {
-        setError(result.message || "Error getting dispositions.");
+        setError(result.message || "Error deleting patient.");
       } else {
-        setError("Error getting dispositions. Please try again.");
+        setError("Error deleting patient. Please try again.");
       }
     }
     setDeletingId(null);
@@ -283,9 +284,9 @@ const AdminDashboard = () => {
       await fetchDashboardStats();
     } else {
       if (result.status === 400 || result.status === 409) {
-        setError(result.message || "Error getting dispositions.");
+        setError(result.message || "Error updating patient status.");
       } else {
-        setError("Error getting dispositions. Please try again.");
+        setError("Error updating patient status. Please try again.");
       }
     }
     setFinalizingId(null);
@@ -309,9 +310,9 @@ const AdminDashboard = () => {
       await fetchDashboardStats();
     } else {
       if (result.status === 400 || result.status === 409) {
-        setError(result.message || "Error getting dispositions.");
+        setError(result.message || "Error updating patient status.");
       } else {
-        setError("Error getting dispositions. Please try again.");
+        setError("Error updating patient status. Please try again.");
       }
     }
     setFinalizingId(null);
