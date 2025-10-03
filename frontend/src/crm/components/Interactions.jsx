@@ -30,9 +30,9 @@ export default function Interactions({ setActiveTab, currentRegistrationId }) {
       setSavedInteractions(result.data || []);
     } else {
       if (result.status === 400 || result.status === 409) {
-        setError(result.message || "Error getting dispositions.");
+        setError(result.message || "Error getting interactions.");
       } else {
-        setError("Error getting dispositions. Please try again.");
+        setError("Error getting interactions. Please try again.");
       }
     }
     setLoading(false);
@@ -69,9 +69,9 @@ export default function Interactions({ setActiveTab, currentRegistrationId }) {
       clearInteractionForm();
     } else {
       if (result.status === 400 || result.status === 409) {
-        setError(result.message || "Error getting dispositions.");
+        setError(result.message || "Error creating interaction.");
       } else {
-        setError("Error getting dispositions. Please try again.");
+        setError("Error creating interaction. Please try again.");
       }
     }
     setLoading(false);
@@ -106,9 +106,9 @@ export default function Interactions({ setActiveTab, currentRegistrationId }) {
       clearInteractionForm();
     } else {
       if (result.status === 400 || result.status === 409) {
-        setError(result.message || "Error getting dispositions.");
+        setError(result.message || "Error updating interaction.");
       } else {
-        setError("Error getting dispositions. Please try again.");
+        setError("Error updating interaction. Please try again.");
       }
     }
     setLoading(false);
@@ -132,9 +132,9 @@ export default function Interactions({ setActiveTab, currentRegistrationId }) {
       await getInteractions(currentRegistrationId);
     } else {
       if (result.status === 400 || result.status === 409) {
-        setError(result.message || "Error getting dispositions.");
+        setError(result.message || "Error deleting interaction.");
       } else {
-        setError("Error getting dispositions. Please try again.");
+        setError("Error deleting interaction. Please try again.");
       }
     }
     setLoading(false);

@@ -28,9 +28,9 @@ export default function Activities({ setActiveTab, currentRegistrationId }) {
       setSavedActivities(result.data || []);
     } else {
       if (result.status === 400 || result.status === 409) {
-        setError(result.message || "Error getting dispositions.");
+        setError(result.message || "Error getting activities.");
       } else {
-        setError("Error getting dispositions. Please try again.");
+        setError("Error getting activities. Please try again.");
       }
     }
     setLoading(false);
@@ -63,9 +63,9 @@ export default function Activities({ setActiveTab, currentRegistrationId }) {
       clearActivityForm();
     } else {
       if (result.status === 400 || result.status === 409) {
-        setError(result.message || "Error getting dispositions.");
+        setError(result.message || "Error creating activity.");
       } else {
-        setError("Error getting dispositions. Please try again.");
+        setError("Error creating activity. Please try again.");
       }
     }
     setIsSavingActivity(false);
@@ -100,9 +100,9 @@ export default function Activities({ setActiveTab, currentRegistrationId }) {
       clearActivityForm();
     } else {
       if (result.status === 400 || result.status === 409) {
-        setError(result.message || "Error getting dispositions.");
+        setError(result.message || "Error updating activity.");
       } else {
-        setError("Error getting dispositions. Please try again.");
+        setError("Error updating activity. Please try again.");
       }
     }
     setIsSavingActivity(false);
@@ -126,9 +126,9 @@ export default function Activities({ setActiveTab, currentRegistrationId }) {
       await getActivities(currentRegistrationId);
     } else {
       if (result.status === 400 || result.status === 409) {
-        setError(result.message || "Error getting dispositions.");
+        setError(result.message || "Error deleting activity.");
       } else {
-        setError("Error getting dispositions. Please try again.");
+        setError("Error deleting activity. Please try again.");
       }
     }
     setLoading(false);

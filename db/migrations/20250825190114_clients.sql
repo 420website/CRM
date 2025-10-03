@@ -52,7 +52,7 @@ CREATE TABLE patients (
     selected_template VARCHAR(200),         -- foreign key if linking to templates
     summary_template TEXT,
     test_type VARCHAR(50),                  -- e.g. "Tests"
-    photo TEXT,                             -- base64 or URL
+    -- photo TEXT,                             -- base64 or URL
 
     -- Timestamps
     finalized_at TIMESTAMPTZ DEFAULT NULL,
@@ -65,6 +65,27 @@ CREATE UNIQUE INDEX unique_health_card
     ON patients (health_card)
     WHERE health_card <> '0000000000';
 
+-- Table tracks metadata for photos stored in object storage
+CREATE TABLE IF NOT EXISTS patient_photos (
+  id SERIAL PRIMARY KEY,
+  patient_id INTEGER NOT NULL UNIQUE REFERENCES patients(id) ON DELETE CASCADE,
+  photo_name VARCHAR(100) NOT NULL,
+  photo_key VARCHAR(200) NOT NULL,
+  -- mime_type VARCHAR(100),
+  uploaded_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS attachments (
+    id SERIAL PRIMARY KEY,
+    patient_id INTEGER NOT NULL REFERENCES patients(id) ON DELETE CASCADE,
+    file_name VARCHAR(255) NOT NULL,
+    file_key VARCHAR(500) NOT NULL,
+    file_size BIGINT,
+    mime_type VARCHAR(100),
+    document_type VARCHAR(255) NOT NULL,
+    uploaded_at TIMESTAMPTZ DEFAULT NOW(),
+    UNIQUE (patient_id , file_name)
+);
 
 -- Create test_results table that references the patients table
 CREATE TABLE tests (
@@ -100,22 +121,6 @@ CREATE TABLE notes (
     template_type VARCHAR(50) NOT NULL,
     note_date DATE NOT NULL DEFAULT CURRENT_DATE,
     note_text TEXT NOT NULL,
-    created_at TIMESTAMPTZ DEFAULT NOW(),
-    updated_at TIMESTAMPTZ DEFAULT NOW()
-);
-
--- Create attachments table that references the patients table
-CREATE TABLE attachments (
-    id SERIAL PRIMARY KEY,
-    patient_id INTEGER NOT NULL REFERENCES patients(id) ON DELETE CASCADE,
-    type VARCHAR(100),
-    filename VARCHAR(255) NOT NULL,
-    url TEXT,
-    document_type VARCHAR(100),
-    is_local BOOLEAN DEFAULT false,
-    original_url TEXT,
-    file_size INTEGER,
-    mime_type VARCHAR(100),
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
@@ -174,6 +179,7 @@ CREATE TABLE activities (
 
 -- migrate:down
 DROP TABLE IF EXISTS patients;
+DROP TABLE IF EXISTS patient_photos;
 DROP TABLE IF EXISTS tests;
 DROP TABLE IF EXISTS notes;
 DROP TABLE IF EXISTS attachments;

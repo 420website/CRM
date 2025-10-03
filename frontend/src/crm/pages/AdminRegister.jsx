@@ -22,6 +22,7 @@ import RegistrationSaved from "../components/RegistrationSaved";
 import { DEFAULT_FORM } from "../forms/Registration";
 import VoiceFillModal from "../components/VoiceInput";
 import ForceRegisterModal from "../components/ForcePopupModal";
+import { ObjectServices } from "../../services/objectService";
 
 const AdminRegister = () => {
   const [error, setError] = useState("");
@@ -51,6 +52,7 @@ const AdminRegister = () => {
   const [photoUploadStatus, setPhotoUploadStatus] = useState(null);
   const [currentVoiceDateField, setCurrentVoiceDateField] = useState("");
   const [dispositionSearch, setDispositionSearch] = useState("");
+  const [photoData, setPhotoData] = useState({});
 
   const getDefaultForm = () => ({
     ...DEFAULT_FORM,
@@ -247,9 +249,9 @@ const AdminRegister = () => {
       setAvailableReferralSites(result.data);
     } else {
       if (result.status === 400 || result.status === 409) {
-        setError(result.message || "Error getting dispositions.");
+        setError(result.message || "Error getting referral sites.");
       } else {
-        setError("Error getting dispositions. Please try again.");
+        setError("Error getting referral sites. Please try again.");
       }
     }
     setLoading(false);
@@ -273,9 +275,9 @@ const AdminRegister = () => {
       setTemplates(templatesObject);
     } else {
       if (result.status === 400 || result.status === 409) {
-        setError(result.message || "Error getting dispositions.");
+        setError(result.message || "Error getting clinical templates.");
       } else {
-        setError("Error getting dispositions. Please try again.");
+        setError("Error getting clinical templates. Please try again.");
       }
     }
     setLoading(false);
@@ -289,6 +291,7 @@ const AdminRegister = () => {
 
   const resetForm = async () => {
     setFormData(getDefaultForm());
+    setPhotoData({});
     setPhotoPreview(null);
     setPhotoUploadStatus(null);
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -410,19 +413,38 @@ const AdminRegister = () => {
         setIsSubmitting(false);
         return;
       }
+
       setCurrentRegistrationId(id);
+      if (photoData.file) {
+        const photoRes = await ObjectServices.upload_photo(
+          id,
+          photoData.name,
+          photoData.file,
+        );
 
-      setSubmitStatus({
-        type: "success",
-        message:
-          "Registration saved for review! You can now access the dashboard to review and finalize registrations.",
-        id: id,
-      });
+        if (photoRes.success) {
+          setSubmitStatus({
+            type: "success",
+            message:
+              "Registration saved for review! You can now access the dashboard to review and finalize registrations.",
+            id: id,
+          });
 
-      // Trigger dashboard refresh
-      localStorage.setItem("new_registration_submitted", Date.now().toString());
+          resetForm();
+        } else {
+          window.scrollTo({ top: 0, behavior: "smooth" });
+          setError(result.message || "Invalid credentials.");
+        }
+      } else {
+        setSubmitStatus({
+          type: "success",
+          message:
+            "Registration saved for review! You can now access the dashboard to review and finalize registrations.",
+          id: id,
+        });
 
-      resetForm();
+        resetForm();
+      }
     } else {
       window.scrollTo({ top: 0, behavior: "smooth" });
       if (result.status === 400 || result.status === 409) {
@@ -463,7 +485,7 @@ const AdminRegister = () => {
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
         <div className="bg-white rounded-lg shadow-md p-4">
           <form onSubmit={handleSubmit} className="space-y-6">
-            <Intake submitStatus={submitStatus} setFormData={setFormData} />
+            <Intake submitStatus={submitStatus} setPhotoData={setPhotoData} />
 
             {/* Tabs Navigation */}
             <div className="border-b border-gray-200 mb-6 relative">

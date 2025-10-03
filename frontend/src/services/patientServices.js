@@ -172,44 +172,6 @@ export const PatientServices = {
     );
   },
   // ======================
-  // Attachment
-  // ======================
-  create_attachment: async (patient_id, data) => {
-    return apiCall(
-      () => api.post(`/patients/${patient_id}/attachments/`, data),
-      "Creating attachment failed.",
-    );
-  },
-
-  get_attachments_by_patient: async (patient_id) => {
-    return apiCall(
-      () => api.get(`/patients/${patient_id}/attachments/`),
-      "Fetching attachments by patient failed.",
-    );
-  },
-
-  get_attachment_by_id: async (patient_id, attachment_id) => {
-    return apiCall(
-      () => api.get(`/patients/${patient_id}/attachments/${attachment_id}`),
-      "Fetching attachment by ID failed.",
-    );
-  },
-
-  update_attachment: async (patient_id, attachment_id, data) => {
-    return apiCall(
-      () =>
-        api.patch(`/patients/${patient_id}/attachments/${attachment_id}`, data),
-      "Updating attachment failed.",
-    );
-  },
-
-  delete_attachment_by_id: async (patient_id, attachment_id) => {
-    return apiCall(
-      () => api.delete(`/patients/${patient_id}/attachments/${attachment_id}`),
-      "Deleting attachment failed.",
-    );
-  },
-  // ======================
   // Dispensing
   // ======================
   create_dispensing: async (patient_id, data) => {

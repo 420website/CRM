@@ -22,6 +22,10 @@ x-backend-base: &backend_base
     - SMTP_PASSWORD=password
     - SUPPORT_EMAIL=example@email.com
     - ENVIRONMENT=Testing
+    - MINIO_SERVER_URL=http://minio:9000
+    - MINIO_KEY_ID=testuser
+    - MINIO_ACCESS_KEY=password
+    - MINIO_VERIFY=False
   networks:
       - frontend-net 
       - backend-net 
@@ -72,6 +76,49 @@ services:
       - test_e2e_watch
     command: ["--wait","up"]
 
+  minio:
+    image: minio/minio:latest
+    container_name: minio
+    restart: unless-stopped
+    ports:
+      - "9000:9000"   # API & SDK access
+      - "9001:9001"   # Web console
+    environment:
+      MINIO_ROOT_USER: testuser
+      MINIO_ROOT_PASSWORD: password
+      MINIO_SERVER_URL: http://minio:9000
+    volumes:
+      - minio_data:/data
+    networks:
+      - backend-net
+      - db-net
+    profiles:
+      - test
+      - database
+      - test_backend_integration_watch
+      - test_frontend_integration_watch
+      - test_e2e_watch
+    command: server /data --console-address ":9001" --address ":9000"
+
+  minio_init:
+    image: minio/mc:latest
+    depends_on:
+      - minio
+    entrypoint: >
+      /bin/sh -c "
+      sleep 5 &&
+      mc alias set local http://minio:9000 testuser password --api S3v4 
+      "
+    networks:
+      - backend-net
+      - db-net
+    profiles:
+      - test
+      - database
+      - test_backend_integration_watch
+      - test_frontend_integration_watch
+      - test_e2e_watch
+
   mongodb:
     image: mongodb/mongodb-community-server:latest
     container_name: mongodb
@@ -119,6 +166,10 @@ services:
       - SMTP_EMAIL=email@exmaple.com
       - SMTP_PASSWORD=password
       - ENVIRONMENT=Testing
+      - MINIO_SERVER_URL=http://minio:9000
+      - MINIO_KEY_ID=testuser
+      - MINIO_ACCESS_KEY=password
+      - MINIO_VERIFY=False
     volumes:
       - ./scripts/wait-for-db.sh:/scripts/wait-for-db.sh
       - ./backend:/backend 
@@ -262,6 +313,7 @@ volumes:
   mongo_data:
   postgres_test_data:
   node_modules:
+  minio_data:
 
 networks:
   frontend-net:

@@ -4,16 +4,18 @@ import { tokenManager } from "../../src/tokenManager";
 import { PatientServices } from "../../src/services/patientServices";
 import { ShareLinkServices } from "../../src/services/shareLinkService";
 import { AuthServices } from "../../src/services/authService";
+import { ObjectServices } from "../../src/services/objectService";
+import { readFileSync } from "fs";
 
 describe("ShareLinkServices", () => {
   let createdPatientId;
-  let createdAttachmentId;
-
+  const fileName = "sample.pdf";
+  const filePath = "tests/integration/docs/sample.pdf";
   const email = "test_share_links@example.com";
   const password = "password123";
 
   const patientForm = {
-    first_name: "Eveyy",
+    first_name: "Atom",
     last_name: "Williams",
     dob: "1991-09-05",
     patient_consent: "verbal",
@@ -33,14 +35,11 @@ describe("ShareLinkServices", () => {
     language: "English",
   };
 
-  const attachmentFormData = {
-    type: "PDF",
-    filename: "test_document.pdf",
-    url: "data:application/pdf;base64,JVBERi0xLjQKJcfs...", // base64 string
-    document_type: "Medical Report",
-    is_local: true,
-    original_url: "data:application/pdf;base64,JVBERi0xLjQKJcfs...",
-  };
+  // Create a File object (or Blob)
+  const fileBuffer = readFileSync(filePath);
+  const file = new File([fileBuffer], fileName, {
+    type: "application/pdf",
+  });
 
   beforeEach(async () => {
     // Register + login + MFA
@@ -58,16 +57,16 @@ describe("ShareLinkServices", () => {
     const patientRes = await PatientServices.create_patient(patientForm);
     createdPatientId = patientRes.data?.patient_id;
 
-    // Attachment
-    const attachmentRes = await PatientServices.create_attachment(
+    await ObjectServices.upload_attachment(
       createdPatientId,
-      attachmentFormData,
+      file,
+      "Lab Report",
     );
-    createdAttachmentId = attachmentRes.data?.id;
   });
 
   afterEach(async () => {
     if (createdPatientId) {
+      await ObjectServices.delete_attachment(createdPatientId, fileName);
       await PatientServices.delete_patient_by_id(createdPatientId);
       createdPatientId = null;
     }
@@ -75,8 +74,14 @@ describe("ShareLinkServices", () => {
   });
 
   it("should get share link with a token", async () => {
-    const response =
-      await ShareLinkServices.get_share_link(createdAttachmentId);
+    const attachments =
+      await ObjectServices.get_attachments_by_patient(createdPatientId);
+
+    const attachment = attachments.data[0];
+    const attachmentId = attachment.id;
+
+    // Test
+    const response = await ShareLinkServices.get_share_link(attachmentId);
 
     expect(response.success).toBe(true);
     expect(response.data?.share_url).toBeTruthy();
@@ -91,8 +96,13 @@ describe("ShareLinkServices", () => {
   });
 
   it("should access share-link successfully", async () => {
-    const response =
-      await ShareLinkServices.get_share_link(createdAttachmentId);
+    const attachments =
+      await ObjectServices.get_attachments_by_patient(createdPatientId);
+
+    const attachment = attachments.data[0];
+    const attachmentId = attachment.id;
+
+    const response = await ShareLinkServices.get_share_link(attachmentId);
 
     const url = response.data?.share_url;
     const token = url.split("token=")[1];
@@ -100,17 +110,25 @@ describe("ShareLinkServices", () => {
     // test
     const result = await ShareLinkServices.access_link(token);
 
-    // validate
-    expect(result.success).toBe(true);
-    expect(result.data?.type, attachmentFormData.type);
-    expect(result.data?.filename, attachmentFormData.filename);
-    expect(result.data?.document_type, attachmentFormData.document_type);
-    expect(result.data?.original_url, attachmentFormData.original_url);
-    expect(result.data?.url, attachmentFormData.url);
+    // Convert to buffer
+    const downloadedBuffer = Buffer.from(
+      result.data,
+      result.data instanceof ArrayBuffer ? undefined : "binary",
+    );
+
+    // Compare
+    expect(result.success).toBeTruthy();
+    expect(downloadedBuffer.length).toBe(fileBuffer.length);
+    expect(Buffer.compare(downloadedBuffer, fileBuffer)).toBe(0);
   });
 
   it("should access share-link invalid successfully", async () => {
-    await ShareLinkServices.get_share_link(createdAttachmentId);
+    const attachments =
+      await ObjectServices.get_attachments_by_patient(createdPatientId);
+
+    const attachment = attachments.data[0];
+    const attachmentId = attachment.id;
+    await ShareLinkServices.get_share_link(attachmentId);
 
     // test
     const result = await ShareLinkServices.access_link("invalid_token");
@@ -118,6 +136,5 @@ describe("ShareLinkServices", () => {
     // validate
     expect(result.success).toBe(false);
     expect(result.status).toBe(401);
-    expect(result.message).toBe("Url has expired.");
   });
 });

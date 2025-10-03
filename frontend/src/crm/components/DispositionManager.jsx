@@ -151,9 +151,9 @@ export default function DispositionManager({
       setMessage("Created disposition successfully.");
     } else {
       if (result.status === 400 || result.status === 409) {
-        setError(result.message || "Error getting dispositions.");
+        setError(result.message || "Error creating dispositions.");
       } else {
-        setError("Error getting dispositions. Please try again.");
+        setError("Error creating dispositions. Please try again.");
       }
     }
     setLoading(false);
@@ -180,9 +180,9 @@ export default function DispositionManager({
       getDispositions();
     } else {
       if (result.status === 400 || result.status === 409) {
-        setError(result.message || "Error getting dispositions.");
+        setError(result.message || "Error update dispositions.");
       } else {
-        setError("Error getting dispositions. Please try again.");
+        setError("Error update dispositions. Please try again.");
       }
     }
     setLoading(false);
@@ -209,9 +209,9 @@ export default function DispositionManager({
       getDispositions();
     } else {
       if (result.status === 400 || result.status === 409) {
-        setError(result.message || "Error getting dispositions.");
+        setError(result.message || "Error deleting dispositions.");
       } else {
-        setError("Error getting dispositions. Please try again.");
+        setError("Error deleting dispositions. Please try again.");
       }
     }
     setLoading(false);

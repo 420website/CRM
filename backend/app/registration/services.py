@@ -5,9 +5,6 @@ from app.registration.schemas import (
     ActivityCreate,
     ActivityRead,
     ActivityUpdate,
-    AttachmentCreate,
-    AttachmentRead,
-    AttachmentUpdate,
     DispensingCreate,
     DispensingRead,
     DispensingUpdate,
@@ -45,12 +42,12 @@ class PatientService:
             hiv_date, hiv_result, hiv_tester, hiv_type, rna_available, 
             rna_result, rna_sample_date, referral_site, referral_person, 
             reg_date, special_attention, instructions, selected_template, 
-            summary_template, test_type, photo
+            summary_template, test_type
         )
         VALUES (
             $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15,
             $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28,
-            $29, $30, $31, $32, $33, $34, $35, $36, $37, $38, $39, $40, $41
+            $29, $30, $31, $32, $33, $34, $35, $36, $37, $38, $39, $40
         )
         RETURNING id;
         """
@@ -99,7 +96,6 @@ class PatientService:
                     patient.selected_template,
                     patient.summary_template,
                     patient.test_type,
-                    patient.photo,
                 )
                 if row and "id" in row:
                     return row["id"]
@@ -450,126 +446,6 @@ class NoteService:
         ]
         query = f"UPDATE notes SET {', '.join(set_clauses)} WHERE id = ${len(updates)+1} RETURNING id;"
         values = list(updates.values()) + [note_id]
-        async with database.get_transaction() as conn:
-            row = await conn.fetchrow(query, *values)
-            return bool(row)
-
-
-class AttachmentService:
-    # Attachments
-    @staticmethod
-    async def create_attachment(
-        patient_id: int, attachment: AttachmentCreate
-    ) -> int | None:
-        query = """
-        INSERT INTO attachments (
-            patient_id, type, filename, url, document_type, is_local,
-            original_url, file_size, mime_type
-        )
-        VALUES (
-            $1, $2, $3, $4, $5, $6, $7, $8, $9
-        )
-        RETURNING id;
-        """
-        async with database.get_transaction() as conn:
-            row = await conn.fetchrow(
-                query,
-                patient_id,
-                attachment.type,
-                attachment.filename,
-                attachment.url,
-                attachment.document_type,
-                attachment.is_local,
-                attachment.original_url,
-                attachment.file_size,
-                attachment.mime_type,
-            )
-        if row and "id" in row:
-            return row["id"]
-        return None
-
-    @staticmethod
-    async def get_attachments() -> List[AttachmentRead]:
-        query = """
-        SELECT * 
-        FROM attachments 
-        ORDER BY created_at DESC; 
-        """
-        async with database.get_connection() as conn:
-            rows = await conn.fetch(query)
-        result = []
-        if rows:
-            for row in rows:
-                result.append(AttachmentRead(**dict(row)))
-        return result
-
-    @staticmethod
-    async def get_attachments_by_patient(
-        patient_id: int,
-    ) -> List[AttachmentRead]:
-        query = """
-        SELECT * 
-        FROM attachments 
-        WHERE patient_id = $1 
-        ORDER BY created_at DESC;
-        """
-        async with database.get_connection() as conn:
-            rows = await conn.fetch(query, patient_id)
-        result = []
-        if rows:
-            for row in rows:
-                result.append(AttachmentRead(**dict(row)))
-        return result
-
-    @staticmethod
-    async def get_attachment_by_id(id: int) -> Union[AttachmentRead, None]:
-        query = """
-        SELECT * 
-        FROM attachments  
-        WHERE id = $1; 
-        """
-        async with database.get_connection() as conn:
-            row = await conn.fetchrow(query, id)
-
-        if row:
-            return AttachmentRead(**dict(row)) if row else None
-
-    @staticmethod
-    async def get_attachemnt_by_id(id: int) -> Union[AttachmentRead, None]:
-        query = """
-        SELECT * 
-        FROM attachments 
-        WHERE id = $1; 
-        """
-        async with database.get_connection() as conn:
-            row = await conn.fetch(query, id)
-
-        if row:
-            return AttachmentRead(**dict(row)) if row else None
-
-    @staticmethod
-    async def delete_attachment_by_id(id: int) -> bool:
-        query = """DELETE FROM attachments WHERE id=$1 RETURNING id;"""
-
-        async with database.get_transaction() as conn:
-            row = await conn.fetchrow(query, id)
-            return bool(row)
-
-    @staticmethod
-    async def update_attachment(
-        attachment_id: int,
-        attachment_updates: AttachmentUpdate,
-    ) -> bool:
-        updates = attachment_updates.model_dump(exclude_unset=True)
-
-        if not updates:
-            return False
-
-        set_clauses = [
-            f"{field} = ${i+1}" for i, field in enumerate(updates.keys())
-        ]
-        query = f"UPDATE attachments SET {', '.join(set_clauses)} WHERE id = ${len(updates)+1} RETURNING id;"
-        values = list(updates.values()) + [attachment_id]
         async with database.get_transaction() as conn:
             row = await conn.fetchrow(query, *values)
             return bool(row)

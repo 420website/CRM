@@ -1,4 +1,3 @@
-import axios from "axios";
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import { AuthServices } from "../../src/services/authService";
 import { TestServices } from "../setup";
@@ -14,7 +13,7 @@ describe("PatientServices.patients", () => {
   const password = "password123";
 
   let patientForm = {
-    first_name: "John",
+    first_name: "Johnathon",
     last_name: "Doe",
     dob: "1990-05-15",
     patient_consent: "verbal",
@@ -1100,171 +1099,6 @@ describe("PatientServices.patient interactions", () => {
     const listRes2 =
       await PatientServices.get_interactions_by_patient(createdPatientId);
     const stillThere = listRes2.data.find((i) => i.id === createdInteractionId);
-    expect(stillThere).toBeUndefined();
-  });
-});
-
-////////////////
-// Attachments
-///////////////
-describe("PatientServices.patient attachments", () => {
-  let createdPatientId;
-  let createdAttachmentId;
-  const email = "test_attachments@example.com";
-  const password = "password123";
-
-  const patientForm = {
-    first_name: "Eve",
-    last_name: "Williams",
-    dob: "1991-09-05",
-    patient_consent: "verbal",
-    gender: "Female",
-    province: "Ontario",
-    disposition: "New Referral",
-    age: 32,
-    reg_date: new Date().toISOString().split("T")[0],
-    health_card: "1234567890",
-    health_card_version: "AB",
-    referral_site: "South Clinic",
-    address: "987 Queen Street",
-    city: "Toronto",
-    postal_code: "M6C 3D4",
-    phone1: "416-555-3333",
-    email: "eve.williams@example.com",
-    language: "English",
-  };
-
-  const attachmentFormData = {
-    type: "PDF",
-    filename: "test_document.pdf",
-    url: "data:application/pdf;base64,JVBERi0xLjQKJcfs...", // base64 string
-    document_type: "Medical Report",
-    is_local: true,
-    original_url: "data:application/pdf;base64,JVBERi0xLjQKJcfs...",
-  };
-
-  beforeEach(async () => {
-    // Register + login + MFA
-    const result = await TestServices.createVerifiedUser(email, password);
-    await AuthServices.verify_email(result.data?.token);
-
-    const login_result = await AuthServices.login(email, password);
-    tokenManager.setAccessToken(login_result.data?.access_token);
-
-    const mfa_email = await TestServices.send_email_mfa(email);
-    const mfa_result = await AuthServices.verify_email_mfa(
-      mfa_email.data?.code,
-    );
-    tokenManager.setAccessToken(mfa_result.data?.access_token);
-
-    // Create patient
-    const patientRes = await PatientServices.create_patient(patientForm);
-    createdPatientId = patientRes.data?.patient_id;
-  });
-
-  afterEach(async () => {
-    if (createdPatientId) {
-      await PatientServices.delete_patient_by_id(createdPatientId);
-      createdPatientId = null;
-    }
-    await TestServices.deleteUser(email, password);
-  });
-
-  it("should create a patient attachment", async () => {
-    const result = await PatientServices.create_attachment(
-      createdPatientId,
-      attachmentFormData,
-    );
-
-    expect(result.success).toBe(true);
-    expect(result.data?.message).toBe("Attachment created successfully.");
-  });
-
-  it("should fetch all attachments for a patient", async () => {
-    await PatientServices.create_attachment(
-      createdPatientId,
-      attachmentFormData,
-    );
-
-    const listRes =
-      await PatientServices.get_attachments_by_patient(createdPatientId);
-
-    expect(listRes.success).toBe(true);
-    expect(Array.isArray(listRes.data)).toBe(true);
-
-    const found = listRes.data.find((a) => a.patient_id === createdPatientId);
-    expect(found).toBeDefined();
-    createdAttachmentId = found.id;
-  });
-
-  it("should fetch a patient attachment by ID", async () => {
-    await PatientServices.create_attachment(
-      createdPatientId,
-      attachmentFormData,
-    );
-
-    const listRes =
-      await PatientServices.get_attachments_by_patient(createdPatientId);
-    const found = listRes.data.find((a) => a.patient_id === createdPatientId);
-    createdAttachmentId = found.id;
-
-    const getRes = await PatientServices.get_attachment_by_id(
-      createdPatientId,
-      createdAttachmentId,
-    );
-
-    expect(getRes.success).toBe(true);
-    expect(getRes.data?.id).toBe(createdAttachmentId);
-    expect(getRes.data?.filename).toBe("test_document.pdf");
-  });
-
-  it("should update an attachment successfully", async () => {
-    await PatientServices.create_attachment(
-      createdPatientId,
-      attachmentFormData,
-    );
-
-    const listRes =
-      await PatientServices.get_attachments_by_patient(createdPatientId);
-    const found = listRes.data.find((a) => a.patient_id === createdPatientId);
-    createdAttachmentId = found.id;
-
-    const updateRes = await PatientServices.update_attachment(
-      createdPatientId,
-      createdAttachmentId,
-      {
-        filename: "updated_document.pdf",
-      },
-    );
-    expect(updateRes.success).toBe(true);
-
-    const getRes = await PatientServices.get_attachment_by_id(
-      createdPatientId,
-      createdAttachmentId,
-    );
-    expect(getRes.data?.filename).toBe("updated_document.pdf");
-  });
-
-  it("should delete an attachment successfully", async () => {
-    await PatientServices.create_attachment(
-      createdPatientId,
-      attachmentFormData,
-    );
-
-    const listRes =
-      await PatientServices.get_attachments_by_patient(createdPatientId);
-    const found = listRes.data.find((a) => a.patient_id === createdPatientId);
-    createdAttachmentId = found.id;
-
-    const deleteRes = await PatientServices.delete_attachment_by_id(
-      createdPatientId,
-      createdAttachmentId,
-    );
-    expect(deleteRes.success).toBe(true);
-
-    const listRes2 =
-      await PatientServices.get_attachments_by_patient(createdPatientId);
-    const stillThere = listRes2.data.find((a) => a.id === createdAttachmentId);
     expect(stillThere).toBeUndefined();
   });
 });

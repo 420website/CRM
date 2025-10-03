@@ -46,9 +46,9 @@ export default function Notes({ setActiveTab, currentRegistrationId }) {
       setAvailableNotesTemplates(result.data);
     } else {
       if (result.status === 400 || result.status === 409) {
-        setError(result.message || "Error getting dispositions.");
+        setError(result.message || "Error getting note templates.");
       } else {
-        setError("Error getting dispositions. Please try again.");
+        setError("Error getting note templates. Please try again.");
       }
     }
     setLoading(false);
@@ -65,9 +65,9 @@ export default function Notes({ setActiveTab, currentRegistrationId }) {
       setSavedNotes(result.data || []);
     } else {
       if (result.status === 400 || result.status === 409) {
-        setError(result.message || "Error getting dispositions.");
+        setError(result.message || "Error getting notes.");
       } else {
-        setError("Error getting dispositions. Please try again.");
+        setError("Error getting notes. Please try again.");
       }
     }
     setLoading(false);
@@ -113,9 +113,9 @@ export default function Notes({ setActiveTab, currentRegistrationId }) {
       clearNotesForm();
     } else {
       if (result.status === 400 || result.status === 409) {
-        setError(result.message || "Error getting dispositions.");
+        setError(result.message || "Error creating note.");
       } else {
-        setError("Error getting dispositions. Please try again.");
+        setError("Error creating note. Please try again.");
       }
     }
     setLoading(false);
@@ -159,9 +159,9 @@ export default function Notes({ setActiveTab, currentRegistrationId }) {
       clearNotesForm();
     } else {
       if (result.status === 400 || result.status === 409) {
-        setError(result.message || "Error getting dispositions.");
+        setError(result.message || "Error updating note.");
       } else {
-        setError("Error getting dispositions. Please try again.");
+        setError("Error updating note. Please try again.");
       }
     }
     setLoading(false);
@@ -186,9 +186,9 @@ export default function Notes({ setActiveTab, currentRegistrationId }) {
       // clearNotesForm();
     } else {
       if (result.status === 400 || result.status === 409) {
-        setError(result.message || "Error getting dispositions.");
+        setError(result.message || "Error deleting note.");
       } else {
-        setError("Error getting dispositions. Please try again.");
+        setError("Error deleting note. Please try again.");
       }
     }
     setLoading(false);

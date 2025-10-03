@@ -1,11 +1,6 @@
 import { useState, useEffect } from "react";
-import { PatientServices } from "../../services/patientServices";
-import {
-  getPdfPageCount,
-  loadImage,
-  loadPDF,
-  loadWord,
-} from "../../utils/loadFile";
+import { ObjectServices } from "../../services/objectService";
+import { loadImage, loadPDF, loadWord } from "../../utils/loadFile";
 import DocumentFullScreen from "./DocumentFullScreen";
 import DocumentPreview from "./DocumentPreview";
 
@@ -16,40 +11,25 @@ export default function Attachments({ setActiveTab, currentRegistrationId }) {
   const [documentUrl, setDocumentUrl] = useState("");
   const [isLoadingDocument, setIsLoadingDocument] = useState(false);
   const [documentPreview, setDocumentPreview] = useState(null);
-  const [documentFile, setDocumentFile] = useState(null);
   const [savedAttachments, setSavedAttachments] = useState([]);
   const [isFullScreenPreview, setIsFullScreenPreview] = useState(false);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize] = useState(20); // Fixed page size for optimal performance
   const [totalPages, setTotalPages] = useState(1);
-
-  // Page navigation functions
-  const nextPage = () => {
-    if (currentPage < totalPages) {
-      setCurrentPage(currentPage + 1);
-    }
-  };
-
-  const prevPage = () => {
-    if (currentPage > 1) {
-      setCurrentPage(currentPage - 1);
-    }
-  };
+  const [documentFile, setDocumentFile] = useState(null);
 
   const getAttachments = async (registrationId) => {
     setLoading(true);
     setError("");
 
     const result =
-      await PatientServices.get_attachments_by_patient(registrationId);
+      await ObjectServices.get_attachments_by_patient(registrationId);
 
     if (result.success) {
       setSavedAttachments(result.data || []);
     } else {
       if (result.status === 400 || result.status === 409) {
-        setError(result.message || "Error getting dispositions.");
+        setError(result.message || "Error getting attachments.");
       } else {
-        setError("Error getting dispositions. Please try again.");
+        setError("Error getting attachments. Please try again.");
       }
     }
     setLoading(false);
@@ -78,19 +58,10 @@ export default function Attachments({ setActiveTab, currentRegistrationId }) {
       return;
     }
 
-    // Create attachment object - use base64 for storage, blob for display
-    const attachmentData = {
-      type: documentType,
-      filename: documentPreview.filename,
-      url: documentPreview.base64 || documentPreview.url, // Use base64 for storage
-      document_type: documentPreview.type,
-      is_local: documentPreview.is_local || false,
-      original_url: documentPreview.base64 || documentPreview.url, // Backup of original URL
-    };
-
-    const result = await PatientServices.create_attachment(
+    const result = await ObjectServices.upload_attachment(
       currentRegistrationId,
-      attachmentData,
+      documentFile,
+      documentType,
     );
 
     if (result.success) {
@@ -99,33 +70,34 @@ export default function Attachments({ setActiveTab, currentRegistrationId }) {
       clearDocument();
     } else {
       if (result.status === 400 || result.status === 409) {
-        setError(result.message || "Error getting dispositions.");
+        setError(result.message || "Error uploading attachment.");
       } else {
-        setError("Error getting dispositions. Please try again.");
+        setError("Error uploading attachment. Please try again.");
       }
     }
     setLoading(false);
   };
 
-  const deleteAttachment = async (attachmentId) => {
+  const deleteAttachment = async (attachmentName) => {
     if (!window.confirm(`Are you sure you want to remove this attachment?`)) {
       return;
     }
 
     setLoading(true);
     setError("");
-    const result = await PatientServices.delete_attachment_by_id(
+
+    const result = await ObjectServices.delete_attachment(
       currentRegistrationId,
-      attachmentId,
+      attachmentName,
     );
 
     if (result.success) {
       await getAttachments(currentRegistrationId);
     } else {
       if (result.status === 400 || result.status === 409) {
-        setError(result.message || "Error getting dispositions.");
+        setError(result.message || "Error deleting attachment.");
       } else {
-        setError("Error getting dispositions. Please try again.");
+        setError("Error deleting attachment. Please try again.");
       }
     }
     setLoading(false);
@@ -136,44 +108,23 @@ export default function Attachments({ setActiveTab, currentRegistrationId }) {
     setDocumentFile(null);
     setDocumentUrl("");
     setDocumentPreview(null);
-    setDocumentType(attachment.type);
+    setDocumentType(attachment.document_type);
 
     // Clear file input
     const fileInput = document.getElementById("documentFile");
     if (fileInput) fileInput.value = "";
 
-    if (attachment.document_type === "pdf") {
-      const totalPages = await getPdfPageCount(attachment.url);
-      setTotalPages(totalPages);
-      setCurrentPage(1);
-    }
+    const result = await ObjectServices.get_attachment_raw(
+      currentRegistrationId,
+      attachment.file_name,
+    );
 
-    // Use a setTimeout to ensure state is cleared before setting new preview
-    setTimeout(() => {
-      // Ensure proper URL format for images
-      let previewUrl = attachment.url;
+    const file = new File([result.data], attachment.file_name, {
+      type: attachment.mime_type,
+    });
 
-      // For images, ensure they have the proper base64 data URI format
-      if (
-        attachment.document_type === "image" &&
-        previewUrl &&
-        !previewUrl.startsWith("data:image/")
-      ) {
-        // If it's a raw base64 string, add the proper prefix
-        if (!previewUrl.startsWith("data:")) {
-          previewUrl = `data:image/jpeg;base64,${previewUrl}`;
-        }
-      }
-
-      // Set the document preview with the exact same structure as upload
-      setDocumentPreview({
-        id: attachment.id,
-        type: attachment.document_type,
-        url: previewUrl,
-        filename: attachment.filename,
-        is_local: attachment.is_local || false,
-      });
-    }, 50);
+    loadDocument(attachment.id, file, setDocumentPreview, setTotalPages);
+    setDocumentFile(file);
   };
 
   const clearDocument = () => {
@@ -198,7 +149,8 @@ export default function Attachments({ setActiveTab, currentRegistrationId }) {
   const openFullScreenPreview = () => {
     if (
       documentPreview &&
-      (documentPreview.type === "pdf" || documentPreview.type === "image")
+      (documentPreview.type === "application/pdf" ||
+        documentPreview.type.startsWith("image"))
     ) {
       setIsFullScreenPreview(true);
     }
@@ -208,16 +160,11 @@ export default function Attachments({ setActiveTab, currentRegistrationId }) {
     setIsFullScreenPreview(false);
   };
 
-  const loadDocument = (
-    file,
-    setDocumentPreview,
-    setCurrentPage,
-    setTotalPages,
-  ) => {
+  const loadDocument = (id, file, setDocumentPreview, setTotalPages) => {
     if (file.type.startsWith("image/")) {
-      loadImage(file, setDocumentPreview);
+      loadImage(id, file, setDocumentPreview);
     } else if (file.type === "application/pdf") {
-      loadPDF(file, setDocumentPreview, setCurrentPage, setTotalPages);
+      loadPDF(id, file, setDocumentPreview, setTotalPages);
     } else if (
       file.type ===
         "application/vnd.openxmlformats-officedocument.wordprocessingml.document" ||
@@ -257,7 +204,7 @@ export default function Attachments({ setActiveTab, currentRegistrationId }) {
         return;
       }
 
-      loadDocument(file, setDocumentPreview, setCurrentPage, setTotalPages);
+      loadDocument(0, file, setDocumentPreview, setTotalPages);
       setDocumentFile(file);
     }
   };
@@ -450,7 +397,7 @@ export default function Attachments({ setActiveTab, currentRegistrationId }) {
             <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center min-h-96">
               {documentPreview ? (
                 <div className="space-y-4">
-                  {documentPreview.type === "image" && (
+                  {documentPreview.type.split("/")[0] === "image" && (
                     <div
                       className="cursor-pointer transition-transform hover:scale-105"
                       onClick={openFullScreenPreview}
@@ -471,7 +418,7 @@ export default function Attachments({ setActiveTab, currentRegistrationId }) {
                       />
                     </div>
                   )}
-                  {documentPreview.type === "pdf" && (
+                  {documentPreview.type === "application/pdf" && (
                     <DocumentPreview
                       documentPreview={documentPreview}
                       totalPages={totalPages}
@@ -581,7 +528,7 @@ export default function Attachments({ setActiveTab, currentRegistrationId }) {
                   >
                     <div className="flex items-center justify-between">
                       <div className="flex items-center">
-                        {attachment.document_type === "pdf" ? (
+                        {attachment.mime_type === "application/pdf" ? (
                           <svg
                             className="h-6 w-6 mr-3 text-red-600"
                             fill="currentColor"
@@ -608,20 +555,19 @@ export default function Attachments({ setActiveTab, currentRegistrationId }) {
                         )}
                         <div>
                           <p className="text-sm font-medium text-gray-900">
-                            {attachment.type}
+                            {attachment.document_type}
                           </p>
                           <p className="text-xs text-gray-500">
-                            {attachment.filename}
+                            {attachment.file_name}
                           </p>
                           <p className="text-xs text-gray-400">
-                            Saved: {attachment.created_at.split("T")[0]},{" "}
-                            {new Date(attachment.created_at).toLocaleTimeString(
-                              "en-US",
-                              {
-                                timeZone: "America/New_York",
-                                hour12: true,
-                              },
-                            )}
+                            Saved: {attachment.uploaded_at.split("T")[0]},{" "}
+                            {new Date(
+                              attachment.uploaded_at,
+                            ).toLocaleTimeString("en-US", {
+                              timeZone: "America/New_York",
+                              hour12: true,
+                            })}
                           </p>
                         </div>
                       </div>
@@ -635,7 +581,7 @@ export default function Attachments({ setActiveTab, currentRegistrationId }) {
                         </button>
                         <button
                           type="button"
-                          onClick={() => deleteAttachment(attachment.id)}
+                          onClick={() => deleteAttachment(attachment.file_name)}
                           className="bg-red-600 text-white px-3 py-1 rounded text-xs hover:bg-red-700 transition-colors"
                         >
                           Remove
@@ -653,7 +599,7 @@ export default function Attachments({ setActiveTab, currentRegistrationId }) {
       <div>
         {isFullScreenPreview &&
           documentPreview &&
-          (documentPreview.type === "pdf" ||
+          (documentPreview.type === "application/pdf" ||
             documentPreview.type === "image") && (
             <DocumentFullScreen
               documentPreview={documentPreview}

@@ -31,9 +31,9 @@ export default function Tests({ setActiveTab, currentRegistrationId }) {
       setSavedTests(result.data || []);
     } else {
       if (result.status === 400 || result.status === 409) {
-        setError(result.message || "Error getting dispositions.");
+        setError(result.message || "Error getting tests.");
       } else {
-        setError("Error getting dispositions. Please try again.");
+        setError("Error getting tests. Please try again.");
       }
     }
     setLoading(false);
@@ -87,9 +87,9 @@ export default function Tests({ setActiveTab, currentRegistrationId }) {
       setEditingTestId(null);
     } else {
       if (result.status === 400 || result.status === 409) {
-        setError(result.message || "Error getting dispositions.");
+        setError(result.message || "Error creating test.");
       } else {
-        setError("Error getting dispositions. Please try again.");
+        setError("Error creating test. Please try again.");
       }
     }
     setLoading(false);
@@ -140,9 +140,9 @@ export default function Tests({ setActiveTab, currentRegistrationId }) {
       setEditingTestId(null);
     } else {
       if (result.status === 400 || result.status === 409) {
-        setError(result.message || "Error getting dispositions.");
+        setError(result.message || "Error updating test.");
       } else {
-        setError("Error getting dispositions. Please try again.");
+        setError("Error updating test. Please try again.");
       }
     }
     setLoading(false);
@@ -168,9 +168,9 @@ export default function Tests({ setActiveTab, currentRegistrationId }) {
       await getTests(currentRegistrationId);
     } else {
       if (result.status === 400 || result.status === 409) {
-        setError(result.message || "Error getting dispositions.");
+        setError(result.message || "Error deleting test.");
       } else {
-        setError("Error getting dispositions. Please try again.");
+        setError("Error deleting test. Please try again.");
       }
     }
     setLoading(false);

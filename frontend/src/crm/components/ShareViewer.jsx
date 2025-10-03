@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { Document, Page, pdfjs } from "react-pdf";
 import { ShareLinkServices } from "../../services/shareLinkService";
+import { PDFDocument } from "pdf-lib";
 
 pdfjs.GlobalWorkerOptions.workerSrc = new URL(
   "pdfjs-dist/build/pdf.worker.min.mjs",
@@ -20,7 +21,6 @@ export default function ShareViewer() {
   const [pdfScale, setPdfScale] = useState(1.0);
   const [pdfLoading, setPdfLoading] = useState(false);
   const [pdfError, setPdfError] = useState(null);
-
   const [containerWidth, setContainerWidth] = useState(0);
   const [hasSetDefaultScale, setHasSetDefaultScale] = useState(false);
   const [defaultScale, setDefaultScale] = useState(1.0);
@@ -98,7 +98,6 @@ export default function ShareViewer() {
 
   const resetZoom = () => {
     setPdfScale(defaultScale);
-    // setPdfScale(1.0);
   };
 
   // PDF event handlers
@@ -119,12 +118,58 @@ export default function ShareViewer() {
     console.error("Error loading page:", error);
   };
 
+  const transformFile = (file) => {
+    if (file.type.startsWith("image/")) {
+      const reader = new FileReader();
+      reader.onload = async (e) => {
+        const doc = {
+          type: "image",
+          url: e.target.result,
+          base64: e.target.result,
+          filename: file.name,
+        };
+        setDocumentPreview(doc);
+      };
+      reader.readAsDataURL(file);
+    } else if (file.type === "application/pdf") {
+      const blobUrl = URL.createObjectURL(file);
+
+      const reader = new FileReader();
+      reader.onload = async (e) => {
+        const base64Data = e.target.result;
+        const arrayBuffer = await file.arrayBuffer();
+        const pdfDoc = await PDFDocument.load(arrayBuffer);
+        const pageCount = pdfDoc.getPageCount();
+
+        const doc = {
+          type: "application/pdf",
+          url: blobUrl,
+          base64: base64Data,
+          filename: file.name,
+          is_local: true,
+          pageCount: pageCount,
+        };
+
+        setCurrentPage(1);
+        setTotalPages(pdfDoc.getPageCount());
+        setDocumentPreview(doc);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
   useEffect(() => {
     setLoading(true);
     const fetchAttachment = async () => {
       try {
-        const response = await ShareLinkServices.access_link(token);
-        await viewAttachment(response.data);
+        const metadata = await ShareLinkServices.get_metadata(token);
+        const result = await ShareLinkServices.access_link(token);
+
+        const file = new File([result.data], metadata.data?.file_name, {
+          type: metadata.data?.mime_type,
+        });
+
+        transformFile(file);
       } catch (err) {
         setError("Invalid or expired link.");
       } finally {
@@ -133,44 +178,6 @@ export default function ShareViewer() {
     };
     fetchAttachment();
   }, [token]);
-
-  const viewAttachment = async (attachment) => {
-    // Clear file input
-    const fileInput = document.getElementById("documentFile");
-    if (fileInput) fileInput.value = "";
-
-    if (attachment.document_type === "pdf") {
-      setCurrentPage(1);
-      // setPdfScale(1.2);
-      setPdfLoading(true);
-    }
-
-    // Use a setTimeout to ensure state is cleared before setting new preview
-    setTimeout(() => {
-      let previewUrl = attachment.url;
-
-      // For images, ensure they have the proper base64 data URI format
-      if (
-        attachment.document_type === "image" &&
-        previewUrl &&
-        !previewUrl.startsWith("data:image/")
-      ) {
-        // If it's a raw base64 string, add the proper prefix
-        if (!previewUrl.startsWith("data:")) {
-          previewUrl = `data:image/jpeg;base64,${previewUrl}`;
-        }
-      }
-
-      // Set the document preview
-      setDocumentPreview({
-        id: attachment.id,
-        type: attachment.document_type,
-        url: previewUrl,
-        filename: attachment.filename,
-        is_local: attachment.is_local || false,
-      });
-    }, 50);
-  };
 
   if (loading) return <div className="p-4">Loading...</div>;
   if (error) return <div className="p-4 text-red-600">{error}</div>;
@@ -187,7 +194,7 @@ export default function ShareViewer() {
           {/* Document Info */}
           <div className="bg-white px-3 py-2 rounded-md shadow-lg flex-shrink-0 mr-3">
             <div className="flex items-center text-black">
-              {documentPreview?.type === "pdf" ? (
+              {documentPreview?.type === "application/pdf" ? (
                 <svg
                   className="h-4 w-4 mr-2 text-red-600 flex-shrink-0"
                   fill="currentColor"
@@ -222,7 +229,7 @@ export default function ShareViewer() {
 
       {/* Document Viewer */}
       <div className="absolute top-16 left-0 right-0 bottom-0 overflow-auto">
-        {documentPreview.type === "pdf" ? (
+        {documentPreview.type === "application/pdf" ? (
           <div className="flex justify-center items-start min-h-full p-4">
             <div className="bg-white shadow-lg">
               {pdfError ? (
@@ -280,7 +287,7 @@ export default function ShareViewer() {
         <div className="fixed bottom-0 left-0 right-0 z-60 bg-[#3C3C3C] bg-opacity-70 p-4">
           <div className="flex justify-between items-center max-w-full">
             {/* PDF Controls */}
-            {documentPreview.type === "pdf" && (
+            {documentPreview.type === "application/pdf" && (
               <>
                 {/* Page Navigation */}
                 <div className="bg-white px-3 py-2 rounded-md shadow-lg flex-shrink mr-3">

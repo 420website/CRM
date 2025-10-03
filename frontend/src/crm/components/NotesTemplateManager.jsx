@@ -38,9 +38,9 @@ export default function NoteTemplateManager({
       setMessage("Created referral-site successfully.");
     } else {
       if (result.status === 400 || result.status === 409) {
-        setError(result.message || "Error getting dispositions.");
+        setError(result.message || "Error creating note template.");
       } else {
-        setError("Error getting dispositions. Please try again.");
+        setError("Error creating note template. Please try again.");
       }
     }
     setLoading(false);
@@ -63,9 +63,9 @@ export default function NoteTemplateManager({
       getNoteTemplates();
     } else {
       if (result.status === 400 || result.status === 409) {
-        setError(result.message || "Error getting dispositions.");
+        setError(result.message || "Error update note template.");
       } else {
-        setError("Error getting dispositions. Please try again.");
+        setError("Error delete note template. Please try again.");
       }
     }
     setLoading(false);
@@ -94,9 +94,9 @@ export default function NoteTemplateManager({
       }
     } else {
       if (result.status === 400 || result.status === 409) {
-        setError(result.message || "Error getting dispositions.");
+        setError(result.message || "Error deleting note templates.");
       } else {
-        setError("Error getting dispositions. Please try again.");
+        setError("Error deleting note templates. Please try again.");
       }
     }
     setLoading(false);
