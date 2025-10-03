@@ -81,17 +81,14 @@ services:
       MINIO_SERVER_URL: https://minio:9000
     volumes:
       - minio_data:/data
-      - ./certs/server.crt:/root/.minio/certs/public.crt 
-      - ./certs/server.key:/root/.minio/certs/private.key 
+      - /etc/vault/certs/server.crt:/root/.minio/certs/public.crt 
+      - /etc/vault/certs/server.key:/root/.minio/certs/private.key 
     networks:
       - backend-net
       - db-net
     profiles:
       - dev
-      - dev_backend
-      - dev_frontend
-      - db
-      - minio
+      - prod
     command: server /data --console-address ":9001" --address ":9000"
 
   minio_init:
@@ -102,18 +99,19 @@ services:
       /bin/sh -c "
       sleep 5 &&
       mkdir -p /root/.mc/certs/CAs &&
-      cp /certs/ca.crt /root/.mc/certs/CAs/ &&
+      cp /certs/ca-chain.crt /root/.mc/certs/CAs/ &&
       mc alias set local https://minio:9000 testuser password --api S3v4 &&
       mc mb local/attachments &&
       mc mb local/photos
       "
     volumes:
-      - ./certs/ca.crt:/certs/ca.crt
+      - /etc/vault/certs/ca-chain.crt:/certs/ca.crt
     networks:
       - backend-net
       - db-net
     profiles:
-      - minio
+      - dev
+      - prod
 
   mongodb:
     image: mongodb/mongodb-community-server:latest
@@ -141,6 +139,8 @@ services:
     depends_on:
       - mongodb
       - postgres
+      - minio
+      - minio_init
     networks:
       - backend-net 
       - frontend-net
@@ -240,6 +240,7 @@ volumes:
   certbot-etc:
   certbot-var:
   certbot-www:
+  minio_data:
 
 networks:
   frontend-net:
