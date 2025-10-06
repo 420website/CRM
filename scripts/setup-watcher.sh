@@ -25,8 +25,11 @@ Description=Vault Cert Reload Watcher
 After=docker.service
 
 [Service]
+Type=simple
+WorkingDirectory=/home/admin/CRM
 ExecStart=/usr/local/bin/cert-reload.sh
 Restart=always
+RestartSec=5
 
 [Install]
 WantedBy=multi-user.target
