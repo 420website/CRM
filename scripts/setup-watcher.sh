@@ -12,8 +12,11 @@ Description=Vault Secret Reload Watcher
 After=docker.service
 
 [Service]
+Type=simple
 ExecStart=/usr/local/bin/secret-reload.sh
+WorkingDirectory=/home/admin/CRM
 Restart=always
+RestartSec=5
 
 [Install]
 WantedBy=multi-user.target
