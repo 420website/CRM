@@ -14,6 +14,22 @@ services:
       - vault-agent
       - prod
 
+  setup-watcher:
+    image: alpine:latest
+    volumes:
+      - ./scripts/secret-reload.sh:/tmp/secret-reload.sh:ro
+      - ./scripts/cert-reload.sh:/tmp/cert-reload.sh:ro
+      - ./scripts/setup-watcher.sh:/setup.sh:ro
+      - /etc/systemd/system:/etc/systemd/system
+      - /usr/local/bin:/usr/local/bin 
+      - /var/run/dbus:/var/run/dbus
+    command: sh /setup.sh
+    privileged: true
+    network_mode: host
+    profiles:
+      - setup
+      - prod
+
   alloy:
     image: grafana/alloy:latest
     env_file:
@@ -29,6 +45,8 @@ services:
     profiles:
       - dev
       - prod
+      - cert-reload
+      - secret-reload
     depends_on:
       - postgres
 
@@ -50,6 +68,8 @@ services:
     profiles:
       - dev
       - prod
+      - cert-reload
+      - secret-reload
     entrypoint: ["/postgres-start.sh"]
 
   dbmate:
@@ -66,6 +86,8 @@ services:
     profiles:
       - dev
       - prod
+      - cert-reload
+      - secret-reload
     command: ["--wait","up"]
 
   minio:
@@ -89,6 +111,8 @@ services:
     profiles:
       - dev
       - prod
+      - cert-reload
+      - secret-reload
     command: server /data --console-address ":9001" --address ":9000"
 
   minio_init:
@@ -127,6 +151,8 @@ services:
     profiles:
       - dev
       - prod
+      - cert-reload
+      - secret-reload
 
   backend:
     build: ./backend
@@ -147,6 +173,8 @@ services:
     profiles:
       - dev
       - prod
+      - cert-reload
+      - secret-reload
     entrypoint: ["/scripts/create_admin.sh"]
     command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "5000"]
 
@@ -159,6 +187,8 @@ services:
     profiles:
       - dev
       - prod
+      - cert-reload
+      - secret-reload
     command: >
       sh -c "
         npm run build &&
@@ -227,6 +257,8 @@ services:
       - /etc/vault/secrets/.env
     profiles:
       - prod
+      - cert-reload
+      - secret-reload
     networks:
       - frontend-net
     depends_on:

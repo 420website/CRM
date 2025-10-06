@@ -29,7 +29,7 @@ template {
   source      = "/etc/vault/templates/secrets.tpl"
   destination = "/etc/vault/secrets/.env"         
   perms       = 0644
-  command     = "./scripts/deploy.sh"
+  command     = "/etc/vault/.secret-trigger"
 }
 
 # Certificate templates
@@ -37,14 +37,14 @@ template {
   source      = "/etc/vault/templates/server-cert.tpl"
   destination = "/etc/vault/certs/server.crt"
   perms       = 0644
-  command     = "./scripts/deploy.sh"  
+  command     = "/etc/vault/.cert-trigger"
 }
 
 template {
   source      = "/etc/vault/templates/server-key.tpl" 
   destination = "/etc/vault/certs/server.key"
   perms       = 0600
-  command     = "./scripts/deploy.sh"  
+  command     = "/etc/vault/.cert-trigger"
 }
 
 template {
