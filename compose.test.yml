@@ -25,7 +25,6 @@ x-backend-base: &backend_base
     - MINIO_SERVER_URL=http://minio:9000
     - MINIO_KEY_ID=testuser
     - MINIO_ACCESS_KEY=password
-    - MINIO_VERIFY=False
   networks:
       - frontend-net 
       - backend-net 
@@ -169,7 +168,6 @@ services:
       - MINIO_SERVER_URL=http://minio:9000
       - MINIO_KEY_ID=testuser
       - MINIO_ACCESS_KEY=password
-      - MINIO_VERIFY=False
     volumes:
       - ./scripts/wait-for-db.sh:/scripts/wait-for-db.sh
       - ./backend:/backend 
