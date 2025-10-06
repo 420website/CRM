@@ -1,11 +1,8 @@
 #!/bin/bash
 set -e
 
-#!/bin/bash
-set -e
-
 echo "Stoppping services..."
-docker compose --profile prod stop
+docker stop $(docker ps -aq)
 
 echo "Starting vault agent..."
 docker compose --profile vault-agent up -d --build
@@ -91,5 +88,9 @@ docker compose --profile staging stop
 
 echo "Starting production services..."
 docker compose --profile prod up -d --build
+
+echo "Enabling cert and secert watch services..."
+sudo systemctl daemon-reload
+sudo systemctl restart secret-reload cert-reload
 
 echo "Deployment complete."
