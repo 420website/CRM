@@ -2,7 +2,7 @@
 set -e
 
 echo "Stoppping services..."
-docker compose down
+docker stop $(docker ps -aq)
 
 echo "Starting vault agent..."
 docker compose --profile vault-agent up -d --build
