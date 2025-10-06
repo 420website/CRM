@@ -1,8 +1,5 @@
 #!/bin/bash
 
-# Avoid triggering on initial start
-# sleep 3m
-
 # Remove trigger if it exists
 rm -f /etc/vault/.cert-trigger
 
