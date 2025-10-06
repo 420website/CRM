@@ -9,5 +9,5 @@ while true; do
     echo "$(date) - Detected trigger, restarting cert-dependent containers"
     docker compose --profile cert-reload up -d --build
   fi
-  sleep 5 # avoid tight loop
+  sleep 5
 done

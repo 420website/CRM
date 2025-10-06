@@ -134,6 +134,8 @@ services:
     profiles:
       - dev
       - prod
+      - cert-reload
+      - secret-reload
 
   mongodb:
     image: mongodb/mongodb-community-server:latest
