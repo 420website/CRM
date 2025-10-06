@@ -20,9 +20,7 @@ services:
       - ./scripts/secret-reload.sh:/tmp/secret-reload.sh:ro
       - ./scripts/cert-reload.sh:/tmp/cert-reload.sh:ro
       - ./scripts/setup-watcher.sh:/setup.sh:ro
-      - /etc/systemd/system:/etc/systemd/system
-      - /usr/local/bin:/usr/local/bin 
-      - /var/run/dbus:/var/run/dbus
+      - /:/host 
     command: sh /setup.sh
     privileged: true
     network_mode: host
