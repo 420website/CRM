@@ -27,9 +27,9 @@ auto_auth {
 
 template {
   source      = "/etc/vault/templates/secrets.tpl"
-  destination = "/etc/vault/secrets/.env"          # Changed to .env
+  destination = "/etc/vault/secrets/.env"         
   perms       = 0644
-  #command     = "systemctl reload myapp"
+  command     = "./scripts/deploy.sh"
 }
 
 # Certificate templates
@@ -37,14 +37,14 @@ template {
   source      = "/etc/vault/templates/server-cert.tpl"
   destination = "/etc/vault/certs/server.crt"
   perms       = 0644
-  #command     = "systemctl reload nginx || true"  # Reload web server if exists
+  command     = "./scripts/deploy.sh"  
 }
 
 template {
   source      = "/etc/vault/templates/server-key.tpl" 
   destination = "/etc/vault/certs/server.key"
   perms       = 0600
-  #command     = "systemctl reload nginx || true"
+  command     = "./scripts/deploy.sh"  
 }
 
 template {
