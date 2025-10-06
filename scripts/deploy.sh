@@ -1,11 +1,8 @@
 #!/bin/bash
 set -e
 
-#!/bin/bash
-set -e
-
 echo "Stoppping services..."
-docker compose --profile prod stop
+docker compose down
 
 echo "Starting vault agent..."
 docker compose --profile vault-agent up -d --build
