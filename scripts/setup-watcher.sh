@@ -36,6 +36,6 @@ WantedBy=multi-user.target
 EOF
 
 # Enable and start via host systemctl
-nsenter -t 1 -m -u -n -i systemctl daemon-reload
-nsenter -t 1 -m -u -n -i systemctl enable --now secret-reload.service
-nsenter -t 1 -m -u -n -i systemctl enable --now cert-reload.service
+nsenter -t 1 -m -u -n -i /bin/systemctl daemon-reload
+nsenter -t 1 -m -u -n -i /bin/systemctl enable --now secret-reload.service
+nsenter -t 1 -m -u -n -i /bin/systemctl enable --now cert-reload.service
