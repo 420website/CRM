@@ -94,8 +94,6 @@ services:
     restart: unless-stopped
     env_file:
       - /etc/vault/secrets/.env
-    ports:
-      - "9001:9001"   # Web console
     volumes:
       - minio_data:/data
       - /etc/vault/certs/server.crt:/root/.minio/certs/public.crt
