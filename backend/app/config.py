@@ -71,7 +71,7 @@ class Settings:
     minio_key_id: str = get_env("MINIO_KEY_ID")
     minio_access_key: str = get_env("MINIO_ACCESS_KEY")
     minio_url: str = get_env("MINIO_SERVER_URL")
-    minio_verify: bool = os.getenv("MINIO_VERIFY") != "False"  # default=true
+    minio_verify: str | bool = os.getenv("MINIO_VERIFY", False)
     minio_signature_version: str = os.getenv("MINIO_SIGNATURE_VERSION", "s3v4")
     minio_addressing_style: str = os.getenv("MINIO_ADDRESSING_STYLE", "path")
 

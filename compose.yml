@@ -103,6 +103,7 @@ services:
       - minio_data:/data
       - /etc/vault/certs/server.crt:/root/.minio/certs/public.crt
       - /etc/vault/certs/server.key:/root/.minio/certs/private.key
+      - /etc/vault/certs/ca-chain.crt:/root/.minio/certs/CAs/ca-chain.crt
     networks:
       - backend-net
       - db-net
