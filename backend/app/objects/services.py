@@ -81,6 +81,36 @@ class ObjectService:
                 raise e
 
     @staticmethod
+    async def upload_object_streaming(
+        bucket: str,
+        key: str,
+        file_obj,  # File-like object from UploadFile
+        content_type: str = "application/octet-stream",
+        chunk_size: int = 1024 * 1024,  # 1MB chunks
+    ):
+        async with minio_client.get_client() as client:
+            try:
+                await client.head_bucket(Bucket=bucket)
+            except ClientError:
+                await ObjectService.create_bucket(bucket)
+            except Exception as e:
+                raise e
+
+            try:
+                result = await client.put_object(
+                    Bucket=bucket,
+                    Key=key,
+                    Body=file_obj,  # Pass file object directly
+                    ContentType=content_type,
+                )
+                metadata = result.get("ResponseMetadata")
+
+                if metadata.get("HTTPStatusCode") != 200:
+                    raise Exception("Error uploading object")
+            except Exception as e:
+                raise e
+
+    @staticmethod
     async def get_object(bucket: str, key: str) -> bytes:
         async with minio_client.get_client() as client:
             if not await client.head_bucket(Bucket=bucket):

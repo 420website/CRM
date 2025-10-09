@@ -34,6 +34,7 @@ app.add_middleware(
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
+    max_age=3600,
 )
 
 
@@ -56,3 +57,16 @@ if settings.debug:
     from app.testing.router import router as testing_router
 
     app.include_router(testing_router)
+
+if __name__ == "__main__":
+    import uvicorn
+
+    uvicorn.run(
+        "app.main:app",
+        host="0.0.0.0",
+        port=8000,
+        reload=settings.debug,
+        timeout_keep_alive=300,  # 5 minutes
+        limit_concurrency=1000,
+        limit_max_requests=10000,
+    )

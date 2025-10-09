@@ -150,7 +150,8 @@ services:
       - ./backend/scripts:/backend/scripts 
       - ./certs:/certs:ro
     entrypoint: ["/scripts/create_admin.sh"]
-    command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000" , "--reload"]
+    command: 'python -m app.main'
+    # command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000" , "--reload"]
 
   frontend:
     build:

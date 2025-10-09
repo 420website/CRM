@@ -40,7 +40,6 @@ export const loadPDF = async (id, file, setDocumentPreview, setTotalPages) => {
 
   const reader = new FileReader();
   reader.onload = async (e) => {
-    const base64Data = e.target.result;
     const arrayBuffer = await file.arrayBuffer();
     const pdfDoc = await PDFDocument.load(arrayBuffer);
 
@@ -48,12 +47,13 @@ export const loadPDF = async (id, file, setDocumentPreview, setTotalPages) => {
       id: id,
       type: "application/pdf",
       url: blobUrl,
-      base64: base64Data,
       filename: file.name,
       is_local: true,
     });
 
     setTotalPages(pdfDoc.getPageCount());
+
+    pdfDoc.destroy();
   };
   reader.readAsDataURL(file); // pdf.js requires ArrayBuffer
 };
@@ -74,33 +74,13 @@ export const loadImage = (id, file, setDocumentPreview) => {
 export const loadWord = (file, setDocumentPreview) => {
   const blobUrl = URL.createObjectURL(file);
 
-  const reader = new FileReader();
-  reader.onload = (e) => {
-    const base64Data = e.target.result;
-
-    setDocumentPreview({
-      type: "document",
-      url: blobUrl,
-      filename: file.name,
-      base64: base64Data,
-      is_local: true,
-    });
-  };
-  reader.readAsDataURL(file);
+  setDocumentPreview({
+    type: "document",
+    url: blobUrl,
+    filename: file.name,
+    is_local: true,
+  });
 };
-// import mammoth from "mammoth";
-//
-// export const loadWord = async (file, setDocumentPreview) => {
-//   const arrayBuffer = await file.arrayBuffer();
-//   const { value: text } = await mammoth.extractRawText({ arrayBuffer });
-//
-//   setDocumentPreview({
-//     type: "word",
-//     text,
-//     filename: file.name,
-//     is_local: true,
-//   });
-// };
 
 export const loadDocument = (
   file,

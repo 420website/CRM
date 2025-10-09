@@ -29,8 +29,15 @@ async def upload_photo(
     key = f"{patient_id}/{name}"
 
     try:
-        data = await file.read()
-        await ObjectService.upload_object(bucket=bucket, key=key, data=data)
+        # data = await file.read()
+        # await ObjectService.upload_object(bucket=bucket, key=key, data=data)
+        await ObjectService.upload_object_streaming(
+            bucket=bucket,
+            key=key,
+            file_obj=file.file,
+            content_type=file.content_type or "image/jpeg",
+        )
+
         await PhotoService.upload_photo(
             patient_id, PhotoCreate(photo_name=name, photo_key=key)
         )
