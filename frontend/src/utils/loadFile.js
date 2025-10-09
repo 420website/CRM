@@ -40,7 +40,7 @@ export const loadPDF = async (id, file, setDocumentPreview, setTotalPages) => {
 
   const reader = new FileReader();
   reader.onload = async (e) => {
-    const base64Data = e.target.result;
+    // const base64Data = e.target.result;
     const arrayBuffer = await file.arrayBuffer();
     const pdfDoc = await PDFDocument.load(arrayBuffer);
 
@@ -48,12 +48,15 @@ export const loadPDF = async (id, file, setDocumentPreview, setTotalPages) => {
       id: id,
       type: "application/pdf",
       url: blobUrl,
-      base64: base64Data,
+      // base64: base64Data,
       filename: file.name,
       is_local: true,
     });
 
     setTotalPages(pdfDoc.getPageCount());
+
+    // Clean up
+    pdfDoc.destroy();
   };
   reader.readAsDataURL(file); // pdf.js requires ArrayBuffer
 };
