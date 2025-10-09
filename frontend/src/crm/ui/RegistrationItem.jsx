@@ -88,7 +88,7 @@ export default function RegistrationItem({
               <img
                 src={loadedPhotos[item.id]}
                 alt="Registration photo"
-                className="max-w-xs max-h-48 object-contain border rounded"
+                className="lg:max-w-xs md:w-3/4 max-h-48 object-contain border rounded"
                 onError={(e) => {
                   e.target.style.display = "none";
                 }}
