@@ -174,7 +174,8 @@ services:
       - cert-reload
       - secret-reload
     entrypoint: ["/scripts/create_admin.sh"]
-    command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "5000"]
+    command: 'python -m app.main'
+    # command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "5000"]
 
   frontend-builder:
     build: ./frontend
