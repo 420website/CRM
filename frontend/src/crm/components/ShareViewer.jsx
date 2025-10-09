@@ -125,7 +125,6 @@ export default function ShareViewer() {
         const doc = {
           type: "image",
           url: e.target.result,
-          base64: e.target.result,
           filename: file.name,
         };
         setDocumentPreview(doc);
@@ -136,7 +135,6 @@ export default function ShareViewer() {
 
       const reader = new FileReader();
       reader.onload = async (e) => {
-        const base64Data = e.target.result;
         const arrayBuffer = await file.arrayBuffer();
         const pdfDoc = await PDFDocument.load(arrayBuffer);
         const pageCount = pdfDoc.getPageCount();
@@ -144,7 +142,6 @@ export default function ShareViewer() {
         const doc = {
           type: "application/pdf",
           url: blobUrl,
-          base64: base64Data,
           filename: file.name,
           is_local: true,
           pageCount: pageCount,
