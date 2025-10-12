@@ -200,8 +200,6 @@ const AdminRegister = () => {
 
   // Check if user has permission for a tab
   const hasTabPermission = (tabId) => {
-    if (userRole === "admin") return true;
-
     return Array.isArray(userPermissions) && userPermissions.includes(tabId);
   };
 
