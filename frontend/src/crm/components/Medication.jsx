@@ -15,6 +15,30 @@ export default function Medications({ setActiveTab, currentRegistrationId }) {
     outcome: "",
   });
 
+  function validateForm() {
+    if (!currentRegistrationId) {
+      alert("Please complete the Patient tab first to save medications.");
+      setActiveTab("patient");
+      return false;
+    }
+
+    if (!medicationData.medication || medicationData.medication === "") {
+      alert("Please select a medication");
+      return false;
+    }
+
+    if (!medicationData.outcome || medicationData.outcome === "") {
+      alert("Please select an outcome");
+      return false;
+    }
+
+    if (!medicationData.start_date || medicationData.start_date === "") {
+      alert("Please select a start date");
+      return false;
+    }
+    return true;
+  }
+
   const getMedications = async (registrationId) => {
     setLoading(true);
     setError("");
@@ -35,33 +59,27 @@ export default function Medications({ setActiveTab, currentRegistrationId }) {
   };
 
   const saveMedication = async () => {
+    if (!validateForm()) {
+      return;
+    }
+
     editingMedicationId ? updateMedications() : createMedications();
   };
 
   const createMedications = async () => {
     setLoading(true);
     setError("");
-
-    if (!currentRegistrationId) {
-      alert("Please complete the Client tab first to save medications.");
-      setActiveTab("client");
-      return;
-    }
-
-    if (!medicationData.medication || medicationData.medication === "") {
-      alert("Please select a medication");
-      return;
-    }
-
-    if (!medicationData.outcome || medicationData.outcome === "") {
-      alert("Please select an outcome");
-      return;
-    }
     setIsSavingMedication(true);
+
+    let data = { ...medicationData };
+
+    if (data.end_date === "") {
+      data = { ...data, end_date: null };
+    }
 
     const result = await PatientServices.create_medication(
       currentRegistrationId,
-      medicationData,
+      data,
     );
 
     if (result.success) {
@@ -81,28 +99,17 @@ export default function Medications({ setActiveTab, currentRegistrationId }) {
   const updateMedications = async () => {
     setLoading(true);
     setError("");
-
-    if (!currentRegistrationId) {
-      alert("Please complete the Patient tab first to save medications.");
-      setActiveTab("patient");
-      return;
-    }
-
-    if (!medicationData.medication || medicationData.medication === "") {
-      alert("Please select a medication");
-      return;
-    }
-
-    if (!medicationData.outcome || medicationData.outcome === "") {
-      alert("Please select an outcome");
-      return;
-    }
     setIsSavingMedication(true);
 
+    let data = { ...medicationData };
+
+    if (data.end_date === "") {
+      data = { ...data, end_date: null };
+    }
     const result = await PatientServices.update_medication(
       currentRegistrationId,
       editingMedicationId,
-      medicationData,
+      data,
     );
 
     if (result.success) {
