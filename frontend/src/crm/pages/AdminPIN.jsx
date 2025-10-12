@@ -46,7 +46,7 @@ function InsertPin({ handleSubmit, formData, handleChange, error, loading }) {
                   required
                   value={formData.email}
                   onChange={handleChange}
-                  className="appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-black focus:border-black focus:z-10 sm:text-sm text-left text-2xl tracking-widest"
+                  className="appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-black focus:border-black focus:z-10 sm:text-sm text-left lg:text-2xl tracking-widest"
                   placeholder="Enter your email"
                 />
               </div>
@@ -67,7 +67,7 @@ function InsertPin({ handleSubmit, formData, handleChange, error, loading }) {
                   required
                   value={formData.password}
                   onChange={handleChange}
-                  className="appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-black focus:border-black focus:z-10 sm:text-sm text-left text-2xl tracking-widest pr-10"
+                  className="appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-black focus:border-black focus:z-10 sm:text-sm text-left lg:text-2xl tracking-widest pr-10"
                   placeholder="Enter your password"
                 />
                 <button
