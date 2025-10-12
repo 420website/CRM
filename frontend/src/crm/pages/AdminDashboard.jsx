@@ -735,6 +735,7 @@ const AdminDashboard = () => {
                         maxHeight: "40px",
                       }}
                     >
+                      <option value="">All</option>
                       {/* Most Frequently Used */}
                       {availableDispositions
                         .filter((d) => d.is_frequent)
