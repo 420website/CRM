@@ -116,6 +116,44 @@ export const GeneralServices = {
   },
 
   // ======================
+  // DOCUMENT TYPE
+  // ======================
+  create_document_type: async (data) => {
+    return apiCall(
+      () => api.post("/general/document-type", data),
+      "Creating document type failed.",
+    );
+  },
+
+  get_document_types: async () => {
+    return apiCall(
+      () => api.get("/general/document-type"),
+      "Fetching document type failed.",
+    );
+  },
+
+  delete_document_type_by_id: async (id) => {
+    return apiCall(
+      () => api.delete(`/general/document-type/${id}`),
+      "Deleting document type by ID failed.",
+    );
+  },
+
+  delete_document_type_by_name: async (name) => {
+    return apiCall(
+      () => api.delete(`/general/document-type/by-name/${name}`),
+      "Deleting document type by name failed.",
+    );
+  },
+
+  update_document_type: async (id, data) => {
+    return apiCall(
+      () => api.patch(`/general/document-type/${id}`, data),
+      "Updating document type failed.",
+    );
+  },
+
+  // ======================
   // REFERRAL SITE
   // ======================
   create_referral_site: async (data) => {

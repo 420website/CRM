@@ -341,6 +341,114 @@ describe("GeneralServices.dispositions", () => {
   });
 });
 
+describe("GeneralServices.document-type", () => {
+  let createdId;
+  const email = "test3@example.com"; // use a unique user
+  const password = "password123";
+
+  const document_type = {
+    name: "HCV Prescription",
+    is_frequent: false,
+    is_default: true,
+  };
+
+  beforeEach(async () => {
+    // Register
+    const result = await TestServices.createVerifiedUser(email, password);
+    await AuthServices.verify_email(result.data?.token);
+
+    // Login
+    const login_result = await AuthServices.login(email, password);
+    tokenManager.setAccessToken(login_result.data?.access_token);
+
+    // MFA
+    const mfa_email = await TestServices.send_email_mfa(email);
+    const mfa_result = await AuthServices.verify_email_mfa(
+      mfa_email.data?.code,
+    );
+    tokenManager.setAccessToken(mfa_result.data?.access_token);
+  });
+
+  afterEach(async () => {
+    // cleanup
+    await GeneralServices.delete_document_type_by_name(document_type.name);
+    await TestServices.deleteUser(email, password);
+    createdId = null;
+  });
+
+  it("should create a document type successfully", async () => {
+    const result = await GeneralServices.create_document_type(document_type);
+
+    expect(result.success).toBe(true);
+    expect(result.data?.message).toBe("Document type created successfully.");
+  });
+
+  it("should fetch document type and include created one", async () => {
+    await GeneralServices.create_document_type(document_type);
+
+    const result = await GeneralServices.get_document_types();
+
+    expect(result.success).toBe(true);
+    expect(Array.isArray(result.data)).toBe(true);
+
+    const found = result.data.find((d) => d.name === document_type.name);
+    expect(found).toBeDefined();
+    createdId = found.id;
+  });
+
+  it("should update a document type successfully", async () => {
+    await GeneralServices.create_document_type(document_type);
+
+    const listRes = await GeneralServices.get_document_types();
+    const found = listRes.data.find((d) => d.name === document_type.name);
+    createdId = found.id;
+
+    const updateData = { is_default: false };
+    const updateRes = await GeneralServices.update_document_type(
+      createdId,
+      updateData,
+    );
+
+    expect(updateRes.success).toBe(true);
+
+    // verify change
+    const refreshed = await GeneralServices.get_document_types();
+    const updated = refreshed.data.find((d) => d.id === createdId);
+    expect(updated.is_default).toBe(false);
+  });
+
+  it("should delete a document type by name", async () => {
+    await GeneralServices.create_document_type(document_type);
+
+    const deleteRes = await GeneralServices.delete_document_type_by_name(
+      document_type.name,
+    );
+    expect(deleteRes.success).toBe(true);
+
+    // verify removal
+    const listRes = await GeneralServices.get_document_types();
+    const stillThere = listRes.data.find((d) => d.name === document_type.name);
+    expect(stillThere).toBeUndefined();
+  });
+
+  it("should delete a document type by id", async () => {
+    await GeneralServices.create_document_type(document_type);
+
+    const listRes = await GeneralServices.get_document_types();
+    const found = listRes.data.find((d) => d.name === document_type.name);
+    createdId = found.id;
+
+    const deleteRes =
+      await GeneralServices.delete_document_type_by_id(createdId);
+    expect(deleteRes.success).toBe(true);
+
+    // verify removal
+    const refreshed = await GeneralServices.get_document_types();
+    const stillThere = refreshed.data.find((d) => d.id === createdId);
+    expect(stillThere).toBeUndefined();
+  });
+});
+
 describe("GeneralServices.referral-sites", () => {
   let createdId;
   const email = "test4@example.com"; // unique user for this suite

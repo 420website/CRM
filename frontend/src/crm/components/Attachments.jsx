@@ -4,7 +4,12 @@ import { loadImage, loadPDF, loadWord } from "../../utils/loadFile";
 import DocumentFullScreen from "./DocumentFullScreen";
 import DocumentPreview from "./DocumentPreview";
 
-export default function Attachments({ setActiveTab, currentRegistrationId }) {
+export default function Attachments({
+  availableDocumentTypes,
+  setActiveTab,
+  currentRegistrationId,
+  setShowDocumentTypeManager,
+}) {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [documentType, setDocumentType] = useState("");
@@ -15,6 +20,7 @@ export default function Attachments({ setActiveTab, currentRegistrationId }) {
   const [isFullScreenPreview, setIsFullScreenPreview] = useState(false);
   const [totalPages, setTotalPages] = useState(1);
   const [documentFile, setDocumentFile] = useState(null);
+  // const [showDocumentTypeManager, setShowDocumentTypeManager] = useState(false);
 
   const getAttachments = async (registrationId) => {
     setLoading(true);
@@ -310,12 +316,21 @@ export default function Attachments({ setActiveTab, currentRegistrationId }) {
 
           {/* Document Type Selection */}
           <div className="mb-6">
-            <label
-              htmlFor="documentType"
-              className="block text-sm font-medium text-gray-700 mb-2"
-            >
-              Document Type
-            </label>
+            <div className="flex items-center justify-between mb-2">
+              <label
+                htmlFor="documentType"
+                className="block text-sm font-medium text-gray-700"
+              >
+                Document Type
+              </label>
+              <button
+                type="button"
+                onClick={() => setShowDocumentTypeManager(true)}
+                className="text-blue-600 hover:text-blue-800 text-sm"
+              >
+                Manage Document Types
+              </button>
+            </div>
             <select
               id="documentType"
               name="documentType"
@@ -326,9 +341,26 @@ export default function Attachments({ setActiveTab, currentRegistrationId }) {
               size="1"
             >
               <option value="">Select Document Type</option>
-              <option value="consultation-report">Consultation Report</option>
-              <option value="treatment-consent">Treatment Consent</option>
-              <option value="hcv-prescription">HCV Prescription</option>
+              {/* Most Frequently Used */}
+              {availableDocumentTypes
+                .filter((d) => d.is_frequent)
+                .map((documentType) => (
+                  <option key={documentType.id} value={documentType.name}>
+                    {documentType.name}
+                  </option>
+                ))}
+              {/* Separator */}
+              {availableDocumentTypes.filter((d) => !d.is_frequent).length >
+                0 && <option disabled>-------</option>}
+              {/* All Others in Alphabetical Order */}
+              {availableDocumentTypes
+                .filter((d) => !d.is_frequent)
+                .sort((a, b) => a.name.localeCompare(b.name))
+                .map((documentType) => (
+                  <option key={documentType.id} value={documentType.name}>
+                    {documentType.name}
+                  </option>
+                ))}
             </select>
           </div>
 

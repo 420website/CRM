@@ -23,6 +23,7 @@ import { DEFAULT_FORM } from "../forms/Registration";
 import VoiceFillModal from "../components/VoiceInput";
 import ForceRegisterModal from "../components/ForcePopupModal";
 import { ObjectServices } from "../../services/objectService";
+import DocumentTypeManager from "../components/DocumentTypeManager";
 
 const AdminEdit = () => {
   const { registrationId } = useParams();
@@ -32,6 +33,7 @@ const AdminEdit = () => {
   const [submitStatus, setSubmitStatus] = useState(null);
   const [saveStatus, setSaveStatus] = useState(null);
   const [selectedTemplate, setSelectedTemplate] = useState("Select");
+  const [showDocumentTypeManager, setShowDocumentTypeManager] = useState(false);
 
   const [activeTab, setActiveTab] = useState("client");
   const { userRole, userPermissions } = useAuth();
@@ -44,6 +46,7 @@ const AdminEdit = () => {
   const [templates, setTemplates] = useState({});
   const [availableReferralSites, setAvailableReferralSites] = useState([]);
   const [availableDispositions, setAvailableDispositions] = useState([]);
+  const [availableDocumentTypes, setAvailableDocumentTypes] = useState([]);
   const [availableClinicalTemplates, setAvailableClinicalTemplates] = useState(
     [],
   );
@@ -246,8 +249,10 @@ const AdminEdit = () => {
     ),
     attachments: (
       <Attachments
+        availableDocumentTypes={availableDocumentTypes}
         setActiveTab={setActiveTab}
         currentRegistrationId={currentRegistrationId}
+        setShowDocumentTypeManager={setShowDocumentTypeManager}
       />
     ),
   };
@@ -271,6 +276,26 @@ const AdminEdit = () => {
     ];
 
     return allTabs.filter((tab) => hasTabPermission(tab.id));
+  };
+
+  // Update to det docuemtn types
+  const getDocumentTypes = async (e) => {
+    setLoading(true);
+    setError("");
+
+    const result = await GeneralServices.get_document_types();
+    console.log(result);
+
+    if (result.success) {
+      setAvailableDocumentTypes(result.data);
+    } else {
+      if (result.status === 400 || result.status === 409) {
+        setError(result.message || "Error getting document types.");
+      } else {
+        setError("Error getting document types. Please try again.");
+      }
+    }
+    setLoading(false);
   };
 
   const getDispositions = async (e) => {
@@ -336,6 +361,7 @@ const AdminEdit = () => {
   };
 
   useEffect(() => {
+    getDocumentTypes();
     getDispositions();
     getReferralSites();
     getClinicalTemplates();
@@ -680,6 +706,14 @@ const AdminEdit = () => {
           handleForceSubmit={handleForceSubmit}
           cancelForceSubmit={cancelForceSubmit}
           errorMessage={error}
+        />
+      )}
+
+      {showDocumentTypeManager && (
+        <DocumentTypeManager
+          setShowDocumentTypeManager={setShowDocumentTypeManager}
+          availableDocumentTypes={availableDocumentTypes}
+          getDocumentTypes={getDocumentTypes}
         />
       )}
     </div>

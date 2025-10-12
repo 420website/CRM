@@ -28,6 +28,16 @@ CREATE TABLE dispositions (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+-- Document type lookup
+CREATE TABLE document_types (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(200) NOT NULL UNIQUE,
+    is_default BOOLEAN DEFAULT false,
+    is_frequent BOOLEAN DEFAULT false,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
 -- Referral sites lookup
 CREATE TABLE referral_sites (
     id SERIAL PRIMARY KEY,
@@ -42,5 +52,6 @@ CREATE TABLE referral_sites (
 DROP TABLE IF EXISTS note_templates;
 DROP TABLE IF EXISTS clinical_templates;
 DROP TABLE IF EXISTS dispositions;
+DROP TABLE IF EXISTS document_type;
 DROP TABLE IF EXISTS referral_sites;
 

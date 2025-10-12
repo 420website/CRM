@@ -6,6 +6,8 @@ from app.general.schemas import (
     ClinicalTemplateUpdate,
     Disposition,
     DispositionUpdate,
+    DocumentType,
+    DocumentTypeUpdate,
     NotesTemplate,
     NotesTemplateUpdate,
     ReferralSite,
@@ -504,6 +506,220 @@ class TestGeneralServiceClinical(IsolatedAsyncioTestCase):
         result = await GeneralService.update_clinical_template(
             1000, update_data
         )
+
+        self.assertFalse(result)
+
+
+class TestGeneralServiceDocumentType(IsolatedAsyncioTestCase):
+
+    async def _cleanup_test_data(self):
+        """Helper method to clean up test data"""
+        test_names = [
+            "Consultation Report",
+            "HCV Perscription",
+            "Treatment Consent",
+            "test_document",
+        ]
+        for name in test_names:
+            try:
+                await GeneralService.delete_document_type(name)
+            except Exception:
+                pass  # Ignore if disposition doesn't exist
+
+    async def asyncSetUp(self) -> None:
+        asyncio.get_event_loop().set_debug(False)
+        await database.connect()
+        await self._cleanup_test_data()
+
+    async def asyncTearDown(self) -> None:
+        await database.disconnect()
+
+    async def test_create_document_type_success(self):
+        document_type = DocumentType(
+            name="Consultation Report",
+            is_default=False,
+            is_frequent=False,
+        )
+
+        # Test
+        result = await GeneralService.create_document_type(document_type)
+        self.assertTrue(result)
+
+        # Validate
+        doc_types = await GeneralService.get_document_types()
+        doc_type = [t for t in doc_types if t.name == "Consultation Report"]
+        self.assertEqual(doc_type[0].name, "Consultation Report")
+
+        await GeneralService.delete_disposition("test_disposition")
+
+    async def test_create_document_type_with_default(self):
+        doc_type = DocumentType(
+            name="HCV Perscription",
+            is_default=True,
+            is_frequent=False,
+        )
+
+        # Test
+        result = await GeneralService.create_document_type(doc_type)
+        self.assertTrue(result)
+
+        # Validate
+        doc_types = await GeneralService.get_document_types()
+        doc_type = [t for t in doc_types if t.name == "HCV Perscription"]
+
+        self.assertEqual(doc_types[0].name, "HCV Perscription")
+        self.assertTrue(doc_types[0].is_default)
+
+        await GeneralService.delete_document_type("HCV Persciption")
+
+    async def test_create_duplicate_document_type_name(self):
+        doc_type = DocumentType(
+            name="HCV Perscription",
+            is_default=True,
+            is_frequent=False,
+        )
+
+        # Create first disposition
+        result1 = await GeneralService.create_document_type(doc_type)
+        self.assertTrue(result1)
+
+        # This might raise an exception or return False depending on implementation
+        with self.assertRaises(Exception):
+            await GeneralService.create_document_type(doc_type)
+
+        await GeneralService.delete_disposition("HCV Perscription")
+
+    async def test_get_doc_types_empty(self):
+        doc_types = await GeneralService.get_document_types()
+
+        self.assertIsInstance(doc_types, list)
+
+    async def test_get_document_type_with_data(self):
+        # Create test dispositions
+        doc_type1 = DocumentType(
+            name="HCV Perscription",
+            is_default=True,
+            is_frequent=False,
+        )
+        doc_type2 = DocumentType(
+            name="Consultation Report",
+            is_default=True,
+            is_frequent=False,
+        )
+
+        await GeneralService.create_document_type(doc_type1)
+        await GeneralService.create_document_type(doc_type2)
+
+        docs = await GeneralService.get_document_types()
+
+        self.assertIsInstance(docs, list)
+        self.assertGreaterEqual(len(docs), 2)
+
+        # Verify our dispositions are in the results
+        doc_names = [d.name for d in docs]
+        self.assertIn("HCV Perscription", doc_names)
+        self.assertIn("Consultation Report", doc_names)
+
+        # Verify disposition structure
+        for doc in docs:
+            self.assertIsInstance(doc, DocumentType)
+            self.assertIsInstance(doc.name, str)
+            self.assertIsInstance(doc.is_default, bool)
+
+        await GeneralService.delete_disposition("HCV Perscription")
+        await GeneralService.delete_disposition("Consultation Report")
+
+    async def test_delete_document_type_success(self):
+        doc_type = DocumentType(
+            name="HCV Perscription",
+            is_default=True,
+            is_frequent=False,
+        )
+        await GeneralService.create_document_type(doc_type)
+
+        # Delete the disposition
+        result = await GeneralService.delete_document_type("HCV Perscription")
+        self.assertTrue(result)
+
+        # Verify disposition was deleted
+        docs = await GeneralService.get_document_types()
+        doc_names = [d.name for d in docs]
+        self.assertNotIn("HCV Perscription", doc_names)
+
+    async def test_delete_document_type_not_found(self):
+        result = await GeneralService.delete_document_type("non_existent")
+
+        self.assertFalse(result)
+
+    async def test_update_document_type_success(self):
+        doc = DocumentType(
+            name="HCV Perscription",
+            is_default=False,
+            is_frequent=False,
+        )
+        id = await GeneralService.create_document_type(doc)
+
+        # Update the disposition
+        update_data = DocumentTypeUpdate(
+            name="test_document",
+            is_default=True,
+        )
+
+        result = await GeneralService.update_document_type(id, update_data)
+        self.assertTrue(result)
+
+        # Verify disposition was updated
+        docs = await GeneralService.get_document_types()
+        doc = [t for t in docs if t.name == "test_document"]
+
+        self.assertIsNotNone(doc[0])
+        self.assertTrue(doc[0].is_default)
+
+        await GeneralService.delete_disposition("test_document")
+
+    async def test_update_document_type_partial(self):
+        doc = DocumentType(
+            name="HCV Perscription",
+            is_default=False,
+            is_frequent=False,
+        )
+        id = await GeneralService.create_document_type(doc)
+
+        # Partial update - only is_frequent
+        update_data = DocumentTypeUpdate(name="test_document")
+        result = await GeneralService.update_document_type(id, update_data)
+        self.assertTrue(result)
+
+        # Verify only is_frequent was updated
+        docs = await GeneralService.get_document_types()
+        doc = [t for t in docs if t.name == "test_document"]
+
+        self.assertIsNotNone(doc[0])
+        self.assertFalse(doc[0].is_default)
+
+        await GeneralService.delete_document_type("test_document")
+
+    async def test_update_document_type_empty_updates(self):
+        doc = DocumentType(
+            name="HCV Perscription",
+            is_default=False,
+            is_frequent=False,
+        )
+        id = await GeneralService.create_document_type(doc)
+
+        # Empty update
+        update_data = DocumentTypeUpdate()
+        result = await GeneralService.update_document_type(id, update_data)
+
+        self.assertFalse(result)
+
+        # Clean up
+        await GeneralService.delete_document_type("HCV Perscription")
+
+    async def test_update_document_type_not_found(self):
+        update_data = DocumentTypeUpdate(name="non_existent")
+
+        result = await GeneralService.update_document_type(1000, update_data)
 
         self.assertFalse(result)
 

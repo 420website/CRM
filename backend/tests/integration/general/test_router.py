@@ -7,22 +7,27 @@ from app.database import database
 from app.general.router import (
     create_clinical_template,
     create_disposition,
+    create_document_type,
     create_note_template,
     create_referral_site,
     delete_clinical_template_id,
     delete_clinical_template_name,
     delete_disposition_id,
     delete_disposition_name,
+    delete_document_type_id,
+    delete_document_type_name,
     delete_note_template_id,
     delete_note_template_name,
     delete_referral_site_id,
     delete_referral_site_name,
     get_clinical_templates,
     get_dispositions,
+    get_document_types,
     get_note_templates,
     get_referral_sites,
     update_disposition,
     update_clinical_template,
+    update_document_type,
     update_note_template,
     update_referral_site,
 )
@@ -31,6 +36,8 @@ from app.general.schemas import (
     ClinicalTemplateUpdate,
     Disposition,
     DispositionUpdate,
+    DocumentType,
+    DocumentTypeUpdate,
     NotesTemplate,
     NotesTemplateUpdate,
     ReferralSite,
@@ -731,6 +738,315 @@ class TestClinicalTemplateAPI(IsolatedAsyncioTestCase):
         self.assertEqual(context.exception.status_code, 404)
         self.assertIn(
             "Clinical template not found or could not be updated",
+            context.exception.detail,
+        )
+
+
+class TestDocumentTypenAPI(IsolatedAsyncioTestCase):
+    async def _cleanup_test_data(self):
+        test_names = [
+            "Consultation Report",
+            "HCV Perscription",
+            "Treatment Consent",
+            "test_document",
+            "new_document",
+        ]
+        for name in test_names:
+            try:
+                await GeneralService.delete_document_type(name)
+            except Exception:
+                pass
+
+    async def asyncSetUp(self) -> None:
+        await database.connect()
+        asyncio.get_event_loop().set_debug(False)
+        await self._cleanup_test_data()
+
+        # Get authenticated user for all tests
+        self.user = UserRead(
+            id=1,
+            email=email,
+            role="admin",
+            permissions=[],
+            authenticator_mfa_enabled=True,
+        )
+
+    async def asyncTearDown(self) -> None:
+        await self._cleanup_test_data()
+        await database.disconnect()
+
+    # Create
+    async def test_create_document_type_success(self):
+        document_type = DocumentType(
+            name="Consultation Report",
+            is_default=False,
+            is_frequent=False,
+        )
+
+        # Test
+        result = await create_document_type(document_type, self.user)
+
+        self.assertEqual(
+            result["message"],
+            "Document type created successfully.",
+        )
+
+        # Validate by getting
+        result = await get_document_types(self.user)
+        doc_names = [d.name for d in result]
+        self.assertIn("Consultation Report", doc_names)
+
+    async def test_create_document_type_with_default(self):
+        document_type = DocumentType(
+            name="Consultation Report",
+            is_default=True,
+            is_frequent=False,
+        )
+
+        # Test
+        result = await create_document_type(document_type, self.user)
+        self.assertEqual(
+            result["message"],
+            "Document type created successfully.",
+        )
+
+        # Validate
+        result = await get_document_types(self.user)
+
+        default_doc = next(
+            (d for d in result if d.name == "Consultation Report"), None
+        )
+        self.assertIsNotNone(default_doc)
+        self.assertTrue(default_doc.is_default)
+
+    async def test_create_duplicate_doc_type_name(self):
+        document_type = DocumentType(
+            name="Consultation Report",
+            is_default=True,
+            is_frequent=False,
+        )
+
+        # Create first disposition
+        result = await create_document_type(document_type, self.user)
+        self.assertEqual(
+            result["message"],
+            "Document type created successfully.",
+        )
+
+        # Try to create duplicate - should raise HTTPException
+        with self.assertRaises(HTTPException) as context:
+            await create_document_type(document_type, self.user)
+
+        self.assertEqual(context.exception.status_code, 400)
+        self.assertIn(
+            "Document type already exists.", context.exception.detail
+        )
+
+    # Get
+    async def test_get_document_type_empty(self):
+        result = await get_document_types(self.user)
+
+        self.assertIsInstance(result, list)
+
+    async def test_get_document_type_with_data(self):
+        document_type1 = DocumentType(
+            name="Consultation Report",
+            is_default=True,
+            is_frequent=False,
+        )
+        document_type2 = DocumentType(
+            name="HCV Perscription",
+            is_default=True,
+            is_frequent=False,
+        )
+
+        await create_document_type(document_type1, self.user)
+        await create_document_type(document_type2, self.user)
+
+        # Test
+        result = await get_document_types(self.user)
+
+        self.assertIsInstance(result, list)
+        self.assertGreaterEqual(len(result), 2)
+
+        doc_names = [d.name for d in result]
+        self.assertIn("Consultation Report", doc_names)
+        self.assertIn("HCV Perscription", doc_names)
+
+        # Verify disposition structure
+        for doc in result:
+            self.assertIsInstance(doc, DocumentType)
+            self.assertIsInstance(doc.name, str)
+            self.assertIsInstance(doc.is_default, bool)
+            self.assertIsNotNone(doc.id)
+
+    # Delete
+    async def test_delete_document_type_by_name_success(self):
+        document_type = DocumentType(
+            name="HCV Perscription",
+            is_default=True,
+            is_frequent=False,
+        )
+        await create_document_type(document_type, self.user)
+
+        # Delete the disposition
+        result = await delete_document_type_name("HCV Perscription", self.user)
+        self.assertEqual(
+            result["message"], "Document type deleted successfully."
+        )
+
+        # Verify  was deleted
+        result = await get_document_types(self.user)
+        docs = [d.name for d in result]
+        self.assertNotIn("HCV Perscription", docs)
+
+    async def test_delete_document_type_by_id_success(self):
+        document_type = DocumentType(
+            name="HCV Perscription",
+            is_default=True,
+            is_frequent=False,
+        )
+        await create_document_type(document_type, self.user)
+
+        # Get doc type to find its ID
+        result = await get_document_types(self.user)
+        doc = next((d for d in result if d.name == "HCV Perscription"), None)
+        self.assertIsNotNone(doc)
+        doc_id = doc.id
+
+        # Delete  by ID
+        result = await delete_document_type_id(doc_id, self.user)
+        self.assertEqual(
+            result["message"], "Document type deleted successfully."
+        )
+
+        # Verify was deleted
+        result = await get_document_types(self.user)
+        doc_names = [d.name for d in result]
+        self.assertNotIn("HCV Perscription", doc_names)
+
+    async def test_delete_document_type_not_found_by_name(self):
+        with self.assertRaises(HTTPException) as context:
+            await delete_document_type_name("non_existent", self.user)
+
+        self.assertEqual(context.exception.status_code, 404)
+        self.assertIn("Document type not found", context.exception.detail)
+
+    async def test_delete_document_type_not_found_by_id(self):
+        with self.assertRaises(HTTPException) as context:
+            await delete_document_type_id(99999, self.user)  # Non-existent ID
+
+        self.assertEqual(context.exception.status_code, 404)
+        self.assertIn("Document type not found", context.exception.detail)
+
+    # Update
+    async def test_update_document_type_success(self):
+        document_type = DocumentType(
+            name="HCV Perscription",
+            is_default=True,
+            is_frequent=False,
+        )
+        await create_document_type(document_type, self.user)
+
+        # Get ID
+        result = await get_document_types(self.user)
+        doc = next((d for d in result if d.name == "HCV Perscription"), None)
+        doc_id = doc.id
+
+        # Update
+        update_data = DocumentTypeUpdate(
+            name="test_document",
+            is_default=True,
+        )
+
+        result = await update_document_type(doc_id, update_data, self.user)
+        self.assertEqual(
+            result["message"],
+            "Document type updated successfully.",
+        )
+
+        # Verify updated
+        docs = await get_document_types(self.user)
+        updated_doc = next(
+            (d for d in docs if d.name == "test_document"), None
+        )
+
+        self.assertIsNotNone(updated_doc)
+        self.assertTrue(updated_doc.is_default)
+
+        await delete_document_type_id(doc_id, self.user)
+
+    async def test_update_document_type_partial(self):
+        document_type = DocumentType(
+            name="Document1",
+            is_default=True,
+            is_frequent=False,
+        )
+        await create_document_type(document_type, self.user)
+
+        # Get ID
+        result = await get_document_types(self.user)
+        doc = next((d for d in result if d.name == "Document1"), None)
+        doc_id = doc.id
+
+        # Partial update - only is_frequent
+        update_data = DocumentTypeUpdate(name="new_document")
+
+        result = await update_document_type(doc_id, update_data, self.user)
+        self.assertEqual(
+            result["message"],
+            "Document type updated successfully.",
+        )
+
+        # Verify only is_frequent was updated
+        result = await get_document_types(self.user)
+        updated_doc = next(
+            (d for d in result if d.name == "new_document"), None
+        )
+
+        self.assertIsNotNone(updated_doc)
+        self.assertTrue(updated_doc.is_default)
+
+        # clean up
+        await delete_document_type_id(doc_id, self.user)
+
+    async def test_update_document_type_empty_updates(self):
+        document_type = DocumentType(
+            name="HCV Perscription",
+            is_default=True,
+            is_frequent=False,
+        )
+        await create_document_type(document_type, self.user)
+
+        # Get ID
+        result = await get_document_types(self.user)
+        doc = next((d for d in result if d.name == "HCV Perscription"), None)
+        doc_id = doc.id
+
+        # Empty update
+        update_data = DocumentTypeUpdate()
+
+        with self.assertRaises(HTTPException) as context:
+            await update_document_type(doc_id, update_data, self.user)
+
+        self.assertEqual(context.exception.status_code, 404)
+        self.assertIn(
+            "Document type not found or could not be updated",
+            context.exception.detail,
+        )
+
+        # clean up
+        await delete_document_type_id(doc_id, self.user)
+
+    async def test_update_document_type_not_found(self):
+        update_data = DocumentTypeUpdate(name="new_document")
+
+        with self.assertRaises(HTTPException) as context:
+            await update_document_type(99999, update_data, self.user)
+
+        self.assertEqual(context.exception.status_code, 404)
+        self.assertIn(
+            "Document type not found or could not be updated",
             context.exception.detail,
         )
 

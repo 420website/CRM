@@ -4,6 +4,8 @@ from app.general.schemas import (
     ClinicalTemplateUpdate,
     Disposition,
     DispositionUpdate,
+    DocumentType,
+    DocumentTypeUpdate,
     NotesTemplate,
     NotesTemplateUpdate,
     ReferralSite,
@@ -272,6 +274,81 @@ class GeneralService:
             f"{field} = ${i+1}" for i, field in enumerate(update.keys())
         ]
         query = f"UPDATE dispositions SET {', '.join(set_clauses)} WHERE id = ${len(update)+1} RETURNING id;"
+        values = list(update.values()) + [id]
+
+        async with database.get_transaction() as conn:
+            row = await conn.fetchrow(query, *values)
+            return bool(row)
+
+    # Dcoument type
+    @staticmethod
+    async def create_document_type(
+        document_type: DocumentType,
+    ) -> Optional[str]:
+        query = """
+        INSERT INTO document_types (name, is_frequent, is_default)
+        VALUES ($1, $2, $3)
+        RETURNING id;
+        """
+
+        # Insert user and get the generated ID
+        async with database.get_transaction() as conn:
+            row = await conn.fetchrow(
+                query,
+                document_type.name,
+                document_type.is_frequent,
+                document_type.is_default,
+            )
+            if row and "id" in row:
+                return row["id"]
+            return None
+
+    @staticmethod
+    async def get_document_types() -> List[Disposition]:
+        query = """
+        SELECT * FROM document_types;
+        """
+
+        async with database.get_connection() as conn:
+            rows = await conn.fetch(query)
+
+        result = []
+        if rows:
+            for row in rows:
+                result.append(DocumentType(**dict(row)))
+
+        return result
+
+    @staticmethod
+    async def delete_document_type(name: str) -> bool:
+        query = """DELETE FROM document_types WHERE name=$1 RETURNING id;"""
+
+        async with database.get_transaction() as conn:
+            row = await conn.fetchrow(query, name)
+            return bool(row)
+
+    @staticmethod
+    async def delete_document_type_by_id(id: int) -> bool:
+        query = """DELETE FROM document_types WHERE id=$1 RETURNING id;"""
+
+        async with database.get_transaction() as conn:
+            row = await conn.fetchrow(query, id)
+            return bool(row)
+
+    @staticmethod
+    async def update_document_type(
+        id: int,
+        updates: DocumentTypeUpdate,
+    ) -> bool:
+        update = updates.model_dump(exclude_unset=True)
+
+        if not update:
+            return False
+
+        set_clauses = [
+            f"{field} = ${i+1}" for i, field in enumerate(update.keys())
+        ]
+        query = f"UPDATE document_types SET {', '.join(set_clauses)} WHERE id = ${len(update)+1} RETURNING id;"
         values = list(update.values()) + [id]
 
         async with database.get_transaction() as conn:

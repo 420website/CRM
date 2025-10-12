@@ -14,6 +14,8 @@ from app.general.schemas import (
     ClinicalTemplateUpdate,
     Disposition,
     DispositionUpdate,
+    DocumentType,
+    DocumentTypeUpdate,
     NotesTemplate,
     NotesTemplateUpdate,
     ReferralSite,
@@ -235,6 +237,75 @@ async def update_disposition(
             detail="Disposition not found or could not be updated.",
         )
     return {"message": "Disposition updated successfully."}
+
+
+###############
+# Document Type
+###############
+@router.post("/document-type")
+async def create_document_type(
+    data: DocumentType,
+    user: UserRead = Depends(get_current_user),
+):
+
+    if await GeneralService.check_exists(data.name, "document_types"):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Document type already exists.",
+        )
+
+    if not await GeneralService.create_document_type(data):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Document type not created.",
+        )
+    return {"message": "Document type created successfully."}
+
+
+@router.get("/document-type", response_model=List[DocumentType])
+async def get_document_types(user: UserRead = Depends(get_current_user)):
+    result = await GeneralService.get_document_types()
+    return result
+
+
+@router.delete("/document-type/{id}")
+async def delete_document_type_id(
+    id: int,
+    user: UserRead = Depends(get_current_user),
+):
+    if not await GeneralService.delete_document_type_by_id(id):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Document type not found.",
+        )
+    return {"message": "Document type deleted successfully."}
+
+
+@router.delete("/document-type/by-name/{name}")
+async def delete_document_type_name(
+    name: str,
+    user: UserRead = Depends(get_current_user),
+):
+    if not await GeneralService.delete_document_type(name):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Document type not found.",
+        )
+    return {"message": "Document type deleted successfully."}
+
+
+@router.patch("/document-type/{id}")
+async def update_document_type(
+    id: int,
+    data: DocumentTypeUpdate,
+    user: UserRead = Depends(get_current_user),
+):
+    if not await GeneralService.update_document_type(id, data):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Document type not found or could not be updated.",
+        )
+    return {"message": "Document type updated successfully."}
 
 
 ##############

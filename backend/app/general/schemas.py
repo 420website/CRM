@@ -67,6 +67,26 @@ class DispositionUpdate(BaseModel):
     updated_at: Optional[datetime] = None
 
 
+# Document Types
+class DocumentType(BaseModel):
+    id: Optional[int] = None
+    name: str
+    is_frequent: bool
+    is_default: bool
+    created_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = None
+
+    class Config:
+        from_attributes = True
+
+
+class DocumentTypeUpdate(BaseModel):
+    name: Optional[str] = None
+    is_frequent: Optional[bool] = None
+    is_default: Optional[bool] = None
+    updated_at: Optional[datetime] = None
+
+
 # Referral Sites
 class ReferralSite(BaseModel):
     id: Optional[int] = None
