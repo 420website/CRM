@@ -52,8 +52,6 @@ export const loadPDF = async (id, file, setDocumentPreview, setTotalPages) => {
     });
 
     setTotalPages(pdfDoc.getPageCount());
-
-    pdfDoc.destroy();
   };
   reader.readAsDataURL(file); // pdf.js requires ArrayBuffer
 };

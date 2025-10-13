@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState } from "react";
-
 import { Document, Page, pdfjs } from "react-pdf";
 
 pdfjs.GlobalWorkerOptions.workerSrc = new URL(
@@ -23,22 +22,31 @@ export default function DocumentPreview({
   const [containerHeight, setContainerHeight] = useState(0);
   const [pageAspectRatio, setPageAspectRatio] = useState(1);
 
+  // Watch container size dynamically
   useEffect(() => {
     if (!containerRef.current) return;
 
     const resizeObserver = new ResizeObserver((entries) => {
       for (let entry of entries) {
-        setContainerWidth(entry.contentRect.width);
-        setContainerHeight(entry.contentRect.height);
+        const newWidth = entry.contentRect.width;
+        setContainerWidth(newWidth);
+        setContainerHeight(newWidth / pageAspectRatio); // maintain aspect ratio
       }
     });
 
     resizeObserver.observe(containerRef.current);
     return () => resizeObserver.disconnect();
-  }, []);
+  }, [pageAspectRatio]);
 
+  // When page loads, update aspect ratio
   const onPageLoadSuccess = (page) => {
-    setPageAspectRatio(page.originalWidth / page.originalHeight);
+    const aspectRatio = page.originalWidth / page.originalHeight;
+    setPageAspectRatio(aspectRatio);
+
+    // Immediately adjust container height based on current width
+    if (containerWidth > 0) {
+      setContainerHeight(containerWidth / aspectRatio);
+    }
   };
 
   // Page navigation functions
@@ -71,7 +79,10 @@ export default function DocumentPreview({
       <div
         ref={containerRef}
         className="border-2 border-gray-300 rounded-lg overflow-hidden shadow-md flex items-center justify-center"
-        style={{ height: "600px" }}
+        style={{
+          width: "100%",
+          height: `${containerHeight}px`,
+        }}
       >
         <Document
           file={documentPreview.url}
@@ -91,17 +102,9 @@ export default function DocumentPreview({
         >
           <Page
             pageNumber={currentPage}
-            width={
-              containerWidth < containerHeight * pageAspectRatio
-                ? containerWidth
-                : undefined
-            }
-            height={
-              containerWidth >= containerHeight * pageAspectRatio
-                ? containerHeight
-                : undefined
-            }
-            className="max-h-full max-w-full object-contain"
+            width={containerWidth}
+            height={containerHeight}
+            // className="max-h-full max-w-full object-contain"
             loading={
               <div className="p-4 text-center">
                 <div className="inline-block animate-spin rounded-full h-6 w-6 border-b-2 border-gray-900"></div>

@@ -20,7 +20,6 @@ export default function Attachments({
   const [isFullScreenPreview, setIsFullScreenPreview] = useState(false);
   const [totalPages, setTotalPages] = useState(1);
   const [documentFile, setDocumentFile] = useState(null);
-  // const [showDocumentTypeManager, setShowDocumentTypeManager] = useState(false);
 
   const getAttachments = async (registrationId) => {
     setLoading(true);
@@ -426,7 +425,7 @@ export default function Attachments({
             <h3 className="text-md font-medium text-gray-900 mb-3">
               Document Preview
             </h3>
-            <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center min-h-96">
+            <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
               {documentPreview ? (
                 <div className="space-y-4">
                   {documentPreview.type.split("/")[0] === "image" && (
@@ -442,10 +441,6 @@ export default function Attachments({
                         src={documentPreview.url}
                         alt="Document preview"
                         className="w-full h-full object-contain border-2 border-gray-300 rounded-lg shadow-md hover:shadow-lg transition-shadow"
-                        style={{
-                          minHeight: "300px",
-                          maxHeight: "350px",
-                        }}
                         key={documentPreview.url?.substring(0, 50)} // Force img re-render
                       />
                     </div>

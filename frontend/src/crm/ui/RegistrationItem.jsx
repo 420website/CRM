@@ -178,7 +178,7 @@ export default function RegistrationItem({
               onClick={() => showPhoto(item.id, index)}
               className="mt-2 text-sm text-blue-600 hover:text-blue-800"
             >
-              Load Photo
+              Show Photo
             </button>
           )}
 
