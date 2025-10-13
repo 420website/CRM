@@ -29,6 +29,20 @@ async def get_legacy_data_summary(user: UserRead = Depends(get_current_user)):
         )
 
 
+@router.delete("/legacy-data-summary")
+async def clear_legacy_data_summary(
+    user: UserRead = Depends(get_current_user),
+):
+    try:
+        result = await AnalyticsService.delete_all_legacy_data(user.id)
+        return result
+    except Exception as e:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Failed to delete summary data: {str(e)}",
+        )
+
+
 @router.post("/upload-legacy-data", response_model=ExcelUploadResponse)
 async def upload_legacy_data(
     file: UploadFile = File(...),

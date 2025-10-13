@@ -100,6 +100,14 @@ const AdminAnalytics = () => {
     }
   };
 
+  const clearLegacyDataSummary = async () => {
+    const result = await AnalyticsServices.clear_legacy_data();
+    if (result.success) {
+      setLegacyDataSummary(null);
+      setUploadStatus(false);
+    }
+  };
+
   const handleFileUpload = async (event) => {
     const file = event.target.files[0];
     if (!file) return;
@@ -211,6 +219,8 @@ const AdminAnalytics = () => {
     setMessages([]);
     setIsTyping(true);
     setTypedText("");
+
+    clearLegacyDataSummary();
 
     // Restart typewriter effect with improved logic
     const typeInterval = setInterval(() => {
