@@ -1,7 +1,83 @@
 import { useNavigate } from "react-router-dom";
+import { useCallback } from "react";
+import { ObjectServices } from "../../services/objectService";
+import { useState } from "react";
 
-export default function ActivityItem({ item }) {
+export function ActivityItems({ filteredData }) {
+  const [showingPhotos, setShowingPhotos] = useState([]);
+  const [loadedPhotos, setLoadedPhotos] = useState({});
+  const [loadingPhotos, setLoadingPhotos] = useState(new Set());
+
+  const getPhoto = async (registrationId) => {
+    const result = await ObjectServices.get_photo_base64(registrationId);
+    if (result.success) {
+      return `data:image/jpeg;base64,${result.data?.file}`;
+    }
+  };
+
+  const showPhoto = async (patientId, index) => {
+    if (loadedPhotos[patientId]) {
+      const isShowing = showingPhotos.some(
+        ([id, idx]) => id === patientId && idx === index,
+      );
+
+      if (!isShowing) {
+        setShowingPhotos([...showingPhotos, [patientId, index]]);
+        return;
+      }
+      return;
+    }
+
+    const photo = await getPhoto(patientId);
+
+    if (photo) {
+      setLoadedPhotos((prev) => ({
+        ...prev,
+        [patientId]: photo,
+      }));
+      setShowingPhotos([...showingPhotos, [patientId, index]]);
+    }
+  };
+
+  const hidePhoto = async (patientId, index) => {
+    setShowingPhotos((prev) =>
+      prev.filter(([id, idx]) => !(id === patientId && idx === index)),
+    );
+  };
+
+  const renderActivityItem = useCallback(
+    (item, index) => (
+      <ActivityItem
+        key={index}
+        index={index}
+        item={item}
+        loadedPhotos={loadedPhotos}
+        loadingPhotos={loadingPhotos}
+        showPhoto={showPhoto}
+        hidePhoto={hidePhoto}
+        showingPhotos={showingPhotos}
+      />
+    ),
+    [loadedPhotos, loadingPhotos, showPhoto, hidePhoto, showingPhotos],
+  );
+
+  return <div>{filteredData.map(renderActivityItem)}</div>;
+}
+
+export default function ActivityItem({
+  index,
+  item,
+  loadingPhotos,
+  loadedPhotos,
+  showPhoto,
+  hidePhoto,
+  showingPhotos,
+}) {
   const navigate = useNavigate();
+
+  const isShowing = showingPhotos.some(
+    ([id, idx]) => id === item.patient_id && idx === index,
+  );
 
   const status =
     new Date(`${item.date}T${item.time}`) > new Date()
@@ -44,6 +120,44 @@ export default function ActivityItem({ item }) {
             {item.phone1 && <p>Phone: {item.phone1}</p>}
             <p className="text-xs text-gray-500 mt-1">Activity ID: {item.id}</p>
           </div>
+
+          {/* Lazy loaded photo */}
+          {isShowing && (
+            <div className="mt-4 mb-4">
+              <div className="flex flex-row justify-between sm:flex-row">
+                <p className="text-sm font-medium text-gray-700 mb-2">
+                  Uploaded Photo:
+                </p>
+                <button
+                  className="text-sm font-medium text-gray-700 mb-2"
+                  onClick={() => hidePhoto(item.patient_id, index)}
+                >
+                  x
+                </button>
+              </div>
+              <img
+                src={loadedPhotos[item.patient_id]}
+                alt="Registration photo"
+                className="lg:max-w-xs md:w-3/4 max-h-48 object-contain border rounded"
+                onError={(e) => {
+                  e.target.style.display = "none";
+                }}
+              />
+            </div>
+          )}
+
+          {!isShowing && (
+            <button
+              onClick={() => showPhoto(item.patient_id, index)}
+              className="mt-2 text-sm text-blue-600 hover:text-blue-800"
+            >
+              Show Photo
+            </button>
+          )}
+
+          {loadingPhotos.has(item.patient_id) && (
+            <div className="mt-2 text-sm text-gray-500">Loading photo...</div>
+          )}
         </div>
       </div>
 

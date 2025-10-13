@@ -1,12 +1,9 @@
 import { useNavigate } from "react-router-dom";
 import { ObjectServices } from "../../services/objectService";
+import { useCallback, useState } from "react";
 
-export default function RegistrationItem({
+export function RegistrationItems({
   activeTab,
-  item,
-  setLoadedPhotos,
-  loadingPhotos,
-  loadedPhotos,
   deletingId,
   finalizingId,
   revertingId,
@@ -15,8 +12,11 @@ export default function RegistrationItem({
   handleDelete,
   handleFinalize,
   handleRevertToPending,
+  filteredData,
 }) {
-  const navigate = useNavigate();
+  const [showingPhotos, setShowingPhotos] = useState([]);
+  const [loadedPhotos, setLoadedPhotos] = useState({});
+  const [loadingPhotos, setLoadingPhotos] = useState(new Set());
 
   const getPhoto = async (registrationId) => {
     const result = await ObjectServices.get_photo_base64(registrationId);
@@ -25,9 +25,16 @@ export default function RegistrationItem({
     }
   };
 
-  // Lazy load photo for a specific registration
-  const loadPhoto = async (registrationId) => {
-    if (loadingPhotos.has(registrationId)) {
+  const showPhoto = async (registrationId, index) => {
+    if (loadedPhotos[registrationId]) {
+      const isShowing = showingPhotos.some(
+        ([id, idx]) => id === registrationId && idx === index,
+      );
+
+      if (!isShowing) {
+        setShowingPhotos([...showingPhotos, [registrationId, index]]);
+        return;
+      }
       return;
     }
 
@@ -48,8 +55,70 @@ export default function RegistrationItem({
         ...prev,
         [registrationId]: photo,
       }));
+      setShowingPhotos([...showingPhotos, [registrationId, index]]);
     }
   };
+
+  const hidePhoto = async (registrationId, index) => {
+    setShowingPhotos((prev) =>
+      prev.filter(([id, idx]) => !(id === registrationId && idx === index)),
+    );
+  };
+
+  const renderRegistrationItem = useCallback(
+    (item, index) => (
+      <RegistrationItem
+        key={index}
+        index={index}
+        activeTab={activeTab}
+        item={item}
+        loadingPhotos={loadingPhotos}
+        loadedPhotos={loadedPhotos}
+        deletingId={deletingId}
+        finalizingId={finalizingId}
+        revertingId={revertingId}
+        handleDelete={handleDelete}
+        handleFinalize={handleFinalize}
+        handleRevertToPending={handleRevertToPending}
+        showPhoto={showPhoto}
+        hidePhoto={hidePhoto}
+        showingPhotos={showingPhotos}
+      />
+    ),
+    [
+      loadedPhotos,
+      loadingPhotos,
+      deletingId,
+      finalizingId,
+      activeTab,
+      showingPhotos,
+    ],
+  );
+
+  return <div>{filteredData.map(renderRegistrationItem)}</div>;
+}
+
+export default function RegistrationItem({
+  index,
+  activeTab,
+  item,
+  loadingPhotos,
+  loadedPhotos,
+  deletingId,
+  finalizingId,
+  revertingId,
+  handleDelete,
+  handleFinalize,
+  handleRevertToPending,
+  showPhoto,
+  hidePhoto,
+  showingPhotos,
+}) {
+  const navigate = useNavigate();
+
+  const isShowing = showingPhotos.some(
+    ([id, idx]) => id === item.id && idx === index,
+  );
 
   return (
     <div key={item.id} className="border rounded-lg p-4 bg-gray-50">
@@ -80,11 +149,19 @@ export default function RegistrationItem({
           </div>
 
           {/* Lazy loaded photo */}
-          {loadedPhotos[item.id] && (
+          {isShowing && (
             <div className="mt-4 mb-4">
-              <p className="text-sm font-medium text-gray-700 mb-2">
-                Uploaded Photo:
-              </p>
+              <div className="flex flex-row justify-between sm:flex-row">
+                <p className="text-lg font-medium text-gray-700 mb-2">
+                  Uploaded Photo:
+                </p>
+                <button
+                  className="text-sm font-medium text-gray-700 mb-2"
+                  onClick={() => hidePhoto(item.id, index)}
+                >
+                  x
+                </button>
+              </div>
               <img
                 src={loadedPhotos[item.id]}
                 alt="Registration photo"
@@ -96,9 +173,9 @@ export default function RegistrationItem({
             </div>
           )}
 
-          {!loadedPhotos[item.id] && !loadingPhotos.has(item.id) && (
+          {!isShowing && (
             <button
-              onClick={() => loadPhoto(item.id)}
+              onClick={() => showPhoto(item.id, index)}
               className="mt-2 text-sm text-blue-600 hover:text-blue-800"
             >
               Load Photo
@@ -132,14 +209,15 @@ export default function RegistrationItem({
 
         {activeTab === "pending" && (
           <button
-            onClick={() =>
+            onClick={() => {
+              hidePhoto(item.id, index);
               handleFinalize(
                 item.id,
                 item.first_name,
                 item.last_name,
                 loadedPhotos[item.id],
-              )
-            }
+              );
+            }}
             disabled={finalizingId === item.id}
             className="bg-green-600 hover:bg-green-700 text-white py-2 px-3 rounded-md transition-colors text-xs font-medium disabled:opacity-50 flex-1 min-w-[70px]"
           >

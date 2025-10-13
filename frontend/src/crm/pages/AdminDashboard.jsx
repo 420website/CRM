@@ -2,11 +2,10 @@ import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { PatientServices } from "../../services/patientServices";
 import PaginationControls from "../ui/PaginationControls";
-import RegistrationItem from "../ui/RegistrationItem";
-import ActivityItem from "../ui/ActivityItem";
+import { RegistrationItems } from "../ui/RegistrationItem";
+import { ActivityItems } from "../ui/ActivityItem";
 import { useAuth } from "../../context/AuthContext";
 import { GeneralServices } from "../../services/generalService";
-import { ObjectServices } from "../../services/objectService";
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
@@ -317,33 +316,6 @@ const AdminDashboard = () => {
     }
     setFinalizingId(null);
   };
-
-  const renderRegistrationItem = useMemo(
-    () => (item, index) => (
-      <RegistrationItem
-        key={index}
-        activeTab={activeTab}
-        item={item}
-        setLoadedPhotos={setLoadedPhotos}
-        loadingPhotos={loadingPhotos}
-        loadedPhotos={loadedPhotos}
-        deletingId={deletingId}
-        finalizingId={finalizingId}
-        revertingId={revertingId}
-        finalizedData={finalizedData}
-        pendingData={pendingData}
-        handleDelete={handleDelete}
-        handleFinalize={handleFinalize}
-        handleRevertToPending={handleRevertToPending}
-      />
-    ),
-    [loadedPhotos, loadingPhotos, deletingId, finalizingId, activeTab],
-  );
-
-  const renderActivityItem = useMemo(
-    () => (item, index) => <ActivityItem key={index} item={item} />,
-    [],
-  );
 
   // Compute filtered data based on active tab + filters
   const getFilteredData = () => {
@@ -846,9 +818,22 @@ const AdminDashboard = () => {
                 <>
                   {/* Performance optimized rendering */}
                   <div className="space-y-4">
-                    {activeTab === "activities"
-                      ? getFilteredData().map(renderActivityItem)
-                      : getFilteredData().map(renderRegistrationItem)}
+                    {activeTab === "activities" ? (
+                      <ActivityItems filteredData={getFilteredData()} />
+                    ) : (
+                      <RegistrationItems
+                        activeTab={activeTab}
+                        deletingId={deletingId}
+                        finalizingId={finalizingId}
+                        revertingId={revertingId}
+                        finalizedData={finalizedData}
+                        pendingData={pendingData}
+                        handleDelete={handleDelete}
+                        handleFinalize={handleFinalize}
+                        handleRevertToPending={handleRevertToPending}
+                        filteredData={getFilteredData()}
+                      />
+                    )}
                   </div>
 
                   {/* Pagination Controls */}

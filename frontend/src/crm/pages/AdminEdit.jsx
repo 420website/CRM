@@ -284,7 +284,6 @@ const AdminEdit = () => {
     setError("");
 
     const result = await GeneralServices.get_document_types();
-    console.log(result);
 
     if (result.success) {
       setAvailableDocumentTypes(result.data);
