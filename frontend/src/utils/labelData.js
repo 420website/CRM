@@ -1,7 +1,41 @@
 import { PatientServices } from "../services/patientServices";
 
-// Format labels data helper function
-export const getFormattedLabelsData = (formData) => {
+export const copyLabelsData = async (formData) => {
+  const labelsData = getFormattedLabelsData(formData);
+  if (labelsData) {
+    try {
+      await navigator.clipboard.writeText(labelsData);
+      alert("✅ Label data copied to clipboard!");
+    } catch (error) {
+      alert("❌ Error copying label data: " + error.message);
+      console.error("Labels copy failed:", error.message);
+    }
+  }
+};
+
+// ClipboardItem is required for safari to work with the async calls
+export const copyFormData = async (currentRegistrationId, formData) => {
+  try {
+    const item = new ClipboardItem({
+      "text/plain": new Promise(async (resolve) => {
+        const data = await getFormattedCopyData(
+          currentRegistrationId,
+          formData,
+        );
+        resolve(new Blob([data], { type: "text/plain" }));
+      }),
+    });
+
+    await navigator.clipboard.write([item]);
+    alert("✅ Client data copied to clipboard!");
+  } catch (error) {
+    alert("❌ Failed to copy data to clipboard: " + error.message);
+    console.error("Form copy failed:", error);
+  }
+};
+
+// Format helper functions
+const getFormattedLabelsData = (formData) => {
   try {
     // Format date of birth for labels (YYYY-MM-DD format)
     let formattedDOB = "";
@@ -44,7 +78,7 @@ ${currentDate} ${currentTime}`;
 };
 
 // Copy form data function with test summary
-export const getFormattedCopyData = async (currentRegistrationId, formData) => {
+const getFormattedCopyData = async (currentRegistrationId, formData) => {
   try {
     // Get fresh test data directly from API
     let currentTests = [];
@@ -143,31 +177,5 @@ ${formData.summary_template || ""}${testSummary}`;
   } catch (error) {
     console.error("Error formatting labels data:", error);
     return "";
-  }
-};
-
-// Copy labels function - Copy to clipboard only
-export const copyLabelsData = async (formData) => {
-  const labelsData = getFormattedLabelsData(formData);
-  if (labelsData) {
-    try {
-      await navigator.clipboard.writeText(text);
-      alert("✅ Label data copied to clipboard!");
-    } catch (error) {
-      alert("❌ Error copying label data: " + error.message);
-      console.error("Labels copy failed:", error.message);
-    }
-  }
-};
-
-// Copy form data function with test summary
-export const copyFormData = async (currentRegistrationId, formData) => {
-  try {
-    const dataPromise = getFormattedCopyData(currentRegistrationId, formData);
-    await navigator.clipboard.writeText(await dataPromise);
-    alert("✅ Client data copied to clipboard!");
-  } catch (error) {
-    alert("❌ Failed to copy data to clipboard: " + error.message);
-    console.error("Form copy failed:", error);
   }
 };
