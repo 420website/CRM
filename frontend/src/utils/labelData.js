@@ -48,8 +48,9 @@ export const getFormattedCopyData = async (currentRegistrationId, formData) => {
   try {
     // Get fresh test data directly from API
     let currentTests = [];
-
+    console.log(currentRegistrationId);
     if (currentRegistrationId) {
+      console.log("tring to get tests");
       try {
         const result = await PatientServices.get_tests_by_patient(
           currentRegistrationId,
@@ -163,16 +164,18 @@ export const copyLabelsData = (formData) => {
 
 // Copy form data function with test summary
 export const copyFormData = async (currentRegistrationId, formData) => {
+  console.log(currentRegistrationId);
   const data = await getFormattedCopyData(currentRegistrationId, formData);
   console.log(data);
 
   try {
     await navigator.clipboard.writeText(data);
+    alert("✅ Client data copied to clipboard!");
     console.log("✅ Copy successful");
   } catch {
     try {
       const textarea = document.createElement("textarea");
-      textarea.value = textToCopy;
+      textarea.value = data;
       document.body.appendChild(textarea);
       textarea.select();
       document.execCommand("copy");
