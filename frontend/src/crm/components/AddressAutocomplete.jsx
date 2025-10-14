@@ -19,6 +19,13 @@ const AddressAutocomplete = ({ onPlaceSelected }) => {
       // Load Places library
       await google.maps.importLibrary("places");
 
+      // Remove any existing gmp-place-autocomplete children
+      Array.from(containerRef.current.children).forEach((child) => {
+        if (child.tagName.toLowerCase() === "gmp-place-autocomplete") {
+          containerRef.current.removeChild(child);
+        }
+      });
+
       // Create the autocomplete element
       const placeAutocomplete =
         new google.maps.places.PlaceAutocompleteElement();
