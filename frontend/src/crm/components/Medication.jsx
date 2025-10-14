@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { PatientServices } from "../../services/patientServices";
+import DeleteConfirmModal from "./DeleteConfirmModal";
 
 export default function Medications({ setActiveTab, currentRegistrationId }) {
   const [error, setError] = useState("");
@@ -7,7 +8,8 @@ export default function Medications({ setActiveTab, currentRegistrationId }) {
   const [editingMedicationId, setEditingMedicationId] = useState(null);
   const [isSavingMedication, setIsSavingMedication] = useState(false);
   const [savedMedications, setSavedMedications] = useState([]);
-
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deleteMedicationId, setDeleteMedicationId] = useState(null);
   const [medicationData, setMedicationData] = useState({
     medication: "",
     start_date: "",
@@ -126,17 +128,13 @@ export default function Medications({ setActiveTab, currentRegistrationId }) {
     setLoading(false);
   };
 
-  const deleteMedication = async (medicationId) => {
-    if (!window.confirm("Are you sure you want to delete this medication?")) {
-      return;
-    }
-
+  const deleteMedication = async () => {
     setLoading(true);
     setError("");
 
     const result = await PatientServices.delete_medication_by_id(
       currentRegistrationId,
-      medicationId,
+      deleteMedicationId,
     );
 
     if (result.success) {
@@ -149,6 +147,11 @@ export default function Medications({ setActiveTab, currentRegistrationId }) {
       }
     }
     setLoading(false);
+  };
+
+  const handleDeleteMedication = async (medicationId) => {
+    setDeleteMedicationId(medicationId);
+    setShowDeleteConfirm(true);
   };
 
   // Medication management functions
@@ -234,7 +237,13 @@ export default function Medications({ setActiveTab, currentRegistrationId }) {
             </div>
           </div>
         )}
-
+        {showDeleteConfirm && (
+          <DeleteConfirmModal
+            message={"Confirm you would like to delete medication."}
+            confirmDelete={deleteMedication}
+            setShowDeleteConfirm={setShowDeleteConfirm}
+          />
+        )}
         {/* Medication Form */}
         <div
           className={
@@ -430,7 +439,7 @@ export default function Medications({ setActiveTab, currentRegistrationId }) {
                       </button>
                       <button
                         type="button"
-                        onClick={() => deleteMedication(medication.id)}
+                        onClick={() => handleDeleteMedication(medication.id)}
                         className="text-red-600 hover:text-red-800 text-sm"
                         title="Delete medication"
                       >

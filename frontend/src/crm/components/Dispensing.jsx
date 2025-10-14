@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { PatientServices } from "../../services/patientServices";
+import DeleteConfirmModal from "./DeleteConfirmModal";
 
 export default function Dispensing({ setActiveTab, currentRegistrationId }) {
   const [error, setError] = useState("");
@@ -7,7 +8,8 @@ export default function Dispensing({ setActiveTab, currentRegistrationId }) {
   const [editingDispensingId, setEditingDispensingId] = useState(null);
   const [isSavingDispensing, setIsSavingDispensing] = useState(false);
   const [savedDispensing, setSavedDispensing] = useState([]);
-
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deleteDispensingId, setDeleteDispensingId] = useState(null);
   const [dispensingData, setDispensingData] = useState({
     medication: "",
     rx: "",
@@ -112,19 +114,13 @@ export default function Dispensing({ setActiveTab, currentRegistrationId }) {
     setIsSavingDispensing(false);
   };
 
-  const deleteDispensing = async (dispensingId) => {
-    if (
-      !window.confirm("Are you sure you want to delete this dispensing record?")
-    ) {
-      return;
-    }
-
+  const deleteDispensing = async () => {
     setLoading(true);
     setError("");
 
     const result = await PatientServices.delete_dispensing_by_id(
       currentRegistrationId,
-      dispensingId,
+      deleteDispensingId,
     );
 
     if (result.success) {
@@ -137,6 +133,11 @@ export default function Dispensing({ setActiveTab, currentRegistrationId }) {
       }
     }
     setLoading(false);
+  };
+
+  const handleDeleteDispensing = async (id) => {
+    setDeleteDispensingId(id);
+    setShowDeleteConfirm(true);
   };
 
   // Dispensing management functions
@@ -227,6 +228,13 @@ export default function Dispensing({ setActiveTab, currentRegistrationId }) {
                 </div>
               </div>
             </div>
+          )}
+          {showDeleteConfirm && (
+            <DeleteConfirmModal
+              message={"Confirm you would like to delete dispensing."}
+              confirmDelete={deleteDispensing}
+              setShowDeleteConfirm={setShowDeleteConfirm}
+            />
           )}
 
           {error && (
@@ -451,7 +459,7 @@ export default function Dispensing({ setActiveTab, currentRegistrationId }) {
                         </button>
                         <button
                           type="button"
-                          onClick={() => deleteDispensing(dispensing.id)}
+                          onClick={() => handleDeleteDispensing(dispensing.id)}
                           className="text-red-600 hover:text-red-800 text-sm"
                           title="Delete dispensing record"
                         >

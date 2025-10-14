@@ -1,7 +1,10 @@
 import { useEffect, useState } from "react";
 import { PatientServices } from "../../services/patientServices";
+import DeleteConfirmModal from "./DeleteConfirmModal";
 
 export default function Tests({ setActiveTab, currentRegistrationId }) {
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deleteTestId, setDeleteTestId] = useState(null);
   const [savedTests, setSavedTests] = useState([]);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -148,20 +151,13 @@ export default function Tests({ setActiveTab, currentRegistrationId }) {
     setLoading(false);
   };
 
-  const deleteTest = async (testId) => {
-    if (
-      !window.confirm(
-        "Are you sure you want to delete this test? This action cannot be undone.",
-      )
-    ) {
-      return;
-    }
+  const deleteTest = async () => {
     setLoading(true);
     setError("");
 
     const result = await PatientServices.delete_test_by_id(
       currentRegistrationId,
-      testId,
+      deleteTestId,
     );
 
     if (result.success) {
@@ -174,6 +170,11 @@ export default function Tests({ setActiveTab, currentRegistrationId }) {
       }
     }
     setLoading(false);
+  };
+
+  const handleDeleteTest = async (testId) => {
+    setDeleteTestId(testId);
+    setShowDeleteConfirm(true);
   };
 
   const editTest = (test) => {
@@ -294,6 +295,13 @@ export default function Tests({ setActiveTab, currentRegistrationId }) {
                 </div>
               </div>
             </div>
+          )}
+          {showDeleteConfirm && (
+            <DeleteConfirmModal
+              message={"Confirm you would like to delete test."}
+              confirmDelete={deleteTest}
+              setShowDeleteConfirm={setShowDeleteConfirm}
+            />
           )}
 
           {/* Test Form */}
@@ -798,7 +806,7 @@ export default function Tests({ setActiveTab, currentRegistrationId }) {
                         </button>
                         <button
                           type="button"
-                          onClick={() => deleteTest(test.id)}
+                          onClick={() => handleDeleteTest(test.id)}
                           className="text-red-600 hover:text-red-800 text-sm"
                           title="Delete test"
                         >

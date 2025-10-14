@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { PatientServices } from "../../services/patientServices";
+import DeleteConfirmModal from "./DeleteConfirmModal";
 
 export default function Activities({ setActiveTab, currentRegistrationId }) {
   const [error, setError] = useState("");
@@ -7,6 +8,8 @@ export default function Activities({ setActiveTab, currentRegistrationId }) {
   const [editingActivityId, setEditingActivityId] = useState(null);
   const [isSavingActivity, setIsSavingActivity] = useState(false);
   const [savedActivities, setSavedActivities] = useState([]);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deleteActivityId, setDeleteActivityId] = useState(null);
 
   const [activityData, setActivityData] = useState({
     date: new Date().toISOString().split("T")[0], // Default to today
@@ -109,17 +112,13 @@ export default function Activities({ setActiveTab, currentRegistrationId }) {
     setLoading(false);
   };
 
-  const deleteActivity = async (activityId) => {
-    if (!window.confirm("Are you sure you want to delete this activity?")) {
-      return;
-    }
-
+  const deleteActivity = async () => {
     setLoading(true);
     setError("");
 
     const result = await PatientServices.delete_activity_by_id(
       currentRegistrationId,
-      activityId,
+      deleteActivityId,
     );
 
     if (result.success) {
@@ -132,6 +131,11 @@ export default function Activities({ setActiveTab, currentRegistrationId }) {
       }
     }
     setLoading(false);
+  };
+
+  const handleDeleteActivity = async (id) => {
+    setDeleteActivityId(id);
+    setShowDeleteConfirm(true);
   };
 
   const handleActivityChange = (e) => {
@@ -215,7 +219,13 @@ export default function Activities({ setActiveTab, currentRegistrationId }) {
               </div>
             </div>
           )}
-
+          {showDeleteConfirm && (
+            <DeleteConfirmModal
+              message={"Confirm you would like to delete activity."}
+              confirmDelete={deleteActivity}
+              setShowDeleteConfirm={setShowDeleteConfirm}
+            />
+          )}
           <div
             className={
               !currentRegistrationId ? "opacity-50 pointer-events-none" : ""
@@ -380,7 +390,7 @@ export default function Activities({ setActiveTab, currentRegistrationId }) {
                         </button>
                         <button
                           type="button"
-                          onClick={() => deleteActivity(activity.id)}
+                          onClick={() => handleDeleteActivity(activity.id)}
                           className="text-red-600 hover:text-red-800 text-sm"
                           title="Delete activity"
                         >

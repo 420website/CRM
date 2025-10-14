@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { PatientServices } from "../../services/patientServices";
+import DeleteConfirmModal from "./DeleteConfirmModal";
 
 export default function Interactions({ setActiveTab, currentRegistrationId }) {
   const [error, setError] = useState("");
@@ -11,6 +12,8 @@ export default function Interactions({ setActiveTab, currentRegistrationId }) {
   const [interactionsPerPage, setInteractionsPerPage] = useState(10);
   const [interactionsPage, setInteractionsPage] = useState(1);
   const [savedInteractions, setSavedInteractions] = useState([]);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deleteInteractionId, setDeleteInteractionId] = useState(null);
 
   const [interactionData, setInteractionData] = useState({
     date: new Date().toISOString().split("T")[0], // Default to current date
@@ -115,17 +118,13 @@ export default function Interactions({ setActiveTab, currentRegistrationId }) {
     setIsSavingInteraction(false);
   };
 
-  const deleteInteraction = async (interactionId) => {
-    if (!window.confirm("Are you sure you want to delete this interaction?")) {
-      return;
-    }
-
+  const deleteInteraction = async () => {
     setLoading(true);
     setError("");
 
     const result = await PatientServices.delete_interaction_by_id(
       currentRegistrationId,
-      interactionId,
+      deleteInteractionId,
     );
 
     if (result.success) {
@@ -138,6 +137,11 @@ export default function Interactions({ setActiveTab, currentRegistrationId }) {
       }
     }
     setLoading(false);
+  };
+
+  const handleDeleteInteraction = async (id) => {
+    setDeleteInteractionId(id);
+    setShowDeleteConfirm(true);
   };
 
   // Interaction management functions
@@ -303,7 +307,13 @@ export default function Interactions({ setActiveTab, currentRegistrationId }) {
             </div>
           </div>
         )}
-
+        {showDeleteConfirm && (
+          <DeleteConfirmModal
+            message={"Confirm you would like to delete interaction."}
+            confirmDelete={deleteInteraction}
+            setShowDeleteConfirm={setShowDeleteConfirm}
+          />
+        )}
         {/* Interaction Form */}
         <div
           className={
@@ -664,7 +674,9 @@ export default function Interactions({ setActiveTab, currentRegistrationId }) {
                         </button>
                         <button
                           type="button"
-                          onClick={() => deleteInteraction(interaction.id)}
+                          onClick={() =>
+                            handleDeleteInteraction(interaction.id)
+                          }
                           className="text-red-600 hover:text-red-800 text-sm"
                           title="Delete interaction"
                         >

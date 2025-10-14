@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { GeneralServices } from "../../services/generalService";
 import { PatientServices } from "../../services/patientServices";
 import NoteTemplateManager from "./NotesTemplateManager";
+import DeleteConfirmModal from "./DeleteConfirmModal";
 
 export default function Notes({ setActiveTab, currentRegistrationId }) {
   const [error, setError] = useState("");
@@ -20,7 +21,8 @@ export default function Notes({ setActiveTab, currentRegistrationId }) {
   const [newTemplateContent, setNewTemplateContent] = useState("");
   const [isSavingNotes, setIsSavingNotes] = useState(false);
   const [selectedTemplate, setSelectedTemplate] = useState("Select");
-
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deleteNoteId, setDeleteNoteId] = useState(null);
   const [notesData, setNotesData] = useState({
     note_name: "General Note",
     note_date: new Date().toISOString().split("T")[0],
@@ -168,22 +170,17 @@ export default function Notes({ setActiveTab, currentRegistrationId }) {
     setIsSavingNotes(false);
   };
 
-  const deleteNote = async (noteId) => {
-    if (!window.confirm("Are you sure you want to delete this note?")) {
-      return;
-    }
-
+  const deleteNote = async () => {
     setLoading(true);
     setError("");
 
     const result = await PatientServices.delete_note_by_id(
       currentRegistrationId,
-      noteId,
+      deleteNoteId,
     );
 
     if (result.success) {
       await getNotes(currentRegistrationId);
-      // clearNotesForm();
     } else {
       if (result.status === 400 || result.status === 409) {
         setError(result.message || "Error deleting note.");
@@ -192,6 +189,11 @@ export default function Notes({ setActiveTab, currentRegistrationId }) {
       }
     }
     setLoading(false);
+  };
+
+  const handleDeleteNote = async (id) => {
+    setDeleteNoteId(id);
+    setShowDeleteConfirm(true);
   };
 
   const handleNotesTemplateChange = async (templateName) => {
@@ -304,7 +306,13 @@ export default function Notes({ setActiveTab, currentRegistrationId }) {
             </div>
           </div>
         )}
-
+        {showDeleteConfirm && (
+          <DeleteConfirmModal
+            message={"Confirm you would like to delete note."}
+            confirmDelete={deleteNote}
+            setShowDeleteConfirm={setShowDeleteConfirm}
+          />
+        )}
         <div
           className={
             !currentRegistrationId ? "opacity-50 pointer-events-none" : ""
@@ -482,7 +490,7 @@ export default function Notes({ setActiveTab, currentRegistrationId }) {
                       </button>
                       <button
                         type="button"
-                        onClick={() => deleteNote(note.id)}
+                        onClick={() => handleDeleteNote(note.id)}
                         className="text-red-600 hover:text-red-800 text-sm"
                         title="Delete note"
                       >
