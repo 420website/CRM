@@ -3,8 +3,7 @@ import EmailTwoFactorVerify from "../components/EmailTwoFactorVerify";
 import { AuthServices } from "../../services/authService";
 import { tokenManager } from "../../tokenManager";
 import { useAuth } from "../../context/AuthContext";
-import { Navigate, useLocation, useNavigate } from "react-router-dom";
-import PasswordInput from "../ui/PasswordInput";
+import { Link, Navigate, useLocation, useNavigate } from "react-router-dom";
 import { Eye, EyeOff } from "lucide-react"; // optional: use lucide-react icons
 
 function InsertPin({ handleSubmit, formData, handleChange, error, loading }) {
@@ -12,18 +11,12 @@ function InsertPin({ handleSubmit, formData, handleChange, error, loading }) {
   const [showPassword, setShowPassword] = useState(false);
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-gray-50 flex flex-col justify-center">
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
-        <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-          Admin Access
-        </h2>
-        <p className="mt-2 text-center text-sm text-gray-600">
-          Enter your PIN to access the admin area
-        </p>
-      </div>
-
-      <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
         <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
+          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
+            Admin Access
+          </h2>
           <form className="space-y-6" onSubmit={handleSubmit}>
             {error && (
               <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
@@ -78,6 +71,22 @@ function InsertPin({ handleSubmit, formData, handleChange, error, loading }) {
                   {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                 </button>
               </div>
+            </div>
+            <div>
+              {/* Conditionally render the verification hint */}
+              {error === "Please verify your email first" && (
+                <p className="text-sm text-gray-700">
+                  If you did not receive a verification email, please check your
+                  spam folder or{" "}
+                  <Link
+                    to="/verify-email"
+                    className="text-blue-600 hover:underline font-medium"
+                  >
+                    resend it here
+                  </Link>
+                  .
+                </p>
+              )}
             </div>
 
             <div>
