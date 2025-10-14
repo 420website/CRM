@@ -1,3 +1,5 @@
+import { PatientServices } from "../services/patientServices";
+
 // Format labels data helper function
 export const getFormattedLabelsData = (formData) => {
   try {
@@ -58,24 +60,23 @@ export const copyLabelsData = (formData) => {
 // Copy form data function with test summary
 export const copyFormData = async (currentRegistrationId, formData) => {
   try {
-    // Debug information
-    console.log("🔄 Copy button clicked");
-    console.log("📋 Current Registration ID:", currentRegistrationId);
-
     // Get fresh test data directly from API
     let currentTests = [];
+
     if (currentRegistrationId) {
-      console.log("🔄 Fetching fresh test data...");
       try {
-        const response = await fetch(
-          `${process.env.REACT_APP_BACKEND_URL}/api/admin-registration/${currentRegistrationId}/tests`,
+        const result = await PatientServices.get_tests_by_patient(
+          currentRegistrationId,
         );
-        if (response.ok) {
-          const data = await response.json();
-          currentTests = data.tests || [];
-          console.log("✅ Fresh test data loaded:", currentTests);
+
+        if (result.success) {
+          currentTests = result.data || [];
         } else {
-          console.warn("⚠️ Failed to load test data, proceeding without tests");
+          if (result.status === 400 || result.status === 409) {
+            console.log(result.message || "Error getting tests.");
+          } else {
+            console.log("Error getting tests. Please try again.");
+          }
         }
       } catch (error) {
         console.warn(
@@ -111,10 +112,8 @@ export const copyFormData = async (currentRegistrationId, formData) => {
     // Format test summary using fresh data
     let testSummary = "";
     if (currentTests && currentTests.length > 0) {
-      console.log("✅ Including test summary in copy");
       testSummary = "\n\nTEST SUMMARY:\n";
       currentTests.forEach((test, index) => {
-        console.log(`📝 Processing test ${index + 1}:`, test);
         const testDate = test.test_date
           ? new Date(test.test_date).toLocaleDateString()
           : "No date";
