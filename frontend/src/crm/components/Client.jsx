@@ -64,7 +64,7 @@ export default function Client({
     return provinceMap[code] || code;
   };
 
-  const updateClinicalSummary = async (formData) => {
+  const defaultPositiveClinicalSummary = async (formData) => {
     const baseTemplate = "Dx 10+ years ago and treated. ";
 
     let rnaSection = "";
@@ -85,7 +85,9 @@ export default function Client({
 
     let coverageSection = "";
     if (formData.coverage_type && formData.coverage_type !== "Select") {
-      coverageSection = `${formData.coverage_type}. `;
+      coverageSection = `Coverage Type: ${formData.coverage_type}. `;
+    } else {
+      coverageSection = `Coverage Type: not selected. `;
     }
 
     let referralSection = "";
@@ -124,6 +126,83 @@ export default function Client({
     );
   };
 
+  const updateClinicalSummary = async (formData) => {
+    if (
+      formData.selected_template === "Positive" &&
+      formData.summary_template
+    ) {
+      let updatedSummary = formData.summary_template;
+
+      // Update RNA section ONLY if it exists
+      const rnaRegex = /RNA - ([^,]+), ([^.]+)\.|RNA - no labs available\./;
+      if (rnaRegex.test(updatedSummary)) {
+        if (formData.rna_available === "No") {
+          updatedSummary = updatedSummary.replace(
+            rnaRegex,
+            "RNA - no labs available.",
+          );
+        } else if (formData.rna_available === "Yes") {
+          const date = formData.rna_sample_date || "[date]";
+          const result = formData.rna_result?.toLowerCase() || "positive";
+          updatedSummary = updatedSummary.replace(
+            rnaRegex,
+            `RNA - ${date}, ${result}.`,
+          );
+        }
+      }
+      // If RNA section was deleted by user, respect that - don't re-add it
+
+      // Update coverage ONLY if it exists
+      const coverageRegex = /Coverage Type: [^.]+\./;
+      if (coverageRegex.test(updatedSummary)) {
+        const newCoverage =
+          formData.coverage_type && formData.coverage_type !== "Select"
+            ? `Coverage Type: ${formData.coverage_type}.`
+            : "Coverage Type: not selected.";
+        updatedSummary = updatedSummary.replace(coverageRegex, newCoverage);
+      }
+
+      // Update referral ONLY if it exists
+      const referralRegex = /Referral: [^.]+\./;
+      if (referralRegex.test(updatedSummary)) {
+        const newReferral = formData.referral_person?.trim()
+          ? `Referral: ${formData.referral_person}.`
+          : "Referral: none.";
+        updatedSummary = updatedSummary.replace(referralRegex, newReferral);
+      }
+
+      // Update address/phone ONLY if it exists
+      const addressPhoneRegex = /Client does.*?results\./;
+      if (addressPhoneRegex.test(updatedSummary)) {
+        const hasAddress = formData.address?.trim();
+        const hasPhone = formData.phone1?.trim();
+        let newEndTemplate = "";
+        if (hasAddress && hasPhone) {
+          newEndTemplate =
+            "Client does have a valid address and has also provided a phone number for results.";
+        } else if (hasAddress) {
+          newEndTemplate =
+            "Client does have a valid address but no phone number for results.";
+        } else if (hasPhone) {
+          newEndTemplate =
+            "Client does not have a valid address but has provided a phone number for results.";
+        } else {
+          newEndTemplate =
+            "Client does not have a valid address or phone number for results.";
+        }
+        updatedSummary = updatedSummary.replace(
+          addressPhoneRegex,
+          newEndTemplate,
+        );
+      }
+
+      return updatedSummary;
+    } else {
+      return defaultPositiveClinicalSummary(formData);
+    }
+
+    // Original template generation...
+  };
   const handleTemplateChange = async (templateName) => {
     setSelectedTemplate(templateName);
 
