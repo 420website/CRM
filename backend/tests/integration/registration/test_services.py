@@ -924,7 +924,9 @@ class TestDispensingService(IsolatedAsyncioTestCase):
         medication = "Tylenol"
 
         # Test
-        result = await DispensingService.check_medication(medication)
+        result = await DispensingService.check_medication(
+            self.patient_id, medication
+        )
         self.assertFalse(result)
 
     async def test_check_medication_present(self):
@@ -941,7 +943,9 @@ class TestDispensingService(IsolatedAsyncioTestCase):
         )
 
         # Test
-        result = await DispensingService.check_medication("Aspirin")
+        result = await DispensingService.check_medication(
+            self.patient_id, "Aspirin"
+        )
         self.assertTrue(result)
 
     #### CREATE

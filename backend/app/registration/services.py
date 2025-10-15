@@ -653,16 +653,17 @@ class MedicationService:
 
 class DispensingService:
     @staticmethod
-    async def check_medication(medication: str) -> bool:
+    async def check_medication(patient_id: int, medication: str) -> bool:
         query = """
             SELECT EXISTS (
                 SELECT 1
                 FROM medications
-                WHERE medication = $1
+                WHERE patient_id = $1
+                AND medication =$2
             );
         """
         async with database.get_transaction() as conn:
-            return await conn.fetchval(query, medication)
+            return await conn.fetchval(query, patient_id, medication)
 
     @staticmethod
     async def create_dispensing(

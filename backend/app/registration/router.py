@@ -511,7 +511,9 @@ async def create_dispensing(
     data: DispensingCreate,
     user: UserRead = Depends(get_current_user),
 ):
-    if not await DispensingService.check_medication(data.medication):
+    if not await DispensingService.check_medication(
+        patient_id, data.medication
+    ):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Medication none existant for client please create medication entry and retry.",
