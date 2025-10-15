@@ -1,8 +1,8 @@
 import { useState, useEffect } from "react";
 import { GeneralServices } from "../../services/generalService";
 import { PatientServices } from "../../services/patientServices";
-import NoteTemplateManager from "./NotesTemplateManager";
-import DeleteConfirmModal from "./DeleteConfirmModal";
+import NoteTemplateManager from "../managers/NotesTemplateManager";
+import ConfirmModal from "../components/ConfirmModal";
 
 export default function Notes({ setActiveTab, currentRegistrationId }) {
   const [error, setError] = useState("");
@@ -11,16 +11,16 @@ export default function Notes({ setActiveTab, currentRegistrationId }) {
   const [notesFilter, setNotesFilter] = useState("all");
   const [notesSearch, setNotesSearch] = useState("");
   const [notesPage, setNotesPage] = useState(1);
-  const [notesPerPage, setNotesPerPage] = useState(10);
+  // const [notesPerPage, setNotesPerPage] = useState(10);
   const [savedNotes, setSavedNotes] = useState([]);
   const [showTemplateManager, setShowTemplateManager] = useState(false);
   const [editingNoteId, setEditingNoteId] = useState(null);
   const [selectedNotesTemplate, setSelectedNotesTemplate] = useState("Select");
   const [availableNotesTemplates, setAvailableNotesTemplates] = useState([]);
-  const [newTemplateName, setNewTemplateName] = useState("");
-  const [newTemplateContent, setNewTemplateContent] = useState("");
+  // const [newTemplateName, setNewTemplateName] = useState("");
+  // const [newTemplateContent, setNewTemplateContent] = useState("");
   const [isSavingNotes, setIsSavingNotes] = useState(false);
-  const [selectedTemplate, setSelectedTemplate] = useState("Select");
+  // const [selectedTemplate, setSelectedTemplate] = useState("Select");
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleteNoteId, setDeleteNoteId] = useState(null);
   const [notesData, setNotesData] = useState({
@@ -307,10 +307,11 @@ export default function Notes({ setActiveTab, currentRegistrationId }) {
           </div>
         )}
         {showDeleteConfirm && (
-          <DeleteConfirmModal
+          <ConfirmModal
             message={"Confirm you would like to delete note."}
-            confirmDelete={deleteNote}
-            setShowDeleteConfirm={setShowDeleteConfirm}
+            subMessage={"This action cannot be undone."}
+            confirm={deleteNote}
+            setShowConfirm={setShowDeleteConfirm}
           />
         )}
         <div

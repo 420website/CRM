@@ -4,7 +4,7 @@ import { AuthServices } from "../../services/authService";
 import { tokenManager } from "../../tokenManager";
 import { useAuth } from "../../context/AuthContext";
 import { Link, Navigate, useLocation, useNavigate } from "react-router-dom";
-import { Eye, EyeOff } from "lucide-react"; // optional: use lucide-react icons
+import { Eye, EyeOff } from "lucide-react";
 
 function InsertPin({ handleSubmit, formData, handleChange, error, loading }) {
   const navigate = useNavigate();

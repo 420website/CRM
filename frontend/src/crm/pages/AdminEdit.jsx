@@ -1,15 +1,15 @@
 import { useState, useEffect } from "react";
 import Client from "../components/Client";
-import Tests from "../components/Tests";
-import Dispensing from "../components/Dispensing";
-import Medications from "../components/Medication";
-import Notes from "../components/Notes";
-import Activities from "../components/Activities";
-import Interactions from "../components/Interactions";
-import Attachments from "../components/Attachments";
-import ClinicalTemplateManager from "../components/ClinicalTemplateManager";
-import DispositionManager from "../components/DispositionManager";
-import ReferralSiteManager from "../components/ReferralSiteManager";
+import Tests from "../tabs/Tests";
+import Dispensing from "../tabs/Dispensing";
+import Medications from "../tabs/Medication";
+import Notes from "../tabs/Notes";
+import Activities from "../tabs/Activities";
+import Interactions from "../tabs/Interactions";
+import Attachments from "../tabs/Attachments";
+import ClinicalTemplateManager from "../managers/ClinicalTemplateManager";
+import DispositionManager from "../managers/DispositionManager";
+import ReferralSiteManager from "../managers/ReferralSiteManager";
 import VoiceDataModal from "../components/VoiceDateModal";
 import { useAuth } from "../../context/AuthContext";
 import { calculateAge } from "../../utils/formatData";
@@ -23,7 +23,7 @@ import { DEFAULT_FORM } from "../forms/Registration";
 import VoiceFillModal from "../components/VoiceInput";
 import ForceRegisterModal from "../components/ForcePopupModal";
 import { ObjectServices } from "../../services/objectService";
-import DocumentTypeManager from "../components/DocumentTypeManager";
+import DocumentTypeManager from "../managers/DocumentTypeManager";
 
 const AdminEdit = () => {
   const { registrationId } = useParams();
@@ -57,7 +57,6 @@ const AdminEdit = () => {
     useState(registrationId);
   const [photoPreview, setPhotoPreview] = useState(null);
   const [photoUploadStatus, setPhotoUploadStatus] = useState(null);
-  const [dispositionSearch, setDispositionSearch] = useState("");
   const [showForceButton, setShowForceButton] = useState(false);
   const [photoData, setPhotoData] = useState({});
   const [photoChanged, setPhotoChanged] = useState(false);
@@ -378,47 +377,47 @@ const AdminEdit = () => {
     if (!formData.first_name.trim()) {
       setError("First Name is required.");
       setIsSubmitting(false);
-      window.scrollTo({ top: 0, behavior: "smooth" });
+      window.scrollTo({ top: 500, behavior: "smooth" });
       return false;
     }
 
     if (!formData.last_name.trim()) {
       setError("Last Name is required.");
       setIsSubmitting(false);
-      window.scrollTo({ top: 0, behavior: "smooth" });
+      window.scrollTo({ top: 500, behavior: "smooth" });
       return false;
     }
 
     if (!formData.patient_consent) {
       setError("Patient Consent is required.");
       setIsSubmitting(false);
-      window.scrollTo({ top: 0, behavior: "smooth" });
+      window.scrollTo({ top: 500, behavior: "smooth" });
       return false;
     }
     if (!formData.dob) {
       setError("Date of birth is required.");
       setIsSubmitting(false);
-      window.scrollTo({ top: 0, behavior: "smooth" });
+      window.scrollTo({ top: 500, behavior: "smooth" });
       return false;
     }
 
     if (!formData.health_card) {
       setError("Health Card Number is required.");
       setIsSubmitting(false);
-      window.scrollTo({ top: 0, behavior: "smooth" });
+      window.scrollTo({ top: 500, behavior: "smooth" });
       return false;
     }
     if (formData.health_card.length != 10) {
       setError("Health Card Number must be 10 digits exactly.");
       setIsSubmitting(false);
-      window.scrollTo({ top: 0, behavior: "smooth" });
+      window.scrollTo({ top: 500, behavior: "smooth" });
       return false;
     }
 
     if (!formData.health_card_version) {
       setError("Health Card Version is required.");
       setIsSubmitting(false);
-      window.scrollTo({ top: 0, behavior: "smooth" });
+      window.scrollTo({ top: 500, behavior: "smooth" });
       return false;
     }
 
@@ -495,24 +494,27 @@ const AdminEdit = () => {
         if (photoRes.success) {
           setSubmitStatus({
             type: "success",
-            message:
-              "Changes saved successfully! You can continue editing or return to admin menu or dashboard.",
+            message: "Changes saved successfully!",
           });
         } else {
-          setError(result.message || "Error updatign photo.");
+          setError(result.message || "Error updating photo.");
         }
-      } else if (!photoPreview) {
+      } else if (!photoPreview && photoChanged) {
         const deleteRes = await ObjectServices.delete_photo(registrationId);
 
         if (deleteRes.success) {
           setSubmitStatus({
             type: "success",
-            message:
-              "Changes saved successfully! You can continue editing or return to admin menu or dashboard.",
+            message: "Changes saved successfully!",
           });
         } else {
-          setError(result.message || "Error updating photo.");
+          setError(result.message || "Error removing photo.");
         }
+      } else {
+        setSubmitStatus({
+          type: "success",
+          message: "Changes saved successfully!",
+        });
       }
     } else {
       if (result.status === 400 || result.status === 409) {
@@ -527,9 +529,10 @@ const AdminEdit = () => {
       }
     }
 
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    window.scrollTo({ top: 500, behavior: "smooth" });
     setLoading(false);
     setIsSubmitting(false);
+    setPhotoChanged(false);
   };
 
   const handleCopyLabel = () => {
@@ -559,6 +562,7 @@ const AdminEdit = () => {
               setPhotoData={setPhotoData}
               photoPreview={photoPreview}
               setPhotoPreview={setPhotoPreview}
+              setPhotoChanged={setPhotoChanged}
             />
 
             {/* Tabs Navigation */}

@@ -1,6 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import { ObjectServices } from "../../services/objectService";
 import { useCallback, useState } from "react";
+import toast from "react-hot-toast";
 
 export function RegistrationItems({
   activeTab,
@@ -22,6 +23,8 @@ export function RegistrationItems({
     const result = await ObjectServices.get_photo_base64(registrationId);
     if (result.success) {
       return `data:image/jpeg;base64,${result.data?.file}`;
+    } else {
+      toast.error("No photo found for this registration.");
     }
   };
 
@@ -200,7 +203,7 @@ export default function RegistrationItem({
         </button>
 
         <button
-          onClick={() => handleDelete(item.id, item.first_name, item.last_name)}
+          onClick={() => handleDelete(item.id)}
           disabled={deletingId === item.id}
           className="bg-red-600 hover:bg-red-700 text-white py-2 px-3 rounded-md transition-colors text-xs font-medium disabled:opacity-50 flex-1 min-w-[60px]"
         >
@@ -211,12 +214,7 @@ export default function RegistrationItem({
           <button
             onClick={() => {
               hidePhoto(item.id, index);
-              handleFinalize(
-                item.id,
-                item.first_name,
-                item.last_name,
-                loadedPhotos[item.id],
-              );
+              handleFinalize(item.id);
             }}
             disabled={finalizingId === item.id}
             className="bg-green-600 hover:bg-green-700 text-white py-2 px-3 rounded-md transition-colors text-xs font-medium disabled:opacity-50 flex-1 min-w-[70px]"
@@ -227,9 +225,7 @@ export default function RegistrationItem({
 
         {activeTab === "submitted" && (
           <button
-            onClick={() =>
-              handleRevertToPending(item.id, item.first_name, item.last_name)
-            }
+            onClick={() => handleRevertToPending(item.id)}
             disabled={revertingId === item.id}
             className="bg-green-600 hover:bg-green-700 text-white py-2 px-3 rounded-md transition-colors text-xs font-medium disabled:opacity-50 flex-1 min-w-[70px]"
           >

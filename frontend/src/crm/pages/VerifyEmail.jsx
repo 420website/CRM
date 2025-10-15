@@ -40,7 +40,6 @@ function UnsuccessfullyVerified() {
     try {
       await AuthServices.send_verification_email(email);
     } catch (err) {
-      // Log it for internal debugging
       console.error("Verification resend error:", err);
     } finally {
       // Always show the same generic success-style message
@@ -56,7 +55,7 @@ function UnsuccessfullyVerified() {
           Verify Email
         </h2>
         <p className="text-sm text-gray-600 text-center">
-          Enter your email to resend the verification link.
+          Enter your email to send the verification link.
         </p>
       </div>
 

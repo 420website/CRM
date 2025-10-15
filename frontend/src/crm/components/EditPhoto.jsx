@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { compressImage } from "../../utils/compressImage";
 
 export default function EditPhoto({
@@ -8,9 +8,9 @@ export default function EditPhoto({
   setPhotoData,
   photoPreview,
   setPhotoPreview,
+  setPhotoChanged,
 }) {
   const navigate = useNavigate();
-  const [error, setError] = useState(null);
   const [photoUploadStatus, setPhotoUploadStatus] = useState(null);
 
   useEffect(() => {
@@ -51,23 +51,15 @@ export default function EditPhoto({
         name: file.name,
         file: file,
       });
-
-      try {
-      } catch (error) {
-        setError("Error compressing image:", error);
-        alert("Error processing image. Please try again.");
-      }
+      setPhotoChanged(true);
     }
-  };
-
-  const goBack = () => {
-    navigate("/");
   };
 
   const removePhoto = () => {
     setPhotoPreview(null);
     setPhotoUploadStatus(null);
     setPhotoData({});
+    setPhotoChanged(true);
 
     // Clear both file inputs
     const cameraInput = document.getElementById("photo-camera");
@@ -218,7 +210,7 @@ export default function EditPhoto({
               </h3>
               <div className="w-48 h-48 border-2 border-gray-300 rounded-lg overflow-hidden">
                 <img
-                  src={photoPreview} //photoPreview}
+                  src={photoPreview}
                   alt="Client photo preview"
                   className="w-full h-full object-cover"
                 />

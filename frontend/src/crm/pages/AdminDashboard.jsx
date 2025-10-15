@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { PatientServices } from "../../services/patientServices";
 import PaginationControls from "../ui/PaginationControls";
@@ -6,6 +6,7 @@ import { RegistrationItems } from "../ui/RegistrationItem";
 import { ActivityItems } from "../ui/ActivityItem";
 import { useAuth } from "../../context/AuthContext";
 import { GeneralServices } from "../../services/generalService";
+import ConfirmModal from "../components/ConfirmModal";
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
@@ -22,7 +23,6 @@ const AdminDashboard = () => {
 
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize] = useState(20); // Fixed page size for optimal performance
   const [totalPages, setTotalPages] = useState(1);
   const [totalRecords, setTotalRecords] = useState(0);
 
@@ -34,14 +34,16 @@ const AdminDashboard = () => {
   const [activitySearchTerm, setActivitySearchTerm] = useState("");
   const [activityStatusFilter, setActivityStatusFilter] = useState("all");
 
-  // Photo lazy loading state
-  const [loadedPhotos, setLoadedPhotos] = useState({});
-  const [loadingPhotos, setLoadingPhotos] = useState(new Set());
-
   // Action states
   const [finalizingId, setFinalizingId] = useState(null);
   const [deletingId, setDeletingId] = useState(null);
   const [revertingId, setRevertingId] = useState(null);
+
+  // Confirmation
+  const [deleteRegistrationId, setDeleteRegistrationId] = useState(null);
+  const [finalizeRegistrationId, setFinalizeRegistrationId] = useState(null);
+  const [revertRegistrationId, setRevertRegistrationId] = useState(null);
+  const [showConfirm, setShowConfirm] = useState("");
 
   // Data state - now paginated
   const [currentData, setCurrentData] = useState([]);
@@ -189,7 +191,6 @@ const AdminDashboard = () => {
   useEffect(() => {
     const debounceTimer = setTimeout(() => {
       setCurrentPage(1); // Reset to first page when searching
-      // fetchPaginatedData(activeTab, 1, true);
     }, 300); // 300ms debounce
 
     return () => clearTimeout(debounceTimer);
@@ -205,8 +206,6 @@ const AdminDashboard = () => {
   // Handle page changes with scroll to top
   const handlePageChange = (newPage) => {
     if (newPage >= 1 && newPage <= totalPages && !loading) {
-      // fetchPaginatedData(activeTab, newPage, true);
-      // Scroll to top of page for easy navigation
       window.scrollTo({ top: 0, behavior: "smooth" });
     }
   };
@@ -241,16 +240,9 @@ const AdminDashboard = () => {
     setActivityStatusFilter("all");
   };
 
-  const handleDelete = async (registrationId, firstName, lastName) => {
-    const confirmed = window.confirm(
-      `Delete registration for ${firstName} ${lastName}?\n\nThis action cannot be undone.`,
-    );
-
-    if (!confirmed) return;
-
-    setDeletingId(registrationId);
-
-    const result = await PatientServices.delete_patient_by_id(registrationId);
+  const deleteRegistration = async () => {
+    const result =
+      await PatientServices.delete_patient_by_id(deleteRegistrationId);
 
     if (result.success) {
       await fetchDashboardStats();
@@ -261,23 +253,22 @@ const AdminDashboard = () => {
         setError("Error deleting patient. Please try again.");
       }
     }
-    setDeletingId(null);
   };
 
-  const handleFinalize = async (registrationId, firstName, lastName, photo) => {
-    const photoText = photo ? " with photo attachment" : "";
-    const proceed = window.confirm(
-      `Finalize registration for ${firstName} ${lastName}?\n\nThis will send the email notification${photoText}.`,
-    );
+  const handleDelete = async (id) => {
+    setDeleteRegistrationId(id);
+    setShowConfirm("delete");
+  };
 
-    if (!proceed) return;
-
-    setFinalizingId(registrationId);
+  const finalizeRegistration = async () => {
     setError(null);
 
-    const result = await PatientServices.update_patient_status(registrationId, {
-      status: "finalized",
-    });
+    const result = await PatientServices.update_patient_status(
+      finalizeRegistrationId,
+      {
+        status: "finalized",
+      },
+    );
 
     if (result.success) {
       await fetchDashboardStats();
@@ -288,22 +279,22 @@ const AdminDashboard = () => {
         setError("Error updating patient status. Please try again.");
       }
     }
-    setFinalizingId(null);
   };
 
-  const handleRevertToPending = async (registrationId, firstName, lastName) => {
-    const proceed = window.confirm(
-      `Move ${firstName} ${lastName} back to pending status?\n\nThis will allow you to make corrections and resubmit with a new email notification.`,
-    );
+  const handleFinalize = async (id) => {
+    setFinalizeRegistrationId(id);
+    setShowConfirm("finalize");
+  };
 
-    if (!proceed) return;
-
-    setFinalizingId(registrationId);
+  const revertToPending = async () => {
     setError(null);
 
-    const result = await PatientServices.update_patient_status(registrationId, {
-      status: "pending",
-    });
+    const result = await PatientServices.update_patient_status(
+      revertRegistrationId,
+      {
+        status: "pending",
+      },
+    );
 
     if (result.success) {
       await fetchDashboardStats();
@@ -314,7 +305,11 @@ const AdminDashboard = () => {
         setError("Error updating patient status. Please try again.");
       }
     }
-    setFinalizingId(null);
+  };
+
+  const handleRevertToPending = async (id) => {
+    setRevertRegistrationId(id);
+    setShowConfirm("revert");
   };
 
   // Compute filtered data based on active tab + filters
@@ -415,6 +410,32 @@ const AdminDashboard = () => {
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+        {showConfirm === "delete" && (
+          <ConfirmModal
+            message={"Confirm you would like to delete note."}
+            subMessage={"This action cannot be undone."}
+            confirm={deleteRegistration}
+            setShowConfirm={setShowConfirm}
+          />
+        )}
+        {showConfirm === "finalize" && (
+          <ConfirmModal
+            message={"Confirm finalize registration"}
+            subMessage={"This will send the email notification."}
+            confirm={finalizeRegistration}
+            setShowConfirm={setShowConfirm}
+          />
+        )}
+        {showConfirm === "revert" && (
+          <ConfirmModal
+            message={"Confirm move registration back to pending"}
+            subMessage={
+              "This will allow you to make edits and resubmit with a new email notification."
+            }
+            confirm={revertToPending}
+            setShowConfirm={setShowConfirm}
+          />
+        )}
         {/* Header */}
         <div className="bg-white rounded-lg shadow-md p-4 mb-6">
           <h1 className="text-2xl font-bold text-gray-900 mb-4">

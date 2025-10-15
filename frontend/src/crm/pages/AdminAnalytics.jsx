@@ -4,19 +4,16 @@ import { AnalyticsServices } from "../../services/analyticsService";
 
 const AdminAnalytics = () => {
   const navigate = useNavigate();
-
-  const [errors, setErrors] = useState({});
   const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [isTyping, setIsTyping] = useState(true);
+  const [typedText, setTypedText] = useState("");
+  const messagesEndRef = useRef(null);
   const [messages, setMessages] = useState([]);
   const [inputMessage, setInputMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [sessionId] = useState(
     () => `session_${Date.now()}_${Math.random().toString(36)}`,
   );
-  const [isTyping, setIsTyping] = useState(true);
-  const [typedText, setTypedText] = useState("");
-  const messagesEndRef = useRef(null);
 
   // Excel upload states
   const [isUploading, setIsUploading] = useState(false);
@@ -178,9 +175,6 @@ const AdminAnalytics = () => {
         const assistantMessage = {
           role: "assistant",
           content: result.data?.response,
-          // timestamp: data.timestamp,
-          // chart_html: data.chart_html,
-          // chart_image_url: data.chart_image_url,
         };
 
         setMessages((prev) => [...prev, assistantMessage]);

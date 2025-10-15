@@ -6,63 +6,43 @@ import {
   formatPostalCode,
 } from "../../utils/formatData";
 
+// Map Google Places province codes to full province names
+const getProvince = (code) => {
+  const provinceMap = {
+    ON: "Ontario",
+    QC: "Quebec",
+    BC: "British Columbia",
+    AB: "Alberta",
+    MB: "Manitoba",
+    SK: "Saskatchewan",
+    NS: "Nova Scotia",
+    NB: "New Brunswick",
+    NL: "Newfoundland and Labrador",
+    PE: "Prince Edward Island",
+    NT: "Northwest Territories",
+    NU: "Nunavut",
+    YT: "Yukon",
+  };
+
+  return provinceMap[code] || code;
+};
+
 export default function Client({
   formData,
   setFormData,
-  setShowVoiceDateModal,
   setShowDispositionManager,
   setShowReferralSiteManager,
   setShowClinicalTemplateManager,
   availableDispositions,
   availableReferralSites,
   availableClinicalTemplates,
-  setTemplates,
   templates,
   selectedTemplate,
   setSelectedTemplate,
   openVoiceDateInput,
   openVoiceFillInput,
-  currentVoiceDateField,
-  setCurrentVoiceDateField,
 }) {
   const [error, setError] = useState("");
-
-  // Voice-to-text input states (like Notes tab)
-  const [voiceInputText, setVoiceInputText] = useState("");
-  const [voiceDateInput, setVoiceDateInput] = useState("");
-  const [isVoiceRecording, setIsVoiceRecording] = useState(false);
-  const [voiceInputStatus, setVoiceInputStatus] = useState("");
-  const [hasAutoFilledData, setHasAutoFilledData] = useState(false);
-  // const [selectedTemplate, setSelectedTemplate] = useState("Select");
-  const [activeTab, setActiveTab] = useState("client");
-  const [showTemplateManager, setShowTemplateManager] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  // const [currentVoiceDateField, setCurrentVoiceDateField] = useState("");
-  const [isEditingTemplate, setIsEditingTemplate] = useState(false);
-  const [voiceAssistantStatus, setVoiceAssistantStatus] = useState("");
-
-  // Handle Google Places address selection
-  const getProvince = (code) => {
-    // Map Google Places province codes to full province names
-    const provinceMap = {
-      ON: "Ontario",
-      QC: "Quebec",
-      BC: "British Columbia",
-      AB: "Alberta",
-      MB: "Manitoba",
-      SK: "Saskatchewan",
-      NS: "Nova Scotia",
-      NB: "New Brunswick",
-      NL: "Newfoundland and Labrador",
-      PE: "Prince Edward Island",
-      NT: "Northwest Territories",
-      NU: "Nunavut",
-      YT: "Yukon",
-    };
-
-    // Get full province name from code or use as-is if already full name
-    return provinceMap[code] || code;
-  };
 
   const defaultPositiveClinicalSummary = async (formData) => {
     const baseTemplate = "Dx 10+ years ago and treated. ";
@@ -150,7 +130,6 @@ export default function Client({
           );
         }
       }
-      // If RNA section was deleted by user, respect that - don't re-add it
 
       // Update coverage ONLY if it exists
       const coverageRegex = /Coverage Type: [^.]+\./;
@@ -200,9 +179,8 @@ export default function Client({
     } else {
       return defaultPositiveClinicalSummary(formData);
     }
-
-    // Original template generation...
   };
+
   const handleTemplateChange = async (templateName) => {
     setSelectedTemplate(templateName);
 
@@ -235,16 +213,14 @@ export default function Client({
 
     let processedValue = type === "checkbox" ? checked : value;
 
-    // Format phone numbers
     if (name === "phone1" || name === "phone2") {
       processedValue = formatPhoneNumber(value);
     }
 
-    // Don't format postal code during typing - only on blur
-
     // Health card should only contain numeric characters
+    // Remove all non-digit characters
     if (name === "health_card") {
-      processedValue = value.replace(/\D/g, ""); // Remove all non-digit characters
+      processedValue = value.replace(/\D/g, "");
     }
 
     let newFormData = {
@@ -252,9 +228,7 @@ export default function Client({
       [name]: processedValue,
     };
 
-    // Update clinical summary ONLY if user has explicitly selected Positive template AND changed RNA/coverage fields
-    // This prevents auto-population when template is set to 'Select'
-
+    // Update clinical summary ONLY if user has explicitly selected Positive template
     if (
       selectedTemplate === "Positive" &&
       (name === "rna_available" ||

@@ -2,6 +2,7 @@ import { useNavigate } from "react-router-dom";
 import { useCallback } from "react";
 import { ObjectServices } from "../../services/objectService";
 import { useState } from "react";
+import toast from "react-hot-toast";
 
 export function ActivityItems({ filteredData }) {
   const [showingPhotos, setShowingPhotos] = useState([]);
@@ -12,6 +13,8 @@ export function ActivityItems({ filteredData }) {
     const result = await ObjectServices.get_photo_base64(registrationId);
     if (result.success) {
       return `data:image/jpeg;base64,${result.data?.file}`;
+    } else {
+      toast.error("No photo found for this registration.");
     }
   };
 

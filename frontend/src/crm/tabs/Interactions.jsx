@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { PatientServices } from "../../services/patientServices";
-import DeleteConfirmModal from "./DeleteConfirmModal";
+import ConfirmModal from "../components/ConfirmModal";
 
 export default function Interactions({ setActiveTab, currentRegistrationId }) {
   const [error, setError] = useState("");
@@ -308,10 +308,11 @@ export default function Interactions({ setActiveTab, currentRegistrationId }) {
           </div>
         )}
         {showDeleteConfirm && (
-          <DeleteConfirmModal
+          <ConfirmModal
             message={"Confirm you would like to delete interaction."}
-            confirmDelete={deleteInteraction}
-            setShowDeleteConfirm={setShowDeleteConfirm}
+            subMessage={"This action cannot be undone."}
+            confirm={deleteInteraction}
+            setShowConfirm={setShowDeleteConfirm}
           />
         )}
         {/* Interaction Form */}

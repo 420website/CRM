@@ -1,8 +1,7 @@
 import "./AddressAutocomplete.css";
 import { useEffect, useRef } from "react";
 
-// Needed b/c for postal code there are two spaces
-// the second should not be split on
+// Needed for postal code there are two spaces the second should not be split on
 function splitFirstSpace(str) {
   const idx = str.indexOf(" ");
   if (idx === -1) return [str, ""];

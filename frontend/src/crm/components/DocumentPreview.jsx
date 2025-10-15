@@ -12,9 +12,6 @@ export default function DocumentPreview({
   openFullScreenPreview,
 }) {
   const [currentPage, setCurrentPage] = useState(1);
-  const [hasSetDefaultScale, setHasSetDefaultScale] = useState(false);
-  const [defaultScale, setDefaultScale] = useState(1.0);
-  const [pdfScale, setPdfScale] = useState(1.0);
   const containerRef = useRef(null);
   const [pdfLoading, setPdfLoading] = useState(false);
   const [pdfError, setPdfError] = useState(null);
@@ -104,7 +101,6 @@ export default function DocumentPreview({
             pageNumber={currentPage}
             width={containerWidth}
             height={containerHeight}
-            // className="max-h-full max-w-full object-contain"
             loading={
               <div className="p-4 text-center">
                 <div className="inline-block animate-spin rounded-full h-6 w-6 border-b-2 border-gray-900"></div>

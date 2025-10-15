@@ -1,6 +1,3 @@
-import { useEffect } from "react";
-import { useVoiceInput } from "../hooks/useVoiceInput";
-
 export default function ForceRegisterModal({
   handleForceSubmit,
   errorMessage,

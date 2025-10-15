@@ -1,8 +1,8 @@
 import { useState, useEffect } from "react";
 import { ObjectServices } from "../../services/objectService";
 import { loadImage, loadPDF, loadWord } from "../../utils/loadFile";
-import DocumentFullScreen from "./DocumentFullScreen";
-import DocumentPreview from "./DocumentPreview";
+import DocumentFullScreen from "../components/DocumentFullScreen";
+import DocumentPreview from "../components/DocumentPreview";
 
 export default function Attachments({
   availableDocumentTypes,
@@ -308,7 +308,12 @@ export default function Attachments({
           </div>
         )}
 
-        <div>
+        <div
+          className={
+            !currentRegistrationId ? "opacity-50 pointer-events-none" : ""
+          }
+          id="interactionForm"
+        >
           <h2 className="text-lg font-medium text-gray-900 mb-4">
             Add New Document
           </h2>

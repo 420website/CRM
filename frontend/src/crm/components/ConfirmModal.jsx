@@ -1,26 +1,26 @@
-export default function DeleteConfirmModal({
+export default function ConfirmModal({
   message,
-  confirmDelete,
-  setShowDeleteConfirm,
+  subMessage,
+  confirm,
+  setShowConfirm,
 }) {
   return (
-    // In your JSX:
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
       <div className="bg-white p-6 rounded-lg max-w-sm mx-4">
         <h3 className="font-bold mb-2">{message}</h3>
-        <p className="mb-4">This action cannot be undone.</p>
-        <div className="flex gap-2">
+        <p className="mb-4">{subMessage}</p>
+        <div className="flex gap-5 justify-center">
           <button
             onClick={() => {
-              confirmDelete();
-              setShowDeleteConfirm(false);
+              confirm();
+              setShowConfirm(null);
             }}
-            className="bg-red-500 text-white px-4 py-2 rounded"
+            className="bg-black text-white px-4 py-2 rounded"
           >
-            Delete
+            Confirm
           </button>
           <button
-            onClick={() => setShowDeleteConfirm(false)}
+            onClick={() => setShowConfirm(null)}
             className="bg-gray-300 px-4 py-2 rounded"
           >
             Cancel

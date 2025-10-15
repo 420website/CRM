@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { UserServices } from "../../services/userServices";
 import PasswordInput from "../ui/PasswordInput";
+import ConfirmModal from "../components/ConfirmModal";
 
 function EditUser({
   editingUser,
@@ -246,9 +247,6 @@ function UserList({
                         <p>
                           <strong>Phone:</strong> {user.phone_number}
                         </p>
-                        {/* <p>
-                            //   <strong>PIN:</strong> {user.password}
-                            // </p> */}
                         <p>
                           <strong>Tab Access:</strong>{" "}
                           {Array.isArray(user.permissions) &&
@@ -275,7 +273,7 @@ function UserList({
                       Edit
                     </button>
                     <button
-                      onClick={() => handleDeleteUser(user)}
+                      onClick={() => handleDeleteUser(user.id)}
                       className="bg-red-600 hover:bg-red-700 text-white py-2 px-3 rounded-md transition-colors text-xs font-medium"
                     >
                       Delete
@@ -299,6 +297,8 @@ const UserManagement = () => {
   const [showAddUser, setShowAddUser] = useState(false);
   const [editingUser, setEditingUser] = useState(null);
   const [user, setUser] = useState(null);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deleteUserId, setDeleteUserId] = useState(null);
   const [formData, setFormData] = useState({
     first_name: "",
     last_name: "",
@@ -427,17 +427,11 @@ const UserManagement = () => {
   };
 
   // Handle delete user
-  const handleDeleteUser = async (user) => {
-    const confirmed = window.confirm(
-      `Delete user ${user.first_name} ${user.last_name}?\n\nThis action cannot be undone.`,
-    );
-
-    if (!confirmed) return;
-
+  const deleteUser = async () => {
     setError("");
     setLoading(true);
 
-    const response = await UserServices.delete_user(user.id);
+    const response = await UserServices.delete_user(deleteUserId);
 
     if (response.success) {
       resetForm();
@@ -451,6 +445,11 @@ const UserManagement = () => {
     }
 
     setLoading(false);
+  };
+
+  const handleDeleteUser = async (id) => {
+    setDeleteUserId(id);
+    setShowDeleteConfirm(true);
   };
 
   // Handle edit user
@@ -467,6 +466,7 @@ const UserManagement = () => {
     setEditingUser(user);
     setUser(user);
     setShowAddUser(true);
+    window.scrollTo(0, 0);
   };
 
   // Handle form input changes
@@ -553,6 +553,15 @@ const UserManagement = () => {
             </button>
           </div>
         </div>
+
+        {showDeleteConfirm && (
+          <ConfirmModal
+            message={"Confirm you would like to delete user."}
+            subMessage={"This action cannot be undone."}
+            confirmDelete={deleteUser}
+            setShowDeleteConfirm={setShowDeleteConfirm}
+          />
+        )}
 
         {/* Add/Edit User Form */}
         {showAddUser && (

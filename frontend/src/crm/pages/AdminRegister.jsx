@@ -1,16 +1,16 @@
 import { useState, useEffect } from "react";
 import Client from "../components/Client";
-import Tests from "../components/Tests";
+import Tests from "../tabs/Tests";
 import Intake from "../components/Intake";
-import Dispensing from "../components/Dispensing";
-import Medications from "../components/Medication";
-import Notes from "../components/Notes";
-import Activities from "../components/Activities";
-import Interactions from "../components/Interactions";
-import Attachments from "../components/Attachments";
-import ClinicalTemplateManager from "../components/ClinicalTemplateManager";
-import DispositionManager from "../components/DispositionManager";
-import ReferralSiteManager from "../components/ReferralSiteManager";
+import Dispensing from "../tabs/Dispensing";
+import Medications from "../tabs/Medication";
+import Notes from "../tabs/Notes";
+import Activities from "../tabs/Activities";
+import Interactions from "../tabs/Interactions";
+import Attachments from "../tabs/Attachments";
+import ClinicalTemplateManager from "../managers/ClinicalTemplateManager";
+import DispositionManager from "../managers/DispositionManager";
+import ReferralSiteManager from "../managers/ReferralSiteManager";
 import VoiceDataModal from "../components/VoiceDateModal";
 import { useAuth } from "../../context/AuthContext";
 import { calculateAge } from "../../utils/formatData";
@@ -34,6 +34,7 @@ const AdminRegister = () => {
   const [showVoiceDateModal, setShowVoiceDateModal] = useState(false);
   const [showVoiceFillModal, setShowVoiceFillModal] = useState(false);
   const [showDispositionManager, setShowDispositionManager] = useState(false);
+  const [showDocumentTypeManager, setShowDocumentTypeManager] = useState(false);
   const [showReferralSiteManager, setShowReferralSiteManager] = useState(false);
   const [showClinicalTemplateManager, setShowClinicalTemplateManager] =
     useState(false);
@@ -43,6 +44,7 @@ const AdminRegister = () => {
   const [availableClinicalTemplates, setAvailableClinicalTemplates] = useState(
     [],
   );
+  const [availableDocumentTypes, setAvailableDocumentTypes] = useState([]);
   const [selectedTemplate, setSelectedTemplate] = useState("Select");
   const [showForceButton, setShowForceButton] = useState(false);
   const [voiceDateInput, setVoiceDateInput] = useState("");
@@ -51,7 +53,6 @@ const AdminRegister = () => {
   const [photoPreview, setPhotoPreview] = useState(null);
   const [photoUploadStatus, setPhotoUploadStatus] = useState(null);
   const [currentVoiceDateField, setCurrentVoiceDateField] = useState("");
-  const [dispositionSearch, setDispositionSearch] = useState("");
   const [photoData, setPhotoData] = useState({});
 
   const getDefaultForm = () => ({
@@ -192,8 +193,10 @@ const AdminRegister = () => {
     ),
     attachments: (
       <Attachments
+        availableDocumentTypes={availableDocumentTypes}
         setActiveTab={setActiveTab}
         currentRegistrationId={currentRegistrationId}
+        setShowDocumentTypeManager={setShowDocumentTypeManager}
       />
     ),
   };
@@ -217,6 +220,25 @@ const AdminRegister = () => {
     ];
 
     return allTabs.filter((tab) => hasTabPermission(tab.id));
+  };
+
+  // Update to det docuemtn types
+  const getDocumentTypes = async (e) => {
+    setLoading(true);
+    setError("");
+
+    const result = await GeneralServices.get_document_types();
+
+    if (result.success) {
+      setAvailableDocumentTypes(result.data);
+    } else {
+      if (result.status === 400 || result.status === 409) {
+        setError(result.message || "Error getting document types.");
+      } else {
+        setError("Error getting document types. Please try again.");
+      }
+    }
+    setLoading(false);
   };
 
   const getDispositions = async (e) => {
@@ -282,6 +304,7 @@ const AdminRegister = () => {
   };
 
   useEffect(() => {
+    getDocumentTypes();
     getDispositions();
     getReferralSites();
     getClinicalTemplates();
@@ -300,47 +323,48 @@ const AdminRegister = () => {
     if (!formData.first_name.trim()) {
       setError("First Name is required.");
       setIsSubmitting(false);
-      window.scrollTo({ top: 0, behavior: "smooth" });
+      // 800 seems good for mobile 700 for desktop
+      window.scrollTo({ top: 750, behavior: "smooth" });
       return false;
     }
 
     if (!formData.last_name.trim()) {
       setError("Last Name is required.");
       setIsSubmitting(false);
-      window.scrollTo({ top: 0, behavior: "smooth" });
+      window.scrollTo({ top: 750, behavior: "smooth" });
       return false;
     }
 
     if (!formData.patient_consent) {
       setError("Patient Consent is required.");
       setIsSubmitting(false);
-      window.scrollTo({ top: 0, behavior: "smooth" });
+      window.scrollTo({ top: 750, behavior: "smooth" });
       return false;
     }
     if (!formData.dob) {
       setError("Date of birth is required.");
       setIsSubmitting(false);
-      window.scrollTo({ top: 0, behavior: "smooth" });
+      window.scrollTo({ top: 750, behavior: "smooth" });
       return false;
     }
 
     if (!formData.health_card) {
       setError("Health Card Number is required.");
       setIsSubmitting(false);
-      window.scrollTo({ top: 0, behavior: "smooth" });
+      window.scrollTo({ top: 750, behavior: "smooth" });
       return false;
     }
     if (formData.health_card.length != 10) {
       setError("Health Card Number must be 10 digits exactly.");
       setIsSubmitting(false);
-      window.scrollTo({ top: 0, behavior: "smooth" });
+      window.scrollTo({ top: 750, behavior: "smooth" });
       return false;
     }
 
     if (!formData.health_card_version) {
       setError("Health Card Version is required.");
       setIsSubmitting(false);
-      window.scrollTo({ top: 0, behavior: "smooth" });
+      window.scrollTo({ top: 750, behavior: "smooth" });
       return false;
     }
 
@@ -615,4 +639,3 @@ const AdminRegister = () => {
 };
 
 export default AdminRegister;
-// {isFullScreenPreview && documentPreview && <DocumentPreviewModal />}

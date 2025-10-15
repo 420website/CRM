@@ -3,10 +3,18 @@ import { useAuth } from "../../context/AuthContext";
 
 const AdminMenu = () => {
   const navigate = useNavigate();
-  const { userRole, userPermissions } = useAuth();
+  const { userRole, userPermissions, logout } = useAuth();
 
   const goBack = () => {
     navigate("/");
+  };
+
+  const handleLogout = async () => {
+    try {
+      logout();
+    } catch (error) {
+      setError("Logout error:", error);
+    }
   };
 
   return (
@@ -22,7 +30,7 @@ const AdminMenu = () => {
 
           {/* Dashboard  */}
           <div className="space-y-6">
-            {userPermissions.includes("client") && (
+            {userPermissions.includes("client") && userRole !== "guest" && (
               <button
                 onClick={() => navigate("/admin-dashboard")}
                 className="w-full py-4 px-6 rounded-lg text-lg font-medium flex items-center justify-center gap-3 text-white transition-colors"
@@ -39,7 +47,7 @@ const AdminMenu = () => {
             )}
 
             {/* Registration  */}
-            {userPermissions.includes("client") && (
+            {userPermissions.includes("client") && userRole !== "guest" && (
               <button
                 onClick={() => navigate("/admin-register")}
                 className="w-full py-4 px-6 rounded-lg text-lg font-medium flex items-center justify-center gap-3 text-white transition-colors"
@@ -80,6 +88,16 @@ const AdminMenu = () => {
                 }
               >
                 👥 Users
+              </button>
+            )}
+
+            {/* Logout for guests */}
+            {userRole === "guest" && (
+              <button
+                onClick={handleLogout}
+                className="w-full py-4 px-6 rounded-lg text-lg font-medium flex items-center justify-center gap-3 text-white transition-colors bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors  "
+              >
+                👥 Logout
               </button>
             )}
           </div>

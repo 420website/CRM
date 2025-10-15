@@ -12,8 +12,6 @@ export default function DocumentFullScreen({
   totalPages,
   closeFullScreenPreview,
 }) {
-  // Sharing functionality state
-  const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [shareUrl, setShareUrl] = useState("");
   const [isSharing, setIsSharing] = useState(false);
@@ -92,7 +90,6 @@ export default function DocumentFullScreen({
 
   const resetZoom = () => {
     setPdfScale(defaultScale);
-    // setPdfScale(1.0);
   };
 
   // Generate shareable link for attachment
@@ -161,7 +158,6 @@ export default function DocumentFullScreen({
     }
   };
 
-  // if (loading) return <div className="p-4">Loading...</div>;
   if (error) return <div className="p-4 text-red-600">{error}</div>;
   if (!documentPreview) return <div className="p-4">Loading document...</div>;
 

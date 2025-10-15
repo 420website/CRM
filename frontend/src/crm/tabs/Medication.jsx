@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { PatientServices } from "../../services/patientServices";
-import DeleteConfirmModal from "./DeleteConfirmModal";
+import ConfirmModal from "../components/ConfirmModal";
 
 export default function Medications({ setActiveTab, currentRegistrationId }) {
   const [error, setError] = useState("");
@@ -238,10 +238,11 @@ export default function Medications({ setActiveTab, currentRegistrationId }) {
           </div>
         )}
         {showDeleteConfirm && (
-          <DeleteConfirmModal
+          <ConfirmModal
             message={"Confirm you would like to delete medication."}
-            confirmDelete={deleteMedication}
-            setShowDeleteConfirm={setShowDeleteConfirm}
+            subMessage={"This action cannot be undone."}
+            confirm={deleteMedication}
+            setShowConfirm={setShowDeleteConfirm}
           />
         )}
         {/* Medication Form */}
