@@ -505,10 +505,10 @@ const UserManagement = () => {
   }, []);
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="bg-gray-50">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
         {/* Header */}
-        <div className="bg-white rounded-lg shadow-md p-4 mb-6">
+        <div className="bg-white rounded-lg shadow-md p-4 mb-4">
           <h1 className="text-2xl font-bold text-gray-900 mb-4">
             User Management
           </h1>
@@ -558,8 +558,8 @@ const UserManagement = () => {
           <ConfirmModal
             message={"Confirm you would like to delete user."}
             subMessage={"This action cannot be undone."}
-            confirmDelete={deleteUser}
-            setShowDeleteConfirm={setShowDeleteConfirm}
+            confirm={deleteUser}
+            setShowConfirm={setShowDeleteConfirm}
           />
         )}
 

@@ -18,7 +18,7 @@ const AdminMenu = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+    <div className="lg:h-[calc(100vh-400px)] bg-gray-50 flex items-center justify-center my-4">
       <div className="max-w-md w-full mx-4">
         <div className="bg-white rounded-lg shadow-md p-8">
           <div className="text-center mb-8">

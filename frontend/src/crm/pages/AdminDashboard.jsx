@@ -408,7 +408,7 @@ const AdminDashboard = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="lg:min-h-[calc(100vh-400px)] bg-gray-50">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
         {showConfirm === "delete" && (
           <ConfirmModal
@@ -437,7 +437,7 @@ const AdminDashboard = () => {
           />
         )}
         {/* Header */}
-        <div className="bg-white rounded-lg shadow-md p-4 mb-6">
+        <div className="bg-white rounded-lg shadow-md p-4 mb-4">
           <h1 className="text-2xl font-bold text-gray-900 mb-4">
             Admin Dashboard
           </h1>

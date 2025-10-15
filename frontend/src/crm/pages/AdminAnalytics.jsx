@@ -243,10 +243,10 @@ const AdminAnalytics = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="bg-gray-50">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
         {/* Header */}
-        <div className="bg-white rounded-lg shadow-md p-4 mb-6">
+        <div className="bg-white rounded-lg shadow-md p-4 mb-4">
           <h1 className="text-2xl font-bold text-gray-900 mb-4">
             AI Analytics
           </h1>
@@ -293,7 +293,7 @@ const AdminAnalytics = () => {
         </div>
 
         {/* Legacy Data Upload Section */}
-        <div className="bg-white rounded-lg shadow-md p-4 mb-6">
+        <div className="bg-white rounded-lg shadow-md p-4 mb-4">
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-lg font-semibold text-gray-900">
               📊 Legacy Data
@@ -423,7 +423,7 @@ const AdminAnalytics = () => {
         {/* Main Content */}
         <div className="bg-white rounded-lg shadow-md p-6">
           {/* Chat Interface */}
-          <div className="h-[calc(100vh-250px)] flex flex-col">
+          <div className="lg:h-[calc(100vh-500px)] flex flex-col">
             {/* Messages */}
             <div className="flex-1 overflow-y-auto bg-white">
               <div className="space-y-4">
