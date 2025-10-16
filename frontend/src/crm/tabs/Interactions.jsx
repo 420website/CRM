@@ -309,7 +309,7 @@ export default function Interactions({ setActiveTab, currentRegistrationId }) {
         )}
         {showDeleteConfirm && (
           <ConfirmModal
-            message={"Confirm you would like to delete interaction"}
+            message={"Confirm delete interaction"}
             subMessage={"This action cannot be undone"}
             confirm={deleteInteraction}
             setShowConfirm={setShowDeleteConfirm}

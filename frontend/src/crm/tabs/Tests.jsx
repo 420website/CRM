@@ -298,7 +298,7 @@ export default function Tests({ setActiveTab, currentRegistrationId }) {
           )}
           {showDeleteConfirm && (
             <ConfirmModal
-              message={"Confirm you would like to delete test"}
+              message={"Confirm delete test"}
               subMessage={"This action cannot be undone"}
               confirm={deleteTest}
               setShowConfirm={setShowDeleteConfirm}

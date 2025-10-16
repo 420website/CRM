@@ -308,7 +308,7 @@ export default function Notes({ setActiveTab, currentRegistrationId }) {
         )}
         {showDeleteConfirm && (
           <ConfirmModal
-            message={"Confirm you would like to delete note"}
+            message={"Confirm delete note"}
             subMessage={"This action cannot be undone"}
             confirm={deleteNote}
             setShowConfirm={setShowDeleteConfirm}
