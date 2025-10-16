@@ -291,6 +291,15 @@ export default function Client({
   };
 
   const onPlaceSelected = (place) => {
+    handleChange({
+      target: {
+        name: "address",
+        value: place.displayName,
+        type: "text",
+        checked: false,
+      },
+    });
+
     setFormData((prev) => ({
       ...prev,
       address: place.displayName,
