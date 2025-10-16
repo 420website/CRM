@@ -1,7 +1,9 @@
 import { useNavigate } from "react-router-dom";
 
 export default function RegistrationSaved({ submitStatus, setSubmitStatus }) {
-  window.scrollTo({ top: 0, behavior: "smooth" });
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }, []);
 
   const navigate = useNavigate();
 
