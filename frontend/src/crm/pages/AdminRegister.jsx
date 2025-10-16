@@ -493,6 +493,7 @@ const AdminRegister = () => {
   };
 
   if (submitStatus?.type === "success") {
+    window.scrollTo({ top: 0, behavior: "smooth" });
     return (
       <RegistrationSaved
         submitStatus={submitStatus}
