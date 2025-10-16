@@ -412,8 +412,8 @@ const AdminDashboard = () => {
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
         {showConfirm === "delete" && (
           <ConfirmModal
-            message={"Confirm you would like to delete note."}
-            subMessage={"This action cannot be undone."}
+            message={"Confirm to delete registration"}
+            subMessage={"This action cannot be undone"}
             confirm={deleteRegistration}
             setShowConfirm={setShowConfirm}
           />
@@ -421,7 +421,7 @@ const AdminDashboard = () => {
         {showConfirm === "finalize" && (
           <ConfirmModal
             message={"Confirm finalize registration"}
-            subMessage={"This will send the email notification."}
+            subMessage={"This will send the email notification"}
             confirm={finalizeRegistration}
             setShowConfirm={setShowConfirm}
           />
@@ -430,7 +430,7 @@ const AdminDashboard = () => {
           <ConfirmModal
             message={"Confirm move registration back to pending"}
             subMessage={
-              "This will allow you to make edits and resubmit with a new email notification."
+              "This will allow you to make edits and resubmit with a new email notification"
             }
             confirm={revertToPending}
             setShowConfirm={setShowConfirm}

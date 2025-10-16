@@ -556,8 +556,8 @@ const UserManagement = () => {
 
         {showDeleteConfirm && (
           <ConfirmModal
-            message={"Confirm you would like to delete user."}
-            subMessage={"This action cannot be undone."}
+            message={"Confirm you would like to delete user"}
+            subMessage={"This action cannot be undone"}
             confirm={deleteUser}
             setShowConfirm={setShowDeleteConfirm}
           />

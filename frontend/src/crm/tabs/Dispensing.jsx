@@ -231,8 +231,8 @@ export default function Dispensing({ setActiveTab, currentRegistrationId }) {
           )}
           {showDeleteConfirm && (
             <ConfirmModal
-              message={"Confirm you would like to delete dispensing."}
-              subMessage={"This action cannot be undone."}
+              message={"Confirm you would like to delete dispensing"}
+              subMessage={"This action cannot be undone"}
               confirm={deleteDispensing}
               setShowConfirm={setShowDeleteConfirm}
             />

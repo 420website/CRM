@@ -221,8 +221,8 @@ export default function Activities({ setActiveTab, currentRegistrationId }) {
           )}
           {showDeleteConfirm && (
             <ConfirmModal
-              message={"Confirm you would like to delete activity."}
-              subMessage={"This action cannot be undone."}
+              message={"Confirm you would like to delete activity"}
+              subMessage={"This action cannot be undone"}
               confirm={deleteActivity}
               setShowConfirm={setShowDeleteConfirm}
             />

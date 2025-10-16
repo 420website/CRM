@@ -239,8 +239,8 @@ export default function Medications({ setActiveTab, currentRegistrationId }) {
         )}
         {showDeleteConfirm && (
           <ConfirmModal
-            message={"Confirm you would like to delete medication."}
-            subMessage={"This action cannot be undone."}
+            message={"Confirm you would like to delete medication"}
+            subMessage={"This action cannot be undone"}
             confirm={deleteMedication}
             setShowConfirm={setShowDeleteConfirm}
           />
