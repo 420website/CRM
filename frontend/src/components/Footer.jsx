@@ -28,10 +28,11 @@ const Footer = () => {
               <p>
                 <strong>Our Milestones:</strong>
               </p>
-              <p>• 2,000+ at-risk people screened</p>
+              <p>• 2,500+ at-risk people screened</p>
               <p>• 98% linked to care</p>
               <p>• 97% treatment adherence</p>
               <p>• $250,000+ donated to people at risk</p>
+              <p>• 2 participants housed</p>
             </div>
           </div>
 

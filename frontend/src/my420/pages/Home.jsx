@@ -247,6 +247,22 @@ const Home = () => {
                 Financial Support Provided
               </div>
             </div>
+
+            <div
+              className="text-center bg-gray-900 rounded-lg p-8 border border-gray-700 cursor-pointer hover:bg-gray-800 transition-colors duration-200"
+              onClick={handleStatsClick}
+            >
+              <div className="text-4xl font-bold text-white mb-2">
+                <AnimatedCounter target={2} />
+              </div>
+              <div className="text-gray-300 text-lg">Participants Housed</div>
+              <div className="text-gray-400 text-sm mt-2">
+                Homelessness Prevention
+              </div>
+              <div className="text-gray-400 text-sm">
+                Effective: September 2025
+              </div>
+            </div>
           </div>
 
           <div className="text-center mt-4 mb-4">
