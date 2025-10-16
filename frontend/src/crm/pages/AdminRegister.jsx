@@ -510,7 +510,7 @@ const AdminRegister = () => {
             <Intake submitStatus={submitStatus} setPhotoData={setPhotoData} />
 
             {/* Tabs Navigation */}
-            <div className="border-b border-gray-200 mb-6 relative">
+            <div id="tabs" className="border-b border-gray-200 mb-6 relative">
               {getAllowedTabs().length > 0 ? (
                 <div className="flex space-x-1 overflow-x-auto scrollbar-hide">
                   {getAllowedTabs().map((tab) => (

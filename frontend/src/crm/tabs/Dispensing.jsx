@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { PatientServices } from "../../services/patientServices";
 import ConfirmModal from "../components/ConfirmModal";
+import toast from "react-hot-toast";
 
 export default function Dispensing({ setActiveTab, currentRegistrationId }) {
   const [error, setError] = useState("");
@@ -72,6 +73,7 @@ export default function Dispensing({ setActiveTab, currentRegistrationId }) {
       } else {
         setError("Error getting dispensing. Please try again.");
       }
+      document.querySelector("#tabs")?.scrollIntoView({ behavior: "smooth" });
     }
     setLoading(false);
     setIsSavingDispensing(false);
@@ -109,6 +111,7 @@ export default function Dispensing({ setActiveTab, currentRegistrationId }) {
       } else {
         setError("Error update dispensing. Please try again.");
       }
+      document.querySelector("#tabs")?.scrollIntoView({ behavior: "smooth" });
     }
     setLoading(false);
     setIsSavingDispensing(false);
@@ -246,6 +249,7 @@ export default function Dispensing({ setActiveTab, currentRegistrationId }) {
 
           {/* Dispensing Form */}
           <div
+            id="dispensingForm"
             className={
               !currentRegistrationId ? "opacity-50 pointer-events-none" : ""
             }
