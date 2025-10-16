@@ -10,9 +10,12 @@ export function ActivityItems({ filteredData }) {
   const [loadingPhotos, setLoadingPhotos] = useState(new Set());
 
   const getPhoto = async (registrationId) => {
-    const result = await ObjectServices.get_photo_base64(registrationId);
+    const result = await ObjectServices.get_photo_raw(registrationId);
+
     if (result.success) {
-      return `data:image/jpeg;base64,${result.data?.file}`;
+      const blob = new Blob([result.data], { type: "image/jpeg" });
+      const url = URL.createObjectURL(blob);
+      return url;
     } else {
       toast.error("No photo found for this registration.");
     }

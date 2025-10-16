@@ -1,6 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
-import { compressImage } from "../../utils/compressImage";
+import { compressImageToBlob } from "../../utils/compressImage";
 
 export default function EditPhoto({
   saveStatus,
@@ -16,8 +16,8 @@ export default function EditPhoto({
   useEffect(() => {
     const compressAndSetPreview = async () => {
       if (photoData.file) {
-        const compressed = await compressImage(photoData.file, 500);
-        setPhotoPreview(compressed);
+        // const compressed = await compressImage(photoData.file, 500);
+        setPhotoPreview(URL.createObjectURL(photoData.file));
         setPhotoUploadStatus({
           type: "success",
           message:
@@ -47,9 +47,12 @@ export default function EditPhoto({
         return;
       }
 
+      const compressedImage = await compressImageToBlob(file, 500);
+      const url = URL.createObjectURL(compressedImage);
+
       setPhotoData({
         name: file.name,
-        file: file,
+        file: compressedImage,
       });
       setPhotoChanged(true);
     }

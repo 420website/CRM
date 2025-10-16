@@ -165,11 +165,12 @@ const AdminEdit = () => {
         setSelectedTemplate("Select");
       }
 
-      // Get Photo
-      const photoRes = await ObjectServices.get_photo_base64(registrationId);
+      const photoRes = await ObjectServices.get_photo_raw(registrationId);
 
       if (photoRes.success) {
-        setPhotoPreview(`data:image/jpeg;base64,${photoRes.data?.file}`);
+        const blob = new Blob([photoRes.data], { type: "image/jpeg" });
+        const url = URL.createObjectURL(blob);
+        setPhotoPreview(url);
       }
     } else {
       if (result.status === 400 || result.status === 409) {

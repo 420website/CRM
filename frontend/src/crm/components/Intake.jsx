@@ -1,7 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";
 import { HealthServices } from "../../services/healthService";
-import { compressImage } from "../../utils/compressImage";
+import { compressImageToBlob } from "../../utils/compressImage";
 
 export default function Intake({ submitStatus, setPhotoData }) {
   const navigate = useNavigate();
@@ -55,13 +55,14 @@ export default function Intake({ submitStatus, setPhotoData }) {
 
       try {
         // Create compressed preview for display only
-        const compressedImage = await compressImage(file, 500);
+        const compressedImage = await compressImageToBlob(file, 500);
+        const url = URL.createObjectURL(compressedImage);
 
-        setPhotoPreview(compressedImage);
+        setPhotoPreview(url);
 
         setPhotoData({
           name: file.name,
-          file: file,
+          file: compressedImage,
         });
       } catch (error) {
         setError("Error compressing image:", error);
