@@ -1,5 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
+import { IoLogOutOutline } from "react-icons/io5";
 
 const AdminMenu = () => {
   const navigate = useNavigate();
@@ -71,7 +72,8 @@ const AdminMenu = () => {
               onMouseEnter={(e) => (e.target.style.backgroundColor = "#1f2937")}
               onMouseLeave={(e) => (e.target.style.backgroundColor = "#000000")}
             >
-              🤖 Analytics
+              <span className="text-lg">🤖</span>
+              Analytics
             </button>
 
             {/* Users */}
@@ -97,7 +99,8 @@ const AdminMenu = () => {
                 onClick={handleLogout}
                 className="w-full py-4 px-6 rounded-lg text-lg font-medium flex items-center justify-center gap-3 text-white transition-colors bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors  "
               >
-                👥 Logout
+                <IoLogOutOutline />
+                Logout
               </button>
             )}
           </div>

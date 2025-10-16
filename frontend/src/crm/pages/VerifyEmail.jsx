@@ -6,8 +6,8 @@ export function SuccessfullyVerified() {
   const navigate = useNavigate();
 
   return (
-    <div className="bg-white py-8 px-6 shadow sm:rounded-lg sm:px-10 flex flex-col items-center space-y-6">
-      <h2 className="text-2xl font-bold text-center text-black-700">
+    <div className="bg-white py-8 px-6 shadow rounded-lg sm:px-10 flex flex-col items-center space-y-6">
+      <h2 className="text-2xl font-bold text-center text-black-700 mb-0">
         Email Verified
       </h2>
       <p className="text-sm text-gray-600 text-center">
@@ -49,7 +49,7 @@ function UnsuccessfullyVerified() {
   };
 
   return (
-    <div className="bg-white py-8 px-6 shadow sm:rounded-lg sm:px-10 flex flex-col items-center space-y-6">
+    <div className="bg-white py-8 px-6 shadow rounded-lg sm:px-10 flex flex-col items-center space-y-6">
       <div>
         <h2 className="text-2xl font-bold text-center text-black-600">
           Verify Email
@@ -115,7 +115,7 @@ export default function VerifyEmail() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-8 sm:px-6 lg:px-8">
+    <div className="lg:h-[calc(100vh-400px)] bg-gray-50 flex flex-col justify-center mx-4 my-12">
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
         <div className="auth-header">
           {result ? <SuccessfullyVerified /> : <UnsuccessfullyVerified />}

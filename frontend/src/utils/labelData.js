@@ -1,14 +1,15 @@
 import { PatientServices } from "../services/patientServices";
+import toast from "react-hot-toast";
 
 export const copyLabelsData = async (formData) => {
   const labelsData = getFormattedLabelsData(formData);
   if (labelsData) {
     try {
       await navigator.clipboard.writeText(labelsData);
-      alert("✅ Label data copied to clipboard!");
+      toast.success("Label data copied to clipboard!");
     } catch (error) {
-      alert("❌ Error copying label data: " + error.message);
-      console.error("Labels copy failed:", error.message);
+      toast.error("Error copying label data: " + error.message);
+      // console.error("Labels copy failed:", error.message);
     }
   }
 };
@@ -27,9 +28,9 @@ export const copyFormData = async (currentRegistrationId, formData) => {
     });
 
     await navigator.clipboard.write([item]);
-    alert("✅ Client data copied to clipboard!");
+    toast.success("Client data copied to clipboard!");
   } catch (error) {
-    alert("❌ Failed to copy data to clipboard: " + error.message);
+    toast.error("Failed to copy data to clipboard: " + error.message);
     console.error("Form copy failed:", error);
   }
 };

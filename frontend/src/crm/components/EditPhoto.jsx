@@ -1,6 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { compressImageToBlob } from "../../utils/compressImage";
+import toast from "react-hot-toast";
 
 export default function EditPhoto({
   saveStatus,
@@ -37,18 +38,19 @@ export default function EditPhoto({
     if (file) {
       // Validate file type
       if (!file.type.startsWith("image/")) {
-        alert("Please select an image file");
+        toast.error("Please select an image file");
+        e.target.value = null;
         return;
       }
 
       // Validate file size (10MB max before compression)
       if (file.size > 10 * 1024 * 1024) {
-        alert("Photo is too large. Please choose an image under 10MB.");
+        toast.error("Photo is too large. Please choose an image under 10MB.");
+        e.target.value = null;
         return;
       }
 
       const compressedImage = await compressImageToBlob(file, 500);
-      const url = URL.createObjectURL(compressedImage);
 
       setPhotoData({
         name: file.name,

@@ -454,7 +454,6 @@ const AdminRegister = () => {
 
           resetForm();
         } else {
-          window.scrollTo({ top: 0, behavior: "smooth" });
           setError(result.message || "Invalid credentials.");
         }
       } else {
@@ -468,7 +467,6 @@ const AdminRegister = () => {
         resetForm();
       }
     } else {
-      window.scrollTo({ top: 0, behavior: "smooth" });
       if (result.status === 400 || result.status === 409) {
         if (
           result.message === "Patient with that name and dob already exists."
@@ -480,6 +478,7 @@ const AdminRegister = () => {
         setError("Login failed. Please try again.");
       }
     }
+    window.scrollTo({ top: 0, behavior: "smooth" });
 
     setLoading(false);
     setIsSubmitting(false);
