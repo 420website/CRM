@@ -172,6 +172,7 @@ CREATE TABLE activities (
     date DATE NOT NULL DEFAULT CURRENT_DATE,
     time TIME,
     description TEXT NOT NULL,
+    completed bool NOT NULL DEFAULT false,
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );

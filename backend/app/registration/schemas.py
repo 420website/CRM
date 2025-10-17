@@ -251,6 +251,7 @@ class DispensingRead(DispensingBase):
 class ActivityBase(BaseModel):
     time: Optional[dt.time] = None
     date: Optional[dt.date] = None
+    # completed: Optional[bool] = False
 
 
 class ActivityCreate(ActivityBase):
@@ -261,12 +262,14 @@ class ActivityCreate(ActivityBase):
 class ActivityUpdate(ActivityBase):
     patient_id: Optional[int] = None
     description: Optional[str] = None
+    completed: Optional[bool] = None
 
 
 class ActivityRead(ActivityBase):
     id: int
     patient_id: int
     description: str
+    completed: bool
     created_at: datetime
     updated_at: datetime
 
@@ -283,6 +286,7 @@ class PatientActivity(ActivityBase):
     disposition: Optional[str] = None
     referral_site: Optional[str] = None
     description: str
+    completed: bool
     created_at: datetime
     updated_at: datetime
 

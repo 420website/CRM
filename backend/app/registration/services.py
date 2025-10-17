@@ -883,3 +883,18 @@ class ActivityService:
         async with database.get_transaction() as conn:
             row = await conn.fetchrow(query, *values)
             return bool(row)
+
+    @staticmethod
+    async def update_activity_status(
+        id: int,
+        status: bool,
+    ) -> bool:
+        query = """
+            UPDATE activities
+            SET completed = $1, updated_at = NOW()
+            WHERE id = $3
+            RETURNING id;
+        """
+        async with database.get_transaction() as conn:
+            row = await conn.fetchrow(query, status)
+            return bool(row)

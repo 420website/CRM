@@ -3,6 +3,9 @@ import { useCallback } from "react";
 import { ObjectServices } from "../../services/objectService";
 import { useState } from "react";
 import toast from "react-hot-toast";
+import { useRegistration } from "../../context/RegistrationContext";
+import { PatientServices } from "../../services/patientServices";
+import { CheckCircleIcon, CircleIcon } from "lucide-react";
 
 export function ActivityItems({ filteredData }) {
   const [showingPhotos, setShowingPhotos] = useState([]);
@@ -57,6 +60,7 @@ export function ActivityItems({ filteredData }) {
         key={index}
         index={index}
         item={item}
+        activityId={item.id}
         loadedPhotos={loadedPhotos}
         loadingPhotos={loadingPhotos}
         showPhoto={showPhoto}
@@ -73,6 +77,7 @@ export function ActivityItems({ filteredData }) {
 export default function ActivityItem({
   index,
   item,
+  activityId,
   loadingPhotos,
   loadedPhotos,
   showPhoto,
@@ -80,20 +85,65 @@ export default function ActivityItem({
   showingPhotos,
 }) {
   const navigate = useNavigate();
+  const { getDashboardActivities, activityData } = useRegistration();
+  const activity = activityData.find((activity) => activity.id === activityId);
+
+  const updateActivityStatus = async (isComplete) => {
+    const result = await PatientServices.update_activity(
+      item.patient_id,
+      item.id,
+      { completed: isComplete },
+    );
+
+    if (result.success) {
+      item = { ...item, completed: isComplete };
+      getDashboardActivities();
+    } else {
+      if (result.status === 400 || result.status === 409) {
+        setError(result.message || "Error updating activity.");
+
+        toast.error("Photo is too large. Please choose an image under 10MB.");
+      } else {
+        setError("Error updating activity. Please try again.");
+      }
+    }
+  };
+
+  const handleToggleComplete = async (e) => {
+    if (activity.completed) {
+      updateActivityStatus(false);
+    } else {
+      updateActivityStatus(true);
+    }
+  };
 
   const isShowing = showingPhotos.some(
     ([id, idx]) => id === item.patient_id && idx === index,
   );
 
-  const status =
-    new Date(`${item.date}T${item.time}`) > new Date()
-      ? "upcoming"
-      : "completed";
+  let status;
+
+  if (activity.completed) {
+    status = "Completed";
+  } else {
+    if (new Date(`${item.date}T${item.time}`) > new Date()) {
+      status = "Upcoming";
+    } else {
+      status = "Late";
+    }
+  }
+
+  const statusStyles = {
+    Upcoming: "bg-blue-100 text-blue-800",
+    in_progress: "bg-yellow-100 text-yellow-800",
+    Late: "bg-red-100 text-red-800",
+    Completed: "bg-green-100 text-green-800",
+  };
 
   return (
     <div
       key={item.id}
-      className="border rounded-lg p-4 bg-gray-50 hover:bg-gray-100 transition-colors cursor-pointer mb-2"
+      className="relative border rounded-lg p-4 bg-gray-50 hover:bg-gray-100 transition-colors cursor-pointer mb-2"
     >
       <div className="flex justify-between items-start">
         <div className="flex-1">
@@ -103,12 +153,10 @@ export default function ActivityItem({
             </h3>
             <span
               className={`px-2 py-1 text-xs font-medium rounded-full ${
-                status === "upcoming"
-                  ? "bg-blue-100 text-blue-800"
-                  : "bg-green-100 text-green-800"
+                statusStyles[status] || "bg-gray-100 text-gray-800"
               }`}
             >
-              {status === "upcoming" ? "Upcoming" : "Completed"}
+              {status}
             </span>
           </div>
           <div className="text-sm text-gray-600 mt-1">
@@ -126,6 +174,22 @@ export default function ActivityItem({
             {item.phone1 && <p>Phone: {item.phone1}</p>}
             <p className="text-xs text-gray-500 mt-1">Activity ID: {item.id}</p>
           </div>
+          {/* Check icon */}
+          <button
+            onClick={() => handleToggleComplete()}
+            className={`absolute top-3 right-3 p-1 rounded-full transition-colors ${
+              item.completed
+                ? "bg-green-100 text-green-700 hover:bg-green-200"
+                : "bg-gray-100 text-gray-500 hover:bg-gray-200"
+            }`}
+            title={item.completed ? "Mark incomplete" : "Mark complete"}
+          >
+            {item.completed ? (
+              <CheckCircleIcon className="w-5 h-5" />
+            ) : (
+              <CircleIcon className="w-5 h-5" />
+            )}
+          </button>
 
           {/* Lazy loaded photo */}
           {isShowing && (
