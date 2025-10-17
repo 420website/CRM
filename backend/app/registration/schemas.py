@@ -281,6 +281,7 @@ class PatientActivity(ActivityBase):
     last_name: str
     phone1: Optional[str] = None
     disposition: Optional[str] = None
+    referral_site: Optional[str] = None
     description: str
     created_at: datetime
     updated_at: datetime

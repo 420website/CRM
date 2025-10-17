@@ -798,7 +798,8 @@ class ActivityService:
             p.first_name, 
             p.last_name, 
             p.phone1,
-            p.disposition
+            p.disposition,
+            p.referral_site
         FROM activities a
         JOIN patients p ON a.patient_id = p.id
         ORDER BY a.date DESC, a.time DESC;

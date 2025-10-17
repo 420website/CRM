@@ -331,6 +331,23 @@ const AdminDashboard = () => {
       if (searchDate) {
         data = data.filter((item) => item.date === searchDate);
       }
+
+      if (searchDisposition) {
+        data = data.filter(
+          (item) =>
+            (item.disposition || "").toLowerCase() ===
+            searchDisposition.toLowerCase(),
+        );
+      }
+
+      if (searchReferralSite) {
+        data = data.filter(
+          (item) =>
+            (item.referral_site || "").toLowerCase() ===
+            searchReferralSite.toLowerCase(),
+        );
+      }
+
       if (activityStatusFilter !== "all") {
         data = data.filter((item) => {
           const itemDateTime = new Date(`${item.date}T${item.time}`);
@@ -356,6 +373,7 @@ const AdminDashboard = () => {
       if (searchDate) {
         data = data.filter((item) => item.reg_date === searchDate);
       }
+
       if (searchDisposition) {
         data = data.filter(
           (item) =>
@@ -692,7 +710,83 @@ const AdminDashboard = () => {
                 />
               </div>
 
-              {activeTab === "activities" ? (
+              <div className="min-w-0">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Disposition
+                </label>
+                <select
+                  value={searchDisposition}
+                  onChange={(e) => handleDispositionSearch(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  style={{
+                    height: "40px",
+                    minHeight: "40px",
+                    maxHeight: "40px",
+                  }}
+                >
+                  <option value="">All</option>
+                  {/* Most Frequently Used */}
+                  {availableDispositions
+                    .filter((d) => d.is_frequent)
+                    .map((disposition) => (
+                      <option key={disposition.id} value={disposition.name}>
+                        {disposition.name}
+                      </option>
+                    ))}
+                  {/* Separator */}
+                  {availableDispositions.filter((d) => !d.is_frequent).length >
+                    0 && <option disabled>-------</option>}
+                  {/* All Others in Alphabetical Order */}
+                  {availableDispositions
+                    .filter((d) => !d.is_frequent)
+                    .sort((a, b) => a.name.localeCompare(b.name))
+                    .map((disposition) => (
+                      <option key={disposition.id} value={disposition.name}>
+                        {disposition.name}
+                      </option>
+                    ))}
+                </select>
+              </div>
+
+              <div className="min-w-0">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Referral Site
+                </label>
+                <select
+                  value={searchReferralSite}
+                  onChange={(e) => handleReferralSiteSearch(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  style={{
+                    height: "40px",
+                    minHeight: "40px",
+                    maxHeight: "40px",
+                  }}
+                >
+                  <option value="">Select Referral Site</option>
+                  {/* Most Frequently Used */}
+                  {availableReferralSites
+                    .filter((s) => s.is_frequent)
+                    .map((site) => (
+                      <option key={site.id} value={site.name}>
+                        {site.name}
+                      </option>
+                    ))}
+                  {/* Separator */}
+                  {availableReferralSites.filter((s) => !s.is_frequent).length >
+                    0 && <option disabled>-------</option>}
+                  {/* All Others in Alphabetical Order */}
+                  {availableReferralSites
+                    .filter((s) => !s.is_frequent)
+                    .sort((a, b) => a.name.localeCompare(b.name))
+                    .map((site) => (
+                      <option key={site.id} value={site.name}>
+                        {site.name}
+                      </option>
+                    ))}
+                </select>
+              </div>
+
+              {activeTab === "activities" && (
                 <div className="min-w-0 md:col-span-2 xl:col-span-1">
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Status
@@ -712,83 +806,6 @@ const AdminDashboard = () => {
                     <option value="completed">Completed</option>
                   </select>
                 </div>
-              ) : (
-                <>
-                  <div className="min-w-0">
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Disposition
-                    </label>
-                    <select
-                      value={searchDisposition}
-                      onChange={(e) => handleDispositionSearch(e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      style={{
-                        height: "40px",
-                        minHeight: "40px",
-                        maxHeight: "40px",
-                      }}
-                    >
-                      <option value="">All</option>
-                      {/* Most Frequently Used */}
-                      {availableDispositions
-                        .filter((d) => d.is_frequent)
-                        .map((disposition) => (
-                          <option key={disposition.id} value={disposition.name}>
-                            {disposition.name}
-                          </option>
-                        ))}
-                      {/* Separator */}
-                      {availableDispositions.filter((d) => !d.is_frequent)
-                        .length > 0 && <option disabled>-------</option>}
-                      {/* All Others in Alphabetical Order */}
-                      {availableDispositions
-                        .filter((d) => !d.is_frequent)
-                        .sort((a, b) => a.name.localeCompare(b.name))
-                        .map((disposition) => (
-                          <option key={disposition.id} value={disposition.name}>
-                            {disposition.name}
-                          </option>
-                        ))}
-                    </select>
-                  </div>
-                  <div className="min-w-0">
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Referral Site
-                    </label>
-                    <select
-                      value={searchReferralSite}
-                      onChange={(e) => handleReferralSiteSearch(e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      style={{
-                        height: "40px",
-                        minHeight: "40px",
-                        maxHeight: "40px",
-                      }}
-                    >
-                      <option value="">Select Referral Site</option>
-                      {/* Most Frequently Used */}
-                      {availableReferralSites
-                        .filter((s) => s.is_frequent)
-                        .map((site) => (
-                          <option key={site.id} value={site.name}>
-                            {site.name}
-                          </option>
-                        ))}
-                      {/* Separator */}
-                      {availableReferralSites.filter((s) => !s.is_frequent)
-                        .length > 0 && <option disabled>-------</option>}
-                      {/* All Others in Alphabetical Order */}
-                      {availableReferralSites
-                        .filter((s) => !s.is_frequent)
-                        .sort((a, b) => a.name.localeCompare(b.name))
-                        .map((site) => (
-                          <option key={site.id} value={site.name}>
-                            {site.name}
-                          </option>
-                        ))}
-                    </select>
-                  </div>
-                </>
               )}
             </div>
 
