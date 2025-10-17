@@ -3,13 +3,11 @@ import { ObjectServices } from "../../services/objectService";
 import { loadImage, loadPDF, loadWord } from "../../utils/loadFile";
 import DocumentFullScreen from "../components/DocumentFullScreen";
 import DocumentPreview from "../components/DocumentPreview";
+import { useRegistration } from "../../context/RegistrationContext";
 
-export default function Attachments({
-  availableDocumentTypes,
-  setActiveTab,
-  currentRegistrationId,
-  setShowDocumentTypeManager,
-}) {
+export default function Attachments({ setActiveTab, currentRegistrationId }) {
+  const { setShowDocumentTypeManager, documentTypes } = useRegistration();
+
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [documentType, setDocumentType] = useState("");
@@ -346,7 +344,7 @@ export default function Attachments({
             >
               <option value="">Select Document Type</option>
               {/* Most Frequently Used */}
-              {availableDocumentTypes
+              {documentTypes
                 .filter((d) => d.is_frequent)
                 .map((documentType) => (
                   <option key={documentType.id} value={documentType.name}>
@@ -354,10 +352,11 @@ export default function Attachments({
                   </option>
                 ))}
               {/* Separator */}
-              {availableDocumentTypes.filter((d) => !d.is_frequent).length >
-                0 && <option disabled>-------</option>}
+              {documentTypes.filter((d) => !d.is_frequent).length > 0 && (
+                <option disabled>-------</option>
+              )}
               {/* All Others in Alphabetical Order */}
-              {availableDocumentTypes
+              {documentTypes
                 .filter((d) => !d.is_frequent)
                 .sort((a, b) => a.name.localeCompare(b.name))
                 .map((documentType) => (

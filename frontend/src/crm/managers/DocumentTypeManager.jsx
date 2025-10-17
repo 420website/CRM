@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { GeneralServices } from "../../services/generalService";
+import { useRegistration } from "../../context/RegistrationContext";
 
 function EditPopup({
   editingDocumentType,
@@ -117,11 +118,10 @@ function EditPopup({
   );
 }
 
-export default function DocumentTypeManager({
-  setShowDocumentTypeManager,
-  availableDocumentTypes,
-  getDocumentTypes,
-}) {
+export default function DocumentTypeManager({}) {
+  const { setShowDocumentTypeManager, documentTypes, getDocumentTypes } =
+    useRegistration();
+
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
@@ -236,11 +236,11 @@ export default function DocumentTypeManager({
   // Filter documenttype based on search
   const getFilteredDocumentTypes = () => {
     if (!documentTypeSearch.trim()) {
-      return availableDocumentTypes;
+      return documentTypes;
     }
 
     const searchTerm = documentTypeSearch.toLowerCase();
-    return availableDocumentTypes.filter((documentType) =>
+    return documentTypes.filter((documentType) =>
       documentType.name.toLowerCase().includes(searchTerm),
     );
   };

@@ -16,15 +16,22 @@ import { useAuth } from "../../context/AuthContext";
 import { calculateAge } from "../../utils/formatData";
 import { copyFormData, copyLabelsData } from "../../utils/labelData";
 import { parseDateFromSpeech, parseFields } from "../../utils/parseFromSpeech";
-import { GeneralServices } from "../../services/generalService";
 import { PatientServices } from "../../services/patientServices";
 import RegistrationSaved from "../components/RegistrationSaved";
 import { DEFAULT_FORM } from "../forms/Registration";
 import VoiceFillModal from "../components/VoiceInput";
 import ForceRegisterModal from "../components/ForcePopupModal";
 import { ObjectServices } from "../../services/objectService";
+import { useRegistration } from "../../context/RegistrationContext";
 
 const AdminRegister = () => {
+  const {
+    showDispositionManager,
+    showReferralSiteManager,
+    showClinicalManager,
+    getRegistrations,
+  } = useRegistration();
+
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [voiceInputText, setVoiceInputText] = useState("");
@@ -33,18 +40,7 @@ const AdminRegister = () => {
   const { userRole, userPermissions } = useAuth();
   const [showVoiceDateModal, setShowVoiceDateModal] = useState(false);
   const [showVoiceFillModal, setShowVoiceFillModal] = useState(false);
-  const [showDispositionManager, setShowDispositionManager] = useState(false);
-  const [showDocumentTypeManager, setShowDocumentTypeManager] = useState(false);
-  const [showReferralSiteManager, setShowReferralSiteManager] = useState(false);
-  const [showClinicalTemplateManager, setShowClinicalTemplateManager] =
-    useState(false);
   const [templates, setTemplates] = useState({});
-  const [availableReferralSites, setAvailableReferralSites] = useState([]);
-  const [availableDispositions, setAvailableDispositions] = useState([]);
-  const [availableClinicalTemplates, setAvailableClinicalTemplates] = useState(
-    [],
-  );
-  const [availableDocumentTypes, setAvailableDocumentTypes] = useState([]);
   const [selectedTemplate, setSelectedTemplate] = useState("Select");
   const [showForceButton, setShowForceButton] = useState(false);
   const [voiceDateInput, setVoiceDateInput] = useState("");
@@ -139,12 +135,6 @@ const AdminRegister = () => {
         formData={formData}
         setShowVoiceDateModal={setShowVoiceDateModal}
         setFormData={setFormData}
-        setShowDispositionManager={setShowDispositionManager}
-        setShowReferralSiteManager={setShowReferralSiteManager}
-        setShowClinicalTemplateManager={setShowClinicalTemplateManager}
-        availableDispositions={availableDispositions}
-        availableReferralSites={availableReferralSites}
-        availableClinicalTemplates={availableClinicalTemplates}
         setTemplates={setTemplates}
         templates={templates}
         selectedTemplate={selectedTemplate}
@@ -193,10 +183,8 @@ const AdminRegister = () => {
     ),
     attachments: (
       <Attachments
-        availableDocumentTypes={availableDocumentTypes}
         setActiveTab={setActiveTab}
         currentRegistrationId={currentRegistrationId}
-        setShowDocumentTypeManager={setShowDocumentTypeManager}
       />
     ),
   };
@@ -221,94 +209,6 @@ const AdminRegister = () => {
 
     return allTabs.filter((tab) => hasTabPermission(tab.id));
   };
-
-  // Update to det docuemtn types
-  const getDocumentTypes = async (e) => {
-    setLoading(true);
-    setError("");
-
-    const result = await GeneralServices.get_document_types();
-
-    if (result.success) {
-      setAvailableDocumentTypes(result.data);
-    } else {
-      if (result.status === 400 || result.status === 409) {
-        setError(result.message || "Error getting document types.");
-      } else {
-        setError("Error getting document types. Please try again.");
-      }
-    }
-    setLoading(false);
-  };
-
-  const getDispositions = async (e) => {
-    setLoading(true);
-    setError("");
-
-    const result = await GeneralServices.get_dispositions();
-
-    if (result.success) {
-      setAvailableDispositions(result.data);
-    } else {
-      if (result.status === 400 || result.status === 409) {
-        setError(result.message || "Error getting dispositions.");
-      } else {
-        setError("Error getting dispositions. Please try again.");
-      }
-    }
-    setLoading(false);
-  };
-
-  const getReferralSites = async () => {
-    setLoading(true);
-    setError("");
-
-    const result = await GeneralServices.get_referral_sites();
-
-    if (result.success) {
-      setAvailableReferralSites(result.data);
-    } else {
-      if (result.status === 400 || result.status === 409) {
-        setError(result.message || "Error getting referral sites.");
-      } else {
-        setError("Error getting referral sites. Please try again.");
-      }
-    }
-    setLoading(false);
-  };
-
-  const getClinicalTemplates = async () => {
-    setLoading(true);
-    setError("");
-
-    const result = await GeneralServices.get_clinical_templates();
-
-    if (result.success) {
-      setAvailableClinicalTemplates(result.data);
-
-      const templatesObject = {};
-      // Convert array to object for easier access
-      result.data.forEach((template) => {
-        templatesObject[template.name] = template.content;
-      });
-
-      setTemplates(templatesObject);
-    } else {
-      if (result.status === 400 || result.status === 409) {
-        setError(result.message || "Error getting clinical templates.");
-      } else {
-        setError("Error getting clinical templates. Please try again.");
-      }
-    }
-    setLoading(false);
-  };
-
-  useEffect(() => {
-    getDocumentTypes();
-    getDispositions();
-    getReferralSites();
-    getClinicalTemplates();
-  }, []);
 
   const resetForm = async () => {
     setFormData(getDefaultForm());
@@ -480,6 +380,7 @@ const AdminRegister = () => {
     }
     window.scrollTo({ top: 0, behavior: "smooth" });
 
+    getRegistrations();
     setLoading(false);
     setIsSubmitting(false);
   };
@@ -606,27 +507,6 @@ const AdminRegister = () => {
           handleVoiceDateSubmit={handleVoiceDateSubmit}
         />
       )}
-      {showDispositionManager && (
-        <DispositionManager
-          setShowDispositionManager={setShowDispositionManager}
-          availableDispositions={availableDispositions}
-          getDispositions={getDispositions}
-        />
-      )}
-      {showReferralSiteManager && (
-        <ReferralSiteManager
-          setShowReferralSiteManager={setShowReferralSiteManager}
-          availableReferralSites={availableReferralSites}
-          getReferralSites={getReferralSites}
-        />
-      )}
-      {showClinicalTemplateManager && (
-        <ClinicalTemplateManager
-          setShowClinicalTemplateManager={setShowClinicalTemplateManager}
-          availableClinicalTemplates={availableClinicalTemplates}
-          getClinicalTemplates={getClinicalTemplates}
-        />
-      )}
       {showForceButton && (
         <ForceRegisterModal
           handleForceSubmit={handleForceSubmit}
@@ -634,6 +514,9 @@ const AdminRegister = () => {
           errorMessage={error}
         />
       )}
+      {showDispositionManager && <DispositionManager />}
+      {showReferralSiteManager && <ReferralSiteManager />}
+      {showClinicalManager && <ClinicalTemplateManager />}
     </div>
   );
 };

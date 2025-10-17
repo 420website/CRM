@@ -1,14 +1,15 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { PatientServices } from "../../services/patientServices";
 import ConfirmModal from "../components/ConfirmModal";
-import toast from "react-hot-toast";
+import { useRegistration } from "../../context/RegistrationContext";
 
 export default function Dispensing({ setActiveTab, currentRegistrationId }) {
+  const { getDispensing, dispensing } = useRegistration();
+
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [editingDispensingId, setEditingDispensingId] = useState(null);
   const [isSavingDispensing, setIsSavingDispensing] = useState(false);
-  const [savedDispensing, setSavedDispensing] = useState([]);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleteDispensingId, setDeleteDispensingId] = useState(null);
   const [dispensingData, setDispensingData] = useState({
@@ -19,24 +20,6 @@ export default function Dispensing({ setActiveTab, currentRegistrationId }) {
     product_type: "Commercial",
     expiry_date: "",
   });
-
-  const getDispensing = async (registrationId) => {
-    setLoading(true);
-    setError("");
-
-    const result =
-      await PatientServices.get_dispensings_by_patient(registrationId);
-    if (result.success) {
-      setSavedDispensing(result.data || []);
-    } else {
-      if (result.status === 400 || result.status === 409) {
-        setError(result.message || "Error getting dispensing.");
-      } else {
-        setError("Error getting dispensing. Please try again.");
-      }
-    }
-    setLoading(false);
-  };
 
   const saveDispensing = async () => {
     editingDispensingId ? updateDispensing() : createDispensing();
@@ -65,7 +48,7 @@ export default function Dispensing({ setActiveTab, currentRegistrationId }) {
     );
 
     if (result.success) {
-      await getDispensing(currentRegistrationId);
+      getDispensing(currentRegistrationId);
       clearDispensingForm();
     } else {
       if (result.status === 400 || result.status === 409) {
@@ -103,7 +86,7 @@ export default function Dispensing({ setActiveTab, currentRegistrationId }) {
     );
 
     if (result.success) {
-      await getDispensing(currentRegistrationId);
+      getDispensing(currentRegistrationId);
       clearDispensingForm();
     } else {
       if (result.status === 400 || result.status === 409) {
@@ -127,7 +110,7 @@ export default function Dispensing({ setActiveTab, currentRegistrationId }) {
     );
 
     if (result.success) {
-      await getDispensing(currentRegistrationId);
+      getDispensing(currentRegistrationId);
     } else {
       if (result.status === 400 || result.status === 409) {
         setError(result.message || "Error deleting dispensing.");
@@ -179,13 +162,6 @@ export default function Dispensing({ setActiveTab, currentRegistrationId }) {
     });
     setEditingDispensingId(null);
   };
-
-  // Load dispensing when registration ID changes
-  useEffect(() => {
-    if (currentRegistrationId) {
-      getDispensing(currentRegistrationId);
-    }
-  }, [currentRegistrationId]);
 
   return (
     <div>
@@ -404,13 +380,13 @@ export default function Dispensing({ setActiveTab, currentRegistrationId }) {
               Saved Dispensing Records
             </h3>
 
-            {savedDispensing.length === 0 ? (
+            {dispensing.length === 0 ? (
               <div className="text-center py-8 text-gray-500">
                 <p>No dispensing records have been saved yet.</p>
               </div>
             ) : (
               <div className="space-y-3">
-                {savedDispensing.map((dispensing, index) => (
+                {dispensing.map((dispensing, index) => (
                   <div
                     key={dispensing.id}
                     className="border border-gray-200 rounded-lg p-4 bg-white hover:shadow-md transition-shadow"

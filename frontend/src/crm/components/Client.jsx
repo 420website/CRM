@@ -5,6 +5,7 @@ import {
   formatPhoneNumber,
   formatPostalCode,
 } from "../../utils/formatData";
+import { useRegistration } from "../../context/RegistrationContext";
 
 // Map Google Places province codes to full province names
 const getProvince = (code) => {
@@ -30,12 +31,6 @@ const getProvince = (code) => {
 export default function Client({
   formData,
   setFormData,
-  setShowDispositionManager,
-  setShowReferralSiteManager,
-  setShowClinicalTemplateManager,
-  availableDispositions,
-  availableReferralSites,
-  availableClinicalTemplates,
   templates,
   selectedTemplate,
   setSelectedTemplate,
@@ -43,6 +38,14 @@ export default function Client({
   openVoiceFillInput,
 }) {
   const [error, setError] = useState("");
+  const {
+    dispositions,
+    referralSites,
+    clinicalTemplates,
+    setShowDispositionManager,
+    setShowClinicalManager,
+    setShowReferralSiteManager,
+  } = useRegistration();
 
   const defaultPositiveClinicalSummary = async (formData) => {
     const baseTemplate = "Dx 10+ years ago and treated. ";
@@ -571,7 +574,7 @@ export default function Client({
                 >
                   <option value="">Select Disposition</option>
                   {/* Most Frequently Used */}
-                  {availableDispositions
+                  {dispositions
                     .filter((d) => d.is_frequent)
                     .map((disposition) => (
                       <option key={disposition.id} value={disposition.name}>
@@ -579,10 +582,11 @@ export default function Client({
                       </option>
                     ))}
                   {/* Separator */}
-                  {availableDispositions.filter((d) => !d.is_frequent).length >
-                    0 && <option disabled>-------</option>}
+                  {dispositions.filter((d) => !d.is_frequent).length > 0 && (
+                    <option disabled>-------</option>
+                  )}
                   {/* All Others in Alphabetical Order */}
-                  {availableDispositions
+                  {dispositions
                     .filter((d) => !d.is_frequent)
                     .sort((a, b) => a.name.localeCompare(b.name))
                     .map((disposition) => (
@@ -675,7 +679,7 @@ export default function Client({
                 >
                   <option value="">Select Referral Site</option>
                   {/* Most Frequently Used */}
-                  {availableReferralSites
+                  {referralSites
                     .filter((s) => s.is_frequent)
                     .map((site) => (
                       <option key={site.id} value={site.name}>
@@ -683,10 +687,11 @@ export default function Client({
                       </option>
                     ))}
                   {/* Separator */}
-                  {availableReferralSites.filter((s) => !s.is_frequent).length >
-                    0 && <option disabled>-------</option>}
+                  {referralSites.filter((s) => !s.is_frequent).length > 0 && (
+                    <option disabled>-------</option>
+                  )}
                   {/* All Others in Alphabetical Order */}
-                  {availableReferralSites
+                  {referralSites
                     .filter((s) => !s.is_frequent)
                     .sort((a, b) => a.name.localeCompare(b.name))
                     .map((site) => (
@@ -1019,7 +1024,7 @@ export default function Client({
                   </label>
                   <button
                     type="button"
-                    onClick={() => setShowClinicalTemplateManager(true)}
+                    onClick={() => setShowClinicalManager(true)}
                     className="text-blue-600 hover:text-blue-800 text-sm"
                   >
                     Manage Templates
@@ -1032,7 +1037,7 @@ export default function Client({
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black"
                 >
                   <option value="Select">Select</option>
-                  {availableClinicalTemplates.map((template) => (
+                  {clinicalTemplates.map((template) => (
                     <option key={template.id} value={template.name}>
                       {template.name}
                     </option>

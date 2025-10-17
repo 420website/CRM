@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { GeneralServices } from "../../services/generalService";
+import { useRegistration } from "../../context/RegistrationContext";
 
 function EditReferralSiteModal({
   editingReferralSite,
@@ -119,11 +120,10 @@ function EditReferralSiteModal({
   );
 }
 
-export default function ReferralSiteManager({
-  setShowReferralSiteManager,
-  availableReferralSites,
-  getReferralSites,
-}) {
+export default function ReferralSiteManager() {
+  const { setShowReferralSiteManager, referralSites, getReferralSites } =
+    useRegistration();
+
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
@@ -241,11 +241,11 @@ export default function ReferralSiteManager({
   // Filter referral sites based on search
   const getFilteredReferralSites = () => {
     if (!referralSiteSearch.trim()) {
-      return availableReferralSites;
+      return referralSites;
     }
 
     const searchTerm = referralSiteSearch.toLowerCase();
-    return availableReferralSites.filter((site) =>
+    return referralSites.filter((site) =>
       site.name.toLowerCase().includes(searchTerm),
     );
   };

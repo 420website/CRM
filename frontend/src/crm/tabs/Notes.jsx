@@ -1,26 +1,26 @@
 import { useState, useEffect } from "react";
-import { GeneralServices } from "../../services/generalService";
 import { PatientServices } from "../../services/patientServices";
 import NoteTemplateManager from "../managers/NotesTemplateManager";
 import ConfirmModal from "../components/ConfirmModal";
+import { useRegistration } from "../../context/RegistrationContext";
 
 export default function Notes({ setActiveTab, currentRegistrationId }) {
+  const {
+    getNotes,
+    notes,
+    showNoteManager,
+    setShowNoteManager,
+    notesTemplates,
+  } = useRegistration();
+
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const [notesTemplates, setNotesTemplates] = useState({});
   const [notesFilter, setNotesFilter] = useState("all");
   const [notesSearch, setNotesSearch] = useState("");
   const [notesPage, setNotesPage] = useState(1);
-  // const [notesPerPage, setNotesPerPage] = useState(10);
-  const [savedNotes, setSavedNotes] = useState([]);
-  const [showTemplateManager, setShowTemplateManager] = useState(false);
   const [editingNoteId, setEditingNoteId] = useState(null);
   const [selectedNotesTemplate, setSelectedNotesTemplate] = useState("Select");
-  const [availableNotesTemplates, setAvailableNotesTemplates] = useState([]);
-  // const [newTemplateName, setNewTemplateName] = useState("");
-  // const [newTemplateContent, setNewTemplateContent] = useState("");
   const [isSavingNotes, setIsSavingNotes] = useState(false);
-  // const [selectedTemplate, setSelectedTemplate] = useState("Select");
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleteNoteId, setDeleteNoteId] = useState(null);
   const [notesData, setNotesData] = useState({
@@ -29,51 +29,6 @@ export default function Notes({ setActiveTab, currentRegistrationId }) {
     note_text: "",
     template_type: "General Note",
   });
-
-  // templates
-  const getNoteTemplates = async () => {
-    setLoading(true);
-    setError("");
-
-    const result = await GeneralServices.get_note_templates();
-
-    if (result.success) {
-      const templatesObject = {};
-      // Convert array to object for easier access
-      result.data.forEach((template) => {
-        templatesObject[template.name] = template.content;
-      });
-
-      setNotesTemplates(templatesObject);
-      setAvailableNotesTemplates(result.data);
-    } else {
-      if (result.status === 400 || result.status === 409) {
-        setError(result.message || "Error getting note templates.");
-      } else {
-        setError("Error getting note templates. Please try again.");
-      }
-    }
-    setLoading(false);
-  };
-
-  // registration
-  const getNotes = async (registrationId) => {
-    setLoading(true);
-    setError("");
-
-    const result = await PatientServices.get_notes_by_patient(registrationId);
-
-    if (result.success) {
-      setSavedNotes(result.data || []);
-    } else {
-      if (result.status === 400 || result.status === 409) {
-        setError(result.message || "Error getting notes.");
-      } else {
-        setError("Error getting notes. Please try again.");
-      }
-    }
-    setLoading(false);
-  };
 
   const saveNote = async () => {
     editingNoteId ? updateNote() : createNote();
@@ -111,7 +66,8 @@ export default function Notes({ setActiveTab, currentRegistrationId }) {
     );
 
     if (result.success) {
-      await getNotes(currentRegistrationId);
+      getNotes(currentRegistrationId);
+      // await getNoteTemplates();
       clearNotesForm();
     } else {
       if (result.status === 400 || result.status === 409) {
@@ -157,7 +113,7 @@ export default function Notes({ setActiveTab, currentRegistrationId }) {
     );
 
     if (result.success) {
-      await getNotes(currentRegistrationId);
+      getNotes(currentRegistrationId);
       clearNotesForm();
     } else {
       if (result.status === 400 || result.status === 409) {
@@ -180,7 +136,7 @@ export default function Notes({ setActiveTab, currentRegistrationId }) {
     );
 
     if (result.success) {
-      await getNotes(currentRegistrationId);
+      getNotes(currentRegistrationId);
     } else {
       if (result.status === 400 || result.status === 409) {
         setError(result.message || "Error deleting note.");
@@ -225,6 +181,7 @@ export default function Notes({ setActiveTab, currentRegistrationId }) {
 
     // Set template to 'Select' when editing individual notes to allow free editing
     setSelectedNotesTemplate(note.template_type || "Select");
+
     // Scroll to top of notes form
     document.querySelector("#noteText")?.scrollIntoView({ behavior: "smooth" });
   };
@@ -237,16 +194,6 @@ export default function Notes({ setActiveTab, currentRegistrationId }) {
     setEditingNoteId(null);
     setSelectedNotesTemplate("Select");
   };
-
-  useEffect(() => {
-    if (currentRegistrationId) {
-      getNotes(currentRegistrationId);
-    }
-  }, [currentRegistrationId]);
-
-  useEffect(() => {
-    getNoteTemplates();
-  }, []);
 
   // Reset pagination when filter/search changes
   useEffect(() => {
@@ -350,7 +297,7 @@ export default function Notes({ setActiveTab, currentRegistrationId }) {
                 </label>
                 <button
                   type="button"
-                  onClick={() => setShowTemplateManager(true)}
+                  onClick={() => setShowNoteManager(true)}
                   className="text-blue-600 hover:text-blue-800 text-sm"
                 >
                   Manage Templates
@@ -363,7 +310,7 @@ export default function Notes({ setActiveTab, currentRegistrationId }) {
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black"
               >
                 <option value="Select">Select</option>
-                {availableNotesTemplates.map((template) => (
+                {notesTemplates.map((template) => (
                   <option key={template.id} value={template.name}>
                     {template.name}
                   </option>
@@ -435,13 +382,13 @@ export default function Notes({ setActiveTab, currentRegistrationId }) {
             Saved Notes
           </h3>
 
-          {savedNotes.length === 0 ? (
+          {notes.length === 0 ? (
             <div className="text-center py-8 text-gray-500">
               <p>No notes have been saved yet.</p>
             </div>
           ) : (
             <div className="space-y-3">
-              {savedNotes.map((note, index) => (
+              {notes.map((note, index) => (
                 <div
                   key={note.id}
                   className="border border-gray-200 rounded-lg p-4 bg-white hover:shadow-md transition-shadow"
@@ -505,13 +452,7 @@ export default function Notes({ setActiveTab, currentRegistrationId }) {
           )}
         </div>
       </div>
-      {showTemplateManager && (
-        <NoteTemplateManager
-          setShowTemplateManager={setShowTemplateManager}
-          availableNotesTemplates={availableNotesTemplates}
-          getNoteTemplates={getNoteTemplates}
-        />
-      )}
+      {showNoteManager && <NoteTemplateManager />}
     </div>
   );
 }

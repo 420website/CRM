@@ -1,11 +1,11 @@
 import { useState } from "react";
 import { GeneralServices } from "../../services/generalService";
+import { useRegistration } from "../../context/RegistrationContext";
 
-export default function NoteTemplateManager({
-  setShowTemplateManager,
-  availableNotesTemplates,
-  getNoteTemplates,
-}) {
+export default function NoteTemplateManager({}) {
+  const { getNoteTemplates, notesTemplates, setShowNoteManager } =
+    useRegistration();
+
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
@@ -35,7 +35,7 @@ export default function NoteTemplateManager({
       setNewTemplateName("");
       setNewTemplateContent("");
       getNoteTemplates();
-      setMessage("Created referral-site successfully.");
+      setMessage("Created note template successfully.");
     } else {
       if (result.status === 400 || result.status === 409) {
         setError(result.message || "Error creating note template.");
@@ -103,7 +103,7 @@ export default function NoteTemplateManager({
   };
 
   const closeTemplateManager = () => {
-    setShowTemplateManager(false);
+    setShowNoteManager(false);
     setNewTemplateName("");
     setNewTemplateContent("");
     setEditingTemplateId(null);
@@ -197,12 +197,12 @@ export default function NoteTemplateManager({
               Existing Templates
             </h4>
             <div className="space-y-3">
-              {availableNotesTemplates.length === 0 ? (
+              {notesTemplates.length === 0 ? (
                 <div className="text-center py-8 text-gray-500">
                   <p>Loading templates...</p>
                 </div>
               ) : (
-                availableNotesTemplates.map((template) => (
+                notesTemplates.map((template) => (
                   <div
                     key={template.id}
                     className="border border-gray-200 rounded-lg p-4 bg-white"

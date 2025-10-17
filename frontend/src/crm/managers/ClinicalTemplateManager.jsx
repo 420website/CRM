@@ -1,11 +1,11 @@
 import { useState } from "react";
 import { GeneralServices } from "../../services/generalService";
+import { useRegistration } from "../../context/RegistrationContext";
 
-export default function ClinicalTemplateManager({
-  setShowClinicalTemplateManager,
-  availableClinicalTemplates,
-  getClinicalTemplates,
-}) {
+export default function ClinicalTemplateManager({}) {
+  const { setShowClinicalManager, getClinicalTemplates, clinicalTemplates } =
+    useRegistration();
+
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
@@ -111,7 +111,7 @@ export default function ClinicalTemplateManager({
   };
 
   const closeClinicalTemplateManager = () => {
-    setShowClinicalTemplateManager(false);
+    setShowClinicalManager(false);
     setNewClinicalTemplateName("");
     setNewClinicalTemplateContent("");
     setEditingClinicalTemplateId(null);
@@ -207,12 +207,12 @@ export default function ClinicalTemplateManager({
               Existing Templates
             </h4>
             <div className="space-y-3">
-              {availableClinicalTemplates.length === 0 ? (
+              {clinicalTemplates.length === 0 ? (
                 <div className="text-center py-8 text-gray-500">
                   <p>Loading templates...</p>
                 </div>
               ) : (
-                availableClinicalTemplates.map((template) => (
+                clinicalTemplates.map((template) => (
                   <div
                     key={template.id}
                     className="border border-gray-200 rounded-lg p-4 bg-white"

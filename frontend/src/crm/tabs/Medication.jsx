@@ -1,13 +1,15 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { PatientServices } from "../../services/patientServices";
 import ConfirmModal from "../components/ConfirmModal";
+import { useRegistration } from "../../context/RegistrationContext";
 
 export default function Medications({ setActiveTab, currentRegistrationId }) {
+  const { medications, getMedications } = useRegistration();
+
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [editingMedicationId, setEditingMedicationId] = useState(null);
   const [isSavingMedication, setIsSavingMedication] = useState(false);
-  const [savedMedications, setSavedMedications] = useState([]);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleteMedicationId, setDeleteMedicationId] = useState(null);
   const [medicationData, setMedicationData] = useState({
@@ -41,25 +43,6 @@ export default function Medications({ setActiveTab, currentRegistrationId }) {
     return true;
   }
 
-  const getMedications = async (registrationId) => {
-    setLoading(true);
-    setError("");
-
-    const result =
-      await PatientServices.get_medications_by_patient(registrationId);
-
-    if (result.success) {
-      setSavedMedications(result.data || []);
-    } else {
-      if (result.status === 400 || result.status === 409) {
-        setError(result.message || "Error getting medications.");
-      } else {
-        setError("Error getting medications. Please try again.");
-      }
-    }
-    setLoading(false);
-  };
-
   const saveMedication = async () => {
     if (!validateForm()) {
       return;
@@ -85,7 +68,7 @@ export default function Medications({ setActiveTab, currentRegistrationId }) {
     );
 
     if (result.success) {
-      await getMedications(currentRegistrationId);
+      getMedications(currentRegistrationId);
       clearMedicationForm();
     } else {
       if (result.status === 400 || result.status === 409) {
@@ -115,7 +98,7 @@ export default function Medications({ setActiveTab, currentRegistrationId }) {
     );
 
     if (result.success) {
-      await getMedications(currentRegistrationId);
+      getMedications(currentRegistrationId);
       clearMedicationForm();
     } else {
       if (result.status === 400 || result.status === 409) {
@@ -138,7 +121,7 @@ export default function Medications({ setActiveTab, currentRegistrationId }) {
     );
 
     if (result.success) {
-      await getMedications(currentRegistrationId);
+      getMedications(currentRegistrationId);
     } else {
       if (result.status === 400 || result.status === 409) {
         setError(result.message || "Error deleting medication.");
@@ -185,13 +168,6 @@ export default function Medications({ setActiveTab, currentRegistrationId }) {
     });
     setEditingMedicationId(null);
   };
-
-  // Load medications when registration ID changes
-  useEffect(() => {
-    if (currentRegistrationId) {
-      getMedications(currentRegistrationId);
-    }
-  }, [currentRegistrationId]);
 
   return (
     <div>
@@ -368,13 +344,13 @@ export default function Medications({ setActiveTab, currentRegistrationId }) {
             Saved Medications
           </h3>
 
-          {savedMedications.length === 0 ? (
+          {medications.length === 0 ? (
             <div className="text-center py-8 text-gray-500">
               <p>No medications have been saved yet.</p>
             </div>
           ) : (
             <div className="space-y-3">
-              {savedMedications.map((medication, index) => (
+              {medications.map((medication, index) => (
                 <div
                   key={medication.id}
                   className="border border-gray-200 rounded-lg p-4 bg-white hover:shadow-md transition-shadow"

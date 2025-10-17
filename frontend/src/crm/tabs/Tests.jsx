@@ -1,11 +1,13 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { PatientServices } from "../../services/patientServices";
 import ConfirmModal from "../components/ConfirmModal";
+import { useRegistration } from "../../context/RegistrationContext";
 
 export default function Tests({ setActiveTab, currentRegistrationId }) {
+  const { tests, getTests } = useRegistration();
+
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleteTestId, setDeleteTestId] = useState(null);
-  const [savedTests, setSavedTests] = useState([]);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [editingTestId, setEditingTestId] = useState(null);
@@ -23,24 +25,6 @@ export default function Tests({ setActiveTab, currentRegistrationId }) {
     bloodwork_date_submitted: new Date().toISOString().split("T")[0],
     bloodwork_tester: "CM",
   });
-
-  const getTests = async (registrationId) => {
-    setLoading(true);
-    setError("");
-
-    const result = await PatientServices.get_tests_by_patient(registrationId);
-
-    if (result.success) {
-      setSavedTests(result.data || []);
-    } else {
-      if (result.status === 400 || result.status === 409) {
-        setError(result.message || "Error getting tests.");
-      } else {
-        setError("Error getting tests. Please try again.");
-      }
-    }
-    setLoading(false);
-  };
 
   const saveTest = async () => {
     editingTestId ? updateTests() : createTests();
@@ -70,7 +54,7 @@ export default function Tests({ setActiveTab, currentRegistrationId }) {
     );
 
     if (result.success) {
-      await getTests(currentRegistrationId);
+      getTests(currentRegistrationId);
 
       // Reset form
       setTestFormData({
@@ -123,7 +107,7 @@ export default function Tests({ setActiveTab, currentRegistrationId }) {
     );
 
     if (result.success) {
-      await getTests(currentRegistrationId);
+      getTests(currentRegistrationId);
 
       // Reset form
       setTestFormData({
@@ -161,7 +145,7 @@ export default function Tests({ setActiveTab, currentRegistrationId }) {
     );
 
     if (result.success) {
-      await getTests(currentRegistrationId);
+      getTests(currentRegistrationId);
     } else {
       if (result.status === 400 || result.status === 409) {
         setError(result.message || "Error deleting test.");
@@ -244,12 +228,6 @@ export default function Tests({ setActiveTab, currentRegistrationId }) {
 
     setTestFormData(newTestData);
   };
-
-  useEffect(() => {
-    if (currentRegistrationId) {
-      getTests(currentRegistrationId);
-    }
-  }, [currentRegistrationId]);
 
   return (
     <div>
@@ -704,13 +682,13 @@ export default function Tests({ setActiveTab, currentRegistrationId }) {
               Saved Tests
             </h3>
 
-            {savedTests.length === 0 ? (
+            {tests.length === 0 ? (
               <div className="text-center py-8 text-gray-500">
                 <p>No tests have been saved yet.</p>
               </div>
             ) : (
               <div className="space-y-3">
-                {savedTests.map((test) => (
+                {tests.map((test) => (
                   <div
                     key={test.id}
                     className="border rounded-lg p-4 bg-gray-50"

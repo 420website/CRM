@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { GeneralServices } from "../../services/generalService";
+import { useRegistration } from "../../context/RegistrationContext";
 
 function EditPopup({
   editingDisposition,
@@ -115,11 +116,10 @@ function EditPopup({
   );
 }
 
-export default function DispositionManager({
-  setShowDispositionManager,
-  availableDispositions,
-  getDispositions,
-}) {
+export default function DispositionManager() {
+  const { setShowDispositionManager, dispositions, getDispositions } =
+    useRegistration();
+
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
@@ -234,11 +234,11 @@ export default function DispositionManager({
   // Filter dispositions based on search
   const getFilteredDispositions = () => {
     if (!dispositionSearch.trim()) {
-      return availableDispositions;
+      return dispositions;
     }
 
     const searchTerm = dispositionSearch.toLowerCase();
-    return availableDispositions.filter((disposition) =>
+    return dispositions.filter((disposition) =>
       disposition.name.toLowerCase().includes(searchTerm),
     );
   };

@@ -15,7 +15,6 @@ import { useAuth } from "../../context/AuthContext";
 import { calculateAge } from "../../utils/formatData";
 import { copyFormData, copyLabelsData } from "../../utils/labelData";
 import { parseDateFromSpeech, parseFields } from "../../utils/parseFromSpeech";
-import { GeneralServices } from "../../services/generalService";
 import { PatientServices } from "../../services/patientServices";
 import EditPhoto from "../components/EditPhoto";
 import { useParams } from "react-router-dom";
@@ -24,8 +23,17 @@ import VoiceFillModal from "../components/VoiceInput";
 import ForceRegisterModal from "../components/ForcePopupModal";
 import { ObjectServices } from "../../services/objectService";
 import DocumentTypeManager from "../managers/DocumentTypeManager";
+import { useRegistration } from "../../context/RegistrationContext";
 
 const AdminEdit = () => {
+  const {
+    showDispositionManager,
+    showReferralSiteManager,
+    showClinicalManager,
+    showDocumentTypeManager,
+    getRegistrationData,
+  } = useRegistration();
+
   const { registrationId } = useParams();
   const [error, setError] = useState("");
   const [voiceInputText, setVoiceInputText] = useState("");
@@ -33,23 +41,10 @@ const AdminEdit = () => {
   const [submitStatus, setSubmitStatus] = useState(null);
   const [saveStatus, setSaveStatus] = useState(null);
   const [selectedTemplate, setSelectedTemplate] = useState("Select");
-  const [showDocumentTypeManager, setShowDocumentTypeManager] = useState(false);
-
   const [activeTab, setActiveTab] = useState("client");
   const { userRole, userPermissions } = useAuth();
   const [showVoiceDateModal, setShowVoiceDateModal] = useState(false);
   const [showVoiceFillModal, setShowVoiceFillModal] = useState(false);
-  const [showDispositionManager, setShowDispositionManager] = useState(false);
-  const [showReferralSiteManager, setShowReferralSiteManager] = useState(false);
-  const [showClinicalTemplateManager, setShowClinicalTemplateManager] =
-    useState(false);
-  const [templates, setTemplates] = useState({});
-  const [availableReferralSites, setAvailableReferralSites] = useState([]);
-  const [availableDispositions, setAvailableDispositions] = useState([]);
-  const [availableDocumentTypes, setAvailableDocumentTypes] = useState([]);
-  const [availableClinicalTemplates, setAvailableClinicalTemplates] = useState(
-    [],
-  );
   const [currentVoiceDateField, setCurrentVoiceDateField] = useState("");
   const [voiceDateInput, setVoiceDateInput] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -60,6 +55,7 @@ const AdminEdit = () => {
   const [showForceButton, setShowForceButton] = useState(false);
   const [photoData, setPhotoData] = useState({});
   const [photoChanged, setPhotoChanged] = useState(false);
+  const [templates, setTemplates] = useState({});
 
   const getDefaultForm = () => ({
     ...DEFAULT_FORM,
@@ -179,6 +175,8 @@ const AdminEdit = () => {
         setError("Login failed. Please try again.");
       }
     }
+
+    getRegistrationData(registrationId);
     setPhotoChanged(false);
     setLoading(false);
   };
@@ -195,12 +193,6 @@ const AdminEdit = () => {
         formData={formData}
         setShowVoiceDateModal={setShowVoiceDateModal}
         setFormData={setFormData}
-        setShowDispositionManager={setShowDispositionManager}
-        setShowReferralSiteManager={setShowReferralSiteManager}
-        setShowClinicalTemplateManager={setShowClinicalTemplateManager}
-        availableDispositions={availableDispositions}
-        availableReferralSites={availableReferralSites}
-        availableClinicalTemplates={availableClinicalTemplates}
         setTemplates={setTemplates}
         templates={templates}
         selectedTemplate={selectedTemplate}
@@ -249,10 +241,8 @@ const AdminEdit = () => {
     ),
     attachments: (
       <Attachments
-        availableDocumentTypes={availableDocumentTypes}
         setActiveTab={setActiveTab}
         currentRegistrationId={currentRegistrationId}
-        setShowDocumentTypeManager={setShowDocumentTypeManager}
       />
     ),
   };
@@ -277,94 +267,6 @@ const AdminEdit = () => {
 
     return allTabs.filter((tab) => hasTabPermission(tab.id));
   };
-
-  // Update to det docuemtn types
-  const getDocumentTypes = async (e) => {
-    setLoading(true);
-    setError("");
-
-    const result = await GeneralServices.get_document_types();
-
-    if (result.success) {
-      setAvailableDocumentTypes(result.data);
-    } else {
-      if (result.status === 400 || result.status === 409) {
-        setError(result.message || "Error getting document types.");
-      } else {
-        setError("Error getting document types. Please try again.");
-      }
-    }
-    setLoading(false);
-  };
-
-  const getDispositions = async (e) => {
-    setLoading(true);
-    setError("");
-
-    const result = await GeneralServices.get_dispositions();
-
-    if (result.success) {
-      setAvailableDispositions(result.data);
-    } else {
-      if (result.status === 400 || result.status === 409) {
-        setError(result.message || "Error getting dispositions.");
-      } else {
-        setError("Error getting dispositions. Please try again.");
-      }
-    }
-    setLoading(false);
-  };
-
-  const getReferralSites = async () => {
-    setLoading(true);
-    setError("");
-
-    const result = await GeneralServices.get_referral_sites();
-
-    if (result.success) {
-      setAvailableReferralSites(result.data);
-    } else {
-      if (result.status === 400 || result.status === 409) {
-        setError(result.message || "Error getting referral sites.");
-      } else {
-        setError("Error getting referral sites. Please try again.");
-      }
-    }
-    setLoading(false);
-  };
-
-  const getClinicalTemplates = async () => {
-    setLoading(true);
-    setError("");
-
-    const result = await GeneralServices.get_clinical_templates();
-
-    if (result.success) {
-      setAvailableClinicalTemplates(result.data);
-
-      const templatesObject = {};
-      // Convert array to object for easier access
-      result.data.forEach((template) => {
-        templatesObject[template.name] = template.content;
-      });
-
-      setTemplates(templatesObject);
-    } else {
-      if (result.status === 400 || result.status === 409) {
-        setError(result.message || "Error getting clinical templates.");
-      } else {
-        setError("Error getting clinical templates. Please try again.");
-      }
-    }
-    setLoading(false);
-  };
-
-  useEffect(() => {
-    getDocumentTypes();
-    getDispositions();
-    getReferralSites();
-    getClinicalTemplates();
-  }, []);
 
   const resetForm = async () => {
     setFormData(getDefaultForm());
@@ -684,27 +586,6 @@ const AdminEdit = () => {
           handleVoiceDateSubmit={handleVoiceDateSubmit}
         />
       )}
-      {showDispositionManager && (
-        <DispositionManager
-          setShowDispositionManager={setShowDispositionManager}
-          availableDispositions={availableDispositions}
-          getDispositions={getDispositions}
-        />
-      )}
-      {showReferralSiteManager && (
-        <ReferralSiteManager
-          setShowReferralSiteManager={setShowReferralSiteManager}
-          availableReferralSites={availableReferralSites}
-          getReferralSites={getReferralSites}
-        />
-      )}
-      {showClinicalTemplateManager && (
-        <ClinicalTemplateManager
-          setShowClinicalTemplateManager={setShowClinicalTemplateManager}
-          availableClinicalTemplates={availableClinicalTemplates}
-          getClinicalTemplates={getClinicalTemplates}
-        />
-      )}
       {showForceButton && (
         <ForceRegisterModal
           handleForceSubmit={handleForceSubmit}
@@ -712,14 +593,10 @@ const AdminEdit = () => {
           errorMessage={error}
         />
       )}
-
-      {showDocumentTypeManager && (
-        <DocumentTypeManager
-          setShowDocumentTypeManager={setShowDocumentTypeManager}
-          availableDocumentTypes={availableDocumentTypes}
-          getDocumentTypes={getDocumentTypes}
-        />
-      )}
+      {showDispositionManager && <DispositionManager />}
+      {showReferralSiteManager && <ReferralSiteManager />}
+      {showClinicalManager && <ClinicalTemplateManager />}
+      {showDocumentTypeManager && <DocumentTypeManager />}
     </div>
   );
 };

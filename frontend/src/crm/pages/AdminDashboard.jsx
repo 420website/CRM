@@ -5,21 +5,26 @@ import PaginationControls from "../ui/PaginationControls";
 import { RegistrationItems } from "../ui/RegistrationItem";
 import { ActivityItems } from "../ui/ActivityItem";
 import { useAuth } from "../../context/AuthContext";
-import { GeneralServices } from "../../services/generalService";
 import ConfirmModal from "../components/ConfirmModal";
+import { useRegistration } from "../../context/RegistrationContext";
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
   const { logout } = useAuth();
+  const {
+    referralSites,
+    dispositions,
+    pendingData,
+    finalizedData,
+    activityData,
+    getRegistrations,
+    getDashboardActivities,
+  } = useRegistration();
 
   // Core state
   const [activeTab, setActiveTab] = useState("activities");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-
-  // Options
-  const [availableReferralSites, setAvailableReferralSites] = useState([]);
-  const [availableDispositions, setAvailableDispositions] = useState([]);
 
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
@@ -47,55 +52,11 @@ const AdminDashboard = () => {
 
   // Data state - now paginated
   const [currentData, setCurrentData] = useState([]);
-  const [pendingData, setPendingData] = useState([]);
-  const [finalizedData, setFinalizedData] = useState([]);
-  const [activityData, setActivityData] = useState([]);
   const [dashboardStats, setDashboardStats] = useState({
     pending_registrations: 0,
     submitted_registrations: 0,
     total_activities: 0,
   });
-
-  useEffect(() => {
-    getDispositions();
-    getReferralSites();
-  }, []);
-
-  const getDispositions = async (e) => {
-    setLoading(true);
-    setError("");
-
-    const result = await GeneralServices.get_dispositions();
-
-    if (result.success) {
-      setAvailableDispositions(result.data);
-    } else {
-      if (result.status === 400 || result.status === 409) {
-        setError(result.message || "Error getting dispositions.");
-      } else {
-        setError("Error getting dispositions. Please try again.");
-      }
-    }
-    setLoading(false);
-  };
-
-  const getReferralSites = async () => {
-    setLoading(true);
-    setError("");
-
-    const result = await GeneralServices.get_referral_sites();
-
-    if (result.success) {
-      setAvailableReferralSites(result.data);
-    } else {
-      if (result.status === 400 || result.status === 409) {
-        setError(result.message || "Error getting referral sites.");
-      } else {
-        setError("Error getting referral sites. Please try again.");
-      }
-    }
-    setLoading(false);
-  };
 
   const handleLogout = async () => {
     try {
@@ -115,55 +76,8 @@ const AdminDashboard = () => {
     }
   };
 
-  const fetchDashboardStats = async (tab = activeTab) => {
-    fetch_registrations();
-    fetch_activities();
-    setDisplayed();
-  };
-
-  const fetch_registrations = async () => {
-    setLoading(true);
-    setError("");
-
-    const result = await PatientServices.get_patients();
-
-    if (result.success) {
-      const pending = result.data.filter((reg) => reg.status === "pending");
-      setPendingData(pending);
-
-      const finalized = result.data.filter((reg) => reg.status === "finalized");
-      setFinalizedData(finalized);
-    } else {
-      if (result.status === 400 || result.status === 409) {
-        setError(result.message || "Invalid credentials.");
-      } else {
-        setError("Login failed. Please try again.");
-      }
-    }
-    setLoading(false);
-  };
-
-  const fetch_activities = async () => {
-    setLoading(true);
-    setError("");
-
-    const result = await PatientServices.get_activities();
-
-    if (result.success) {
-      setActivityData(result.data);
-    } else {
-      if (result.status === 400 || result.status === 409) {
-        setError(result.message || "Invalid credentials.");
-      } else {
-        setError("Login failed. Please try again.");
-      }
-    }
-    setLoading(false);
-  };
-
   useEffect(() => {
     window.scrollTo(0, 0);
-    fetchDashboardStats();
   }, []);
 
   useEffect(() => {
@@ -176,15 +90,8 @@ const AdminDashboard = () => {
   }, [activityData, pendingData, finalizedData]);
 
   useEffect(() => {
-    setCurrentPage(1); // Reset to first page when changing tabs
-
-    if (activeTab === "activities") {
-      setCurrentData(activityData);
-    } else if (activeTab === "pending") {
-      setCurrentData(pendingData);
-    } else {
-      setCurrentData(finalizedData);
-    }
+    setCurrentPage(1);
+    setDisplayed();
   }, [activeTab]);
 
   // Handle search changes with debouncing
@@ -211,7 +118,8 @@ const AdminDashboard = () => {
   };
 
   const handle_refresh = async () => {
-    await fetchDashboardStats();
+    getDashboardActivities();
+    getRegistrations();
   };
 
   // Optimized search handlers
@@ -245,7 +153,8 @@ const AdminDashboard = () => {
       await PatientServices.delete_patient_by_id(deleteRegistrationId);
 
     if (result.success) {
-      await fetchDashboardStats();
+      getDashboardActivities();
+      getRegistrations();
     } else {
       if (result.status === 400 || result.status === 409) {
         setError(result.message || "Error deleting patient.");
@@ -271,7 +180,8 @@ const AdminDashboard = () => {
     );
 
     if (result.success) {
-      await fetchDashboardStats();
+      getDashboardActivities();
+      getRegistrations();
     } else {
       if (result.status === 400 || result.status === 409) {
         setError(result.message || "Error updating patient status.");
@@ -297,7 +207,8 @@ const AdminDashboard = () => {
     );
 
     if (result.success) {
-      await fetchDashboardStats();
+      getDashboardActivities();
+      getRegistrations();
     } else {
       if (result.status === 400 || result.status === 409) {
         setError(result.message || "Error updating patient status.");
@@ -420,6 +331,11 @@ const AdminDashboard = () => {
 
     return data;
   };
+
+  useEffect(() => {
+    getDashboardActivities();
+    getRegistrations();
+  }, []);
 
   const goBack = () => {
     navigate("/");
@@ -726,7 +642,7 @@ const AdminDashboard = () => {
                 >
                   <option value="">All</option>
                   {/* Most Frequently Used */}
-                  {availableDispositions
+                  {dispositions
                     .filter((d) => d.is_frequent)
                     .map((disposition) => (
                       <option key={disposition.id} value={disposition.name}>
@@ -734,10 +650,11 @@ const AdminDashboard = () => {
                       </option>
                     ))}
                   {/* Separator */}
-                  {availableDispositions.filter((d) => !d.is_frequent).length >
-                    0 && <option disabled>-------</option>}
+                  {dispositions.filter((d) => !d.is_frequent).length > 0 && (
+                    <option disabled>-------</option>
+                  )}
                   {/* All Others in Alphabetical Order */}
-                  {availableDispositions
+                  {dispositions
                     .filter((d) => !d.is_frequent)
                     .sort((a, b) => a.name.localeCompare(b.name))
                     .map((disposition) => (
@@ -764,7 +681,7 @@ const AdminDashboard = () => {
                 >
                   <option value="">Select Referral Site</option>
                   {/* Most Frequently Used */}
-                  {availableReferralSites
+                  {referralSites
                     .filter((s) => s.is_frequent)
                     .map((site) => (
                       <option key={site.id} value={site.name}>
@@ -772,10 +689,11 @@ const AdminDashboard = () => {
                       </option>
                     ))}
                   {/* Separator */}
-                  {availableReferralSites.filter((s) => !s.is_frequent).length >
-                    0 && <option disabled>-------</option>}
+                  {referralSites.filter((s) => !s.is_frequent).length > 0 && (
+                    <option disabled>-------</option>
+                  )}
                   {/* All Others in Alphabetical Order */}
-                  {availableReferralSites
+                  {referralSites
                     .filter((s) => !s.is_frequent)
                     .sort((a, b) => a.name.localeCompare(b.name))
                     .map((site) => (

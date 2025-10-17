@@ -1,17 +1,19 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { PatientServices } from "../../services/patientServices";
 import ConfirmModal from "../components/ConfirmModal";
+import { useRegistration } from "../../context/RegistrationContext";
 
 export default function Activities({ setActiveTab, currentRegistrationId }) {
+  const { activities, getActivities, getDashboardActivities } =
+    useRegistration();
+
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [editingActivityId, setEditingActivityId] = useState(null);
   const [isSavingActivity, setIsSavingActivity] = useState(false);
-  const [savedActivities, setSavedActivities] = useState([]);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleteActivityId, setDeleteActivityId] = useState(null);
-
-  const [activityData, setActivityData] = useState({
+  const [activityForm, setActivityForm] = useState({
     date: new Date().toISOString().split("T")[0], // Default to today
     time: "",
     description: "",
@@ -19,24 +21,6 @@ export default function Activities({ setActiveTab, currentRegistrationId }) {
 
   const saveActivity = async () => {
     editingActivityId ? updateActivities() : createActivities();
-  };
-
-  const getActivities = async (registrationId) => {
-    setLoading(true);
-    setError("");
-
-    const result =
-      await PatientServices.get_activities_by_patient(registrationId);
-    if (result.success) {
-      setSavedActivities(result.data || []);
-    } else {
-      if (result.status === 400 || result.status === 409) {
-        setError(result.message || "Error getting activities.");
-      } else {
-        setError("Error getting activities. Please try again.");
-      }
-    }
-    setLoading(false);
   };
 
   const createActivities = async () => {
@@ -49,7 +33,7 @@ export default function Activities({ setActiveTab, currentRegistrationId }) {
       return;
     }
 
-    if (!activityData.description.trim()) {
+    if (!activityForm.description.trim()) {
       alert("Please enter an activity description before saving");
       return;
     }
@@ -58,11 +42,12 @@ export default function Activities({ setActiveTab, currentRegistrationId }) {
 
     const result = await PatientServices.create_activity(
       currentRegistrationId,
-      activityData,
+      activityForm,
     );
 
     if (result.success) {
-      await getActivities(currentRegistrationId);
+      getActivities(currentRegistrationId);
+      getDashboardActivities();
       clearActivityForm();
     } else {
       if (result.status === 400 || result.status === 409) {
@@ -85,7 +70,7 @@ export default function Activities({ setActiveTab, currentRegistrationId }) {
       return;
     }
 
-    if (!activityData.description.trim()) {
+    if (!activityForm.description.trim()) {
       alert("Please enter an activity description before saving");
       return;
     }
@@ -95,11 +80,12 @@ export default function Activities({ setActiveTab, currentRegistrationId }) {
     const result = await PatientServices.update_activity(
       currentRegistrationId,
       editingActivityId,
-      activityData,
+      activityForm,
     );
 
     if (result.success) {
-      await getActivities(currentRegistrationId);
+      getActivities(currentRegistrationId);
+      getDashboardActivities();
       clearActivityForm();
     } else {
       if (result.status === 400 || result.status === 409) {
@@ -122,7 +108,8 @@ export default function Activities({ setActiveTab, currentRegistrationId }) {
     );
 
     if (result.success) {
-      await getActivities(currentRegistrationId);
+      getActivities(currentRegistrationId);
+      getDashboardActivities();
     } else {
       if (result.status === 400 || result.status === 409) {
         setError(result.message || "Error deleting activity.");
@@ -140,25 +127,20 @@ export default function Activities({ setActiveTab, currentRegistrationId }) {
 
   const handleActivityChange = (e) => {
     const { name, value } = e.target;
-    setActivityData((prev) => ({
+    setActivityForm((prev) => ({
       ...prev,
       [name]: value,
     }));
   };
 
-  useEffect(() => {
-    if (currentRegistrationId) {
-      getActivities(currentRegistrationId);
-    }
-  }, [currentRegistrationId]);
-
   const editActivity = (activity) => {
-    setActivityData({
+    setActivityForm({
       date: activity.date || new Date().toISOString().split("T")[0],
       time: activity.time || "",
       description: activity.description || "",
     });
     setEditingActivityId(activity.id);
+
     // Scroll to top of activity form
     document
       .querySelector("#activityDescription")
@@ -166,7 +148,7 @@ export default function Activities({ setActiveTab, currentRegistrationId }) {
   };
 
   const clearActivityForm = () => {
-    setActivityData({
+    setActivityForm({
       date: new Date().toISOString().split("T")[0],
       time: "",
       description: "",
@@ -247,7 +229,7 @@ export default function Activities({ setActiveTab, currentRegistrationId }) {
                   type="date"
                   id="activityDate"
                   name="date"
-                  value={activityData.date}
+                  value={activityForm.date}
                   onChange={handleActivityChange}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black"
                 />
@@ -264,7 +246,7 @@ export default function Activities({ setActiveTab, currentRegistrationId }) {
                   type="time"
                   id="activityTime"
                   name="time"
-                  value={activityData.time}
+                  value={activityForm.time}
                   onChange={handleActivityChange}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black"
                 />
@@ -281,7 +263,7 @@ export default function Activities({ setActiveTab, currentRegistrationId }) {
                   id="activityDescription"
                   name="description"
                   rows={4}
-                  value={activityData.description}
+                  value={activityForm.description}
                   onChange={handleActivityChange}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black resize-y"
                   placeholder="Enter activity description..."
@@ -295,7 +277,7 @@ export default function Activities({ setActiveTab, currentRegistrationId }) {
                   onClick={saveActivity}
                   disabled={
                     isSavingActivity ||
-                    !activityData.description.trim() ||
+                    !activityForm.description.trim() ||
                     !currentRegistrationId
                   }
                   className="bg-black text-white px-6 py-2 rounded-md hover:bg-gray-800 disabled:bg-gray-400 transition-colors"
@@ -332,13 +314,13 @@ export default function Activities({ setActiveTab, currentRegistrationId }) {
               Saved Activities
             </h3>
 
-            {savedActivities.length === 0 ? (
+            {activities.length === 0 ? (
               <div className="text-center py-8 text-gray-500">
                 <p>No activities have been saved yet.</p>
               </div>
             ) : (
               <div className="space-y-3">
-                {savedActivities.map((activity, index) => (
+                {activities.map((activity, index) => (
                   <div
                     key={activity.id}
                     className="border border-gray-200 rounded-lg p-4 bg-white hover:shadow-md transition-shadow"
@@ -376,6 +358,15 @@ export default function Activities({ setActiveTab, currentRegistrationId }) {
                           {activity.time && (
                             <p>
                               <strong>Time:</strong> {activity.time}
+                            </p>
+                          )}
+                          {activity.completed ? (
+                            <p>
+                              <strong>Status:</strong> Completed
+                            </p>
+                          ) : (
+                            <p>
+                              <strong>Status:</strong> Not Completed
                             </p>
                           )}
                         </div>

@@ -1,8 +1,11 @@
 import { useState, useEffect } from "react";
 import { PatientServices } from "../../services/patientServices";
 import ConfirmModal from "../components/ConfirmModal";
+import { useRegistration } from "../../context/RegistrationContext";
 
 export default function Interactions({ setActiveTab, currentRegistrationId }) {
+  const { interactions, getInteractions } = useRegistration();
+
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [interactionsFilter, setInteractionsFilter] = useState("all");
@@ -11,7 +14,6 @@ export default function Interactions({ setActiveTab, currentRegistrationId }) {
   const [isSavingInteraction, setIsSavingInteraction] = useState(false);
   const [interactionsPerPage, setInteractionsPerPage] = useState(10);
   const [interactionsPage, setInteractionsPage] = useState(1);
-  const [savedInteractions, setSavedInteractions] = useState([]);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleteInteractionId, setDeleteInteractionId] = useState(null);
 
@@ -23,23 +25,6 @@ export default function Interactions({ setActiveTab, currentRegistrationId }) {
     payment_type: "",
     issued: "Select",
   });
-  const getInteractions = async (registrationId) => {
-    setLoading(true);
-    setError("");
-
-    const result =
-      await PatientServices.get_interactions_by_patient(registrationId);
-    if (result.success) {
-      setSavedInteractions(result.data || []);
-    } else {
-      if (result.status === 400 || result.status === 409) {
-        setError(result.message || "Error getting interactions.");
-      } else {
-        setError("Error getting interactions. Please try again.");
-      }
-    }
-    setLoading(false);
-  };
 
   const saveInteraction = async () => {
     editingInteractionId ? updateInteraction() : createInteraction();
@@ -59,16 +44,21 @@ export default function Interactions({ setActiveTab, currentRegistrationId }) {
       alert("Please select a description");
       return;
     }
+    let data = interactionData;
+
+    if (!interactionData.amount) {
+      data = { ...data, amount: 0 };
+    }
 
     setIsSavingInteraction(true);
 
     const result = await PatientServices.create_interaction(
       currentRegistrationId,
-      interactionData,
+      data,
     );
 
     if (result.success) {
-      await getInteractions(currentRegistrationId);
+      getInteractions(currentRegistrationId);
       clearInteractionForm();
     } else {
       if (result.status === 400 || result.status === 409) {
@@ -98,14 +88,20 @@ export default function Interactions({ setActiveTab, currentRegistrationId }) {
 
     setIsSavingInteraction(true);
 
+    let data = interactionData;
+
+    if (!interactionData.amount) {
+      data = { ...data, amount: 0 };
+    }
+
     const result = await PatientServices.update_interaction(
       currentRegistrationId,
       editingInteractionId,
-      interactionData,
+      data,
     );
 
     if (result.success) {
-      await getInteractions(currentRegistrationId);
+      getInteractions(currentRegistrationId);
       clearInteractionForm();
     } else {
       if (result.status === 400 || result.status === 409) {
@@ -128,7 +124,7 @@ export default function Interactions({ setActiveTab, currentRegistrationId }) {
     );
 
     if (result.success) {
-      await getInteractions(currentRegistrationId);
+      getInteractions(currentRegistrationId);
     } else {
       if (result.status === 400 || result.status === 409) {
         setError(result.message || "Error deleting interaction.");
@@ -184,7 +180,7 @@ export default function Interactions({ setActiveTab, currentRegistrationId }) {
 
   // Enhanced filter and search for interactions
   const getFilteredInteractions = () => {
-    let filtered = [...savedInteractions];
+    let filtered = [...interactions];
 
     // Apply date filter
     const today = new Date();
@@ -255,13 +251,6 @@ export default function Interactions({ setActiveTab, currentRegistrationId }) {
   useEffect(() => {
     setInteractionsPage(1);
   }, [interactionsFilter, interactionsSearch]);
-
-  // Load interactions when registration ID changes
-  useEffect(() => {
-    if (currentRegistrationId) {
-      getInteractions(currentRegistrationId);
-    }
-  }, [currentRegistrationId]);
 
   return (
     <div>
@@ -512,11 +501,10 @@ export default function Interactions({ setActiveTab, currentRegistrationId }) {
               <h3 className="text-lg font-medium text-gray-900">
                 Saved Interactions
               </h3>
-              {savedInteractions.length !==
-                getFilteredInteractions().length && (
+              {interactions.length !== getFilteredInteractions().length && (
                 <p className="text-sm text-gray-500">
                   Showing {getFilteredInteractions().length} of{" "}
-                  {savedInteractions.length} total interactions
+                  {interactions.length} total interactions
                 </p>
               )}
             </div>
@@ -569,7 +557,7 @@ export default function Interactions({ setActiveTab, currentRegistrationId }) {
           </div>
 
           {/* Performance Warning for Large Interaction Sets */}
-          {savedInteractions.length > 50 && interactionsFilter === "all" && (
+          {interactions.length > 50 && interactionsFilter === "all" && (
             <div className="bg-blue-50 border border-blue-200 rounded-md p-3">
               <div className="flex items-center gap-2">
                 <svg
@@ -586,8 +574,8 @@ export default function Interactions({ setActiveTab, currentRegistrationId }) {
                   />
                 </svg>
                 <p className="text-sm text-blue-700">
-                  You have {savedInteractions.length} interactions. Consider
-                  using filters for better performance.
+                  You have {interactions.length} interactions. Consider using
+                  filters for better performance.
                 </p>
               </div>
             </div>
@@ -597,7 +585,7 @@ export default function Interactions({ setActiveTab, currentRegistrationId }) {
           {getFilteredInteractions().length === 0 ? (
             <div className="text-center py-8 text-gray-500">
               <p>
-                {savedInteractions.length === 0
+                {interactions.length === 0
                   ? "No interactions have been saved yet."
                   : "No interactions match your search criteria."}
               </p>
