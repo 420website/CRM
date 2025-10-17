@@ -319,6 +319,7 @@ export default function Client({
               Registration Information
             </h2>
 
+            {/* Voice to text icons
             <div>
               <div className="flex items-center space-x-2">
                 <div className="relative">
@@ -334,6 +335,7 @@ export default function Client({
                 </button>
               </div>
             </div>
+                */}
 
             {/* Registration Date Field */}
             <div className="mb-6">
@@ -387,6 +389,7 @@ export default function Client({
                     style={{ width: "160px" }}
                   />
                 </div>
+                {/*
                 <button
                   type="button"
                   onClick={() => openVoiceDateInput("reg_date")}
@@ -395,6 +398,7 @@ export default function Client({
                 >
                   🎤
                 </button>
+                */}
               </div>
             </div>
 
@@ -491,6 +495,7 @@ export default function Client({
                       style={{ width: "160px" }}
                     />
                   </div>
+                  {/*
                   <button
                     type="button"
                     onClick={() => openVoiceDateInput("dob")}
@@ -499,6 +504,7 @@ export default function Client({
                   >
                     🎤
                   </button>
+                  */}
                 </div>
               </div>
 
@@ -1111,6 +1117,7 @@ export default function Client({
                               style={{ width: "160px" }}
                             />
                           </div>
+                          {/*
                           <button
                             type="button"
                             onClick={() =>
@@ -1121,6 +1128,7 @@ export default function Client({
                           >
                             🎤
                           </button>
+                          */}
                         </div>
                       </div>
 
