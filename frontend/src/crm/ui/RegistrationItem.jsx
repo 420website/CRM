@@ -127,7 +127,7 @@ export default function RegistrationItem({
   );
 
   return (
-    <div key={item.id} className="border rounded-lg p-4 bg-gray-50">
+    <div key={item.id} className="border rounded-lg p-4 bg-gray-50 mb-2">
       <div className="flex justify-between items-start">
         <div className="flex-1">
           <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">

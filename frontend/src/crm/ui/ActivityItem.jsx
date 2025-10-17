@@ -93,7 +93,7 @@ export default function ActivityItem({
   return (
     <div
       key={item.id}
-      className="border rounded-lg p-4 bg-gray-50 hover:bg-gray-100 transition-colors cursor-pointer"
+      className="border rounded-lg p-4 bg-gray-50 hover:bg-gray-100 transition-colors cursor-pointer mb-2"
     >
       <div className="flex justify-between items-start">
         <div className="flex-1">
