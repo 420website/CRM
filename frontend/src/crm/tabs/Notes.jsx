@@ -155,13 +155,16 @@ export default function Notes({ setActiveTab, currentRegistrationId }) {
 
   const handleNotesTemplateChange = async (templateName) => {
     setSelectedNotesTemplate(templateName);
+    const template = notesTemplates.find(
+      (template) => template.name === templateName,
+    );
 
-    if (templateName === "Select") {
-      setNotesData((prev) => ({
-        ...prev,
-        note_text: "",
-      }));
-    }
+    const content = template ? template.content : "";
+
+    setNotesData((prev) => ({
+      ...prev,
+      note_text: content,
+    }));
   };
 
   const handleNotesChange = (e) => {
