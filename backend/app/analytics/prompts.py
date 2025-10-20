@@ -1,6 +1,5 @@
 # /app/analytics/prompts
 def legacy_context_prompt(
-    legacy_upload,
     total_records,
     rewards_stats,
     address_stats,
@@ -21,7 +20,6 @@ def legacy_context_prompt(
 ) -> str:
     return f"""
     LEGACY DATA UPLOADED:
-    - File: {legacy_upload['filename']}
     - Total records: {total_records}
     - Available columns: PatientID, Phone, DOB, FileNo, HC, Disposition, RegDate, Site, Type, Month, Address, City, PostalCode, Province, Gender, Reward, Consultation, Amount
 

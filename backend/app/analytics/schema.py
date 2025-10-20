@@ -4,6 +4,30 @@ from pydantic import BaseModel, Field
 import uuid
 from typing import Dict, List, Any, Optional
 from dataclasses import dataclass
+import datetime as dt
+
+
+# Shared attributes - all optional for maximum flexibility
+class RawAnalytics(BaseModel):
+    # Registration data
+    patientid: int
+    dob: dt.date
+    gender: Optional[str] = ""
+    address: Optional[str] = ""
+    city: Optional[str] = ""
+    province: Optional[str] = ""
+    postalcode: Optional[str] = ""
+    phone: Optional[str] = ""
+    healthcard: Optional[str] = ""
+    disposition: Optional[str] = ""
+    regdate: dt.date
+    referralsite: Optional[str] = ""
+    # Interactions data
+    interactiontype: Optional[str] = ""
+    amount: Optional[int] = 0
+
+    class Config:
+        from_attributes = True
 
 
 class DataSummaryResponse(BaseModel):

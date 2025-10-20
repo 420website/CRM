@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { AnalyticsServices } from "../../services/analyticsService";
+import toast from "react-hot-toast";
 
 const AdminAnalytics = () => {
   const navigate = useNavigate();
@@ -94,6 +95,7 @@ const AdminAnalytics = () => {
     const result = await AnalyticsServices.get_legacy_data();
     if (result.success) {
       setLegacyDataSummary(result.data);
+      setShowUploadSection(false);
     }
   };
 
@@ -132,6 +134,7 @@ const AdminAnalytics = () => {
         message: result.data?.message,
         data: result.data,
       });
+      toast.success(result.data?.message);
 
       // Reload summary
       await loadLegacyDataSummary();
@@ -397,25 +400,6 @@ const AdminAnalytics = () => {
                   className="hidden"
                 />
               </div>
-
-              {/* Upload Status */}
-              {uploadStatus && (
-                <div
-                  className={`mt-4 p-4 rounded-md ${
-                    uploadStatus.type === "success"
-                      ? "bg-green-50 text-green-800"
-                      : "bg-red-50 text-red-800"
-                  }`}
-                >
-                  <p className="font-medium">{uploadStatus.message}</p>
-                  {uploadStatus.data && (
-                    <p className="text-sm mt-2">
-                      Preview: {uploadStatus.data.preview.length} sample records
-                      processed
-                    </p>
-                  )}
-                </div>
-              )}
             </div>
           )}
         </div>

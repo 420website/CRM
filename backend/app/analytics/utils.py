@@ -1,11 +1,13 @@
+from datetime import date
 import io
-from typing import Any, Dict, Tuple
+from typing import Any, Dict, List, Tuple
 import pandas as pd
 from fastapi import UploadFile
 from app.analytics.schema import (
     AnalyticsStats,
     DataSummaryResponse,
     LegacyData,
+    RawAnalytics,
 )
 import re
 
@@ -149,16 +151,15 @@ class LegacyDataAnalyzer:
         return None, None
 
     @staticmethod
-    def process_disposition_and_gender(record: Dict, stats: AnalyticsStats):
+    def process_disposition_and_gender(
+        record: RawAnalytics, stats: AnalyticsStats
+    ):
         """Process disposition and gender data with year breakdown"""
-        year = LegacyDataAnalyzer.extract_year_from_date(
-            record.get("RegDate") or record.get("regDate")
-        )
+        year = LegacyDataAnalyzer.extract_year_from_date(record.regdate)
 
         # Process disposition
-        disp = (
-            record.get("disposition") or record.get("Disposition") or "Unknown"
-        )
+        disp = record.disposition
+
         if (
             disp
             and str(disp).strip()
@@ -177,7 +178,8 @@ class LegacyDataAnalyzer:
                 )
 
         # Process gender
-        gender = record.get("Gender") or record.get("gender") or "Unknown"
+        gender = record.gender
+
         if (
             gender
             and str(gender).strip()
@@ -196,11 +198,11 @@ class LegacyDataAnalyzer:
                 )
 
     @staticmethod
-    def process_phone_number(record: Dict, stats: AnalyticsStats):
+    def process_phone_number(record: RawAnalytics, stats: AnalyticsStats):
         """Process phone number validation"""
         stats.phone_stats["total_records"] += 1
 
-        phone = record.get("Phone") or record.get("phone") or ""
+        phone = record.phone
         phone_str = str(phone).strip()
 
         invalid_phones = [
@@ -219,16 +221,11 @@ class LegacyDataAnalyzer:
             stats.phone_stats["valid_phone_count"] += 1
 
     @staticmethod
-    def process_health_card(record: Dict, stats: AnalyticsStats):
+    def process_health_card(record: RawAnalytics, stats: AnalyticsStats):
         """Process health card validation"""
         stats.health_card_stats["total_records"] += 1
 
-        hc = (
-            record.get("HC")
-            or record.get("HealthCard")
-            or record.get("healthCard")
-            or ""
-        )
+        hc = record.healthcard
         hc_str = str(hc).strip()
 
         # No health card patterns
@@ -255,11 +252,11 @@ class LegacyDataAnalyzer:
             stats.health_card_stats["invalid_hc_count"] += 1
 
     @staticmethod
-    def process_address(record: Dict, stats: AnalyticsStats):
+    def process_address(record: RawAnalytics, stats: AnalyticsStats):
         """Process address validation"""
         stats.address_stats["total_records"] += 1
 
-        address = record.get("Address") or record.get("address") or ""
+        address = record.address
         address_str = str(address).strip().lower()
 
         invalid_addresses = [
@@ -279,30 +276,11 @@ class LegacyDataAnalyzer:
             stats.address_stats["valid_address_count"] += 1
 
     @staticmethod
-    def process_rewards(record: Dict, stats: AnalyticsStats):
+    def process_rewards(record: RawAnalytics, stats: AnalyticsStats):
         """Process rewards/payment amounts"""
         # Try multiple possible field names for amount
-        amount_fields = [
-            "Amount",
-            "amount",
-            "Reward",
-            "reward",
-            "AMOUNT",
-            "REWARD",
-            "P",
-            "p",
-            "rewards",
-            "REWARDS",
-            "payment",
-            "Payment",
-            "PAYMENT",
-        ]
-
-        amount = None
-        for field in amount_fields:
-            if field in record and record[field] is not None:
-                amount = record[field]
-                break
+        amount = record.amount
+        # reward = record.reward
 
         if amount is None:
             return
@@ -316,9 +294,7 @@ class LegacyDataAnalyzer:
                 # Process date for monthly/yearly breakdown
                 month_year, year = (
                     LegacyDataAnalyzer.extract_month_year_from_date(
-                        record.get("RegDate")
-                        or record.get("regDate")
-                        or record.get("REGDATE")
+                        record.regdate
                     )
                 )
 
@@ -390,18 +366,9 @@ class LegacyDataAnalyzer:
             return float(clean_amount) if clean_amount else 0
 
     @staticmethod
-    def process_age(record: Dict, stats: AnalyticsStats):
+    def process_age(record: RawAnalytics, stats: AnalyticsStats):
         """Process age and categorize into ranges"""
-        dob_fields = ["DOB", "dob", "dateOfBirth", "DateOfBirth"]
-        dob = None
-
-        for field in dob_fields:
-            if field in record and record[field]:
-                dob = record[field]
-                break
-
-        if not dob or str(dob).strip().lower() in ["", "null", "none", "nan"]:
-            return
+        dob = record.dob
 
         try:
             # Parse date of birth
@@ -448,10 +415,13 @@ class LegacyDataAnalyzer:
             pass
 
     @staticmethod
-    def process_registration_dates(record: Dict, stats: AnalyticsStats):
+    def process_registration_dates(
+        record: RawAnalytics,
+        stats: AnalyticsStats,
+    ):
         """Process registration dates for monthly/yearly counts"""
         month_year, year = LegacyDataAnalyzer.extract_month_year_from_date(
-            record.get("RegDate") or record.get("regDate")
+            record.regdate
         )
 
         if month_year and year:
@@ -461,12 +431,13 @@ class LegacyDataAnalyzer:
             stats.yearly_data[year] = stats.yearly_data.get(year, 0) + 1
 
     @staticmethod
-    def analyze_legacy_data(legacy_upload: dict) -> AnalyticsStats:
+    def analyze_legacy_data(
+        records: List[RawAnalytics],
+    ) -> AnalyticsStats:
         """Main analysis function - processes all legacy data"""
-        if not legacy_upload or len(legacy_upload["data"]) == 0:
+        if not records or len(records) == 0:
             raise ValueError("No legacy data available")
 
-        records = legacy_upload["data"]
         stats = AnalyticsStats()
         stats.total_records = len(records)
 

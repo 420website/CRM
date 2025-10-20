@@ -1,3 +1,5 @@
+from typing import List
+from app.database import database
 from app.analytics.utils import LegacyDataAnalyzer, summarize_data
 from app.config import settings
 from app.database import mongo_db
@@ -10,25 +12,31 @@ from app.analytics.schema import (
     ClaudeChatResponse,
     DataSummaryResponse,
     LegacyData,
+    RawAnalytics,
 )
 
 
+def normalize_keys(record: dict) -> dict:
+    return {k.lower(): v for k, v in record.items()}
+
+
 # Usage example:
-async def generate_legacy_analytics_context(legacy_upload: dict) -> str:
+async def generate_legacy_analytics_context(
+    legacy_upload: List[RawAnalytics],
+) -> str:
     """Generate analytics context for Claude"""
     try:
         stats = LegacyDataAnalyzer.analyze_legacy_data(legacy_upload)
 
         # Generate context prompt
         context_text = legacy_context_prompt(
-            legacy_upload,
             stats.total_records,
             stats.rewards_stats,
             stats.address_stats,
             stats.dispositions,
             stats.dispositions_2024,
             stats.dispositions_2025,
-            stats.dispositions,  # clean_dispositions
+            stats.dispositions,
             stats.genders_2024,
             stats.genders_2025,
             stats.phone_stats,
@@ -59,12 +67,46 @@ class AnalyticsService:
         return result.acknowledged
 
     @staticmethod
-    async def get_legacy_data_by_userid(user_id: int) -> dict | None:
+    async def get_legacy_data_by_userid(
+        user_id: int,
+    ) -> List[RawAnalytics] | None:
         result = await mongo_db.legacy_data.find_one({"user_id": user_id})
 
-        if result:
-            return result
+        if result and result["data"]:
+            normalized = [normalize_keys(r) for r in result["data"]]
+            return [RawAnalytics(**r) for r in normalized]
         return None
+
+    @staticmethod
+    async def get_data() -> List[RawAnalytics]:
+        query = """
+        SELECT 
+            p.id as patientid, 
+            p.dob, 
+            p.gender,
+            p.address, 
+            p.city, 
+            p.province, 
+            p.postal_code as postalcode, 
+            p.phone1 as phone, 
+            p.health_card as healthcard,
+            p.disposition, 
+            p.reg_date as regdate,
+            p.referral_site as referralsite,
+            i.description as interactiontype,
+            i.amount 
+        FROM patients p 
+        LEFT JOIN interactions i ON p.id = i.patient_id;
+        """
+        async with database.get_connection() as conn:
+            rows = await conn.fetch(query)
+
+        result = []
+        if rows:
+            for row in rows:
+                print(row)
+                result.append(RawAnalytics(**dict(row)))
+        return result
 
     @staticmethod
     async def upload_legacy_data(data: LegacyData, user_id: int) -> bool:
@@ -80,7 +122,7 @@ class AnalyticsService:
     @staticmethod
     async def get_legacy_data_summary(user_id: int) -> DataSummaryResponse:
         """Get summary of uploaded legacy data"""
-        result = await AnalyticsService.get_legacy_data_by_userid(user_id)
+        result = await mongo_db.legacy_data.find_one({"user_id": user_id})
 
         if not result:
             raise Exception(
@@ -92,7 +134,8 @@ class AnalyticsService:
 
     @staticmethod
     async def claude_chat(
-        request: ClaudeChatRequest, user_id: int
+        request: ClaudeChatRequest,
+        user_id: int,
     ) -> ClaudeChatResponse:
         """Claude AI chat endpoint for admin analytics with legacy data access and chart generation"""
         legacy_upload = await AnalyticsService.get_legacy_data_by_userid(
@@ -100,9 +143,12 @@ class AnalyticsService:
         )
 
         if not legacy_upload:
-            raise Exception(
-                "No legacy data found. Please upload an Excel file first."
-            )
+            legacy_upload = await AnalyticsService.get_data()
+
+            if len(legacy_upload) == 0:
+                raise Exception(
+                    "No legacy data found. Please upload an Excel file first."
+                )
 
         try:
             context = await generate_legacy_analytics_context(legacy_upload)
