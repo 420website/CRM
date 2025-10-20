@@ -106,6 +106,24 @@ services:
     networks:
       - backend-net
 
+  nginx-proxy:
+    image: nginx:stable-alpine
+    ports:
+      - 80:80
+      - 443:443
+    depends_on:
+      - backend 
+    volumes:
+      - ./certs:/certs:ro
+      - ./nginx/nginx.dev.conf:/etc/nginx/conf.d/default.conf:ro
+    networks:
+      - backend-net
+      - frontend-net
+    profiles:
+      - dev 
+      - backend
+      - nginx
+
   backend:
     build:
       context: ./backend
@@ -117,7 +135,7 @@ services:
       - POSTGRES_USER=admin 
       - POSTGRES_PASSWORD=example
       - DATABASE_URL=postgres://admin:example@postgres_dev:5432/appdb?sslmode=require
-      - ALLOWED_ORIGINS=[http://localhost:5173]
+      - ALLOWED_ORIGINS=http://localhost:5173,http://bs-local.com:5173,http://localhost
       - JWT_ALGORITHM=HS256
       - JWT_ACCESS_SECRET=STUFRZH-MKLFj4j-6c9Z50WNWkvd9uqiWQJOpeCtI9Q
       - JWT_REFRESH_SECRET=STUFRZH-MKLFj4j-6c9Z50WNWkvd9uqiWQJOpeCtI9Q
@@ -151,7 +169,6 @@ services:
       - ./certs:/certs:ro
     entrypoint: ["/scripts/create_admin.sh"]
     command: 'python -m app.main'
-    # command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000" , "--reload"]
 
   frontend:
     build:
@@ -160,7 +177,7 @@ services:
     env_file:
       - .env
     environment: 
-      - VITE_API_BASE_URL=http://localhost:8000
+      - VITE_API_BASE_URL=/api
     networks:
       - frontend-net
     ports:

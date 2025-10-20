@@ -41,7 +41,9 @@ class Settings:
     ca_file: str = os.getenv("CA_FILE", "/certs/ca-chain.crt")
 
     # CORS
-    allowed_origins: List[str] = get_env("ALLOWED_ORIGINS")
+    allowed_origins: List[str] = os.getenv(
+        "ALLOWED_ORIGINS", "http://localhost:5173"
+    ).split(",")
 
     # App
     app_url: str = get_env("APP_URL")
