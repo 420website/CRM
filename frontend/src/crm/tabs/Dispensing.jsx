@@ -2,6 +2,7 @@ import { useState } from "react";
 import { PatientServices } from "../../services/patientServices";
 import ConfirmModal from "../components/ConfirmModal";
 import { useRegistration } from "../../context/RegistrationContext";
+import DatePicker from "../ui/DatePicker";
 
 export default function Dispensing({ setActiveTab, currentRegistrationId }) {
   const { getDispensing, dispensing } = useRegistration();
@@ -338,13 +339,12 @@ export default function Dispensing({ setActiveTab, currentRegistrationId }) {
                 >
                   Expiry Date
                 </label>
-                <input
-                  type="date"
-                  id="expiry_date"
+                <DatePicker
                   name="expiry_date"
                   value={dispensingData.expiry_date}
                   onChange={handleDispensingChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black"
+                  className="w-full px-3 py-1.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black"
+                  placeholder="mm/dd/yyyy"
                 />
               </div>
             </div>

@@ -2,6 +2,7 @@ import { useState } from "react";
 import { PatientServices } from "../../services/patientServices";
 import ConfirmModal from "../components/ConfirmModal";
 import { useRegistration } from "../../context/RegistrationContext";
+import DatePicker from "../ui/DatePicker";
 
 export default function Activities({ setActiveTab, currentRegistrationId }) {
   const { activities, getActivities, getDashboardActivities } =
@@ -225,13 +226,12 @@ export default function Activities({ setActiveTab, currentRegistrationId }) {
                 >
                   Description *
                 </label>
-                <input
-                  type="date"
-                  id="activityDate"
+                <DatePicker
                   name="date"
                   value={activityForm.date}
                   onChange={handleActivityChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black"
+                  className="w-full px-3 py-1.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black"
+                  placeholder="mm/dd/yyyy"
                 />
               </div>
 

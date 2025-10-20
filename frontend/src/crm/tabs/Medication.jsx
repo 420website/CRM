@@ -2,6 +2,7 @@ import { useState } from "react";
 import { PatientServices } from "../../services/patientServices";
 import ConfirmModal from "../components/ConfirmModal";
 import { useRegistration } from "../../context/RegistrationContext";
+import DatePicker from "../ui/DatePicker";
 
 export default function Medications({ setActiveTab, currentRegistrationId }) {
   const { medications, getMedications } = useRegistration();
@@ -284,13 +285,12 @@ export default function Medications({ setActiveTab, currentRegistrationId }) {
                 >
                   Start Date
                 </label>
-                <input
-                  type="date"
-                  id="start_date"
+                <DatePicker
                   name="start_date"
                   value={medicationData.start_date}
                   onChange={handleMedicationChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black"
+                  className="w-full px-3 py-1.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black"
+                  placeholder="mm/dd/yyyy"
                 />
               </div>
 
@@ -301,13 +301,12 @@ export default function Medications({ setActiveTab, currentRegistrationId }) {
                 >
                   End Date
                 </label>
-                <input
-                  type="date"
-                  id="end_date"
+                <DatePicker
                   name="end_date"
                   value={medicationData.end_date}
                   onChange={handleMedicationChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black"
+                  className="w-full px-3 py-1.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black"
+                  placeholder="mm/dd/yyyy"
                 />
               </div>
             </div>

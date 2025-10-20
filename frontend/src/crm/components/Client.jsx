@@ -6,6 +6,7 @@ import {
   formatPostalCode,
 } from "../../utils/formatData";
 import { useRegistration } from "../../context/RegistrationContext";
+import DatePicker from "../ui/DatePicker";
 
 // Map Google Places province codes to full province names
 const getProvince = (code) => {
@@ -221,7 +222,6 @@ export default function Client({
     }
 
     // Health card should only contain numeric characters
-    // Remove all non-digit characters
     if (name === "health_card") {
       processedValue = value.replace(/\D/g, "");
     }
@@ -349,49 +349,15 @@ export default function Client({
                 Registration Date
               </label>
               <div className="flex items-center space-x-2">
-                <div className="relative">
-                  <input
-                    type="text"
-                    id="reg_date"
-                    name="reg_date"
-                    value={
-                      formData.reg_date
-                        ? (() => {
-                            // Create date in local timezone to avoid timezone conversion issues
-                            const dateParts = formData.reg_date.split("-");
-                            const date = new Date(
-                              dateParts[0],
-                              dateParts[1] - 1,
-                              dateParts[2],
-                            );
-                            return date.toLocaleDateString("en-US", {
-                              year: "numeric",
-                              month: "short",
-                              day: "numeric",
-                            });
-                          })()
-                        : ""
-                    }
-                    readOnly
-                    onClick={() =>
-                      document.getElementById("regDatePicker").showPicker()
-                    }
-                    className="px-3 py-2 bg-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-black text-left font-medium cursor-pointer border border-gray-300"
-                    style={{
-                      width: "160px", // Keep width for proper date display
-                    }}
-                    placeholder="Select date"
-                  />
-                  <input
-                    type="date"
-                    id="regDatePicker"
-                    value={formData.reg_date}
-                    onChange={handleChange}
-                    name="reg_date"
-                    className="absolute inset-0 opacity-0 cursor-pointer"
-                    style={{ width: "160px" }}
-                  />
-                </div>
+                <DatePicker
+                  name="reg_date"
+                  value={formData.reg_date}
+                  onChange={handleChange}
+                  className="px-3 py-2 bg-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-black text-left font-medium cursor-pointer border border-gray-300"
+                  style={{
+                    width: "160px",
+                  }}
+                />
                 {/*
                 <button
                   type="button"
@@ -454,50 +420,15 @@ export default function Client({
                   Date of Birth<span className="text-red-500">*</span>
                 </label>
                 <div className="flex items-center space-x-2">
-                  <div className="relative">
-                    <input
-                      type="text"
-                      id="dob"
-                      name="dob"
-                      required
-                      value={
-                        formData.dob
-                          ? (() => {
-                              // Create date in local timezone to avoid timezone conversion issues
-                              const dateParts = formData.dob.split("-");
-                              const date = new Date(
-                                dateParts[0],
-                                dateParts[1] - 1,
-                                dateParts[2],
-                              );
-                              return date.toLocaleDateString("en-US", {
-                                year: "numeric",
-                                month: "short",
-                                day: "numeric",
-                              });
-                            })()
-                          : ""
-                      }
-                      readOnly
-                      onClick={() =>
-                        document.getElementById("dobPicker").showPicker()
-                      }
-                      className="px-3 py-2 bg-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-black text-left font-medium cursor-pointer border border-gray-300"
-                      style={{
-                        width: "160px", // Keep width for proper date display
-                      }}
-                      placeholder="Select date"
-                    />
-                    <input
-                      type="date"
-                      id="dobPicker"
-                      value={formData.dob}
-                      onChange={handleChange}
-                      name="dob"
-                      className="absolute inset-0 opacity-0 cursor-pointer"
-                      style={{ width: "160px" }}
-                    />
-                  </div>
+                  <DatePicker
+                    name="dob"
+                    value={formData.dob}
+                    onChange={handleChange}
+                    className="px-3 py-2 bg-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-black text-left font-medium cursor-pointer border border-gray-300"
+                    style={{
+                      width: "160px",
+                    }}
+                  />
                   {/*
                   <button
                     type="button"
@@ -1076,52 +1007,15 @@ export default function Client({
                           RNA Sample Date
                         </label>
                         <div className="flex items-center space-x-2">
-                          <div className="relative">
-                            <input
-                              type="text"
-                              id="rna_sample_date"
-                              name="rna_sample_date"
-                              value={
-                                formData.rna_sample_date
-                                  ? (() => {
-                                      // Create date in local timezone to avoid timezone conversion issues
-                                      const dateParts =
-                                        formData.rna_sample_date.split("-");
-                                      const date = new Date(
-                                        dateParts[0],
-                                        dateParts[1] - 1,
-                                        dateParts[2],
-                                      );
-                                      return date.toLocaleDateString("en-US", {
-                                        year: "numeric",
-                                        month: "short",
-                                        day: "numeric",
-                                      });
-                                    })()
-                                  : ""
-                              }
-                              readOnly
-                              onClick={() =>
-                                document
-                                  .getElementById("rna_sample_date_picker")
-                                  .showPicker()
-                              }
-                              className="px-3 py-2 bg-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-black text-left font-medium cursor-pointer border border-gray-300"
-                              style={{
-                                width: "160px", // Keep width for proper date display
-                              }}
-                              placeholder="Select date"
-                            />
-                            <input
-                              type="date"
-                              id="rna_sample_date_picker"
-                              value={formData.rna_sample_date}
-                              onChange={handleChange}
-                              name="rna_sample_date"
-                              className="absolute inset-0 opacity-0 cursor-pointer"
-                              style={{ width: "160px" }}
-                            />
-                          </div>
+                          <DatePicker
+                            name="rna_sample_date"
+                            value={formData.rna_sample_date}
+                            onChange={handleChange}
+                            className="px-3 py-2 bg-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-black text-left font-medium cursor-pointer border border-gray-300"
+                            style={{
+                              width: "160px",
+                            }}
+                          />
                           {/*
                           <button
                             type="button"

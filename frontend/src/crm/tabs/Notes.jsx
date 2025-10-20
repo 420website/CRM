@@ -3,6 +3,7 @@ import { PatientServices } from "../../services/patientServices";
 import NoteTemplateManager from "../managers/NotesTemplateManager";
 import ConfirmModal from "../components/ConfirmModal";
 import { useRegistration } from "../../context/RegistrationContext";
+import DatePicker from "../ui/DatePicker";
 
 export default function Notes({ setActiveTab, currentRegistrationId }) {
   const {
@@ -277,13 +278,12 @@ export default function Notes({ setActiveTab, currentRegistrationId }) {
               >
                 Date
               </label>
-              <input
-                type="date"
-                id="note_date"
+              <DatePicker
                 name="note_date"
                 value={notesData.note_date}
                 onChange={handleNotesChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black"
+                className="w-full px-3 py-1.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black"
+                placeholder="mm/dd/yyyy"
               />
             </div>
 

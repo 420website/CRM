@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { PatientServices } from "../../services/patientServices";
 import ConfirmModal from "../components/ConfirmModal";
 import { useRegistration } from "../../context/RegistrationContext";
+import DatePicker from "../ui/DatePicker";
 
 export default function Interactions({ setActiveTab, currentRegistrationId }) {
   const { interactions, getInteractions } = useRegistration();
@@ -322,13 +323,12 @@ export default function Interactions({ setActiveTab, currentRegistrationId }) {
               >
                 Date
               </label>
-              <input
-                type="date"
-                id="date"
+              <DatePicker
                 name="date"
                 value={interactionData.date}
                 onChange={handleInteractionChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black"
+                className="w-full px-3 py-1.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black"
+                placeholder="mm/dd/yyyy"
               />
             </div>
 

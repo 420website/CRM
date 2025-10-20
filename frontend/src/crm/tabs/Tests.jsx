@@ -2,6 +2,7 @@ import { useState } from "react";
 import { PatientServices } from "../../services/patientServices";
 import ConfirmModal from "../components/ConfirmModal";
 import { useRegistration } from "../../context/RegistrationContext";
+import DatePicker from "../ui/DatePicker";
 
 export default function Tests({ setActiveTab, currentRegistrationId }) {
   const { tests, getTests } = useRegistration();
@@ -329,13 +330,11 @@ export default function Tests({ setActiveTab, currentRegistrationId }) {
                     >
                       Test Date
                     </label>
-                    <input
-                      type="date"
-                      id="testDate"
+                    <DatePicker
                       name="test_date"
                       value={testFormData.test_date}
                       onChange={handleTestChange}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black"
+                      className="w-full px-3 py-1.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black"
                       style={{
                         lineHeight: "1.5",
                         height: "auto",
@@ -442,13 +441,11 @@ export default function Tests({ setActiveTab, currentRegistrationId }) {
                     >
                       Test Date
                     </label>
-                    <input
-                      type="date"
-                      id="bloodwork_test_date"
+                    <DatePicker
                       name="test_date"
                       value={testFormData.test_date}
                       onChange={handleTestChange}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black"
+                      className="w-full px-3 py-1.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black"
                       style={{
                         lineHeight: "1.5",
                         height: "auto",
@@ -529,13 +526,11 @@ export default function Tests({ setActiveTab, currentRegistrationId }) {
                     >
                       Date Submitted
                     </label>
-                    <input
-                      type="date"
-                      id="bloodwork_date_submitted"
+                    <DatePicker
                       name="bloodwork_date_submitted"
                       value={testFormData.bloodwork_date_submitted}
                       onChange={handleTestChange}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black"
+                      className="w-full px-3 py-1.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black"
                       style={{
                         lineHeight: "1.5",
                         height: "auto",
@@ -599,13 +594,11 @@ export default function Tests({ setActiveTab, currentRegistrationId }) {
                     >
                       Test Date
                     </label>
-                    <input
-                      type="date"
-                      id="hcvTestDate"
+                    <DatePicker
                       name="test_date"
                       value={testFormData.test_date}
                       onChange={handleTestChange}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black"
+                      className="w-full px-3 py-1.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black"
                       style={{
                         lineHeight: "1.5",
                         height: "auto",
