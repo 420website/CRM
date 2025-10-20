@@ -9,7 +9,6 @@ export const copyLabelsData = async (formData) => {
       toast.success("Label data copied to clipboard!");
     } catch (error) {
       toast.error("Error copying label data: " + error.message);
-      // console.error("Labels copy failed:", error.message);
     }
   }
 };
@@ -31,7 +30,6 @@ export const copyFormData = async (currentRegistrationId, formData) => {
     toast.success("Client data copied to clipboard!");
   } catch (error) {
     toast.error("Failed to copy data to clipboard: " + error.message);
-    console.error("Form copy failed:", error);
   }
 };
 
@@ -63,13 +61,8 @@ const getFormattedLabelsData = (formData) => {
     });
 
     // Format labels data
-    const labelsData = `HCN: ${formData.health_card || ""} ${formData.health_card_version || ""}  Sex: ${formData.gender === "Male" ? "M" : formData.gender === "Female" ? "F" : formData.gender || ""}
-${formData.last_name}, ${formData.first_name}
-DOB: ${formattedDOB}
-${formData.address ? `Address: ${formData.address}` : "Address not available"}
-${formData.city || ""}, ${formData.province?.toUpperCase().substring(0, 2) || ""} ${formData.postal_code || ""}
-${formData.phone1 ? `Phone: ${formData.phone1}` : "Phone number not available"}
-${currentDate} ${currentTime}`;
+    //NOTE: Cannot start with 'WORD:' becauyse it gets encoded liek http: and messes up text on past anywhere but browser
+    const labelsData = `LABEL\nHCN: ${formData.health_card || ""} ${formData.health_card_version || ""} Sex: ${formData.gender === "Male" ? "M" : formData.gender === "Female" ? "F" : formData.gender || ""}\n${formData.last_name}, ${formData.first_name}\nDOB: ${formattedDOB}\n${formData.address ? `Address: ${formData.address}` : "Address not available"}\n${formData.city || ""}, ${formData.province?.toUpperCase().substring(0, 2) || ""} ${formData.postal_code || ""}\n${formData.phone1 ? `Phone: ${formData.phone1}` : "Phone number not available"}\n${currentDate} ${currentTime}`;
 
     return labelsData;
   } catch (error) {

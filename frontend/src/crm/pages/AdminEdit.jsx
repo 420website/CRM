@@ -438,14 +438,6 @@ const AdminEdit = () => {
     setPhotoChanged(false);
   };
 
-  const handleCopyLabel = () => {
-    copyLabelsData(formData);
-  };
-
-  const handleCopy = () => {
-    copyFormData(currentRegistrationId, formData);
-  };
-
   useEffect(() => {
     if (saveStatus?.type === "success") {
       window.scrollTo(0, 0);
@@ -542,7 +534,7 @@ const AdminEdit = () => {
                 {/* Labels Button */}
                 <button
                   type="button"
-                  onClick={handleCopyLabel}
+                  onClick={() => copyLabelsData(formData)}
                   className="w-full bg-black text-white py-3 px-6 rounded-md hover:bg-gray-800 transition-colors text-lg font-semibold"
                 >
                   Labels
@@ -550,7 +542,7 @@ const AdminEdit = () => {
                 {/* Copy Button */}
                 <button
                   type="button"
-                  onClick={handleCopy}
+                  onClick={() => copyFormData(currentRegistrationId, formData)}
                   className="w-full bg-black text-white py-3 px-6 rounded-md hover:bg-gray-800 transition-colors text-lg font-semibold"
                 >
                   Copy

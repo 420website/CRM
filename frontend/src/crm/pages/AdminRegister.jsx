@@ -385,14 +385,6 @@ const AdminRegister = () => {
     setIsSubmitting(false);
   };
 
-  const handleCopyLabel = () => {
-    copyLabelsData(formData);
-  };
-
-  const handleCopy = () => {
-    copyFormData(currentRegistrationId, formData);
-  };
-
   if (submitStatus?.type === "success") {
     window.scrollTo({ top: 0, behavior: "smooth" });
     return (
@@ -463,7 +455,7 @@ const AdminRegister = () => {
                 {/* Labels Button */}
                 <button
                   type="button"
-                  onClick={handleCopyLabel}
+                  onClick={() => copyLabelsData(formData)}
                   className="w-full bg-black text-white py-3 px-6 rounded-md hover:bg-gray-800 transition-colors text-lg font-semibold"
                 >
                   Labels
@@ -471,7 +463,7 @@ const AdminRegister = () => {
                 {/* Copy Button */}
                 <button
                   type="button"
-                  onClick={handleCopy}
+                  onClick={() => copyFormData(currentRegistrationId, formData)}
                   className="w-full bg-black text-white py-3 px-6 rounded-md hover:bg-gray-800 transition-colors text-lg font-semibold"
                 >
                   Copy
