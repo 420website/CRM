@@ -32,31 +32,16 @@ export function UsersProvider({ children }) {
   };
 
   useEffect(() => {
-    if (!users) {
-      fetchUsers();
-      console.log("getting user data");
-    }
+    fetchUsers();
   }, []);
 
   return (
     <UsersContext.Provider
-      value={
-        {
-          // isLoggedIn,
-          // setIsLoggedIn,
-          // isAuthenticated,
-          // setIsAuthenticatorMfaSetup,
-          // isAuthenticatorMfaSetup,
-          // logout,
-          // userRole,
-          // setUserRole,
-          // userPermissions,
-          // setUserPermissions,
-          // startTokenRefreshCycle,
-          // currentUsersId,
-          // setCurrentUsersId,
-        }
-      }
+      value={{
+        users,
+        fetchUsers,
+        loading,
+      }}
     >
       {children}
     </UsersContext.Provider>

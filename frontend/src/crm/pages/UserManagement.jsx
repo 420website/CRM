@@ -3,6 +3,8 @@ import { useNavigate } from "react-router-dom";
 import { UserServices } from "../../services/userServices";
 import PasswordInput from "../ui/PasswordInput";
 import ConfirmModal from "../components/ConfirmModal";
+import { useUsers } from "../../context/UserContext";
+import toast from "react-hot-toast";
 
 function EditUser({
   editingUser,
@@ -10,7 +12,6 @@ function EditUser({
   handleAddUser,
   handleInputChange,
   formData,
-  error,
   loading,
   handlePermissionChange,
   resetForm,
@@ -20,12 +21,6 @@ function EditUser({
       <h2 className="text-xl font-bold text-gray-900 mb-4">
         {editingUser ? "Edit User" : "Add New User"}
       </h2>
-
-      {error && (
-        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
-          {error}
-        </div>
-      )}
 
       <form onSubmit={editingUser ? handleUpdateUser : handleAddUser}>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
@@ -192,13 +187,9 @@ function EditUser({
   );
 }
 
-function UserList({
-  users,
-  fetchUsers,
-  loading,
-  handleEditUser,
-  handleDeleteUser,
-}) {
+function UserList({ handleEditUser, handleDeleteUser }) {
+  const { users, fetchUsers, loading } = useUsers();
+
   function capitalizeFirstLetter(word = "") {
     return word.charAt(0).toUpperCase() + word.slice(1);
   }
@@ -291,9 +282,8 @@ function UserList({
 
 const UserManagement = () => {
   const navigate = useNavigate();
-  const [users, setUsers] = useState([]);
+  const { fetchUsers } = useUsers();
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
   const [showAddUser, setShowAddUser] = useState(false);
   const [editingUser, setEditingUser] = useState(null);
   const [user, setUser] = useState(null);
@@ -324,16 +314,28 @@ const UserManagement = () => {
   };
 
   const validateAddForm = () => {
-    setError("");
+    if (!formData.first_name) {
+      toast.error("First Name required");
+      return false;
+    }
 
-    if (
-      !formData.first_name ||
-      !formData.last_name ||
-      !formData.email ||
-      !formData.phone_number ||
-      !formData.password
-    ) {
-      setError("Please fill in all required fields");
+    if (!formData.last_name) {
+      toast.error("Last Name required");
+      return false;
+    }
+
+    if (!formData.email) {
+      toast.error("Please fill in all required fields");
+      return false;
+    }
+
+    if (!formData.phone_number) {
+      toast.error("Phone number required");
+      return false;
+    }
+
+    if (!formData.password) {
+      toast.error("Password required");
       return false;
     }
 
@@ -341,49 +343,32 @@ const UserManagement = () => {
   };
 
   const validateEditForm = () => {
-    setError("");
+    if (!formData.first_name) {
+      toast.error("First Name required");
+      return false;
+    }
 
-    if (
-      !formData.first_name ||
-      !formData.last_name ||
-      !formData.email ||
-      !formData.phone_number
-      // !formData.password
-    ) {
-      setError("Please fill in all required fields");
+    if (!formData.last_name) {
+      toast.error("Last Name required");
+      return false;
+    }
+
+    if (!formData.email) {
+      toast.error("Please fill in all required fields");
+      return false;
+    }
+
+    if (!formData.phone_number) {
+      toast.error("Phone number required");
       return false;
     }
 
     return true;
   };
 
-  // Fetch users
-  const fetchUsers = async () => {
-    setLoading(true);
-    setError(null);
-
-    const response = await UserServices.get_users();
-
-    if (response.success) {
-      setUsers(response.data);
-    } else {
-      if (response.status === 400 || response.status === 409) {
-        setError(response.message || "Invalid credentials.");
-      } else {
-        setError("Login failed. Please try again.");
-      }
-    }
-    setLoading(false);
-  };
-
-  useEffect(() => {
-    fetchUsers();
-  }, []);
-
   // Handle add user
   const handleAddUser = async (e) => {
     e.preventDefault();
-    setError("");
     setLoading(true);
 
     if (validateAddForm()) {
@@ -392,11 +377,12 @@ const UserManagement = () => {
       if (response.success) {
         resetForm();
         fetchUsers();
+        toast.success("User created successfully");
       } else {
         if (response.status === 400 || response.status === 409) {
-          setError(response.message || "Failed to create users.");
+          toast.error(response.message || "Failed to create users.");
         } else {
-          setError("Failed to create user. Please try again.");
+          toast.error("Failed to create user. Please try again.");
         }
       }
     }
@@ -406,7 +392,6 @@ const UserManagement = () => {
   // Handle update user
   const handleUpdateUser = async (e) => {
     e.preventDefault();
-    setError("");
     setLoading(true);
 
     if (validateEditForm()) {
@@ -415,11 +400,12 @@ const UserManagement = () => {
       if (response.success) {
         resetForm();
         fetchUsers();
+        toast.success("User updated successfully");
       } else {
         if (response.status === 400 || response.status === 409) {
-          setError(response.message || "Failed to create users.");
+          toast.error(response.message || "Failed to create users.");
         } else {
-          setError("Failed to create user. Please try again.");
+          toast.error("Failed to create user. Please try again.");
         }
       }
     }
@@ -428,7 +414,6 @@ const UserManagement = () => {
 
   // Handle delete user
   const deleteUser = async () => {
-    setError("");
     setLoading(true);
 
     const response = await UserServices.delete_user(deleteUserId);
@@ -436,11 +421,12 @@ const UserManagement = () => {
     if (response.success) {
       resetForm();
       fetchUsers();
+      toast.success("User deleted successfully");
     } else {
       if (response.status === 400 || response.status === 409) {
-        setError(response.message || "Failed to create users.");
+        toast.error(response.message || "Failed to create users.");
       } else {
-        setError("Failed to create user. Please try again.");
+        toast.error("Failed to create user. Please try again.");
       }
     }
 
@@ -495,14 +481,6 @@ const UserManagement = () => {
   const goBack = () => {
     navigate("/admin-menu");
   };
-
-  function capitalizeFirstLetter(word = "") {
-    return word.charAt(0).toUpperCase() + word.slice(1);
-  }
-
-  useEffect(() => {
-    fetchUsers();
-  }, []);
 
   return (
     <div className="bg-gray-50">
@@ -572,7 +550,6 @@ const UserManagement = () => {
             handleAddUser={handleAddUser}
             handleInputChange={handleInputChange}
             formData={formData}
-            error={error}
             loading={loading}
             resetForm={resetForm}
           />
@@ -580,18 +557,9 @@ const UserManagement = () => {
 
         {/* Users List */}
         <UserList
-          users={users}
-          fetchUsers={fetchUsers}
-          loading={loading}
           handleEditUser={handleEditUser}
           handleDeleteUser={handleDeleteUser}
         />
-
-        {error && (
-          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
-            {error}
-          </div>
-        )}
       </div>
     </div>
   );

@@ -356,7 +356,6 @@ export function RegistrationProvider({ children }) {
     };
 
     getInitialData();
-    console.log("getting data");
   }, []);
 
   return (
