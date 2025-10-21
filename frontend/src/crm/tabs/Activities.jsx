@@ -225,7 +225,7 @@ export default function Activities({ setActiveTab, currentRegistrationId }) {
                   htmlFor="activityDescription"
                   className="block text-sm font-medium text-gray-700 mb-2"
                 >
-                  Description *
+                  Date *
                 </label>
                 <DatePicker
                   name="date"
