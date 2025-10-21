@@ -91,6 +91,7 @@ function EditUser({
         <PasswordInput
           formData={formData}
           handleInputChange={handleInputChange}
+          required={editingUser ? false : true}
         />
 
         {/* Role Selection Section */}
@@ -109,6 +110,7 @@ function EditUser({
                   checked={formData.role === roleOption}
                   onChange={handleInputChange}
                   className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
+                  // required
                 />
                 <label
                   htmlFor={`role-${roleOption}`}
@@ -336,6 +338,10 @@ const UserManagement = () => {
 
     if (!formData.password) {
       toast.error("Password required");
+      return false;
+    }
+    if (!formData.role) {
+      toast.error("Role required");
       return false;
     }
 

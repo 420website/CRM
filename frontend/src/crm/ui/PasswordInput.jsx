@@ -1,7 +1,11 @@
 import { useState } from "react";
 import { Eye, EyeOff } from "lucide-react";
 
-export default function PasswordInput({ formData, handleInputChange }) {
+export default function PasswordInput({
+  formData,
+  handleInputChange,
+  required,
+}) {
   const [showPassword, setShowPassword] = useState(false);
 
   return (
@@ -15,6 +19,7 @@ export default function PasswordInput({ formData, handleInputChange }) {
           name="password"
           value={formData.password}
           onChange={handleInputChange}
+          required={required}
           className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 pr-10"
           style={{ height: "40px" }}
         />
