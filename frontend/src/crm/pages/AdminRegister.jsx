@@ -275,7 +275,7 @@ const AdminRegister = () => {
     }
     if (formData.health_card.length != 10) {
       setIsSubmitting(false);
-      toast.error("Health Card Number must be 10 digits exactly.");
+      toast.error("Health Card Number must be 10 digits");
       document
         .querySelector("#healthcard")
         ?.scrollIntoView({ behavior: "smooth" });
@@ -414,7 +414,7 @@ const AdminRegister = () => {
             {/* Tabs Navigation */}
             <div
               id="tabs"
-              className="border-b border-gray-200 mb-6 relative py-2"
+              className="border-b border-gray-200 mb-6 relative py-2 scroll-mt-[20px]"
             >
               {getAllowedTabs().length > 0 ? (
                 <div className="flex space-x-1 overflow-x-auto overflow-y-hidden scrollbar-hide">

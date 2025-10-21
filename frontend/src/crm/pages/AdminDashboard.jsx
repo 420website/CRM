@@ -7,6 +7,7 @@ import { ActivityItems } from "../ui/ActivityItem";
 import { useAuth } from "../../context/AuthContext";
 import ConfirmModal from "../components/ConfirmModal";
 import { useRegistration } from "../../context/RegistrationContext";
+import toast from "react-hot-toast";
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
@@ -155,11 +156,12 @@ const AdminDashboard = () => {
     if (result.success) {
       getDashboardActivities();
       getRegistrations();
+      toast.success("Registration deleted successfully");
     } else {
       if (result.status === 400 || result.status === 409) {
-        setError(result.message || "Error deleting patient.");
+        toast.error(result.message || "Error deleting patient.");
       } else {
-        setError("Error deleting patient. Please try again.");
+        toast.error("Error deleting patient. Please try again.");
       }
     }
   };
@@ -182,11 +184,12 @@ const AdminDashboard = () => {
     if (result.success) {
       getDashboardActivities();
       getRegistrations();
+      toast.success("Registration finalized successfully");
     } else {
       if (result.status === 400 || result.status === 409) {
-        setError(result.message || "Error updating patient status.");
+        toast.error(result.message || "Error updating patient status.");
       } else {
-        setError("Error updating patient status. Please try again.");
+        toast.error("Error updating patient status. Please try again.");
       }
     }
   };
@@ -209,11 +212,12 @@ const AdminDashboard = () => {
     if (result.success) {
       getDashboardActivities();
       getRegistrations();
+      toast.success("Registration reverted to pending");
     } else {
       if (result.status === 400 || result.status === 409) {
-        setError(result.message || "Error updating patient status.");
+        toast.error(result.message || "Error updating patient status.");
       } else {
-        setError("Error updating patient status. Please try again.");
+        toast.error("Error updating patient status. Please try again.");
       }
     }
   };
@@ -259,13 +263,19 @@ const AdminDashboard = () => {
         );
       }
 
-      if (activityStatusFilter !== "all") {
+      if (activityStatusFilter === "completed") {
+        data = data.filter((item) => item.completed === true);
+      } else if (
+        activityStatusFilter === "late" ||
+        activityStatusFilter === "upcoming"
+      ) {
         data = data.filter((item) => {
+          if (item.completed) return false;
+
           const itemDateTime = new Date(`${item.date}T${item.time}`);
           const now = new Date();
 
-          const computedStatus = itemDateTime > now ? "upcoming" : "completed";
-
+          const computedStatus = itemDateTime > now ? "upcoming" : "late";
           return (
             computedStatus.toLowerCase() === activityStatusFilter.toLowerCase()
           );
@@ -722,6 +732,7 @@ const AdminDashboard = () => {
                     <option value="all">All Activities</option>
                     <option value="upcoming">Upcoming</option>
                     <option value="completed">Completed</option>
+                    <option value="late">Late</option>
                   </select>
                 </div>
               )}
