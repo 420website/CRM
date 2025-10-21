@@ -69,10 +69,10 @@ function StandardRoute() {
 function AppRoutes() {
   return (
     // <MobileOnlyWrapper>
-    <div className="App min-h-screen bg-gray-50">
+    <div className="App min-h-screen flex flex-col bg-gray-50">
       <ScrollToTop />
       <Header />
-      <main>
+      <main className="flex-grow flex flex-col">
         <Routes>
           {/* my420 website  */}
           <Route path="/" element={<Home />} />

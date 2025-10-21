@@ -246,8 +246,8 @@ const AdminAnalytics = () => {
   };
 
   return (
-    <div className="bg-gray-50">
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+    <div className="flex-grow flex flex-col bg-gray-50">
+      <div className="flex-grow flex flex-col max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
         {/* Header */}
         <div className="bg-white rounded-lg shadow-md p-4 mb-4">
           <h1 className="text-2xl font-bold text-gray-900 mb-4">
@@ -405,9 +405,9 @@ const AdminAnalytics = () => {
         </div>
 
         {/* Main Content */}
-        <div className="bg-white rounded-lg shadow-md p-6">
+        <div className="flex-1 flex flex-col bg-white rounded-lg shadow-md p-6">
           {/* Chat Interface */}
-          <div className="lg:h-[calc(100vh-500px)] flex flex-col">
+          <div className="flex-grow flex flex-col">
             {/* Messages */}
             <div className="flex-1 overflow-y-auto bg-white">
               <div className="space-y-4">

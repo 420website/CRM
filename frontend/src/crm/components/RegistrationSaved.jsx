@@ -13,7 +13,7 @@ export default function RegistrationSaved({ submitStatus, setSubmitStatus }) {
   };
 
   return (
-    <div className="bg-gray-50 flex items-center justify-center m-4">
+    <div className="flex-grow flex flex-col bg-gray-50 flex items-center justify-center m-4">
       <div className="max-w-md w-full bg-white rounded-lg shadow-md p-4  text-center">
         <div className="mb-3">
           <div className="mx-auto w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mb-3">

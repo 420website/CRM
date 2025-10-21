@@ -342,8 +342,8 @@ const AdminDashboard = () => {
   };
 
   return (
-    <div className="lg:min-h-[calc(100vh-400px)] bg-gray-50">
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+    <div className="flex-grow flex flex-col bg-gray-50">
+      <div className="flex-grow flex flex-col max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
         {showConfirm === "delete" && (
           <ConfirmModal
             message={"Confirm to delete registration"}
@@ -459,7 +459,7 @@ const AdminDashboard = () => {
         </div>
 
         {/* Main Content */}
-        <div className="bg-white rounded-lg shadow-md p-6">
+        <div className="flex-grow flex flex-col bg-white rounded-lg shadow-md p-6">
           {/* Tabs */}
           <div className="flex border-b mb-6">
             <button
