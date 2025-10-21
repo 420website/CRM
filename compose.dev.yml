@@ -140,7 +140,8 @@ services:
       - JWT_ACCESS_SECRET=STUFRZH-MKLFj4j-6c9Z50WNWkvd9uqiWQJOpeCtI9Q
       - JWT_REFRESH_SECRET=STUFRZH-MKLFj4j-6c9Z50WNWkvd9uqiWQJOpeCtI9Q
       - MFA_ENCRYPTION_KEY=7CrUl1rG4NBNk4bSV2uU7RW79Z_dRdvrrZn3Eqgytqg=
-      - APP_URL=http://localhost:5173 
+      # - APP_URL=http://localhost:5173 
+      - APP_URL=http://localhost
       - APP_NAME=testing 
       - DEBUG=True
       - MONGO_URL=mongodb://root:example@mongodb:27017
@@ -180,8 +181,8 @@ services:
       - VITE_API_BASE_URL=/api
     networks:
       - frontend-net
-    ports:
-      - 5173:5173
+    # ports:
+      # - 5173:5173
     profiles:
       - dev 
       - frontend

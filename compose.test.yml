@@ -10,7 +10,7 @@ x-backend-base: &backend_base
     - POSTGRES_USER=root 
     - POSTGRES_PASSWORD=example
     - DATABASE_URL=postgres://root:example@postgres_test:5432/appdb
-    - ALLOWED_ORIGINS=["http://localhost:8000", "http://localhost:3000"]
+    - ALLOWED_ORIGINS=http://localhost:8000,http://localhost:3000
     - JWT_ALGORITHM=HS256
     - JWT_ACCESS_SECRET=STUFRZH-MKLFj4j-6c9Z50WNWkvd9uqiWQJOpeCtI9Q
     - JWT_REFRESH_SECRET=STUFRZH-MKLFj4j-6c9Z50WNWkvd9uqiWQJOpeCtI9Q
@@ -149,7 +149,7 @@ services:
       - POSTGRES_USER=root 
       - POSTGRES_PASSWORD=example
       - DATABASE_URL=postgres://root:example@postgres_test:5432/appdb
-      - ALLOWED_ORIGINS=["http://localhost:3000"]
+      - ALLOWED_ORIGINS=http://localhost:3000
       - JWT_ALGORITHM=HS256
       - JWT_ACCESS_SECRET=STUFRZH-MKLFj4j-6c9Z50WNWkvd9uqiWQJOpeCtI9Q
       - JWT_REFRESH_SECRET=STUFRZH-MKLFj4j-6c9Z50WNWkvd9uqiWQJOpeCtI9Q
