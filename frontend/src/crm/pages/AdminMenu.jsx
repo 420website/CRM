@@ -31,7 +31,7 @@ const AdminMenu = () => {
 
           {/* Dashboard  */}
           <div className="space-y-6">
-            {userPermissions.includes("client") && userRole !== "guest" && (
+            {userRole !== "guest" && (
               <button
                 onClick={() => navigate("/admin-dashboard")}
                 className="w-full py-4 px-6 rounded-lg text-lg font-medium flex items-center justify-center gap-3 text-white transition-colors"
@@ -92,7 +92,7 @@ const AdminMenu = () => {
                 👥 Users
               </button>
             )}
-
+            {console.log(userPermissions)}
             {/* Logout for guests */}
             {userRole === "guest" && (
               <button

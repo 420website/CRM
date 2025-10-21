@@ -17,7 +17,7 @@ import { copyFormData, copyLabelsData } from "../../utils/labelData";
 import { parseDateFromSpeech, parseFields } from "../../utils/parseFromSpeech";
 import { PatientServices } from "../../services/patientServices";
 import EditPhoto from "../components/EditPhoto";
-import { useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { DEFAULT_FORM } from "../forms/Registration";
 import VoiceFillModal from "../components/VoiceInput";
 import ForceRegisterModal from "../components/ForcePopupModal";
@@ -27,6 +27,7 @@ import { useRegistration } from "../../context/RegistrationContext";
 import toast from "react-hot-toast";
 
 const AdminEdit = () => {
+  const navigate = useNavigate();
   const {
     showDispositionManager,
     showReferralSiteManager,
@@ -34,14 +35,12 @@ const AdminEdit = () => {
     showDocumentTypeManager,
     getRegistrationData,
   } = useRegistration();
-
   const { registrationId } = useParams();
   const [voiceInputText, setVoiceInputText] = useState("");
   const [loading, setLoading] = useState(false);
   const [submitStatus, setSubmitStatus] = useState(null);
   const [saveStatus, setSaveStatus] = useState(null);
   const [selectedTemplate, setSelectedTemplate] = useState("Select");
-  const [activeTab, setActiveTab] = useState("client");
   const { userRole, userPermissions } = useAuth();
   const [showVoiceDateModal, setShowVoiceDateModal] = useState(false);
   const [showVoiceFillModal, setShowVoiceFillModal] = useState(false);
@@ -64,6 +63,26 @@ const AdminEdit = () => {
     rna_sample_date: new Date().toISOString().split("T")[0],
   });
 
+  // Check if user has permission for a tab
+  const hasTabPermission = (tabId) => {
+    return Array.isArray(userPermissions) && userPermissions.includes(tabId);
+  };
+
+  const getFirstAllowedTab = () => {
+    const allTabs = [
+      { id: "client", name: "Client" },
+      { id: "tests", name: "Tests" },
+      { id: "medication", name: "Medication" },
+      { id: "dispensing", name: "Dispensing" },
+      { id: "notes", name: "Notes" },
+      { id: "activities", name: "Activities" },
+      { id: "interactions", name: "Interactions" },
+      { id: "attachments", name: "Attachments" },
+    ];
+    return allTabs.find((tab) => hasTabPermission(tab.id))?.id || "client";
+  };
+
+  const [activeTab, setActiveTab] = useState(getFirstAllowedTab());
   const [formData, setFormData] = useState(getDefaultForm());
 
   const openVoiceDateInput = (dateField) => {
@@ -244,11 +263,6 @@ const AdminEdit = () => {
         currentRegistrationId={currentRegistrationId}
       />
     ),
-  };
-
-  // Check if user has permission for a tab
-  const hasTabPermission = (tabId) => {
-    return Array.isArray(userPermissions) && userPermissions.includes(tabId);
   };
 
   // Get allowed tabs based on user permissions
@@ -449,22 +463,38 @@ const AdminEdit = () => {
     <div className="bg-gray-50">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
         <div className="bg-white rounded-lg shadow-md p-4">
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <EditPhoto
-              saveStatus={saveStatus}
-              photoData={photoData}
-              setPhotoData={setPhotoData}
-              photoPreview={photoPreview}
-              setPhotoPreview={setPhotoPreview}
-              setPhotoChanged={setPhotoChanged}
-            />
+          {getAllowedTabs().length == 0 ? (
+            <div className="text-center py-8">
+              <div className="text-gray-500 text-lg mb-2">
+                🔒 Access Restricted
+              </div>
+              <p className="text-gray-600 mb-4">
+                You don't have permission to access any registration tabs.
+              </p>
+              <button
+                type="button"
+                onClick={() => navigate("/admin-menu")}
+                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+              >
+                Back to Menu
+              </button>
+            </div>
+          ) : (
+            <form onSubmit={handleSubmit} className="space-y-6">
+              <EditPhoto
+                saveStatus={saveStatus}
+                photoData={photoData}
+                setPhotoData={setPhotoData}
+                photoPreview={photoPreview}
+                setPhotoPreview={setPhotoPreview}
+                setPhotoChanged={setPhotoChanged}
+              />
 
-            {/* Tabs Navigation */}
-            <div
-              id="tabs"
-              className="border-b border-gray-200 mb-6 relative py-2"
-            >
-              {getAllowedTabs().length > 0 ? (
+              {/* Tabs Navigation */}
+              <div
+                id="tabs"
+                className="border-b border-gray-200 mb-6 relative py-2"
+              >
                 <div className="flex space-x-1 overflow-x-auto overflow-y-hidden scrollbar-hide">
                   {getAllowedTabs().map((tab) => (
                     <button
@@ -481,60 +511,46 @@ const AdminEdit = () => {
                     </button>
                   ))}
                 </div>
-              ) : (
-                <div className="text-center py-8">
-                  <div className="text-gray-500 text-lg mb-2">
-                    🔒 Access Restricted
-                  </div>
-                  <p className="text-gray-600 mb-4">
-                    You don't have permission to access any registration tabs.
-                  </p>
+              </div>
+
+              {/* Tab Content  */}
+              <div className="tab-content">
+                {tabComponents[activeTab] || null}
+              </div>
+
+              {/* Save Button - Only show in Patient tab */}
+              {activeTab === "client" && (
+                <div className="border-t pt-6 space-y-4">
+                  {/* Labels Button */}
                   <button
                     type="button"
-                    onClick={() => navigate("/admin-menu")}
-                    className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                    onClick={() => copyLabelsData(formData)}
+                    className="w-full bg-black text-white py-3 px-6 rounded-md hover:bg-gray-800 transition-colors text-lg font-semibold"
                   >
-                    Back to Menu
+                    Labels
+                  </button>
+                  {/* Copy Button */}
+                  <button
+                    type="button"
+                    onClick={() =>
+                      copyFormData(currentRegistrationId, formData)
+                    }
+                    className="w-full bg-black text-white py-3 px-6 rounded-md hover:bg-gray-800 transition-colors text-lg font-semibold"
+                  >
+                    Copy
+                  </button>
+                  {/* Submit Button */}
+                  <button
+                    type="submit"
+                    disabled={isSubmitting}
+                    className="w-full bg-black text-white py-3 px-6 rounded-md hover:bg-gray-800 disabled:bg-gray-400 transition-colors text-lg font-semibold"
+                  >
+                    {isSubmitting ? "Saving..." : "Save"}
                   </button>
                 </div>
               )}
-            </div>
-
-            {/* Tab Content  */}
-            <div className="tab-content">
-              {tabComponents[activeTab] || null}
-            </div>
-
-            {/* Save Button - Only show in Patient tab */}
-            {activeTab === "client" && (
-              <div className="border-t pt-6 space-y-4">
-                {/* Labels Button */}
-                <button
-                  type="button"
-                  onClick={() => copyLabelsData(formData)}
-                  className="w-full bg-black text-white py-3 px-6 rounded-md hover:bg-gray-800 transition-colors text-lg font-semibold"
-                >
-                  Labels
-                </button>
-                {/* Copy Button */}
-                <button
-                  type="button"
-                  onClick={() => copyFormData(currentRegistrationId, formData)}
-                  className="w-full bg-black text-white py-3 px-6 rounded-md hover:bg-gray-800 transition-colors text-lg font-semibold"
-                >
-                  Copy
-                </button>
-                {/* Submit Button */}
-                <button
-                  type="submit"
-                  disabled={isSubmitting}
-                  className="w-full bg-black text-white py-3 px-6 rounded-md hover:bg-gray-800 disabled:bg-gray-400 transition-colors text-lg font-semibold"
-                >
-                  {isSubmitting ? "Saving..." : "Save"}
-                </button>
-              </div>
-            )}
-          </form>
+            </form>
+          )}
         </div>
       </div>
 
