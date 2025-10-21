@@ -4,6 +4,7 @@ import NoteTemplateManager from "../managers/NotesTemplateManager";
 import ConfirmModal from "../components/ConfirmModal";
 import { useRegistration } from "../../context/RegistrationContext";
 import DatePicker from "../ui/DatePicker";
+import toast from "react-hot-toast";
 
 export default function Notes({ setActiveTab, currentRegistrationId }) {
   const {
@@ -14,7 +15,6 @@ export default function Notes({ setActiveTab, currentRegistrationId }) {
     notesTemplates,
   } = useRegistration();
 
-  const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [notesFilter, setNotesFilter] = useState("all");
   const [notesSearch, setNotesSearch] = useState("");
@@ -31,25 +31,35 @@ export default function Notes({ setActiveTab, currentRegistrationId }) {
     template_type: "General Note",
   });
 
+  function validateForm() {
+    if (!currentRegistrationId) {
+      alert("Please complete the Patient tab first to save notes.");
+      setActiveTab("patient");
+      return false;
+    }
+
+    if (!notesData.note_date || notesData.note_date === "") {
+      toast.error("Please select a date");
+      return false;
+    }
+
+    if (!notesData.note_text.trim() || notesData.note_text === "") {
+      toast.error("Please add note text");
+      return false;
+    }
+
+    return true;
+  }
+
   const saveNote = async () => {
+    if (!validateForm()) {
+      return;
+    }
     editingNoteId ? updateNote() : createNote();
   };
 
   const createNote = async () => {
     setLoading(true);
-    setError("");
-
-    if (!currentRegistrationId) {
-      alert("Please complete the Client tab first to save notes.");
-      setActiveTab("client");
-      return;
-    }
-
-    if (!notesData.note_text.trim()) {
-      alert("Please enter a note before saving");
-      return;
-    }
-
     setIsSavingNotes(true);
 
     // Include the template type with the note data
@@ -68,13 +78,13 @@ export default function Notes({ setActiveTab, currentRegistrationId }) {
 
     if (result.success) {
       getNotes(currentRegistrationId);
-      // await getNoteTemplates();
       clearNotesForm();
+      toast.success("Created note successfully");
     } else {
       if (result.status === 400 || result.status === 409) {
-        setError(result.message || "Error creating note.");
+        toast.error(result.message || "Error creating note.");
       } else {
-        setError("Error creating note. Please try again.");
+        toast.error("Error creating note. Please try again.");
       }
     }
     setLoading(false);
@@ -83,19 +93,6 @@ export default function Notes({ setActiveTab, currentRegistrationId }) {
 
   const updateNote = async () => {
     setLoading(true);
-    setError("");
-
-    if (!currentRegistrationId) {
-      alert("Please complete the Client tab first to save notes.");
-      setActiveTab("client");
-      return;
-    }
-
-    if (!notesData.note_text.trim()) {
-      alert("Please enter a note before saving");
-      return;
-    }
-
     setIsSavingNotes(true);
 
     // Include the template type with the note data
@@ -116,11 +113,12 @@ export default function Notes({ setActiveTab, currentRegistrationId }) {
     if (result.success) {
       getNotes(currentRegistrationId);
       clearNotesForm();
+      toast.success("Updated note successfully");
     } else {
       if (result.status === 400 || result.status === 409) {
-        setError(result.message || "Error updating note.");
+        toast.error(result.message || "Error updating note.");
       } else {
-        setError("Error updating note. Please try again.");
+        toast.error("Error updating note. Please try again.");
       }
     }
     setLoading(false);
@@ -129,7 +127,6 @@ export default function Notes({ setActiveTab, currentRegistrationId }) {
 
   const deleteNote = async () => {
     setLoading(true);
-    setError("");
 
     const result = await PatientServices.delete_note_by_id(
       currentRegistrationId,
@@ -138,11 +135,12 @@ export default function Notes({ setActiveTab, currentRegistrationId }) {
 
     if (result.success) {
       getNotes(currentRegistrationId);
+      toast.success("Deleted note successfully");
     } else {
       if (result.status === 400 || result.status === 409) {
-        setError(result.message || "Error deleting note.");
+        toast.error(result.message || "Error deleting note.");
       } else {
-        setError("Error deleting note. Please try again.");
+        toast.error("Error deleting note. Please try again.");
       }
     }
     setLoading(false);
@@ -187,7 +185,7 @@ export default function Notes({ setActiveTab, currentRegistrationId }) {
     setSelectedNotesTemplate(note.template_type || "Select");
 
     // Scroll to top of notes form
-    document.querySelector("#noteText")?.scrollIntoView({ behavior: "smooth" });
+    document.querySelector("#tabs")?.scrollIntoView({ behavior: "smooth" });
   };
 
   const clearNotesForm = () => {
@@ -345,7 +343,7 @@ export default function Notes({ setActiveTab, currentRegistrationId }) {
                 style={{ whiteSpace: "pre-wrap" }}
                 autoComplete="off"
                 spellCheck="true"
-                readOnly={selectedNotesTemplate === "Select"}
+                // readOnly={selectedNotesTemplate === "Select"}
               />
             </div>
           </div>

@@ -3,11 +3,10 @@ import { PatientServices } from "../../services/patientServices";
 import ConfirmModal from "../components/ConfirmModal";
 import { useRegistration } from "../../context/RegistrationContext";
 import DatePicker from "../ui/DatePicker";
+import toast from "react-hot-toast";
 
 export default function Medications({ setActiveTab, currentRegistrationId }) {
   const { medications, getMedications } = useRegistration();
-
-  const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [editingMedicationId, setEditingMedicationId] = useState(null);
   const [isSavingMedication, setIsSavingMedication] = useState(false);
@@ -28,17 +27,17 @@ export default function Medications({ setActiveTab, currentRegistrationId }) {
     }
 
     if (!medicationData.medication || medicationData.medication === "") {
-      alert("Please select a medication");
+      toast.error("Please select a medication");
       return false;
     }
 
     if (!medicationData.outcome || medicationData.outcome === "") {
-      alert("Please select an outcome");
+      toast.error("Please select an outcome");
       return false;
     }
 
     if (!medicationData.start_date || medicationData.start_date === "") {
-      alert("Please select a start date");
+      toast.error("Please select a start date");
       return false;
     }
     return true;
@@ -54,7 +53,6 @@ export default function Medications({ setActiveTab, currentRegistrationId }) {
 
   const createMedications = async () => {
     setLoading(true);
-    setError("");
     setIsSavingMedication(true);
 
     let data = { ...medicationData };
@@ -71,11 +69,12 @@ export default function Medications({ setActiveTab, currentRegistrationId }) {
     if (result.success) {
       getMedications(currentRegistrationId);
       clearMedicationForm();
+      toast.success("Medication created successfully");
     } else {
       if (result.status === 400 || result.status === 409) {
-        setError(result.message || "Error creating medications.");
+        toast.error(result.message || "Error creating medications.");
       } else {
-        setError("Error creating medications. Please try again.");
+        toast.error("Error creating medications. Please try again.");
       }
     }
     setIsSavingMedication(false);
@@ -84,7 +83,6 @@ export default function Medications({ setActiveTab, currentRegistrationId }) {
 
   const updateMedications = async () => {
     setLoading(true);
-    setError("");
     setIsSavingMedication(true);
 
     let data = { ...medicationData };
@@ -101,11 +99,12 @@ export default function Medications({ setActiveTab, currentRegistrationId }) {
     if (result.success) {
       getMedications(currentRegistrationId);
       clearMedicationForm();
+      toast.success("Medication updated successfully");
     } else {
       if (result.status === 400 || result.status === 409) {
-        setError(result.message || "Error updating medication.");
+        toast.error(result.message || "Error updating medication.");
       } else {
-        setError("Error updating medication. Please try again.");
+        toast.error("Error updating medication. Please try again.");
       }
     }
     setIsSavingMedication(false);
@@ -114,7 +113,6 @@ export default function Medications({ setActiveTab, currentRegistrationId }) {
 
   const deleteMedication = async () => {
     setLoading(true);
-    setError("");
 
     const result = await PatientServices.delete_medication_by_id(
       currentRegistrationId,
@@ -123,11 +121,12 @@ export default function Medications({ setActiveTab, currentRegistrationId }) {
 
     if (result.success) {
       getMedications(currentRegistrationId);
+      toast.success("Medication deleted successfully");
     } else {
       if (result.status === 400 || result.status === 409) {
-        setError(result.message || "Error deleting medication.");
+        toast.error(result.message || "Error deleting medication.");
       } else {
-        setError("Error deleting medication. Please try again.");
+        toast.error("Error deleting medication. Please try again.");
       }
     }
     setLoading(false);
@@ -156,9 +155,7 @@ export default function Medications({ setActiveTab, currentRegistrationId }) {
     });
     setEditingMedicationId(medication.id);
     // Scroll to top of medication form
-    document
-      .querySelector("#medicationForm")
-      ?.scrollIntoView({ behavior: "smooth" });
+    document.querySelector("#tabs")?.scrollIntoView({ behavior: "smooth" });
   };
   const clearMedicationForm = () => {
     setMedicationData({

@@ -3,12 +3,11 @@ import { PatientServices } from "../../services/patientServices";
 import ConfirmModal from "../components/ConfirmModal";
 import { useRegistration } from "../../context/RegistrationContext";
 import DatePicker from "../ui/DatePicker";
+import toast from "react-hot-toast";
 
 export default function Activities({ setActiveTab, currentRegistrationId }) {
   const { activities, getActivities, getDashboardActivities } =
     useRegistration();
-
-  const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [editingActivityId, setEditingActivityId] = useState(null);
   const [isSavingActivity, setIsSavingActivity] = useState(false);
@@ -20,25 +19,40 @@ export default function Activities({ setActiveTab, currentRegistrationId }) {
     description: "",
   });
 
+  function validateForm() {
+    if (!currentRegistrationId) {
+      alert("Please complete the Patient tab first to save notes.");
+      setActiveTab("patient");
+      return false;
+    }
+
+    if (!activityForm.date || activityForm.date === "") {
+      toast.error("Please select a date");
+      return false;
+    }
+
+    if (!activityForm.time || activityForm.time === "") {
+      toast.error("Please select a time");
+      return false;
+    }
+
+    if (!activityForm.description.trim() || activityForm.description === "") {
+      toast.error("Please add description");
+      return false;
+    }
+
+    return true;
+  }
+
   const saveActivity = async () => {
+    if (!validateForm()) {
+      return;
+    }
     editingActivityId ? updateActivities() : createActivities();
   };
 
   const createActivities = async () => {
     setLoading(true);
-    setError("");
-
-    if (!currentRegistrationId) {
-      alert("Please complete the Client tab first to save activities.");
-      setActiveTab("client");
-      return;
-    }
-
-    if (!activityForm.description.trim()) {
-      alert("Please enter an activity description before saving");
-      return;
-    }
-
     setIsSavingActivity(true);
 
     const result = await PatientServices.create_activity(
@@ -50,11 +64,12 @@ export default function Activities({ setActiveTab, currentRegistrationId }) {
       getActivities(currentRegistrationId);
       getDashboardActivities();
       clearActivityForm();
+      toast.success("Activity created successfully");
     } else {
       if (result.status === 400 || result.status === 409) {
-        setError(result.message || "Error creating activity.");
+        toast.error(result.message || "Error creating activity.");
       } else {
-        setError("Error creating activity. Please try again.");
+        toast.error("Error creating activity. Please try again.");
       }
     }
     setIsSavingActivity(false);
@@ -63,19 +78,6 @@ export default function Activities({ setActiveTab, currentRegistrationId }) {
 
   const updateActivities = async () => {
     setLoading(true);
-    setError("");
-
-    if (!currentRegistrationId) {
-      alert("Please complete the Client tab first to save activities.");
-      setActiveTab("client");
-      return;
-    }
-
-    if (!activityForm.description.trim()) {
-      alert("Please enter an activity description before saving");
-      return;
-    }
-
     setIsSavingActivity(true);
 
     const result = await PatientServices.update_activity(
@@ -88,11 +90,12 @@ export default function Activities({ setActiveTab, currentRegistrationId }) {
       getActivities(currentRegistrationId);
       getDashboardActivities();
       clearActivityForm();
+      toast.success("Activity updated successfully");
     } else {
       if (result.status === 400 || result.status === 409) {
-        setError(result.message || "Error updating activity.");
+        toast.error(result.message || "Error updating activity.");
       } else {
-        setError("Error updating activity. Please try again.");
+        toast.error("Error updating activity. Please try again.");
       }
     }
     setIsSavingActivity(false);
@@ -101,7 +104,6 @@ export default function Activities({ setActiveTab, currentRegistrationId }) {
 
   const deleteActivity = async () => {
     setLoading(true);
-    setError("");
 
     const result = await PatientServices.delete_activity_by_id(
       currentRegistrationId,
@@ -111,11 +113,12 @@ export default function Activities({ setActiveTab, currentRegistrationId }) {
     if (result.success) {
       getActivities(currentRegistrationId);
       getDashboardActivities();
+      toast.success("Activity deleted successfully");
     } else {
       if (result.status === 400 || result.status === 409) {
-        setError(result.message || "Error deleting activity.");
+        toast.error(result.message || "Error deleting activity.");
       } else {
-        setError("Error deleting activity. Please try again.");
+        toast.error("Error deleting activity. Please try again.");
       }
     }
     setLoading(false);
@@ -143,9 +146,7 @@ export default function Activities({ setActiveTab, currentRegistrationId }) {
     setEditingActivityId(activity.id);
 
     // Scroll to top of activity form
-    document
-      .querySelector("#activityDescription")
-      ?.scrollIntoView({ behavior: "smooth" });
+    document.querySelector("#tabs")?.scrollIntoView({ behavior: "smooth" });
   };
 
   const clearActivityForm = () => {

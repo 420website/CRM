@@ -3,11 +3,10 @@ import { PatientServices } from "../../services/patientServices";
 import ConfirmModal from "../components/ConfirmModal";
 import { useRegistration } from "../../context/RegistrationContext";
 import DatePicker from "../ui/DatePicker";
+import toast from "react-hot-toast";
 
 export default function Dispensing({ setActiveTab, currentRegistrationId }) {
   const { getDispensing, dispensing } = useRegistration();
-
-  const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [editingDispensingId, setEditingDispensingId] = useState(null);
   const [isSavingDispensing, setIsSavingDispensing] = useState(false);
@@ -22,25 +21,45 @@ export default function Dispensing({ setActiveTab, currentRegistrationId }) {
     expiry_date: "",
   });
 
+  function validateForm() {
+    if (!currentRegistrationId) {
+      alert("Please complete the Patient tab first to save dispensing.");
+      setActiveTab("patient");
+      return false;
+    }
+
+    if (!dispensingData.medication || dispensingData.medication === "") {
+      toast.error("Please select a medication");
+      return false;
+    }
+
+    if (!dispensingData.rx || dispensingData.rx === "") {
+      toast.error("Please enter Rx number");
+      return false;
+    }
+
+    if (!dispensingData.lot || dispensingData.lot === "") {
+      toast.error("Please enter a lot number");
+      return false;
+    }
+
+    if (!dispensingData.expiry_date || dispensingData.expiry_date === "") {
+      toast.error("Please select an expiry date");
+      return false;
+    }
+
+    return true;
+  }
+
   const saveDispensing = async () => {
+    if (!validateForm()) {
+      return;
+    }
     editingDispensingId ? updateDispensing() : createDispensing();
   };
 
   const createDispensing = async () => {
     setLoading(true);
-    setError("");
-
-    if (!currentRegistrationId) {
-      alert("Please complete the Client tab first to save dispensing records.");
-      setActiveTab("client");
-      return;
-    }
-
-    if (!dispensingData.medication || dispensingData.medication === "") {
-      alert("Please select a medication");
-      return;
-    }
-
     setIsSavingDispensing(true);
 
     const result = await PatientServices.create_dispensing(
@@ -51,11 +70,12 @@ export default function Dispensing({ setActiveTab, currentRegistrationId }) {
     if (result.success) {
       getDispensing(currentRegistrationId);
       clearDispensingForm();
+      toast.success("Dispensing created successfully");
     } else {
       if (result.status === 400 || result.status === 409) {
-        setError(result.message || "Error creating dispensing.");
+        toast.error(result.message || "Error creating dispensing.");
       } else {
-        setError("Error getting dispensing. Please try again.");
+        toast.error("Error getting dispensing. Please try again.");
       }
       document.querySelector("#tabs")?.scrollIntoView({ behavior: "smooth" });
     }
@@ -65,19 +85,6 @@ export default function Dispensing({ setActiveTab, currentRegistrationId }) {
 
   const updateDispensing = async () => {
     setLoading(true);
-    setError("");
-
-    if (!currentRegistrationId) {
-      alert("Please complete the Client tab first to save dispensing records.");
-      setActiveTab("client");
-      return;
-    }
-
-    if (!dispensingData.medication || dispensingData.medication === "") {
-      alert("Please select a medication");
-      return;
-    }
-
     setIsSavingDispensing(true);
 
     const result = await PatientServices.update_dispensing(
@@ -89,11 +96,12 @@ export default function Dispensing({ setActiveTab, currentRegistrationId }) {
     if (result.success) {
       getDispensing(currentRegistrationId);
       clearDispensingForm();
+      toast.success("Dispensing updated successfully");
     } else {
       if (result.status === 400 || result.status === 409) {
-        setError(result.message || "Error update dispensing.");
+        toast.error(result.message || "Error update dispensing.");
       } else {
-        setError("Error update dispensing. Please try again.");
+        toast.error("Error update dispensing. Please try again.");
       }
       document.querySelector("#tabs")?.scrollIntoView({ behavior: "smooth" });
     }
@@ -103,7 +111,6 @@ export default function Dispensing({ setActiveTab, currentRegistrationId }) {
 
   const deleteDispensing = async () => {
     setLoading(true);
-    setError("");
 
     const result = await PatientServices.delete_dispensing_by_id(
       currentRegistrationId,
@@ -112,11 +119,12 @@ export default function Dispensing({ setActiveTab, currentRegistrationId }) {
 
     if (result.success) {
       getDispensing(currentRegistrationId);
+      toast.success("Dispensing deleted successfully");
     } else {
       if (result.status === 400 || result.status === 409) {
-        setError(result.message || "Error deleting dispensing.");
+        toast.error(result.message || "Error deleting dispensing.");
       } else {
-        setError("Error getting dispensing. Please try again.");
+        toast.error("Error getting dispensing. Please try again.");
       }
     }
     setLoading(false);
@@ -147,9 +155,7 @@ export default function Dispensing({ setActiveTab, currentRegistrationId }) {
     });
     setEditingDispensingId(dispensing.id);
     // Scroll to top of dispensing form
-    document
-      .querySelector("#dispensingForm")
-      ?.scrollIntoView({ behavior: "smooth" });
+    document.querySelector("#tabs")?.scrollIntoView({ behavior: "smooth" });
   };
 
   const clearDispensingForm = () => {
@@ -216,12 +222,6 @@ export default function Dispensing({ setActiveTab, currentRegistrationId }) {
               confirm={deleteDispensing}
               setShowConfirm={setShowDeleteConfirm}
             />
-          )}
-
-          {error && (
-            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-2 rounded text-sm text-center">
-              {error}
-            </div>
           )}
 
           {/* Dispensing Form */}

@@ -78,10 +78,8 @@ export default function EditPhoto({
   };
 
   return (
-    <>
-      <h1 className="text-2xl font-bold text-gray-900 mb-4">
-        Edit Registration
-      </h1>
+    <div id="editPhoto" className="mb-0">
+      <h1 className="text-2xl font-bold text-gray-900">Edit Registration</h1>
       <div className="flex gap-2 mb-4">
         <button
           type="button"
@@ -231,6 +229,6 @@ export default function EditPhoto({
           )}
         </div>
       </div>
-    </>
+    </div>
   );
 }

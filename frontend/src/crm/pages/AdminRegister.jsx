@@ -23,6 +23,7 @@ import VoiceFillModal from "../components/VoiceInput";
 import ForceRegisterModal from "../components/ForcePopupModal";
 import { ObjectServices } from "../../services/objectService";
 import { useRegistration } from "../../context/RegistrationContext";
+import toast from "react-hot-toast";
 
 const AdminRegister = () => {
   const {
@@ -32,7 +33,6 @@ const AdminRegister = () => {
     getRegistrations,
   } = useRegistration();
 
-  const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [voiceInputText, setVoiceInputText] = useState("");
   const [submitStatus, setSubmitStatus] = useState(null);
@@ -219,66 +219,78 @@ const AdminRegister = () => {
   };
 
   function validateForm() {
-    // Client-side validation for required fields
-    if (!formData.first_name.trim()) {
-      setError("First Name is required.");
+    if (formData.photo && formData.photo.length > 1200 * 1024) {
+      toast.error(
+        "Photo is too large for submission. Please try uploading a different photo.",
+      );
       setIsSubmitting(false);
-      // 800 seems good for mobile 700 for desktop
-      window.scrollTo({ top: 750, behavior: "smooth" });
+      return false;
+    }
+
+    if (!formData.reg_date) {
+      setIsSubmitting(false);
+      toast.error("Registration date required");
+      document
+        .querySelector("#regDate")
+        ?.scrollIntoView({ behavior: "smooth" });
+
+      return false;
+    }
+
+    if (!formData.first_name.trim()) {
+      setIsSubmitting(false);
+      toast.error("First Name required");
+      document
+        .querySelector("#firstName")
+        ?.scrollIntoView({ behavior: "smooth" });
+
       return false;
     }
 
     if (!formData.last_name.trim()) {
-      setError("Last Name is required.");
       setIsSubmitting(false);
-      window.scrollTo({ top: 750, behavior: "smooth" });
+      toast.error("Last Name required");
+      document
+        .querySelector("#lastName")
+        ?.scrollIntoView({ behavior: "smooth" });
       return false;
     }
 
-    if (!formData.patient_consent) {
-      setError("Patient Consent is required.");
-      setIsSubmitting(false);
-      window.scrollTo({ top: 750, behavior: "smooth" });
-      return false;
-    }
     if (!formData.dob) {
-      setError("Date of birth is required.");
       setIsSubmitting(false);
-      window.scrollTo({ top: 750, behavior: "smooth" });
+      toast.error("Date of birth required");
+      document
+        .querySelector("#dateOfBirth")
+        ?.scrollIntoView({ behavior: "smooth" });
       return false;
     }
 
     if (!formData.health_card) {
-      setError("Health Card Number is required.");
       setIsSubmitting(false);
-      window.scrollTo({ top: 750, behavior: "smooth" });
+      toast.error("Health Card Number required.");
+      document
+        .querySelector("#healthcard")
+        ?.scrollIntoView({ behavior: "smooth" });
       return false;
     }
     if (formData.health_card.length != 10) {
-      setError("Health Card Number must be 10 digits exactly.");
       setIsSubmitting(false);
-      window.scrollTo({ top: 750, behavior: "smooth" });
+      toast.error("Health Card Number must be 10 digits exactly.");
+      document
+        .querySelector("#healthcard")
+        ?.scrollIntoView({ behavior: "smooth" });
       return false;
     }
 
     if (!formData.health_card_version) {
-      setError("Health Card Version is required.");
       setIsSubmitting(false);
-      window.scrollTo({ top: 750, behavior: "smooth" });
+      toast.error("Health Card Version required");
+      document
+        .querySelector("#healthcard")
+        ?.scrollIntoView({ behavior: "smooth" });
       return false;
     }
 
-    // Check if photo is too large before sending
-    if (formData.photo && formData.photo.length > 1200 * 1024) {
-      // Increased from 1MB to 1.2MB
-      setSubmitStatus({
-        type: "error",
-        message:
-          "Photo is too large for submission. Please try uploading a different photo.",
-      });
-      setIsSubmitting(false);
-      return false;
-    }
     return true;
   }
 
@@ -288,7 +300,6 @@ const AdminRegister = () => {
   };
 
   const cancelForceSubmit = async () => {
-    setError("");
     setShowForceButton(false);
   };
 
@@ -296,7 +307,6 @@ const AdminRegister = () => {
     e.preventDefault();
     setIsSubmitting(true);
     setSubmitStatus(null);
-    setError("");
     setShowForceButton(false);
 
     const payload = dataOverride || formData;
@@ -351,10 +361,9 @@ const AdminRegister = () => {
               "Registration saved for review! You can now access the dashboard to review and finalize registrations.",
             id: id,
           });
-
           resetForm();
         } else {
-          setError(result.message || "Invalid credentials.");
+          toast.error(result.message || "Invalid credentials.");
         }
       } else {
         setSubmitStatus({
@@ -373,9 +382,9 @@ const AdminRegister = () => {
         ) {
           setShowForceButton(true);
         }
-        setError(result.message || "Invalid credentials.");
+        toast.error(result.message || "Invalid credentials.");
       } else {
-        setError("Login failed. Please try again.");
+        toast.error("Login failed. Please try again.");
       }
     }
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -403,9 +412,12 @@ const AdminRegister = () => {
             <Intake submitStatus={submitStatus} setPhotoData={setPhotoData} />
 
             {/* Tabs Navigation */}
-            <div id="tabs" className="border-b border-gray-200 mb-6 relative">
+            <div
+              id="tabs"
+              className="border-b border-gray-200 mb-6 relative py-2"
+            >
               {getAllowedTabs().length > 0 ? (
-                <div className="flex space-x-1 overflow-x-auto scrollbar-hide">
+                <div className="flex space-x-1 overflow-x-auto overflow-y-hidden scrollbar-hide">
                   {getAllowedTabs().map((tab) => (
                     <button
                       key={tab.id}
@@ -441,11 +453,6 @@ const AdminRegister = () => {
 
             {/* Tab Content  */}
             <div className="tab-content">
-              {error && (
-                <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-2 rounded text-sm text-center">
-                  {error}
-                </div>
-              )}
               {tabComponents[activeTab] || null}
             </div>
 
@@ -503,7 +510,6 @@ const AdminRegister = () => {
         <ForceRegisterModal
           handleForceSubmit={handleForceSubmit}
           cancelForceSubmit={cancelForceSubmit}
-          errorMessage={error}
         />
       )}
       {showDispositionManager && <DispositionManager />}

@@ -91,12 +91,13 @@ export default function Intake({ submitStatus, setPhotoData }) {
   };
 
   return (
-    <>
+    <div className="mb-0">
       <h1 className="text-2xl font-bold text-gray-900 mb-4">Intake</h1>
       <div className="flex gap-2 mb-4">
         <button
           onClick={() => navigate("/admin-menu")}
           className="inline-flex items-center gap-1 px-3 py-1 bg-black text-white rounded-md hover:bg-gray-800 transition-colors text-xs font-medium"
+          type="button"
         >
           <svg
             className="w-3 h-3"
@@ -116,6 +117,7 @@ export default function Intake({ submitStatus, setPhotoData }) {
         <button
           onClick={() => navigate("/admin-dashboard")}
           className="inline-flex items-center gap-1 px-3 py-1 bg-black text-white rounded-md hover:bg-gray-800 transition-colors text-xs font-medium"
+          type="button"
         >
           <svg
             className="w-3 h-3"
@@ -135,6 +137,7 @@ export default function Intake({ submitStatus, setPhotoData }) {
         <button
           onClick={goBack}
           className="inline-flex items-center gap-1 px-3 py-1 bg-white text-black border border-black rounded-md hover:bg-gray-100 transition-colors text-xs font-medium"
+          type="button"
         >
           <svg
             className="w-3 h-3"
@@ -257,7 +260,7 @@ export default function Intake({ submitStatus, setPhotoData }) {
         )}
       </div>
 
-      <div className="space-y-6">
+      <div id="intake" className="space-y-6">
         {/* Photo Upload Section */}
         <div className="border-b border-gray-200 pb-6">
           <h2 className="text-lg font-medium text-gray-900 mb-4">
@@ -340,7 +343,7 @@ export default function Intake({ submitStatus, setPhotoData }) {
           </div>
         </div>
       </div>
-    </>
+    </div>
   );
 }
 // {/* Photo Upload Status */}

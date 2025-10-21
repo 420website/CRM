@@ -3,11 +3,10 @@ import { PatientServices } from "../../services/patientServices";
 import ConfirmModal from "../components/ConfirmModal";
 import { useRegistration } from "../../context/RegistrationContext";
 import DatePicker from "../ui/DatePicker";
+import toast from "react-hot-toast";
 
 export default function Interactions({ setActiveTab, currentRegistrationId }) {
   const { interactions, getInteractions } = useRegistration();
-
-  const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [interactionsFilter, setInteractionsFilter] = useState("all");
   const [interactionsSearch, setInteractionsSearch] = useState("");
@@ -17,9 +16,8 @@ export default function Interactions({ setActiveTab, currentRegistrationId }) {
   const [interactionsPage, setInteractionsPage] = useState(1);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleteInteractionId, setDeleteInteractionId] = useState(null);
-
   const [interactionData, setInteractionData] = useState({
-    date: new Date().toISOString().split("T")[0], // Default to current date
+    date: new Date().toISOString().split("T")[0],
     description: "",
     referral_id: "",
     amount: "",
@@ -27,31 +25,55 @@ export default function Interactions({ setActiveTab, currentRegistrationId }) {
     issued: "Select",
   });
 
+  function validateForm() {
+    if (!currentRegistrationId) {
+      alert("Please complete the Patient tab first to save dispensing.");
+      setActiveTab("patient");
+      return false;
+    }
+
+    if (!interactionData.date || interactionData.date === "") {
+      toast.error("Please select a date");
+      return false;
+    }
+
+    if (!interactionData.description || interactionData.description === "") {
+      toast.error("Please select a description");
+      return false;
+    }
+
+    if (interactionData.amount !== "" && interactionData.payment_type === "") {
+      toast.error("Please select a payment type");
+      return false;
+    }
+
+    if (
+      interactionData.description === "Referral" &&
+      interactionData.referral_id === ""
+    ) {
+      toast.error("Please set a referral id");
+      return false;
+    }
+
+    return true;
+  }
+
   const saveInteraction = async () => {
+    if (!validateForm()) {
+      return;
+    }
     editingInteractionId ? updateInteraction() : createInteraction();
   };
 
   const createInteraction = async () => {
     setLoading(true);
-    setError("");
+    setIsSavingInteraction(true);
 
-    if (!currentRegistrationId) {
-      alert("Please complete the Client tab first to save interactions.");
-      setActiveTab("client");
-      return;
-    }
-
-    if (!interactionData.description || interactionData.description === "") {
-      alert("Please select a description");
-      return;
-    }
     let data = interactionData;
 
     if (!interactionData.amount) {
       data = { ...data, amount: 0 };
     }
-
-    setIsSavingInteraction(true);
 
     const result = await PatientServices.create_interaction(
       currentRegistrationId,
@@ -61,11 +83,12 @@ export default function Interactions({ setActiveTab, currentRegistrationId }) {
     if (result.success) {
       getInteractions(currentRegistrationId);
       clearInteractionForm();
+      toast.success("Interaction saved successfully");
     } else {
       if (result.status === 400 || result.status === 409) {
-        setError(result.message || "Error creating interaction.");
+        toast.error(result.message || "Error creating interaction.");
       } else {
-        setError("Error creating interaction. Please try again.");
+        toast.error("Error creating interaction. Please try again.");
       }
     }
     setLoading(false);
@@ -74,19 +97,6 @@ export default function Interactions({ setActiveTab, currentRegistrationId }) {
 
   const updateInteraction = async () => {
     setLoading(true);
-    setError("");
-
-    if (!currentRegistrationId) {
-      alert("Please complete the Client tab first to save interactions.");
-      setActiveTab("client");
-      return;
-    }
-
-    if (!interactionData.description || interactionData.description === "") {
-      alert("Please select a description");
-      return;
-    }
-
     setIsSavingInteraction(true);
 
     let data = interactionData;
@@ -104,11 +114,12 @@ export default function Interactions({ setActiveTab, currentRegistrationId }) {
     if (result.success) {
       getInteractions(currentRegistrationId);
       clearInteractionForm();
+      toast.success("Interaction updated successfully");
     } else {
       if (result.status === 400 || result.status === 409) {
-        setError(result.message || "Error updating interaction.");
+        toast.error(result.message || "Error updating interaction.");
       } else {
-        setError("Error updating interaction. Please try again.");
+        toast.error("Error updating interaction. Please try again.");
       }
     }
     setLoading(false);
@@ -117,7 +128,6 @@ export default function Interactions({ setActiveTab, currentRegistrationId }) {
 
   const deleteInteraction = async () => {
     setLoading(true);
-    setError("");
 
     const result = await PatientServices.delete_interaction_by_id(
       currentRegistrationId,
@@ -126,11 +136,12 @@ export default function Interactions({ setActiveTab, currentRegistrationId }) {
 
     if (result.success) {
       getInteractions(currentRegistrationId);
+      toast.error("Interaction deleted successfully");
     } else {
       if (result.status === 400 || result.status === 409) {
-        setError(result.message || "Error deleting interaction.");
+        toast.error(result.message || "Error deleting interaction.");
       } else {
-        setError("Error deleting interaction. Please try again.");
+        toast.error("Error deleting interaction. Please try again.");
       }
     }
     setLoading(false);
@@ -161,9 +172,7 @@ export default function Interactions({ setActiveTab, currentRegistrationId }) {
     });
     setEditingInteractionId(interaction.id);
     // Scroll to top of interaction form
-    document
-      .querySelector("#interactionForm")
-      ?.scrollIntoView({ behavior: "smooth" });
+    document.querySelector("#tabs")?.scrollIntoView({ behavior: "smooth" });
   };
 
   const clearInteractionForm = () => {

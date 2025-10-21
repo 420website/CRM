@@ -3,13 +3,12 @@ import { PatientServices } from "../../services/patientServices";
 import ConfirmModal from "../components/ConfirmModal";
 import { useRegistration } from "../../context/RegistrationContext";
 import DatePicker from "../ui/DatePicker";
+import toast from "react-hot-toast";
 
 export default function Tests({ setActiveTab, currentRegistrationId }) {
   const { tests, getTests } = useRegistration();
-
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleteTestId, setDeleteTestId] = useState(null);
-  const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [editingTestId, setEditingTestId] = useState(null);
   const [testFormData, setTestFormData] = useState({
@@ -27,27 +26,111 @@ export default function Tests({ setActiveTab, currentRegistrationId }) {
     bloodwork_tester: "CM",
   });
 
+  function validateHIV() {
+    if (!testFormData.hiv_result || testFormData.hiv_result === "") {
+      toast.error("Please select test result");
+      return false;
+    }
+
+    if (
+      testFormData.hiv_result === "positive" &&
+      testFormData.hiv_type === ""
+    ) {
+      toast.error("Please select HIV Type");
+      return false;
+    }
+
+    if (!testFormData.hiv_tester || testFormData.hiv_tester === "") {
+      toast.error("Please select a tester");
+      return false;
+    }
+
+    return true;
+  }
+
+  function validateHCV() {
+    if (!testFormData.hcv_result || testFormData.hcv_result === "") {
+      toast.error("Please select test result");
+      return false;
+    }
+
+    if (!testFormData.hcv_tester || testFormData.hcv_tester === "") {
+      toast.error("Please select a tester");
+      return false;
+    }
+
+    return true;
+  }
+
+  function validateBloodwork() {
+    if (!testFormData.bloodwork_type || testFormData.bloodwork_type === "") {
+      toast.error("Please select bloodwork type");
+      return false;
+    }
+
+    if (
+      !testFormData.bloodwork_tester ||
+      testFormData.bloodwork_tester === ""
+    ) {
+      toast.error("Please select a tester");
+      return false;
+    }
+
+    if (
+      !testFormData.bloodwork_date_submitted ||
+      testFormData.bloodwork_date_submitted === ""
+    ) {
+      toast.error("Please select date submitted");
+      return false;
+    }
+
+    if (
+      testFormData.bloodwork_type === "DBS" &&
+      testFormData.bloodwork_circles === ""
+    ) {
+      toast.error("Please select bloodwork circles");
+      return false;
+    }
+    return true;
+  }
+
+  function validateForm() {
+    if (!currentRegistrationId) {
+      alert("Please complete the Patient tab first to save tests.");
+      setActiveTab("patient");
+      return false;
+    }
+
+    if (!testFormData.test_type || testFormData.test_type === "") {
+      toast.error("Please select a test type");
+      return false;
+    }
+
+    if (!testFormData.test_date || testFormData.test_date === "") {
+      toast.error("Please select a test date");
+      return false;
+    }
+
+    if (testFormData.test_type === "HIV") {
+      return validateHIV();
+    } else if (testFormData.test_type === "HCV") {
+      return validateHCV();
+    } else if (testFormData.test_type == "Bloodwork") {
+      return validateBloodwork();
+    }
+
+    return true;
+  }
+
   const saveTest = async () => {
+    if (!validateForm()) {
+      return;
+    }
     editingTestId ? updateTests() : createTests();
   };
 
   const createTests = async () => {
     setLoading(true);
-    setError("");
-
-    if (!testFormData.test_type || testFormData.test_type === "") {
-      alert("Please select a test type");
-      return;
-    }
-
-    // Check if patient form has been submitted (registration ID exists)
-    if (!currentRegistrationId) {
-      alert(
-        "Please complete and save the Client tab form first before adding tests.",
-      );
-      setActiveTab("client");
-      return;
-    }
 
     const result = await PatientServices.create_test(
       currentRegistrationId,
@@ -73,11 +156,12 @@ export default function Tests({ setActiveTab, currentRegistrationId }) {
         bloodwork_tester: "CM",
       });
       setEditingTestId(null);
+      toast.success("Test created successfully");
     } else {
       if (result.status === 400 || result.status === 409) {
-        setError(result.message || "Error creating test.");
+        toast.error(result.message || "Error creating test.");
       } else {
-        setError("Error creating test. Please try again.");
+        toast.error("Error creating test. Please try again.");
       }
     }
     setLoading(false);
@@ -85,21 +169,6 @@ export default function Tests({ setActiveTab, currentRegistrationId }) {
 
   const updateTests = async () => {
     setLoading(true);
-    setError("");
-
-    if (!testFormData.test_type || testFormData.test_type === "") {
-      alert("Please select a test type");
-      return;
-    }
-
-    // Check if patient form has been submitted (registration ID exists)
-    if (!currentRegistrationId) {
-      alert(
-        "Please complete and save the Patient tab form first before adding tests.",
-      );
-      setActiveTab("patient");
-      return;
-    }
 
     const result = await PatientServices.update_test(
       currentRegistrationId,
@@ -126,11 +195,12 @@ export default function Tests({ setActiveTab, currentRegistrationId }) {
         bloodwork_tester: "CM",
       });
       setEditingTestId(null);
+      toast.success("Test updated successfully");
     } else {
       if (result.status === 400 || result.status === 409) {
-        setError(result.message || "Error updating test.");
+        toast.error(result.message || "Error updating test.");
       } else {
-        setError("Error updating test. Please try again.");
+        toast.error("Error updating test. Please try again.");
       }
     }
     setLoading(false);
@@ -138,7 +208,6 @@ export default function Tests({ setActiveTab, currentRegistrationId }) {
 
   const deleteTest = async () => {
     setLoading(true);
-    setError("");
 
     const result = await PatientServices.delete_test_by_id(
       currentRegistrationId,
@@ -147,11 +216,12 @@ export default function Tests({ setActiveTab, currentRegistrationId }) {
 
     if (result.success) {
       getTests(currentRegistrationId);
+      toast.success("Deleted test successfully");
     } else {
       if (result.status === 400 || result.status === 409) {
-        setError(result.message || "Error deleting test.");
+        toast.error(result.message || "Error deleting test.");
       } else {
-        setError("Error deleting test. Please try again.");
+        toast.error("Error deleting test. Please try again.");
       }
     }
     setLoading(false);

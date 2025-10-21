@@ -4,11 +4,10 @@ import { loadImage, loadPDF, loadWord } from "../../utils/loadFile";
 import DocumentFullScreen from "../components/DocumentFullScreen";
 import DocumentPreview from "../components/DocumentPreview";
 import { useRegistration } from "../../context/RegistrationContext";
+import toast from "react-hot-toast";
 
 export default function Attachments({ setActiveTab, currentRegistrationId }) {
   const { setShowDocumentTypeManager, documentTypes } = useRegistration();
-
-  const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [documentType, setDocumentType] = useState("");
   const [documentUrl, setDocumentUrl] = useState("");
@@ -21,7 +20,6 @@ export default function Attachments({ setActiveTab, currentRegistrationId }) {
 
   const getAttachments = async (registrationId) => {
     setLoading(true);
-    setError("");
 
     const result =
       await ObjectServices.get_attachments_by_patient(registrationId);
@@ -30,9 +28,9 @@ export default function Attachments({ setActiveTab, currentRegistrationId }) {
       setSavedAttachments(result.data || []);
     } else {
       if (result.status === 400 || result.status === 409) {
-        setError(result.message || "Error getting attachments.");
+        toast.error(result.message || "Error getting attachments.");
       } else {
-        setError("Error getting attachments. Please try again.");
+        toast.error("Error getting attachments. Please try again.");
       }
     }
     setLoading(false);
@@ -40,7 +38,6 @@ export default function Attachments({ setActiveTab, currentRegistrationId }) {
 
   const saveAttachment = async () => {
     setLoading(true);
-    setError("");
 
     // Check if patient form has been submitted (registration ID exists)
     if (!currentRegistrationId) {
@@ -52,12 +49,12 @@ export default function Attachments({ setActiveTab, currentRegistrationId }) {
     }
 
     if (!documentType) {
-      alert("Please select a document type");
+      toast.error("Please select a document type");
       return;
     }
 
     if (!documentFile && !documentUrl.trim()) {
-      alert("Please upload a file or provide a URL");
+      toast.error("Please upload a file or provide a URL");
       return;
     }
 
@@ -69,13 +66,13 @@ export default function Attachments({ setActiveTab, currentRegistrationId }) {
 
     if (result.success) {
       await getAttachments(currentRegistrationId);
-
       clearDocument();
+      toast.success("Attachment created successfully");
     } else {
       if (result.status === 400 || result.status === 409) {
-        setError(result.message || "Error uploading attachment.");
+        toast.error(result.message || "Error uploading attachment.");
       } else {
-        setError("Error uploading attachment. Please try again.");
+        toast.error("Error uploading attachment. Please try again.");
       }
     }
     setLoading(false);
@@ -87,7 +84,6 @@ export default function Attachments({ setActiveTab, currentRegistrationId }) {
     }
 
     setLoading(true);
-    setError("");
 
     const result = await ObjectServices.delete_attachment(
       currentRegistrationId,
@@ -96,11 +92,12 @@ export default function Attachments({ setActiveTab, currentRegistrationId }) {
 
     if (result.success) {
       await getAttachments(currentRegistrationId);
+      toast.success("Attachment deleted successfully");
     } else {
       if (result.status === 400 || result.status === 409) {
-        setError(result.message || "Error deleting attachment.");
+        toast.error(result.message || "Error deleting attachment.");
       } else {
-        setError("Error deleting attachment. Please try again.");
+        toast.error("Error deleting attachment. Please try again.");
       }
     }
     setLoading(false);
@@ -195,14 +192,16 @@ export default function Attachments({ setActiveTab, currentRegistrationId }) {
       ];
 
       if (!allowedTypes.includes(file.type)) {
-        alert("Please select a valid file type (PDF, DOC, DOCX, JPG, PNG)");
+        toast.error(
+          "Please select a valid file type (PDF, DOC, DOCX, JPG, PNG)",
+        );
         e.target.value = "";
         return;
       }
 
       // Validate file size (10MB)
       if (file.size > 10 * 1024 * 1024) {
-        alert("File is too large. Please choose a file under 10MB.");
+        toast.error("File is too large. Please choose a file under 10MB.");
         e.target.value = "";
         return;
       }
@@ -214,7 +213,7 @@ export default function Attachments({ setActiveTab, currentRegistrationId }) {
 
   const handleLoadUrl = async () => {
     if (!documentUrl.trim()) {
-      alert("Please enter a valid URL");
+      toast.error("Please enter a valid URL");
       return;
     }
 
@@ -250,7 +249,7 @@ export default function Attachments({ setActiveTab, currentRegistrationId }) {
         });
       }
     } catch (error) {
-      alert("Please enter a valid URL");
+      toast.error("Please enter a valid URL");
     } finally {
       setIsLoadingDocument(false);
     }

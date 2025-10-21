@@ -341,7 +341,7 @@ export default function Client({
                 */}
 
             {/* Registration Date Field */}
-            <div className="mb-6">
+            <div id="regDate" className="mb-6">
               <label
                 htmlFor="reg_date"
                 className="block text-sm font-medium text-gray-700 mb-2"
@@ -372,7 +372,7 @@ export default function Client({
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
+              <div id="firstName">
                 <label
                   htmlFor="first_name"
                   className="block text-sm font-medium text-gray-700 mb-2"
@@ -392,7 +392,7 @@ export default function Client({
                 />
               </div>
 
-              <div>
+              <div id="lastName">
                 <label
                   htmlFor="last_name"
                   className="block text-sm font-medium text-gray-700 mb-2"
@@ -412,7 +412,7 @@ export default function Client({
                 />
               </div>
 
-              <div>
+              <div id="dateOfBirth">
                 <label
                   htmlFor="dob"
                   className="block text-sm font-medium text-gray-700 mb-2"
@@ -546,7 +546,7 @@ export default function Client({
               </div>
 
               <div className="flex gap-4">
-                <div className="flex-1">
+                <div id="healthcard" className="flex-1">
                   <label
                     htmlFor="health_card"
                     className="block text-sm font-medium text-gray-700 mb-2"
