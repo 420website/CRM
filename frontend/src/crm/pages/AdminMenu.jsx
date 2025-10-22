@@ -92,7 +92,6 @@ const AdminMenu = () => {
                 👥 Users
               </button>
             )}
-            {console.log(userPermissions)}
             {/* Logout for guests */}
             {userRole === "guest" && (
               <button
