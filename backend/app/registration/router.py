@@ -117,8 +117,13 @@ async def delete_patient_by_id(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Patient not found.",
         )
-    await ObjectService.delete_objects("photos", str(id))
-    await ObjectService.delete_objects("attachments", str(id))
+
+    # Fail quietly if objects don't exist
+    for bucket in ["photos", "attachments"]:
+        try:
+            await ObjectService.delete_objects(bucket, str(id))
+        except Exception:
+            pass
 
     return {"message": "Patient deleted successfully."}
 
