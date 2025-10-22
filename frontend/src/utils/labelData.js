@@ -61,8 +61,8 @@ const getFormattedLabelsData = (formData) => {
     });
 
     // Format labels data
-    //NOTE: Cannot start with 'WORD:' becauyse it gets encoded liek http: and messes up text on past anywhere but browser
-    const labelsData = `LABEL\nHCN: ${formData.health_card || ""} ${formData.health_card_version || ""} Sex: ${formData.gender === "Male" ? "M" : formData.gender === "Female" ? "F" : formData.gender || ""}\n${formData.last_name}, ${formData.first_name}\nDOB: ${formattedDOB}\n${formData.address ? `Address: ${formData.address}` : "Address not available"}\n${formData.city || ""}, ${formData.province?.toUpperCase().substring(0, 2) || ""} ${formData.postal_code || ""}\n${formData.phone1 ? `Phone: ${formData.phone1}` : "Phone number not available"}\n${currentDate} ${currentTime}`;
+    //NOTE: Cannot start with 'HCN:' added \u200B as a 0 width space to about URI encoding
+    const labelsData = `HCN\u200B: ${formData.health_card || ""} ${formData.health_card_version || ""} Sex: ${formData.gender === "Male" ? "M" : formData.gender === "Female" ? "F" : formData.gender || ""}\n${formData.last_name}, ${formData.first_name}\nDOB: ${formattedDOB}\n${formData.address ? `Address: ${formData.address}` : "Address not available"}\n${formData.city || ""}, ${formData.province?.toUpperCase().substring(0, 2) || ""} ${formData.postal_code || ""}\n${formData.phone1 ? `Phone: ${formData.phone1}` : "Phone number not available"}\n${currentDate} ${currentTime}`;
 
     return labelsData;
   } catch (error) {
