@@ -37,6 +37,7 @@ export const apiCall = async (axiosCall, customErrorMessage = null) => {
     const response = await axiosCall();
 
     return {
+      headers: response.headers,
       success: true,
       data: response.data || {},
     };
