@@ -4,8 +4,8 @@ CREATE TABLE note_templates (
     name VARCHAR(200) NOT NULL UNIQUE,
     content TEXT NOT NULL,
     is_default BOOLEAN DEFAULT false,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Clinical templates
@@ -14,8 +14,8 @@ CREATE TABLE clinical_templates (
     name VARCHAR(200) NOT NULL UNIQUE,
     content TEXT NOT NULL,
     is_default BOOLEAN DEFAULT false,
-    created_at TIMESTAMPZ DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMPZ DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Dispositions lookup
@@ -24,8 +24,8 @@ CREATE TABLE dispositions (
     name VARCHAR(200) NOT NULL UNIQUE,
     is_frequent BOOLEAN DEFAULT false,
     is_default BOOLEAN DEFAULT false,
-    created_at TIMESTAMPZ DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMPZ DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Document type lookup
@@ -34,8 +34,8 @@ CREATE TABLE document_types (
     name VARCHAR(200) NOT NULL UNIQUE,
     is_default BOOLEAN DEFAULT false,
     is_frequent BOOLEAN DEFAULT false,
-    created_at TIMESTAMPZ DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMPZ DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Referral sites lookup
@@ -44,8 +44,8 @@ CREATE TABLE referral_sites (
     name VARCHAR(200) NOT NULL UNIQUE,
     is_frequent BOOLEAN DEFAULT false,
     is_default BOOLEAN DEFAULT false,
-    created_at TIMESTAMPZ DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMPZ DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 );
 
 -- migrate:down
