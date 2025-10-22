@@ -765,14 +765,19 @@ export default function Tests({ setActiveTab, currentRegistrationId }) {
                           <span className="text-sm text-gray-500 mr-3">
                             {test.test_date}
                           </span>
-                          {test.created_at && (
+                          {test.updated_at && (
                             <span className="text-xs text-gray-400 whitespace-nowrap">
                               Saved:{" "}
-                              {new Date(test.created_at).toLocaleTimeString(
+                              {new Date(test.updated_at).toLocaleString(
                                 "en-US",
                                 {
                                   timeZone: "America/New_York",
                                   hour12: true,
+                                  month: "short",
+                                  day: "numeric",
+                                  year: "numeric",
+                                  hour: "2-digit",
+                                  minute: "2-digit",
                                 },
                               )}
                             </span>
