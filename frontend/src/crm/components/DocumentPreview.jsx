@@ -126,7 +126,9 @@ export default function DocumentPreview({
           </button>
 
           <div className="flex items-center space-x-2">
-            <span className="text-sm text-gray-600">Page</span>
+            <span className="px-1 m-0 text-xs lg:text-sm text-gray-600">
+              Page
+            </span>
             <input
               type="number"
               value={currentPage}
@@ -138,9 +140,11 @@ export default function DocumentPreview({
               }}
               min="1"
               max={totalPages}
-              className="w-16 px-2 py-1 border border-gray-300 rounded text-center text-sm"
+              className="w-14 px-1 py-1 border m-0 border-gray-300 rounded text-center text-sm"
             />
-            <span className="text-sm text-gray-600">of {totalPages}</span>
+            <span className="text-xs lg:text-sm m-0 px-1 text-gray-600">
+              of {totalPages}
+            </span>
           </div>
 
           <button

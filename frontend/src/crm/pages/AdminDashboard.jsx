@@ -8,6 +8,7 @@ import { useAuth } from "../../context/AuthContext";
 import ConfirmModal from "../components/ConfirmModal";
 import { useRegistration } from "../../context/RegistrationContext";
 import toast from "react-hot-toast";
+import DatePicker from "../ui/DatePicker";
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
@@ -372,7 +373,7 @@ const AdminDashboard = () => {
         )}
         {showConfirm === "revert" && (
           <ConfirmModal
-            message={"Confirm move registration back to pending"}
+            message={"Confirm revert to pending"}
             subMessage={
               "This will allow you to make edits and resubmit with a new email notification"
             }
@@ -623,8 +624,8 @@ const AdminDashboard = () => {
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Search by Date
                 </label>
-                <input
-                  type="date"
+                <DatePicker
+                  name="reg_date"
                   value={searchDate}
                   onChange={(e) => handleDateSearch(e.target.value)}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"

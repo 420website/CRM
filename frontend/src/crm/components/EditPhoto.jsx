@@ -17,7 +17,6 @@ export default function EditPhoto({
   useEffect(() => {
     const compressAndSetPreview = async () => {
       if (photoData.file) {
-        // const compressed = await compressImage(photoData.file, 500);
         setPhotoPreview(URL.createObjectURL(photoData.file));
         setPhotoUploadStatus({
           type: "success",

@@ -345,7 +345,7 @@ const AdminEdit = () => {
     }
     if (formData.health_card.length != 10) {
       setIsSubmitting(false);
-      toast.error("Health Card Number must be 10 digits exactly.");
+      toast.error("Health Card Number must be 10 digits.");
       document
         .querySelector("#healthcard")
         ?.scrollIntoView({ behavior: "smooth" });

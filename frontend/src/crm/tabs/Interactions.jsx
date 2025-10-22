@@ -136,7 +136,7 @@ export default function Interactions({ setActiveTab, currentRegistrationId }) {
 
     if (result.success) {
       getInteractions(currentRegistrationId);
-      toast.error("Interaction deleted successfully");
+      toast.success("Interaction deleted successfully");
     } else {
       if (result.status === 400 || result.status === 409) {
         toast.error(result.message || "Error deleting interaction.");

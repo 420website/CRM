@@ -243,14 +243,16 @@ export default function Activities({ setActiveTab, currentRegistrationId }) {
                 >
                   Time
                 </label>
-                <input
-                  type="time"
-                  id="activityTime"
-                  name="time"
-                  value={activityForm.time}
-                  onChange={handleActivityChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black"
-                />
+                <div className="flex w-full">
+                  <input
+                    type="time"
+                    id="activityTime"
+                    name="time"
+                    value={activityForm.time}
+                    onChange={handleActivityChange}
+                    className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black"
+                  />
+                </div>
               </div>
 
               <div>
