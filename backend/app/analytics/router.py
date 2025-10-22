@@ -64,6 +64,30 @@ async def upload_legacy_data(
 
     df = await read_legacy_data_file(file)
 
+    expected_columns = [
+        "PatientID",
+        "DOB",
+        "Gender",
+        "Address",
+        "City",
+        "Province",
+        "PostalCode",
+        "Phone",
+        "HealthCard",
+        "Disposition",
+        "RegDate",
+        "ReferralSite",
+        "InteractionType",
+        "Amount",
+    ]
+    missing_cols = [col for col in expected_columns if col not in df.columns]
+
+    if missing_cols:
+        raise HTTPException(
+            status_code=400,
+            detail="Columns not as expected please update file column names.",
+        )
+
     if len(df) == 0:
         raise HTTPException(status_code=400, detail="File is empty.")
 

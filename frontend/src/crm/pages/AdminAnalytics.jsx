@@ -25,9 +25,9 @@ const AdminAnalytics = () => {
   const welcomeMessage =
     "Welcome to the Analytics dashboard powered by 420 AI. I can help you analyze enrollment statistics, dispositions, trends, and other data insights about the program's performance.";
 
-  // Scroll to top when component mounts
   useEffect(() => {
     window.scrollTo(0, 0);
+    loadLegacyDataSummary();
   }, []);
 
   // Handle scroll to top when upload status changes (same pattern as client registration)
@@ -45,11 +45,6 @@ const AdminAnalytics = () => {
       scrollToBottom();
     }
   }, [messages, isTyping]);
-
-  // Check for existing legacy data on load
-  useEffect(() => {
-    loadLegacyDataSummary();
-  }, []);
 
   // Typewriter effect for welcome message
   useEffect(() => {
@@ -96,6 +91,10 @@ const AdminAnalytics = () => {
     if (result.success) {
       setLegacyDataSummary(result.data);
       setShowUploadSection(false);
+      return true;
+    } else {
+      setShowUploadSection(false);
+      return false;
     }
   };
 
@@ -137,21 +136,25 @@ const AdminAnalytics = () => {
       toast.success(result.data?.message);
 
       // Reload summary
-      await loadLegacyDataSummary();
-
-      // Add message to chat
-      const uploadMessage = {
-        role: "assistant",
-        content: `📊 Legacy data uploaded successfully! I now have access to ${result.records_count} historical records from ${file.name}. You can ask me questions about trends, dispositions, and patterns in your historical data.`,
-        timestamp: new Date().toISOString(),
-      };
-      setMessages((prev) => [...prev, uploadMessage]);
+      const status = await loadLegacyDataSummary();
+      if (status) {
+        // Add message to chat
+        const uploadMessage = {
+          role: "assistant",
+          content: `📊 Legacy data uploaded successfully! I now have access to ${result.records_count} historical records from ${file.name}. You can ask me questions about trends, dispositions, and patterns in your historical data.`,
+          timestamp: new Date().toISOString(),
+        };
+        setMessages((prev) => [...prev, uploadMessage]);
+      } else {
+        const error = await response.json();
+        throw new Error(error.detail || "Upload failed");
+      }
     } else {
-      const error = await response.json();
-      throw new Error(error.detail || "Upload failed");
+      setShowUploadSection(false);
+      toast.error(result.message);
     }
     setIsUploading(false);
-    // Clear the file input
+
     event.target.value = "";
   };
 
@@ -382,8 +385,14 @@ const AdminAnalytics = () => {
                 </p>
                 <p className="text-sm text-gray-600 mb-4">
                   Upload your Excel file with 2000+ historical records.
-                  Supported formats: .xlsx, .xls, .csv
+                  Supported formats: .xlsx, .xls, .csv. For optimal performance
+                  ensure file has the follwing columns:
+                  <br></br>
+                  PatientID, DOB, Gender, Address, City, Province, PostalCode,
+                  Phone, HealthCard, Disposition, RegDate, ReferralSite,
+                  InteractionType, Amount
                 </p>
+                <p className="text-sm text-gray-600 mb-4"></p>
 
                 <label
                   htmlFor="excel-upload"
