@@ -5,8 +5,10 @@ import DocumentFullScreen from "../components/DocumentFullScreen";
 import DocumentPreview from "../components/DocumentPreview";
 import { useRegistration } from "../../context/RegistrationContext";
 import toast from "react-hot-toast";
+import { useAuth } from "../../context/AuthContext";
 
 export default function Attachments({ setActiveTab, currentRegistrationId }) {
+  const { userRole } = useAuth();
   const { setShowDocumentTypeManager, documentTypes } = useRegistration();
   const [loading, setLoading] = useState(false);
   const [documentType, setDocumentType] = useState("");
@@ -324,13 +326,15 @@ export default function Attachments({ setActiveTab, currentRegistrationId }) {
               >
                 Document Type
               </label>
-              <button
-                type="button"
-                onClick={() => setShowDocumentTypeManager(true)}
-                className="text-blue-600 hover:text-blue-800 text-sm"
-              >
-                Manage Document Types
-              </button>
+              {userRole == "admin" && (
+                <button
+                  type="button"
+                  onClick={() => setShowDocumentTypeManager(true)}
+                  className="text-blue-600 hover:text-blue-800 text-sm"
+                >
+                  Manage Document Types
+                </button>
+              )}
             </div>
             <select
               id="documentType"

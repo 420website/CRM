@@ -7,6 +7,7 @@ import {
 } from "../../utils/formatData";
 import { useRegistration } from "../../context/RegistrationContext";
 import DatePicker from "../ui/DatePicker";
+import { useAuth } from "../../context/AuthContext";
 
 // Map Google Places province codes to full province names
 const getProvince = (code) => {
@@ -38,6 +39,8 @@ export default function Client({
   openVoiceDateInput,
   openVoiceFillInput,
 }) {
+  const { userRole } = useAuth();
+
   const [error, setError] = useState("");
   const {
     dispositions,
@@ -491,13 +494,15 @@ export default function Client({
                   >
                     Disposition
                   </label>
-                  <button
-                    type="button"
-                    onClick={() => setShowDispositionManager(true)}
-                    className="text-blue-600 hover:text-blue-800 text-sm"
-                  >
-                    Manage Dispositions
-                  </button>
+                  {userRole == "admin" && (
+                    <button
+                      type="button"
+                      onClick={() => setShowDispositionManager(true)}
+                      className="text-blue-600 hover:text-blue-800 text-sm"
+                    >
+                      Manage Dispositions
+                    </button>
+                  )}
                 </div>
                 <select
                   id="disposition"
@@ -596,13 +601,15 @@ export default function Client({
                   >
                     Referral Site
                   </label>
-                  <button
-                    type="button"
-                    onClick={() => setShowReferralSiteManager(true)}
-                    className="text-blue-600 hover:text-blue-800 text-sm"
-                  >
-                    Manage Referral Sites
-                  </button>
+                  {userRole == "admin" && (
+                    <button
+                      type="button"
+                      onClick={() => setShowReferralSiteManager(true)}
+                      className="text-blue-600 hover:text-blue-800 text-sm"
+                    >
+                      Manage Referral Sites
+                    </button>
+                  )}
                 </div>
                 <select
                   id="referral_site"
@@ -956,13 +963,15 @@ export default function Client({
                   >
                     Clinical Summary Template
                   </label>
-                  <button
-                    type="button"
-                    onClick={() => setShowClinicalManager(true)}
-                    className="text-blue-600 hover:text-blue-800 text-sm"
-                  >
-                    Manage Templates
-                  </button>
+                  {userRole == "admin" && (
+                    <button
+                      type="button"
+                      onClick={() => setShowClinicalManager(true)}
+                      className="text-blue-600 hover:text-blue-800 text-sm"
+                    >
+                      Manage Templates
+                    </button>
+                  )}
                 </div>
                 <select
                   id="selected_template"

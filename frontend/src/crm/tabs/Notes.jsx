@@ -5,8 +5,10 @@ import ConfirmModal from "../components/ConfirmModal";
 import { useRegistration } from "../../context/RegistrationContext";
 import DatePicker from "../ui/DatePicker";
 import toast from "react-hot-toast";
+import { useAuth } from "../../context/AuthContext";
 
 export default function Notes({ setActiveTab, currentRegistrationId }) {
+  const { userRole } = useAuth();
   const {
     getNotes,
     notes,
@@ -296,13 +298,15 @@ export default function Notes({ setActiveTab, currentRegistrationId }) {
                 >
                   Notes Template
                 </label>
-                <button
-                  type="button"
-                  onClick={() => setShowNoteManager(true)}
-                  className="text-blue-600 hover:text-blue-800 text-sm"
-                >
-                  Manage Templates
-                </button>
+                {userRole == "admin" && (
+                  <button
+                    type="button"
+                    onClick={() => setShowNoteManager(true)}
+                    className="text-blue-600 hover:text-blue-800 text-sm"
+                  >
+                    Manage Templates
+                  </button>
+                )}
               </div>
               <select
                 id="selectedNotesTemplate"
