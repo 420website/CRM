@@ -199,7 +199,7 @@ const Home = () => {
               onClick={handleStatsClick}
             >
               <div className="text-4xl font-bold text-white mb-2">
-                <AnimatedCounter target={2000} suffix="+" />
+                <AnimatedCounter target={2500} suffix="+" />
               </div>
               <div className="text-gray-300 text-lg">Participants Screened</div>
               <div className="text-gray-400 text-sm mt-2">
