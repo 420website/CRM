@@ -203,10 +203,13 @@ export default function Client({
         selected_template: templateName,
       }));
     } else {
-      const templateContent = templates[templateName] || "";
+      const content =
+        clinicalTemplates.find((item) => item.name === templateName)?.content ||
+        "";
+
       setFormData((prev) => ({
         ...prev,
-        summary_template: templateContent,
+        summary_template: content,
         selected_template: templateName,
       }));
     }
