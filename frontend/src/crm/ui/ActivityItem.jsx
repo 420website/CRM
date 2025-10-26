@@ -151,6 +151,12 @@ export default function ActivityItem({
             <h3 className="text-lg font-semibold text-gray-900">
               {item.description}
             </h3>
+            {item.disposition && (
+              <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-xs font-normal ">
+                {item.disposition.charAt(0).toUpperCase() +
+                  item.disposition.slice(1).toLowerCase()}
+              </span>
+            )}
             <span
               className={`px-2 py-1 text-xs font-medium rounded-full ${
                 statusStyles[status] || "bg-gray-100 text-gray-800"
@@ -162,12 +168,6 @@ export default function ActivityItem({
           <div className="text-sm text-gray-600 mt-1">
             <p className="font-medium">
               Client: {item.first_name} {item.last_name}
-              {item.disposition && (
-                <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded-md text-xs font-normal ml-2">
-                  {item.disposition.charAt(0).toUpperCase() +
-                    item.disposition.slice(1).toLowerCase()}
-                </span>
-              )}
             </p>
             <p>Date: {item.date}</p>
             {item.time && <p>Time: {item.time}</p>}
