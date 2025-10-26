@@ -336,20 +336,30 @@ export default function Activities({ setActiveTab, currentRegistrationId }) {
                           </span>
                           {/* Recent indicator */}
                           {(() => {
-                            const activityDateTime = new Date(
-                              activity.date + "T" + (activity.time || "00:00"),
-                            );
-                            const now = new Date();
-                            const diffHours =
-                              (now - activityDateTime) / (1000 * 60 * 60);
-                            if (diffHours < 24) {
+                            if (activity.completed) {
                               return (
                                 <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full">
-                                  Recent
+                                  Completed
                                 </span>
                               );
+                            } else {
+                              if (
+                                new Date(`${activity.date}T${activity.time}`) >
+                                new Date()
+                              ) {
+                                return (
+                                  <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">
+                                    Upcoming
+                                  </span>
+                                );
+                              } else {
+                                return (
+                                  <span className="text-xs bg-red-100 text-red-700 px-2 py-0.5 rounded-full">
+                                    Late
+                                  </span>
+                                );
+                              }
                             }
-                            return null;
                           })()}
                         </div>
                         <div className="text-sm text-gray-700 space-y-1">
@@ -361,15 +371,6 @@ export default function Activities({ setActiveTab, currentRegistrationId }) {
                           {activity.time && (
                             <p>
                               <strong>Time:</strong> {activity.time}
-                            </p>
-                          )}
-                          {activity.completed ? (
-                            <p>
-                              <strong>Status:</strong> Completed
-                            </p>
-                          ) : (
-                            <p>
-                              <strong>Status:</strong> Not Completed
                             </p>
                           )}
                         </div>
