@@ -6,6 +6,10 @@ from app.general.schemas import (
     DispositionUpdate,
     DocumentType,
     DocumentTypeUpdate,
+    Medication,
+    MedicationOutcome,
+    MedicationOutcomeUpdate,
+    MedicationUpdate,
     NotesTemplate,
     NotesTemplateUpdate,
     ReferralSite,
@@ -424,6 +428,162 @@ class GeneralService:
             f"{field} = ${i+1}" for i, field in enumerate(update.keys())
         ]
         query = f"UPDATE referral_sites SET {', '.join(set_clauses)} WHERE id = ${len(update)+1} RETURNING id;"
+        values = list(update.values()) + [id]
+
+        async with database.get_transaction() as conn:
+            row = await conn.fetchrow(query, *values)
+            return bool(row)
+
+    # Medication
+    @staticmethod
+    async def create_medication(
+        medication: Medication,
+    ) -> Optional[int]:
+        query = """
+        INSERT INTO medication_templates (name, is_frequent, is_default)
+        VALUES ($1, $2, $3)
+        RETURNING id;
+        """
+
+        # Insert referral site and get the generated ID
+        async with database.get_transaction() as conn:
+            row = await conn.fetchrow(
+                query,
+                medication.name,
+                medication.is_frequent,
+                medication.is_default,
+            )
+            if row and "id" in row:
+                return row["id"]
+            return None
+
+    @staticmethod
+    async def get_medications() -> List[ReferralSite]:
+        query = """
+        SELECT * FROM medication_templates
+        """
+
+        async with database.get_connection() as conn:
+            rows = await conn.fetch(query)
+
+        result = []
+        if rows:
+            for row in rows:
+                result.append(Medication(**dict(row)))
+
+        return result
+
+    @staticmethod
+    async def delete_medication(name: str) -> bool:
+        query = (
+            """DELETE FROM medication_templates WHERE name=$1 RETURNING id;"""
+        )
+
+        async with database.get_transaction() as conn:
+            row = await conn.fetchrow(query, name)
+            return bool(row)
+
+    @staticmethod
+    async def delete_medication_by_id(id: int) -> bool:
+        query = (
+            """DELETE FROM medication_templates WHERE id=$1 RETURNING id;"""
+        )
+
+        async with database.get_transaction() as conn:
+            row = await conn.fetchrow(query, id)
+            return bool(row)
+
+    @staticmethod
+    async def update_medication(
+        id: int,
+        updates: MedicationUpdate,
+    ) -> bool:
+        update = updates.model_dump(exclude_unset=True)
+
+        if not update:
+            return False
+
+        set_clauses = [
+            f"{field} = ${i+1}" for i, field in enumerate(update.keys())
+        ]
+        query = f"UPDATE medication_templates SET {', '.join(set_clauses)} WHERE id = ${len(update)+1} RETURNING id;"
+        values = list(update.values()) + [id]
+
+        async with database.get_transaction() as conn:
+            row = await conn.fetchrow(query, *values)
+            return bool(row)
+
+    # Medication Outcome
+    @staticmethod
+    async def create_medication_outcome(
+        medication: MedicationOutcome,
+    ) -> Optional[int]:
+        query = """
+        INSERT INTO medication_outcomes (name, is_frequent, is_default)
+        VALUES ($1, $2, $3)
+        RETURNING id;
+        """
+
+        # Insert referral site and get the generated ID
+        async with database.get_transaction() as conn:
+            row = await conn.fetchrow(
+                query,
+                medication.name,
+                medication.is_frequent,
+                medication.is_default,
+            )
+            if row and "id" in row:
+                return row["id"]
+            return None
+
+    @staticmethod
+    async def get_medication_outcomes() -> List[ReferralSite]:
+        query = """
+        SELECT * FROM medication_outcomes;
+        """
+
+        async with database.get_connection() as conn:
+            rows = await conn.fetch(query)
+
+        result = []
+        if rows:
+            for row in rows:
+                result.append(MedicationOutcome(**dict(row)))
+
+        return result
+
+    @staticmethod
+    async def delete_medication_outcome(name: str) -> bool:
+        query = (
+            """DELETE FROM medication_outcomes WHERE name=$1 RETURNING id;"""
+        )
+
+        async with database.get_transaction() as conn:
+            row = await conn.fetchrow(query, name)
+            return bool(row)
+
+    @staticmethod
+    async def delete_medication_outcome_by_id(id: int) -> bool:
+        query = """DELETE FROM medication_outcomes WHERE id=$1 RETURNING id;"""
+
+        async with database.get_transaction() as conn:
+            row = await conn.fetchrow(query, id)
+            return bool(row)
+
+    @staticmethod
+    async def update_medication_outcome(
+        id: int,
+        updates: MedicationOutcomeUpdate,
+    ) -> bool:
+        update = updates.model_dump(exclude_unset=True)
+
+        if not update:
+            return False
+
+        set_clauses = [
+            f"{field} = ${i+1}" for i, field in enumerate(update.keys())
+        ]
+        query = f"UPDATE medication_outcomes SET {', '.join(set_clauses)} WHERE id = ${len(update)+1} RETURNING id;"
         values = list(update.values()) + [id]
 
         async with database.get_transaction() as conn:

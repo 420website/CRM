@@ -190,4 +190,79 @@ export const GeneralServices = {
       "Updating referral site failed.",
     );
   },
+
+  // ======================
+  // Medication Templates
+  // ======================
+  create_medication_template: async (data) => {
+    return apiCall(
+      () => api.post("/general/medication-template", data),
+      "Creating medication templates failed.",
+    );
+  },
+
+  get_medication_template: async () => {
+    return apiCall(
+      () => api.get("/general/medication-template"),
+      "Fetching medication templates failed.",
+    );
+  },
+
+  delete_medication_template_by_id: async (id) => {
+    return apiCall(
+      () => api.delete(`/general/medication-template/${id}`),
+      "Deleting medication templates by ID failed.",
+    );
+  },
+
+  delete_medication_template_by_name: async (name) => {
+    return apiCall(
+      () => api.delete(`/general/medication-template/by-name/${name}`),
+      "Deleting medication templates by name failed.",
+    );
+  },
+
+  update_medication_template: async (id, data) => {
+    return apiCall(
+      () => api.patch(`/general/medication-template/${id}`, data),
+      "Updating medication templates failed.",
+    );
+  },
+  // ======================
+  // Medication outcomes
+  // ======================
+  create_medication_outcome: async (data) => {
+    return apiCall(
+      () => api.post("/general/medication-outcome", data),
+      "Creating medication outcomes failed.",
+    );
+  },
+
+  get_medication_outcomes: async () => {
+    return apiCall(
+      () => api.get("/general/medication-outcome"),
+      "Fetching medication outcomes failed.",
+    );
+  },
+
+  delete_medication_outcome_by_id: async (id) => {
+    return apiCall(
+      () => api.delete(`/general/medication-outcome/${id}`),
+      "Deleting medication outcome by ID failed.",
+    );
+  },
+
+  delete_medication_outcome_by_name: async (name) => {
+    return apiCall(
+      () => api.delete(`/general/medication-outcome/by-name/${name}`),
+      "Deleting medication outcome by name failed.",
+    );
+  },
+
+  update_medication_outcome: async (id, data) => {
+    return apiCall(
+      () => api.patch(`/general/medication-outcome/${id}`, data),
+      "Updating medication outcome failed.",
+    );
+  },
 };

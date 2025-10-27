@@ -48,10 +48,32 @@ CREATE TABLE referral_sites (
     updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 );
 
+-- Referral sites lookup
+CREATE TABLE medication_templates (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(200) NOT NULL UNIQUE,
+    is_frequent BOOLEAN DEFAULT false,
+    is_default BOOLEAN DEFAULT false,
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Referral sites lookup
+CREATE TABLE medication_outcomes (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(200) NOT NULL UNIQUE,
+    is_frequent BOOLEAN DEFAULT false,
+    is_default BOOLEAN DEFAULT false,
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+);
+
 -- migrate:down
 DROP TABLE IF EXISTS note_templates;
 DROP TABLE IF EXISTS clinical_templates;
 DROP TABLE IF EXISTS dispositions;
 DROP TABLE IF EXISTS document_type;
 DROP TABLE IF EXISTS referral_sites;
+DROP TABLE IF EXISTS medication_templates;
+DROP TABLE IF EXISTS medication_outcomes;
 

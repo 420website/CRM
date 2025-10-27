@@ -556,3 +556,224 @@ describe("GeneralServices.referral-sites", () => {
     expect(stillThere).toBeUndefined();
   });
 });
+
+describe("GeneralServices.medication-templates", () => {
+  let createdId;
+
+  const email = "test4@example.com"; // unique user for this suite
+  const password = "password123";
+
+  const medication = {
+    name: "test_medication",
+    is_frequent: true,
+    is_default: true,
+  };
+
+  beforeEach(async () => {
+    // Register
+    const result = await TestServices.createVerifiedUser(email, password);
+    await AuthServices.verify_email(result.data?.token);
+
+    // Login
+    const login_result = await AuthServices.login(email, password);
+    tokenManager.setAccessToken(login_result.data?.access_token);
+
+    // MFA
+    const mfa_email = await TestServices.send_email_mfa(email);
+    const mfa_result = await AuthServices.verify_email_mfa(
+      mfa_email.data?.code,
+    );
+
+    tokenManager.setAccessToken(mfa_result.data?.access_token);
+  });
+
+  afterEach(async () => {
+    // cleanup
+    await GeneralServices.delete_medication_template_by_name(medication.name);
+    await TestServices.deleteUser(email, password);
+    createdId = null;
+  });
+
+  it("should create a medication template successfully", async () => {
+    const result = await GeneralServices.create_medication_template(medication);
+
+    expect(result.success).toBe(true);
+    expect(result.data?.message).toBe("Medication created successfully.");
+  });
+
+  it("should fetch medications and include created one", async () => {
+    await GeneralServices.create_medication_template(medication);
+    const result = await GeneralServices.get_medication_template();
+
+    expect(result.success).toBe(true);
+    expect(Array.isArray(result.data)).toBe(true);
+
+    const found = result.data.find((m) => m.name === medication.name);
+
+    expect(found).toBeDefined();
+    createdId = found.id;
+  });
+
+  it("should update a medication successfully", async () => {
+    await GeneralServices.create_medication_template(medication);
+    const listRes = await GeneralServices.get_medication_template();
+
+    const found = listRes.data.find((m) => m.name === medication.name);
+
+    createdId = found.id;
+    const updateData = { is_frequent: false };
+    const updateRes = await GeneralServices.update_medication_template(
+      createdId,
+      updateData,
+    );
+    expect(updateRes.success).toBe(true);
+
+    // verify change
+    const refreshed = await GeneralServices.get_medication_template();
+    const updated = refreshed.data.find((m) => m.id === createdId);
+    expect(updated.is_frequent).toBe(false);
+  });
+
+  it("should delete a medication by name", async () => {
+    await GeneralServices.create_medication_template(medication);
+    const deleteRes = await GeneralServices.delete_medication_template_by_name(
+      medication.name,
+    );
+    expect(deleteRes.success).toBe(true);
+
+    // verify removal
+    const listRes = await GeneralServices.get_medication_template();
+    const stillThere = listRes.data.find((m) => m.name === medication.name);
+    expect(stillThere).toBeUndefined();
+  });
+
+  it("should delete a medication by id", async () => {
+    await GeneralServices.create_medication_template(medication);
+    const listRes = await GeneralServices.get_medication_template();
+    const found = listRes.data.find((m) => m.name === medication.name);
+    createdId = found.id;
+
+    const deleteRes =
+      await GeneralServices.delete_medication_template_by_id(createdId);
+    expect(deleteRes.success).toBe(true);
+
+    // verify removal
+    const refreshed = await GeneralServices.get_medication_template();
+    const stillThere = refreshed.data.find((m) => m.id === createdId);
+    expect(stillThere).toBeUndefined();
+  });
+});
+
+describe("GeneralServices.medication-outcomes", () => {
+  let createdId;
+
+  const email = "test4@example.com";
+  const password = "password123";
+
+  const medicationOutcome = {
+    name: "test_outcome",
+    is_frequent: true,
+    is_default: true,
+  };
+
+  beforeEach(async () => {
+    // Register
+    const result = await TestServices.createVerifiedUser(email, password);
+    await AuthServices.verify_email(result.data?.token);
+
+    // Login
+    const login_result = await AuthServices.login(email, password);
+    tokenManager.setAccessToken(login_result.data?.access_token);
+
+    // MFA
+    const mfa_email = await TestServices.send_email_mfa(email);
+    const mfa_result = await AuthServices.verify_email_mfa(
+      mfa_email.data?.code,
+    );
+
+    tokenManager.setAccessToken(mfa_result.data?.access_token);
+  });
+
+  afterEach(async () => {
+    // cleanup
+    await GeneralServices.delete_medication_outcome_by_name(
+      medicationOutcome.name,
+    );
+    await TestServices.deleteUser(email, password);
+    createdId = null;
+  });
+
+  it("should create a medication outcome successfully", async () => {
+    const result =
+      await GeneralServices.create_medication_outcome(medicationOutcome);
+
+    expect(result.success).toBe(true);
+    expect(result.data?.message).toBe(
+      "Medication outcome created successfully.",
+    );
+  });
+
+  it("should fetch medication outcomes and include created one", async () => {
+    await GeneralServices.create_medication_outcome(medicationOutcome);
+    const result = await GeneralServices.get_medication_outcomes();
+
+    expect(result.success).toBe(true);
+    expect(Array.isArray(result.data)).toBe(true);
+
+    const found = result.data.find((m) => m.name === medicationOutcome.name);
+
+    expect(found).toBeDefined();
+    createdId = found.id;
+  });
+
+  it("should update a medication outcome successfully", async () => {
+    await GeneralServices.create_medication_outcome(medicationOutcome);
+    const listRes = await GeneralServices.get_medication_outcomes();
+
+    const found = listRes.data.find((m) => m.name === medicationOutcome.name);
+
+    createdId = found.id;
+    const updateData = { is_frequent: false };
+    const updateRes = await GeneralServices.update_medication_outcome(
+      createdId,
+      updateData,
+    );
+    expect(updateRes.success).toBe(true);
+
+    // verify change
+    const refreshed = await GeneralServices.get_medication_outcomes();
+    const updated = refreshed.data.find((m) => m.id === createdId);
+    expect(updated.is_frequent).toBe(false);
+  });
+
+  it("should delete a medication outcome by name", async () => {
+    await GeneralServices.create_medication_outcome(medicationOutcome);
+    const deleteRes = await GeneralServices.delete_medication_outcome_by_name(
+      medicationOutcome.name,
+    );
+    expect(deleteRes.success).toBe(true);
+
+    // verify removal
+    const listRes = await GeneralServices.get_medication_outcomes();
+    const stillThere = listRes.data.find(
+      (m) => m.name === medicationOutcome.name,
+    );
+    expect(stillThere).toBeUndefined();
+  });
+
+  it("should delete a medication outcome by id", async () => {
+    await GeneralServices.create_medication_outcome(medicationOutcome);
+    const listRes = await GeneralServices.get_medication_outcomes();
+    const found = listRes.data.find((m) => m.name === medicationOutcome.name);
+    createdId = found.id;
+
+    const deleteRes =
+      await GeneralServices.delete_medication_outcome_by_id(createdId);
+    expect(deleteRes.success).toBe(true);
+
+    // verify removal
+    const refreshed = await GeneralServices.get_medication_outcomes();
+    const stillThere = refreshed.data.find((m) => m.id === createdId);
+    expect(stillThere).toBeUndefined();
+  });
+});

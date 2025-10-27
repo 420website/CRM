@@ -16,6 +16,10 @@ from app.general.schemas import (
     DispositionUpdate,
     DocumentType,
     DocumentTypeUpdate,
+    Medication,
+    MedicationOutcome,
+    MedicationOutcomeUpdate,
+    MedicationUpdate,
     NotesTemplate,
     NotesTemplateUpdate,
     ReferralSite,
@@ -375,3 +379,141 @@ async def update_referral_site(
             detail="Referral site not found or could not be updated.",
         )
     return {"message": "Referral site updated successfully."}
+
+
+##############
+# medications
+##############
+@router.post("/medication-template")
+async def create_medication(
+    data: Medication,
+    user: UserRead = Depends(get_current_user),
+):
+
+    if await GeneralService.check_exists(data.name, "medication_templates"):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Medication already exists.",
+        )
+
+    if not await GeneralService.create_medication(data):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Medication not created.",
+        )
+    return {"message": "Medication created successfully."}
+
+
+@router.get("/medication-template", response_model=List[ReferralSite])
+async def get_medications(user: UserRead = Depends(get_current_user)):
+    result = await GeneralService.get_medications()
+    return result
+
+
+@router.delete("/medication-template/{id}")
+async def delete_medication_id(
+    id: int,
+    user: UserRead = Depends(get_current_user),
+):
+    if not await GeneralService.delete_medication_by_id(id):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Medication not found.",
+        )
+    return {"message": "Medication deleted successfully."}
+
+
+@router.delete("/medication-template/by-name/{name}")
+async def delete_medication_name(
+    name: str,
+    user: UserRead = Depends(get_current_user),
+):
+    if not await GeneralService.delete_medication(name):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Medication not found.",
+        )
+    return {"message": "Medication deleted successfully."}
+
+
+@router.patch("/medication-template/{id}")
+async def update_medication(
+    id: int,
+    data: MedicationUpdate,
+    user: UserRead = Depends(get_current_user),
+):
+    if not await GeneralService.update_medication(id, data):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Medication not found or could not be updated.",
+        )
+    return {"message": "Medication updated successfully."}
+
+
+####################
+# Medication Outcome
+####################
+@router.post("/medication-outcome")
+async def create_medication_outcome(
+    data: MedicationOutcome,
+    user: UserRead = Depends(get_current_user),
+):
+
+    if await GeneralService.check_exists(data.name, "medication_outcomes"):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Medication outcome already exists.",
+        )
+
+    if not await GeneralService.create_medication_outcome(data):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Medication outcome not created.",
+        )
+    return {"message": "Medication outcome created successfully."}
+
+
+@router.get("/medication-outcome", response_model=List[ReferralSite])
+async def get_medication_outcomes(user: UserRead = Depends(get_current_user)):
+    result = await GeneralService.get_medication_outcomes()
+    return result
+
+
+@router.delete("/medication-outcome/{id}")
+async def delete_medication_outcome_id(
+    id: int,
+    user: UserRead = Depends(get_current_user),
+):
+    if not await GeneralService.delete_medication_outcome_by_id(id):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Medication outcome not found.",
+        )
+    return {"message": "Medication outcome deleted successfully."}
+
+
+@router.delete("/medication-outcome/by-name/{name}")
+async def delete_medication_outcome_name(
+    name: str,
+    user: UserRead = Depends(get_current_user),
+):
+    if not await GeneralService.delete_medication_outcome(name):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Medication outcome not found.",
+        )
+    return {"message": "Medication outcome deleted successfully."}
+
+
+@router.patch("/medication-outcome/{id}")
+async def update_medication_outcome(
+    id: int,
+    data: MedicationOutcomeUpdate,
+    user: UserRead = Depends(get_current_user),
+):
+    if not await GeneralService.update_medication_outcome(id, data):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Medication outcome not found or could not be updated.",
+        )
+    return {"message": "Medication outcome updated successfully."}
