@@ -50,9 +50,11 @@ export default function Medications({ setActiveTab, currentRegistrationId }) {
       return false;
     }
 
-    if (!medicationData.start_date || medicationData.start_date === "") {
-      toast.error("Please select a start date");
-      return false;
+    if (!medicationData.outcome === "Tx Pending") {
+      if (!medicationData.start_date || medicationData.start_date === "") {
+        toast.error("Please select a start date");
+        return false;
+      }
     }
     return true;
   }
@@ -70,6 +72,10 @@ export default function Medications({ setActiveTab, currentRegistrationId }) {
     setIsSavingMedication(true);
 
     let data = { ...medicationData };
+
+    if (data.start_date === "") {
+      data = { ...data, start_date: null };
+    }
 
     if (data.end_date === "") {
       data = { ...data, end_date: null };
