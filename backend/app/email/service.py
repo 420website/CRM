@@ -1,7 +1,10 @@
+import mimetypes
+import os
 import smtplib
 from email.message import EmailMessage
 from typing import Self, overload
 from app.config import settings
+from app.objects.services import ObjectService
 
 
 class Message:
@@ -55,6 +58,28 @@ class EmailService:
             self.msg.set_content(body.msg, "html")
         else:
             self.msg.set_content(body.msg)
+        return self
+
+    async def attach(self, bucket: str, file_key: str) -> Self:
+        # Fetch file bytes from your object storage
+        file_bytes = await ObjectService.get_object(bucket, file_key)
+
+        # Guess MIME type (fallback to binary)
+        mime_type, _ = mimetypes.guess_type(file_key)
+        mime_type = mime_type or "application/octet-stream"
+        maintype, subtype = mime_type.split("/", 1)
+
+        # Extract filename from key
+        filename = os.path.basename(file_key)
+
+        # Attach file bytes to email
+        self.msg.add_attachment(
+            file_bytes,
+            maintype=maintype,
+            subtype=subtype,
+            filename=filename,
+        )
+
         return self
 
     def send(self):

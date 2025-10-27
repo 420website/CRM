@@ -10,7 +10,7 @@ from app.authentication.schemas import UserRead
 from app.email.messages import FinalizedEmailMessage
 from app.email.service import EmailService
 from app.config import settings
-from app.objects.services import ObjectService
+from app.objects.services import ObjectService, PhotoService
 from app.registration.schemas import (
     ActivityCreate,
     ActivityRead,
@@ -224,16 +224,28 @@ async def update_patient_status(
         )
 
     if data.status == "finalized":
-        subject = (
-            f"New Registration - {patient.first_name} {patient.last_name}"
-        )
-        (
-            EmailService()
-            .recipient(settings.support_email)
-            .subject(subject)
-            .body(FinalizedEmailMessage(patient.model_dump()))
-            .send()
-        )
+        try:
+            subject = (
+                f"New Registration - {patient.first_name} {patient.last_name}"
+            )
+
+            email = (
+                EmailService()
+                .recipient(settings.support_email)
+                .subject(subject)
+                .body(FinalizedEmailMessage(patient.model_dump()))
+            )
+
+            photo_key = await PhotoService.get_patient_photo_key(id)
+            if photo_key:
+                await email.attach("photos", photo_key)
+
+            email.send()
+        except Exception:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Error sending registration email.",
+            )
     return {"message": "Patient updated successfully."}
 
 
