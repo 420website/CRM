@@ -4,8 +4,9 @@ from app.analytics.utils import LegacyDataAnalyzer, summarize_data
 from app.config import settings
 from app.database import mongo_db
 from app.analytics.prompts import (
+    internal_system_message,
     legacy_context_prompt,
-    system_message,
+    legacy_system_message,
 )
 from app.analytics.schema import (
     ClaudeChatRequest,
@@ -21,7 +22,7 @@ def normalize_keys(record: dict) -> dict:
 
 
 # Usage example:
-async def generate_legacy_analytics_context(
+async def generate_context(
     legacy_upload: List[RawAnalytics],
 ) -> str:
     """Generate analytics context for Claude"""
@@ -138,21 +139,24 @@ class AnalyticsService:
         user_id: int,
     ) -> ClaudeChatResponse:
         """Claude AI chat endpoint for admin analytics with legacy data access and chart generation"""
-        legacy_upload = await AnalyticsService.get_legacy_data_by_userid(
-            user_id
-        )
+        is_file = True
+        raw_data = await AnalyticsService.get_legacy_data_by_userid(user_id)
 
-        if not legacy_upload:
-            legacy_upload = await AnalyticsService.get_data()
+        if not raw_data:
+            raw_data = await AnalyticsService.get_data()
 
-            if len(legacy_upload) == 0:
+            if len(raw_data) == 0:
                 raise Exception(
                     "No legacy data found. Please upload an Excel file first."
                 )
+            is_file = False
 
         try:
-            context = await generate_legacy_analytics_context(legacy_upload)
-            system_msg = system_message(context)
+            context = await generate_context(raw_data)
+            if is_file:
+                system_msg = legacy_system_message(context)
+            else:
+                system_msg = internal_system_message(context)
 
             message = await settings.anthropic_client.messages.create(
                 model=settings.anthropic_model,
