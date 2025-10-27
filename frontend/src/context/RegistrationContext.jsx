@@ -17,6 +17,8 @@ export function RegistrationProvider({ children }) {
   const [notesTemplates, setNotesTemplates] = useState([]);
   const [clinicalTemplates, setClinicalTemplates] = useState([]);
   const [documentTypes, setDocumentTypes] = useState([]);
+  const [medicationTemplates, setMedicationTemplates] = useState([]);
+  const [outcomes, setOutcomes] = useState([]);
   const [pendingData, setPendingData] = useState([]);
   const [finalizedData, setFinalizedData] = useState([]);
   const [activityData, setActivityData] = useState([]);
@@ -34,6 +36,8 @@ export function RegistrationProvider({ children }) {
   const [showDispositionManager, setShowDispositionManager] = useState(false);
   const [showReferralSiteManager, setShowReferralSiteManager] = useState(false);
   const [showClinicalManager, setShowClinicalManager] = useState(false);
+  const [showMedicationManager, setShowMedicationManager] = useState(false);
+  const [showOutcomeManager, setShowOutcomeManager] = useState(false);
 
   // -- Dashboard
   // Activities
@@ -297,6 +301,44 @@ export function RegistrationProvider({ children }) {
     setLoading(false);
   };
 
+  // Referral Sites
+  const getMedicationTemplates = async () => {
+    setLoading(true);
+    setError("");
+
+    const result = await GeneralServices.get_medication_template();
+
+    if (result.success) {
+      setMedicationTemplates(result.data);
+    } else {
+      if (result.status === 400 || result.status === 409) {
+        setError(result.message || "Error getting medication templates.");
+      } else {
+        setError("Error getting medication templates. Please try again.");
+      }
+    }
+    setLoading(false);
+  };
+
+  // Referral Sites
+  const getOutcomes = async () => {
+    setLoading(true);
+    setError("");
+
+    const result = await GeneralServices.get_medication_outcomes();
+
+    if (result.success) {
+      setOutcomes(result.data);
+    } else {
+      if (result.status === 400 || result.status === 409) {
+        setError(result.message || "Error getting outcomes.");
+      } else {
+        setError("Error getting outcomes. Please try again.");
+      }
+    }
+    setLoading(false);
+  };
+
   // clinical templates
   const getClinicalTemplates = async () => {
     setLoading(true);
@@ -350,6 +392,8 @@ export function RegistrationProvider({ children }) {
       getDocumentTypes();
       getNoteTemplates();
       getReferralSites();
+      getOutcomes();
+      getMedicationTemplates();
       getActivities();
       getDashboardActivities();
       getRegistrations();
@@ -361,6 +405,8 @@ export function RegistrationProvider({ children }) {
   return (
     <RegistrationContext.Provider
       value={{
+        medicationTemplates,
+        outcomes,
         referralSites,
         dispositions,
         notesTemplates,
@@ -377,6 +423,10 @@ export function RegistrationProvider({ children }) {
         notes,
         activities,
         getActivities,
+        setShowOutcomeManager,
+        showOutcomeManager,
+        setShowMedicationManager,
+        showMedicationManager,
         setShowNoteManager,
         showNoteManager,
         setShowDocumentTypeManager,
@@ -398,9 +448,11 @@ export function RegistrationProvider({ children }) {
         getInteractions,
         getDispensing,
         getMedications,
+        getMedicationTemplates,
         getTests,
         getNotes,
         getRegistrationData,
+        getOutcomes,
       }}
     >
       {children}

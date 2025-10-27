@@ -4,9 +4,23 @@ import ConfirmModal from "../components/ConfirmModal";
 import { useRegistration } from "../../context/RegistrationContext";
 import DatePicker from "../ui/DatePicker";
 import toast from "react-hot-toast";
+import { useAuth } from "../../context/AuthContext";
+import MedicationTemplateManager from "../managers/MedicationManager";
+import MedicationOutcomeManager from "../managers/MedicationOutcomeManager";
 
 export default function Medications({ setActiveTab, currentRegistrationId }) {
-  const { medications, getMedications } = useRegistration();
+  const { userRole } = useAuth();
+  const {
+    medications,
+    getMedications,
+    showMedicationManager,
+    setShowMedicationManager,
+    medicationTemplates,
+    getOutcomes,
+    outcomes,
+    setShowOutcomeManager,
+    showOutcomeManager,
+  } = useRegistration();
   const [loading, setLoading] = useState(false);
   const [editingMedicationId, setEditingMedicationId] = useState(null);
   const [isSavingMedication, setIsSavingMedication] = useState(false);
@@ -170,6 +184,8 @@ export default function Medications({ setActiveTab, currentRegistrationId }) {
   return (
     <div>
       <div className="space-y-6">
+        {showMedicationManager && <MedicationTemplateManager />}
+        {showOutcomeManager && <MedicationOutcomeManager />}
         {/* Registration ID Check */}
         {!currentRegistrationId && (
           <div className="border-2 border-orange-200 bg-orange-50 p-4 rounded-lg">
@@ -230,12 +246,23 @@ export default function Medications({ setActiveTab, currentRegistrationId }) {
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
-              <label
-                htmlFor="medication"
-                className="block text-sm font-medium text-gray-700 mb-2"
-              >
-                Medication *
-              </label>
+              <div className="flex items-center justify-between mb-2">
+                <label
+                  htmlFor="medication"
+                  className="block text-sm font-medium text-gray-700 mb-2"
+                >
+                  Medication *
+                </label>
+                {userRole == "admin" && (
+                  <button
+                    type="button"
+                    onClick={() => setShowMedicationManager(true)}
+                    className="text-blue-600 hover:text-blue-800 text-sm"
+                  >
+                    Manage Medications
+                  </button>
+                )}
+              </div>
               <select
                 id="medication"
                 name="medication"
@@ -244,19 +271,47 @@ export default function Medications({ setActiveTab, currentRegistrationId }) {
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black"
               >
                 <option value="">Select</option>
-                <option value="Epclusa">Epclusa</option>
-                <option value="Maviret">Maviret</option>
-                <option value="Vosevi">Vosevi</option>
+                {/* Most Frequently Used */}
+                {medicationTemplates
+                  .filter((d) => d.is_frequent)
+                  .map((medication) => (
+                    <option key={medication.id} value={medication.name}>
+                      {medication.name}
+                    </option>
+                  ))}
+                {/* Separator */}
+                {medicationTemplates.filter((d) => !d.is_frequent).length >
+                  0 && <option disabled>-------</option>}
+                {/* All Others in Alphabetical Order */}
+                {medicationTemplates
+                  .filter((d) => !d.is_frequent)
+                  .sort((a, b) => a.name.localeCompare(b.name))
+                  .map((medication) => (
+                    <option key={medication.id} value={medication.name}>
+                      {medication.name}
+                    </option>
+                  ))}
               </select>
             </div>
 
             <div>
-              <label
-                htmlFor="outcome"
-                className="block text-sm font-medium text-gray-700 mb-2"
-              >
-                Outcome *
-              </label>
+              <div className="flex items-center justify-between mb-2">
+                <label
+                  htmlFor="outcome"
+                  className="block text-sm font-medium text-gray-700 mb-2"
+                >
+                  Outcome *
+                </label>
+                {userRole == "admin" && (
+                  <button
+                    type="button"
+                    onClick={() => setShowOutcomeManager(true)}
+                    className="text-blue-600 hover:text-blue-800 text-sm"
+                  >
+                    Manage Outcomes
+                  </button>
+                )}
+              </div>
               <select
                 id="outcome"
                 name="outcome"
@@ -265,12 +320,27 @@ export default function Medications({ setActiveTab, currentRegistrationId }) {
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black"
               >
                 <option value="">Select</option>
-                <option value="Active">Active</option>
-                <option value="Completed">Completed</option>
-                <option value="Non Compliance">Non Compliance</option>
-                <option value="Side Effect">Side Effect</option>
-                <option value="Did not start">Did not start</option>
-                <option value="Death">Death</option>
+                {/* Most Frequently Used */}
+                {outcomes
+                  .filter((d) => d.is_frequent)
+                  .map((outcome) => (
+                    <option key={outcome.id} value={outcome.name}>
+                      {outcome.name}
+                    </option>
+                  ))}
+                {/* Separator */}
+                {outcomes.filter((d) => !d.is_frequent).length > 0 && (
+                  <option disabled>-------</option>
+                )}
+                {/* All Others in Alphabetical Order */}
+                {outcomes
+                  .filter((d) => !d.is_frequent)
+                  .sort((a, b) => a.name.localeCompare(b.name))
+                  .map((outcome) => (
+                    <option key={outcome.id} value={outcome.name}>
+                      {outcome.name}
+                    </option>
+                  ))}
               </select>
             </div>
 
@@ -333,7 +403,6 @@ export default function Medications({ setActiveTab, currentRegistrationId }) {
             </button>
           </div>
         </div>
-
         {/* Saved Medications */}
         <div className="border-t pt-6">
           <h3 className="text-lg font-medium text-gray-900 mb-4">
