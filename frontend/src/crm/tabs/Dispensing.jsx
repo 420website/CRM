@@ -6,7 +6,7 @@ import DatePicker from "../ui/DatePicker";
 import toast from "react-hot-toast";
 
 export default function Dispensing({ setActiveTab, currentRegistrationId }) {
-  const { getDispensing, dispensing } = useRegistration();
+  const { getDispensing, dispensing, medicationTemplates } = useRegistration();
   const [loading, setLoading] = useState(false);
   const [editingDispensingId, setEditingDispensingId] = useState(null);
   const [isSavingDispensing, setIsSavingDispensing] = useState(false);
@@ -242,6 +242,7 @@ export default function Dispensing({ setActiveTab, currentRegistrationId }) {
                 >
                   Medication *
                 </label>
+
                 <select
                   id="medication"
                   name="medication"
@@ -250,9 +251,26 @@ export default function Dispensing({ setActiveTab, currentRegistrationId }) {
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black"
                 >
                   <option value="">Select</option>
-                  <option value="Epclusa">Epclusa</option>
-                  <option value="Maviret">Maviret</option>
-                  <option value="Vosevi">Vosevi</option>
+                  {/* Most Frequently Used */}
+                  {medicationTemplates
+                    .filter((d) => d.is_frequent)
+                    .map((medication) => (
+                      <option key={medication.id} value={medication.name}>
+                        {medication.name}
+                      </option>
+                    ))}
+                  {/* Separator */}
+                  {medicationTemplates.filter((d) => !d.is_frequent).length >
+                    0 && <option disabled>-------</option>}
+                  {/* All Others in Alphabetical Order */}
+                  {medicationTemplates
+                    .filter((d) => !d.is_frequent)
+                    .sort((a, b) => a.name.localeCompare(b.name))
+                    .map((medication) => (
+                      <option key={medication.id} value={medication.name}>
+                        {medication.name}
+                      </option>
+                    ))}
                 </select>
               </div>
 
