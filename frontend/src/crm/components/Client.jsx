@@ -8,6 +8,7 @@ import {
 import { useRegistration } from "../../context/RegistrationContext";
 import DatePicker from "../ui/DatePicker";
 import { useAuth } from "../../context/AuthContext";
+import CoverageManager from "../managers/CoverageManager";
 
 // Map Google Places province codes to full province names
 const getProvince = (code) => {
@@ -33,9 +34,9 @@ const getProvince = (code) => {
 export default function Client({
   formData,
   setFormData,
-  templates,
   selectedTemplate,
   setSelectedTemplate,
+  templates,
   openVoiceDateInput,
   openVoiceFillInput,
 }) {
@@ -44,8 +45,11 @@ export default function Client({
   const [error, setError] = useState("");
   const {
     dispositions,
+    genericCoverage,
     referralSites,
     clinicalTemplates,
+    setShowCoverageManager,
+    showCoverageManager,
     setShowDispositionManager,
     setShowClinicalManager,
     setShowReferralSiteManager,
@@ -322,6 +326,8 @@ export default function Client({
     <div>
       <div className="tab-content">
         <div className="space-y-6">
+          {showCoverageManager && <CoverageManager />}
+
           {/* Basic Information */}
           <div>
             <h2 className="text-lg font-medium text-gray-900 mb-4">
@@ -577,7 +583,7 @@ export default function Client({
                     htmlFor="health_card_version"
                     className="block text-sm font-medium text-gray-700 mb-2"
                   >
-                    Version Code<span className="text-red-500">*</span>
+                    Version Code
                   </label>
                   <input
                     type="text"
@@ -1065,12 +1071,23 @@ export default function Client({
                   )}
 
                   <div>
-                    <label
-                      htmlFor="coverage_type"
-                      className="block text-sm font-medium text-gray-700 mb-2"
-                    >
-                      Coverage Type
-                    </label>
+                    <div className="flex items-center justify-between mb-2">
+                      <label
+                        htmlFor="coverage_type"
+                        className="block text-sm font-medium text-gray-700 mb-2"
+                      >
+                        Coverage Type
+                      </label>
+                      {userRole == "admin" && (
+                        <button
+                          type="button"
+                          onClick={() => setShowCoverageManager(true)}
+                          className="text-blue-600 hover:text-blue-800 text-sm"
+                        >
+                          Manage Coverage
+                        </button>
+                      )}
+                    </div>
                     <select
                       id="coverage_type"
                       name="coverage_type"
@@ -1078,10 +1095,27 @@ export default function Client({
                       onChange={handleChange}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black"
                     >
-                      <option value="Select">Select</option>
-                      <option value="OW">OW</option>
-                      <option value="ODSP">ODSP</option>
-                      <option value="No coverage">No coverage</option>
+                      <option value="">Select</option>
+                      {/* Most Frequently Used */}
+                      {genericCoverage
+                        .filter((c) => c.is_frequent)
+                        .map((c) => (
+                          <option key={c.id} value={c.name}>
+                            {c.name}
+                          </option>
+                        ))}
+                      {/* Separator */}
+                      {genericCoverage.filter((c) => !c.is_frequent).length >
+                        0 && <option disabled>-------</option>}
+                      {/* All Others in Alphabetical Order */}
+                      {genericCoverage
+                        .filter((c) => !c.is_frequent)
+                        .sort((a, b) => a.name.localeCompare(b.name))
+                        .map((c) => (
+                          <option key={c.id} value={c.name}>
+                            {c.name}
+                          </option>
+                        ))}
                     </select>
                   </div>
 

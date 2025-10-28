@@ -16,6 +16,8 @@ from app.general.schemas import (
     DispositionUpdate,
     DocumentType,
     DocumentTypeUpdate,
+    General,
+    GeneralUpdate,
     Medication,
     MedicationOutcome,
     MedicationOutcomeUpdate,
@@ -517,3 +519,76 @@ async def update_medication_outcome(
             detail="Medication outcome not found or could not be updated.",
         )
     return {"message": "Medication outcome updated successfully."}
+
+
+####################
+# General
+####################
+@router.post("/general")
+async def create_general_type(
+    data: General,
+    user: UserRead = Depends(get_current_user),
+):
+
+    if await GeneralService.check_exists(data.name, "general"):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"{data.type} already exists.",
+        )
+
+    if not await GeneralService.create_general_type(data):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"{data.type} not created.",
+        )
+    return {"message": f"{data.type} created successfully."}
+
+
+@router.get("/general/{general_type}", response_model=List[General])
+async def get_general_type(
+    general_type: str,
+    user: UserRead = Depends(get_current_user),
+):
+    result = await GeneralService.get_general(general_type)
+    return result
+
+
+@router.delete("/general/{id}")
+async def delete_general_id(
+    id: int,
+    user: UserRead = Depends(get_current_user),
+):
+    if not await GeneralService.delete_general_by_id(id):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Id: {id} not found.",
+        )
+    return {"message": "Deleted successfully."}
+
+
+@router.delete("/general/by-name/{general_type}/{name}")
+async def delete_general_name(
+    general_type: str,
+    name: str,
+    user: UserRead = Depends(get_current_user),
+):
+    if not await GeneralService.delete_general(name, general_type):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"{general_type} not found.",
+        )
+    return {"message": f"{general_type} deleted successfully."}
+
+
+@router.patch("/general/{id}")
+async def update_general(
+    id: int,
+    data: GeneralUpdate,
+    user: UserRead = Depends(get_current_user),
+):
+    if not await GeneralService.update_general(id, data):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Id: {id} not found or could not be updated.",
+        )
+    return {"message": f"Id: {id} updated successfully."}

@@ -8,6 +8,7 @@ from app.general.router import (
     create_clinical_template,
     create_disposition,
     create_document_type,
+    create_general_type,
     create_medication,
     create_medication_outcome,
     create_note_template,
@@ -18,6 +19,8 @@ from app.general.router import (
     delete_disposition_name,
     delete_document_type_id,
     delete_document_type_name,
+    delete_general_id,
+    delete_general_name,
     delete_medication_id,
     delete_medication_name,
     delete_medication_outcome_id,
@@ -29,6 +32,7 @@ from app.general.router import (
     get_clinical_templates,
     get_dispositions,
     get_document_types,
+    get_general_type,
     get_medication_outcomes,
     get_medications,
     get_note_templates,
@@ -36,6 +40,7 @@ from app.general.router import (
     update_disposition,
     update_clinical_template,
     update_document_type,
+    update_general,
     update_medication,
     update_medication_outcome,
     update_note_template,
@@ -48,6 +53,8 @@ from app.general.schemas import (
     DispositionUpdate,
     DocumentType,
     DocumentTypeUpdate,
+    General,
+    GeneralUpdate,
     Medication,
     MedicationOutcome,
     MedicationOutcomeUpdate,
@@ -2427,5 +2434,350 @@ class TestMedicationOutcomeAPI(IsolatedAsyncioTestCase):
         self.assertEqual(context.exception.status_code, 404)
         self.assertIn(
             "Medication outcome not found or could not be updated",
+            context.exception.detail,
+        )
+
+
+class TestGeneralAPI(IsolatedAsyncioTestCase):
+    async def _cleanup_test_data(self):
+        """Helper method to clean up test data"""
+        types = ["interaction", "coverage"]
+
+        test_names = [
+            "test_general",
+            "test_general_2",
+            "updated_general",
+            "default_general",
+        ]
+        for t in types:
+            for name in test_names:
+                try:
+                    await GeneralService.delete_general(name, t)
+                except Exception:
+                    pass  # Ignore if general site doesn't exist
+
+    async def asyncSetUp(self) -> None:
+        await database.connect()
+        asyncio.get_event_loop().set_debug(False)
+        await self._cleanup_test_data()
+
+        # Get authenticated user for all tests
+        self.user = UserRead(
+            id=1,
+            email=email,
+            role="admin",
+            permissions=[],
+            authenticator_mfa_enabled=True,
+        )
+
+    async def asyncTearDown(self) -> None:
+        await self._cleanup_test_data()
+        await database.disconnect()
+
+    # Create
+    async def test_create_general_success(self):
+        """Test successful creation of a general via API"""
+        general_data = General(
+            name="test_general",
+            is_frequent=False,
+            is_default=False,
+            type="interaction",
+        )
+        # Test
+        result = await create_general_type(general_data, self.user)
+        self.assertEqual(
+            result["message"],
+            "interaction created successfully.",
+        )
+        # Validate by getting generals
+        generals = await get_general_type("interaction", self.user)
+        general_names = [g.name for g in generals]
+        self.assertIn("test_general", general_names)
+
+    async def test_create_general_with_default(self):
+        """Test creation of a default general via API"""
+        general_data = General(
+            name="default_general",
+            is_frequent=True,
+            is_default=True,
+            type="coverage",
+        )
+
+        # Test
+        result = await create_general_type(general_data, self.user)
+        self.assertEqual(
+            result["message"],
+            "coverage created successfully.",
+        )
+
+        # Validate
+        generals = await get_general_type("coverage", self.user)
+        default_general = next(
+            (g for g in generals if g.name == "default_general"),
+            None,
+        )
+        self.assertIsNotNone(default_general)
+        self.assertTrue(default_general.is_default)
+        self.assertTrue(default_general.is_frequent)
+        self.assertEqual(default_general.type, "coverage")
+
+    async def test_create_duplicate_general_name(self):
+        """Test creating general with duplicate name via API"""
+        general_data = General(
+            name="test_general",
+            is_frequent=False,
+            is_default=False,
+            type="coverage",
+        )
+
+        # Create first general
+        result1 = await create_general_type(general_data, self.user)
+        self.assertEqual(
+            result1["message"],
+            "coverage created successfully.",
+        )
+
+        # Try to create duplicate - should raise HTTPException
+        with self.assertRaises(HTTPException) as context:
+            await create_general_type(general_data, self.user)
+
+        self.assertEqual(context.exception.status_code, 400)
+        self.assertIn("coverage already exists.", context.exception.detail)
+
+    # Get
+    async def test_get_general_empty(self):
+        """Test getting generals when none exist via API"""
+        generals = await get_general_type("interaction", self.user)
+        self.assertIsInstance(generals, list)
+        # self.assertEqual(len(generals), 0)
+
+    async def test_get_general_with_data(self):
+        """Test getting generals when data exists via API"""
+        # Create test generals
+        general1_data = General(
+            name="test_general",
+            is_frequent=False,
+            is_default=False,
+            type="coverage",
+        )
+        general2_data = General(
+            name="test_general_2",
+            is_frequent=True,
+            is_default=True,
+            type="coverage",
+        )
+        await create_general_type(general1_data, self.user)
+        await create_general_type(general2_data, self.user)
+
+        # Test
+        generals = await get_general_type("coverage", self.user)
+        self.assertIsInstance(generals, list)
+        self.assertGreaterEqual(len(generals), 2)
+
+        # Verify our generals are in the results
+        general_names = [g.name for g in generals]
+        self.assertIn("test_general", general_names)
+        self.assertIn("test_general_2", general_names)
+
+        # Verify general structure
+        for general in generals:
+            self.assertIsInstance(general, General)
+            self.assertIsInstance(general.name, str)
+            self.assertIsInstance(general.is_frequent, bool)
+            self.assertIsInstance(general.is_default, bool)
+            self.assertIsInstance(general.type, str)
+            self.assertIsNotNone(general.id)
+
+    # Delete
+    async def test_delete_general_by_name_success(self):
+        """Test successful deletion of a general by name via API"""
+        # Create general first
+        general_data = General(
+            name="test_general",
+            is_frequent=False,
+            is_default=False,
+            type="coverage",
+        )
+
+        await create_general_type(general_data, self.user)
+
+        # Delete the general
+        result = await delete_general_name(
+            "coverage", "test_general", self.user
+        )
+        self.assertEqual(result["message"], "coverage deleted successfully.")
+
+        # Verify general was deleted
+        generals = await get_general_type("coverage", self.user)
+        general_names = [g.name for g in generals]
+
+        self.assertNotIn("test_general", general_names)
+
+    async def test_delete_general_by_id_success(self):
+        """Test successful deletion of a general by ID via API"""
+        # Create general first
+        general_data = General(
+            name="test_general",
+            is_frequent=True,
+            is_default=False,
+            type="interaction",
+        )
+        await create_general_type(general_data, self.user)
+
+        # Get general to find its ID
+        generals = await get_general_type("interaction", self.user)
+        general = next((g for g in generals if g.name == "test_general"), None)
+        self.assertIsNotNone(general)
+        general_id = general.id
+
+        # Delete the general by ID
+        result = await delete_general_id(general_id, self.user)
+        self.assertEqual(result["message"], "Deleted successfully.")
+
+        # Verify general was deleted
+        generals = await get_general_type("interaction", self.user)
+        general_names = [g.name for g in generals]
+        self.assertNotIn("test_general", general_names)
+
+    async def test_delete_general_not_found_by_name(self):
+        """Test deletion of non-existent general by name via API"""
+        with self.assertRaises(HTTPException) as context:
+            await delete_general_name(
+                "interaction", "non_existent_general", self.user
+            )
+
+        self.assertEqual(context.exception.status_code, 404)
+        self.assertIn("interaction not found", context.exception.detail)
+
+    async def test_delete_general_not_found_by_id(self):
+        """Test deletion of non-existent general by ID via API"""
+        with self.assertRaises(HTTPException) as context:
+            await delete_general_id(99999, self.user)  # Non-existent ID
+
+        self.assertEqual(context.exception.status_code, 404)
+        self.assertIn(f"Id: {99999} not found", context.exception.detail)
+
+    # Update
+    async def test_update_general_success(self):
+        """Test successful update of a general via API"""
+        # Create general first
+        general_data = General(
+            name="test_general",
+            is_frequent=False,
+            is_default=False,
+            type="coverage",
+        )
+        await create_general_type(general_data, self.user)
+
+        # Get general to find its ID
+        generals = await get_general_type("coverage", self.user)
+        general = next((g for g in generals if g.name == "test_general"), None)
+        general_id = general.id
+
+        # Update the general
+        update_data = GeneralUpdate(
+            name="test_general",
+            is_frequent=True,
+            is_default=True,
+        )
+        result = await update_general(
+            general_id,
+            update_data,
+            self.user,
+        )
+        self.assertEqual(
+            result["message"],
+            f"Id: {general_id} updated successfully.",
+        )
+
+        # Verify general was updated
+        generals = await get_general_type("coverage", self.user)
+        updated_general = next(
+            (g for g in generals if g.name == "test_general"), None
+        )
+        self.assertIsNotNone(updated_general)
+        self.assertTrue(updated_general.is_frequent)
+        self.assertTrue(updated_general.is_default)
+
+    async def test_update_general_partial(self):
+        """Test partial update of a general via API"""
+        # Create general first
+        general_data = General(
+            name="test_general",
+            is_frequent=False,
+            is_default=False,
+            type="interaction",
+        )
+
+        await create_general_type(general_data, self.user)
+
+        # Get general ID
+        generals = await get_general_type("interaction", self.user)
+        general = next((g for g in generals if g.name == "test_general"), None)
+        general_id = general.id
+
+        # Partial update - only is_frequent
+        update_data = GeneralUpdate(
+            is_frequent=True,
+        )
+        result = await update_general(
+            general_id,
+            update_data,
+            self.user,
+        )
+        self.assertEqual(
+            result["message"],
+            f"Id: {general_id} updated successfully.",
+        )
+
+        # Verify only is_frequent was updated
+        generals = await get_general_type("interaction", self.user)
+        updated_general = next(
+            (g for g in generals if g.name == "test_general"), None
+        )
+        self.assertIsNotNone(updated_general)
+        self.assertTrue(updated_general.is_frequent)
+        self.assertFalse(updated_general.is_default)
+
+    async def test_update_general_empty_updates(self):
+        """Test update with no actual changes via API"""
+        # Create general first
+        general_data = General(
+            name="test_general",
+            is_frequent=False,
+            is_default=False,
+            type="interaction",
+        )
+        await create_general_type(general_data, self.user)
+
+        # Get general ID
+        generals = await get_general_type("interaction", self.user)
+        general = next((g for g in generals if g.name == "test_general"), None)
+        general_id = general.id
+
+        # Empty update
+        update_data = GeneralUpdate()
+        with self.assertRaises(HTTPException) as context:
+            await update_general(general_id, update_data, self.user)
+
+        self.assertEqual(context.exception.status_code, 404)
+        self.assertIn(
+            f"Id: {general_id} not found or could not be updated",
+            context.exception.detail,
+        )
+
+    async def test_update_general_not_found(self):
+        """Test update of non-existent general via API"""
+        update_data = GeneralUpdate(
+            name="non_existent_general",
+            is_frequent=True,
+        )
+
+        with self.assertRaises(HTTPException) as context:
+            await update_general(99999, update_data, self.user)
+
+        self.assertEqual(context.exception.status_code, 404)
+        self.assertIn(
+            f"Id: {99999} not found or could not be updated",
             context.exception.detail,
         )

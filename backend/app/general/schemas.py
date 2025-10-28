@@ -145,3 +145,25 @@ class MedicationOutcomeUpdate(BaseModel):
     is_frequent: Optional[bool] = None
     is_default: Optional[bool] = None
     updated_at: Optional[datetime] = None
+
+
+# General Fields
+class General(BaseModel):
+    id: Optional[int] = None
+    name: str
+    is_frequent: bool
+    is_default: bool
+    type: str
+    created_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = None
+
+    class Config:
+        from_attributes = True
+
+
+class GeneralUpdate(BaseModel):
+    name: Optional[str] = None
+    type: Optional[str] = None
+    is_frequent: Optional[bool] = None
+    is_default: Optional[bool] = None
+    updated_at: Optional[datetime] = None

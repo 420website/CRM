@@ -265,4 +265,45 @@ export const GeneralServices = {
       "Updating medication outcome failed.",
     );
   },
+  // ======================
+  // Medication Templates
+  // ======================
+  create_general: async (type, data) => {
+    data = { ...data, type: type };
+
+    return apiCall(
+      () => api.post("/general/general", data),
+      "Creating general failed.",
+    );
+  },
+
+  get_general_type: async (type) => {
+    return apiCall(
+      () => api.get(`/general/general/${type}`),
+      `Fetching ${type} failed.`,
+    );
+  },
+
+  delete_general_by_id: async (type, id) => {
+    return apiCall(
+      () => api.delete(`/general/general/${id}`),
+      `Deleting ${type} by ID failed.`,
+    );
+  },
+
+  delete_general_by_name: async (type, name) => {
+    return apiCall(
+      () => api.delete(`/general/general/by-name/${type}/${name}`),
+      `Deleting ${type} by name failed.`,
+    );
+  },
+
+  update_general: async (type, id, data) => {
+    data = { ...data, type: type };
+
+    return apiCall(
+      () => api.patch(`/general/general/${id}`, data),
+      `Updating ${type} failed.`,
+    );
+  },
 };

@@ -12,6 +12,13 @@ export function RegistrationProvider({ children }) {
   const navigate = useNavigate();
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+
+  // Dashboard
+  const [pendingData, setPendingData] = useState([]);
+  const [finalizedData, setFinalizedData] = useState([]);
+  const [activityData, setActivityData] = useState([]);
+
+  // Generic
   const [referralSites, setReferralSites] = useState([]);
   const [dispositions, setDispositions] = useState([]);
   const [notesTemplates, setNotesTemplates] = useState([]);
@@ -19,9 +26,10 @@ export function RegistrationProvider({ children }) {
   const [documentTypes, setDocumentTypes] = useState([]);
   const [medicationTemplates, setMedicationTemplates] = useState([]);
   const [outcomes, setOutcomes] = useState([]);
-  const [pendingData, setPendingData] = useState([]);
-  const [finalizedData, setFinalizedData] = useState([]);
-  const [activityData, setActivityData] = useState([]);
+  const [genericInteractions, setGenericInteractions] = useState([]);
+  const [genericCoverage, setGenericCoverage] = useState([]);
+
+  // Patient
   const [registrationId, setRegistrationId] = useState(null);
   const [interactions, setInteractions] = useState([]);
   const [dispensing, setDispensing] = useState([]);
@@ -31,6 +39,8 @@ export function RegistrationProvider({ children }) {
   const [notes, setNotes] = useState([]);
 
   // Modals
+  const [showInteractionManager, setShowInteractionManager] = useState(false);
+  const [showCoverageManager, setShowCoverageManager] = useState(false);
   const [showNoteManager, setShowNoteManager] = useState(false);
   const [showDocumentTypeManager, setShowDocumentTypeManager] = useState(false);
   const [showDispositionManager, setShowDispositionManager] = useState(false);
@@ -339,6 +349,43 @@ export function RegistrationProvider({ children }) {
     setLoading(false);
   };
 
+  // Generic interaction
+  const getGenericInteractions = async () => {
+    setLoading(true);
+    setError("");
+
+    const result = await GeneralServices.get_general_type("interaction");
+
+    if (result.success) {
+      setGenericInteractions(result.data);
+    } else {
+      if (result.status === 400 || result.status === 409) {
+        setError(result.message || "Error getting interactions.");
+      } else {
+        setError("Error getting interactions. Please try again.");
+      }
+    }
+    setLoading(false);
+  };
+
+  const getCoverageTypes = async () => {
+    setLoading(true);
+    setError("");
+
+    const result = await GeneralServices.get_general_type("coverage");
+
+    if (result.success) {
+      setGenericCoverage(result.data);
+    } else {
+      if (result.status === 400 || result.status === 409) {
+        setError(result.message || "Error getting outcomes.");
+      } else {
+        setError("Error getting outcomes. Please try again.");
+      }
+    }
+    setLoading(false);
+  };
+
   // clinical templates
   const getClinicalTemplates = async () => {
     setLoading(true);
@@ -397,6 +444,8 @@ export function RegistrationProvider({ children }) {
       getActivities();
       getDashboardActivities();
       getRegistrations();
+      getGenericInteractions();
+      getCoverageTypes();
     };
 
     getInitialData();
@@ -405,6 +454,10 @@ export function RegistrationProvider({ children }) {
   return (
     <RegistrationContext.Provider
       value={{
+        genericCoverage,
+        genericInteractions,
+        getGenericInteractions,
+        getCoverageTypes,
         medicationTemplates,
         outcomes,
         referralSites,
@@ -453,6 +506,10 @@ export function RegistrationProvider({ children }) {
         getNotes,
         getRegistrationData,
         getOutcomes,
+        setShowInteractionManager,
+        showInteractionManager,
+        setShowCoverageManager,
+        showCoverageManager,
       }}
     >
       {children}

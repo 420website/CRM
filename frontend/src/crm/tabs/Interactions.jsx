@@ -4,9 +4,19 @@ import ConfirmModal from "../components/ConfirmModal";
 import { useRegistration } from "../../context/RegistrationContext";
 import DatePicker from "../ui/DatePicker";
 import toast from "react-hot-toast";
+import { useAuth } from "../../context/AuthContext";
+import InteractionsManager from "../managers/InteractionsManager";
 
 export default function Interactions({ setActiveTab, currentRegistrationId }) {
-  const { interactions, getInteractions } = useRegistration();
+  const { userRole } = useAuth();
+  const {
+    interactions,
+    getInteractions,
+    setShowInteractionManager,
+    genericInteractions,
+    getGenericInteractions,
+    showInteractionManager,
+  } = useRegistration();
   const [loading, setLoading] = useState(false);
   const [interactionsFilter, setInteractionsFilter] = useState("all");
   const [interactionsSearch, setInteractionsSearch] = useState("");
@@ -265,6 +275,8 @@ export default function Interactions({ setActiveTab, currentRegistrationId }) {
   return (
     <div>
       <div className="space-y-6">
+        {showInteractionManager && <InteractionsManager />}
+
         {/* Registration ID Check */}
         {!currentRegistrationId && (
           <div className="border-2 border-orange-200 bg-orange-50 p-4 rounded-lg">
@@ -342,12 +354,23 @@ export default function Interactions({ setActiveTab, currentRegistrationId }) {
             </div>
 
             <div>
-              <label
-                htmlFor="description"
-                className="block text-sm font-medium text-gray-700 mb-2"
-              >
-                Description *
-              </label>
+              <div className="flex items-center justify-between mb-2">
+                <label
+                  htmlFor="description"
+                  className="block text-sm font-medium text-gray-700 mb-2"
+                >
+                  Description *
+                </label>
+                {userRole == "admin" && (
+                  <button
+                    type="button"
+                    onClick={() => setShowInteractionManager(true)}
+                    className="text-blue-600 hover:text-blue-800 text-sm"
+                  >
+                    Manage Templates
+                  </button>
+                )}
+              </div>
               <select
                 id="description"
                 name="description"
@@ -356,28 +379,26 @@ export default function Interactions({ setActiveTab, currentRegistrationId }) {
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black"
               >
                 <option value="">Select</option>
-                <option value="Screening">Screening</option>
-                <option value="Adherence">Adherence</option>
-                <option value="Bloodwork">Bloodwork</option>
-                <option value="Discretionary">Discretionary</option>
-                <option value="Referral">Referral</option>
-                <option value="Consultation">Consultation</option>
-                <option value="Outreach">Outreach</option>
-                <option value="Repeat">Repeat</option>
-                <option value="Results">Results</option>
-                <option value="Safe Supply">Safe Supply</option>
-                <option value="Lab Req">Lab Req</option>
-                <option value="Telephone">Telephone</option>
-                <option value="Remittance">Remittance</option>
-                <option value="Update">Update</option>
-                <option value="Counselling">Counselling</option>
-                <option value="Trillium">Trillium</option>
-                <option value="Housing">Housing</option>
-                <option value="SOT">SOT</option>
-                <option value="EOT">EOT</option>
-                <option value="SVR">SVR</option>
-                <option value="Locate">Locate</option>
-                <option value="Staff">Staff</option>
+                {/* Most Frequently Used */}
+                {genericInteractions
+                  .filter((i) => i.is_frequent)
+                  .map((i) => (
+                    <option key={i.id} value={i.name}>
+                      {i.name}
+                    </option>
+                  ))}
+                {/* Separator */}
+                {genericInteractions.filter((i) => !i.is_frequent).length >
+                  0 && <option disabled>-------</option>}
+                {/* All Others in Alphabetical Order */}
+                {genericInteractions
+                  .filter((i) => !i.is_frequent)
+                  .sort((a, b) => a.name.localeCompare(b.name))
+                  .map((i) => (
+                    <option key={i.id} value={i.name}>
+                      {i.name}
+                    </option>
+                  ))}
               </select>
             </div>
 

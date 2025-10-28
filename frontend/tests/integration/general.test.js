@@ -777,3 +777,111 @@ describe("GeneralServices.medication-outcomes", () => {
     expect(stillThere).toBeUndefined();
   });
 });
+
+describe("GeneralServices.general", () => {
+  let createdId;
+  const email = "test798@example.com"; // unique user for this suite
+  const password = "password123";
+  const general = {
+    name: "test_general",
+    is_frequent: true,
+    is_default: true,
+  };
+
+  beforeEach(async () => {
+    // Register
+    const result = await TestServices.createVerifiedUser(email, password);
+    await AuthServices.verify_email(result.data?.token);
+
+    // Login
+    const login_result = await AuthServices.login(email, password);
+    tokenManager.setAccessToken(login_result.data?.access_token);
+
+    // MFA
+    const mfa_email = await TestServices.send_email_mfa(email);
+    const mfa_result = await AuthServices.verify_email_mfa(
+      mfa_email.data?.code,
+    );
+    tokenManager.setAccessToken(mfa_result.data?.access_token);
+  });
+
+  afterEach(async () => {
+    // cleanup
+    await GeneralServices.delete_general_by_name("interaction", general.name);
+    await GeneralServices.delete_general_by_name("coverage", general.name);
+
+    await TestServices.deleteUser(email, password);
+    createdId = null;
+  });
+
+  it("should create a general successfully", async () => {
+    const result = await GeneralServices.create_general("interaction", general);
+
+    expect(result.success).toBe(true);
+    expect(result.data?.message).toBe("interaction created successfully.");
+  });
+
+  it("should fetch generals and include created one", async () => {
+    await GeneralServices.create_general("interaction", general);
+    const result = await GeneralServices.get_general_type("interaction");
+
+    expect(result.success).toBe(true);
+    expect(Array.isArray(result.data)).toBe(true);
+
+    const found = result.data.find((g) => g.name === general.name);
+    expect(found).toBeDefined();
+    createdId = found.id;
+  });
+
+  it("should update a general successfully", async () => {
+    await GeneralServices.create_general("coverage", general);
+    const listRes = await GeneralServices.get_general_type("coverage");
+    const found = listRes.data.find((g) => g.name === general.name);
+    createdId = found.id;
+
+    const updateData = { is_frequent: false };
+    const updateRes = await GeneralServices.update_general(
+      "coverage",
+      createdId,
+      updateData,
+    );
+    expect(updateRes.success).toBe(true);
+
+    // verify change
+    const refreshed = await GeneralServices.get_general_type("coverage");
+    const updated = refreshed.data.find((g) => g.id === createdId);
+    expect(updated.is_frequent).toBe(false);
+  });
+
+  it("should delete a general by name", async () => {
+    await GeneralServices.create_general("coverage", general);
+    const deleteRes = await GeneralServices.delete_general_by_name(
+      "coverage",
+      general.name,
+    );
+    expect(deleteRes.success).toBe(true);
+
+    // verify removal
+    const listRes = await GeneralServices.get_general_type("coverage");
+    const stillThere = listRes.data.find((g) => g.name === general.name);
+    expect(stillThere).toBeUndefined();
+  });
+
+  it("should delete a general by id", async () => {
+    await GeneralServices.create_general("coverage", general);
+    const listRes = await GeneralServices.get_general_type("coverage");
+    const found = listRes.data.find((g) => g.name === general.name);
+    createdId = found.id;
+
+    const deleteRes = await GeneralServices.delete_general_by_id(
+      "coverage",
+      createdId,
+    );
+    expect(deleteRes.success).toBe(true);
+
+    // verify removal
+    const refreshed = await GeneralServices.get_general_type("coverage");
+    const stillThere = refreshed.data.find((g) => g.id === createdId);
+    expect(stillThere).toBeUndefined();
+  });
+});

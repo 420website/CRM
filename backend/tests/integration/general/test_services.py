@@ -8,6 +8,8 @@ from app.general.schemas import (
     DispositionUpdate,
     DocumentType,
     DocumentTypeUpdate,
+    General,
+    GeneralUpdate,
     Medication,
     MedicationOutcome,
     MedicationOutcomeUpdate,
@@ -1691,4 +1693,264 @@ class TestGeneralServiceMedicationOutcome(IsolatedAsyncioTestCase):
         result = await GeneralService.update_medication_outcome(
             1000, update_data
         )
+        self.assertFalse(result)
+
+
+class TestGeneralServiceGeneralSite(IsolatedAsyncioTestCase):
+    async def _cleanup_test_data(self):
+        """Helper method to clean up test data"""
+        # Clean up test general sites
+        types = ["interaction", "coverage"]
+        test_names = [
+            "test_general_site",
+            "test_general_site_2",
+            "updated_general_site",
+            "default_general_site",
+        ]
+        for t in types:
+            for name in test_names:
+                try:
+                    await GeneralService.delete_general(name, t)
+                except Exception:
+                    pass  # Ignore if general site doesn't exist
+
+    async def asyncSetUp(self) -> None:
+        asyncio.get_event_loop().set_debug(False)
+        await database.connect()
+        await self._cleanup_test_data()
+
+    async def asyncTearDown(self) -> None:
+        await database.disconnect()
+
+    async def test_create_general_site_success(self):
+        """Test successful creation of a general site"""
+        general_site = General(
+            name="test_general_site",
+            is_frequent=False,
+            is_default=False,
+            type="interaction",
+        )
+
+        # Test
+        result = await GeneralService.create_general_type(general_site)
+        self.assertTrue(result)
+
+        # Validate
+        general_sites = await GeneralService.get_general("interaction")
+        general_site = [
+            t for t in general_sites if t.name == "test_general_site"
+        ]
+
+        self.assertEqual(general_site[0].name, "test_general_site")
+        await GeneralService.delete_general("test_general_site", "interaction")
+
+    async def test_create_general_site_with_default(self):
+        """Test creation of a default general site"""
+        general_site = General(
+            name="default_general_site",
+            is_frequent=True,
+            is_default=True,
+            type="coverage",
+        )
+
+        # Test
+        result = await GeneralService.create_general_type(general_site)
+        self.assertTrue(result)
+
+        # Validate
+        general_sites = await GeneralService.get_general("coverage")
+        general_site = [
+            t for t in general_sites if t.name == "default_general_site"
+        ]
+
+        self.assertEqual(general_site[0].name, "default_general_site")
+        self.assertTrue(general_site[0].is_default)
+        await GeneralService.delete_general("default_general_site", "coverage")
+
+    async def test_create_duplicate_general_site_name(self):
+        """Test creating general site with duplicate name (should handle gracefully)"""
+        general_site = General(
+            name="test_general_site",
+            is_frequent=False,
+            is_default=False,
+            type="interaction",
+        )
+
+        # Create first general site
+        result1 = await GeneralService.create_general_type(general_site)
+        self.assertTrue(result1)
+
+        # This might raise an exception or return False depending on implementation
+        with self.assertRaises(Exception):
+            await GeneralService.create_general_type(general_site)
+
+        await GeneralService.delete_general("test_general_site", "interaction")
+
+    async def test_get_general_site_empty(self):
+        """Test getting general sites when none exist"""
+        general_sites = await GeneralService.get_general("other")
+        self.assertIsInstance(general_sites, list)
+        # self.assertEqual(len(general_sites), 0)
+
+    async def test_get_general_site_with_data(self):
+        """Test getting general sites when data exists"""
+        # Create test general sites
+        general_site1 = General(
+            name="test_general_site",
+            is_frequent=False,
+            is_default=False,
+            type="interaction",
+        )
+        general_site2 = General(
+            name="test_general_site_2",
+            is_frequent=True,
+            is_default=True,
+            type="interaction",
+        )
+
+        await GeneralService.create_general_type(general_site1)
+        await GeneralService.create_general_type(general_site2)
+
+        general_sites = await GeneralService.get_general("interaction")
+        self.assertIsInstance(general_sites, list)
+        self.assertGreaterEqual(len(general_sites), 2)
+
+        # Verify our general sites are in the results
+        general_site_names = [d.name for d in general_sites]
+        self.assertIn("test_general_site", general_site_names)
+        self.assertIn("test_general_site_2", general_site_names)
+
+        # Verify general site structure
+        for general_site in general_sites:
+            self.assertIsInstance(general_site, General)
+            self.assertIsInstance(general_site.name, str)
+            self.assertIsInstance(general_site.is_frequent, bool)
+            self.assertIsInstance(general_site.is_default, bool)
+
+        await GeneralService.delete_general("test_general_site", "interaction")
+        await GeneralService.delete_general(
+            "test_general_site_2", "interaction"
+        )
+
+    async def test_delete_general_site_success(self):
+        """Test successful deletion of a general site"""
+        # Create general site first
+        general_site = General(
+            name="test_general_site",
+            is_frequent=False,
+            is_default=False,
+            type="coverage",
+        )
+
+        await GeneralService.create_general_type(general_site)
+
+        # Delete the general site
+        result = await GeneralService.delete_general(
+            "test_general_site", "coverage"
+        )
+        self.assertTrue(result)
+
+        # Verify general site was deleted
+        general_sites = await GeneralService.get_general("coverage")
+        general_site_names = [d.name for d in general_sites]
+        self.assertNotIn("test_general_site", general_site_names)
+
+    async def test_delete_general_site_not_found(self):
+        """Test deletion of non-existent general site"""
+        result = await GeneralService.delete_general(
+            "non_existent_general_site", "other"
+        )
+        self.assertFalse(result)
+
+    async def test_update_general_site_success(self):
+        """Test successful update of a general site"""
+        # Create general site first
+        general_site = General(
+            name="test_general_site",
+            is_frequent=False,
+            is_default=False,
+            type="interaction",
+        )
+
+        id = await GeneralService.create_general_type(general_site)
+
+        # Update the general site
+        update_data = GeneralUpdate(
+            name="test_general_site",
+            is_frequent=True,
+            is_default=True,
+        )
+
+        result = await GeneralService.update_general(id, update_data)
+        self.assertTrue(result)
+
+        # Verify general site was updated
+        general_sites = await GeneralService.get_general("interaction")
+        general_site = [
+            t for t in general_sites if t.name == "test_general_site"
+        ]
+        self.assertIsNotNone(general_site[0])
+        self.assertTrue(general_site[0].is_frequent)
+        self.assertTrue(general_site[0].is_default)
+
+        await GeneralService.delete_general("test_general_site", "interaction")
+
+    async def test_update_general_site_partial(self):
+        """Test partial update of a general site"""
+        # Create general site first
+        general_site = General(
+            name="test_general_site",
+            is_frequent=False,
+            is_default=False,
+            type="coverage",
+        )
+        id = await GeneralService.create_general_type(general_site)
+
+        # Partial update - only is_frequent
+        update_data = GeneralUpdate(
+            name="test_general_site",
+            is_frequent=True,
+        )
+
+        # general_sites = await GeneralService.get_general_sites()
+        result = await GeneralService.update_general(id, update_data)
+        self.assertTrue(result)
+
+        # Verify only is_frequent was updated
+        general_sites = await GeneralService.get_general("coverage")
+        general_site = [
+            t for t in general_sites if t.name == "test_general_site"
+        ]
+        self.assertIsNotNone(general_site[0])
+        self.assertTrue(general_site[0].is_frequent)
+        self.assertFalse(general_site[0].is_default)
+
+        await GeneralService.delete_general("test_general_site", "coverage")
+
+    async def test_update_general_site_empty_updates(self):
+        """Test update with no actual changes"""
+        # Create general site first
+        general_site = General(
+            name="test_general_site",
+            is_frequent=False,
+            is_default=False,
+            type="interaction",
+        )
+        id = await GeneralService.create_general_type(general_site)
+
+        # Empty update
+        update_data = GeneralUpdate()
+        result = await GeneralService.update_general(id, update_data)
+        self.assertFalse(result)
+
+        await GeneralService.delete_general("test_general_site", "interaction")
+
+    async def test_update_general_site_not_found(self):
+        """Test update of non-existent general site"""
+        update_data = GeneralUpdate(
+            name="non_existent_general_site",
+            is_frequent=True,
+        )
+
+        result = await GeneralService.update_general(1000, update_data)
         self.assertFalse(result)

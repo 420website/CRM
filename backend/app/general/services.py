@@ -6,6 +6,8 @@ from app.general.schemas import (
     DispositionUpdate,
     DocumentType,
     DocumentTypeUpdate,
+    General,
+    GeneralUpdate,
     Medication,
     MedicationOutcome,
     MedicationOutcomeUpdate,
@@ -584,6 +586,88 @@ class GeneralService:
             f"{field} = ${i+1}" for i, field in enumerate(update.keys())
         ]
         query = f"UPDATE medication_outcomes SET {', '.join(set_clauses)} WHERE id = ${len(update)+1} RETURNING id;"
+        values = list(update.values()) + [id]
+
+        async with database.get_transaction() as conn:
+            row = await conn.fetchrow(query, *values)
+            return bool(row)
+
+    # general
+    @staticmethod
+    async def create_general_type(data: General) -> Optional[int]:
+        query = """
+        INSERT INTO general (name, is_frequent, is_default, type)
+        VALUES ($1, $2, $3, $4)
+        RETURNING id;
+        """
+
+        # Insert referral site and get the generated ID
+        async with database.get_transaction() as conn:
+            row = await conn.fetchrow(
+                query,
+                data.name,
+                data.is_frequent,
+                data.is_default,
+                data.type,
+            )
+            if row and "id" in row:
+                return row["id"]
+            return None
+
+    @staticmethod
+    async def get_general(general_type: str) -> List[General]:
+        query = """
+        SELECT * 
+        FROM general 
+        WHERE type=$1;
+        """
+
+        async with database.get_connection() as conn:
+            rows = await conn.fetch(query, general_type)
+
+        result = []
+        if rows:
+            for row in rows:
+                result.append(General(**dict(row)))
+
+        return result
+
+    @staticmethod
+    async def delete_general(name: str, general_type: str) -> bool:
+        query = """
+            DELETE FROM general 
+            WHERE name=$1
+            AND type=$2
+            RETURNING id;
+            """
+
+        async with database.get_transaction() as conn:
+            row = await conn.fetchrow(query, name, general_type)
+            return bool(row)
+
+    @staticmethod
+    async def delete_general_by_id(id: int) -> bool:
+        query = """
+            DELETE FROM general 
+            WHERE id=$1 
+            RETURNING id;
+            """
+
+        async with database.get_transaction() as conn:
+            row = await conn.fetchrow(query, id)
+            return bool(row)
+
+    @staticmethod
+    async def update_general(id: int, updates: GeneralUpdate) -> bool:
+        update = updates.model_dump(exclude_unset=True)
+
+        if not update:
+            return False
+
+        set_clauses = [
+            f"{field} = ${i+1}" for i, field in enumerate(update.keys())
+        ]
+        query = f"UPDATE general SET {', '.join(set_clauses)} WHERE id = ${len(update)+1} RETURNING id;"
         values = list(update.values()) + [id]
 
         async with database.get_transaction() as conn:

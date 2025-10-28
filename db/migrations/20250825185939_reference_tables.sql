@@ -68,6 +68,18 @@ CREATE TABLE medication_outcomes (
     updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 );
 
+-- general type
+CREATE TABLE general (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(200) NOT NULL UNIQUE,
+    is_frequent BOOLEAN DEFAULT false,
+    is_default BOOLEAN DEFAULT false,
+    type VARCHAR(50) NOT NULL DEFAULT 'unknown', 
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE (name, type)
+);
+
 -- migrate:down
 DROP TABLE IF EXISTS note_templates;
 DROP TABLE IF EXISTS clinical_templates;
@@ -76,4 +88,5 @@ DROP TABLE IF EXISTS document_type;
 DROP TABLE IF EXISTS referral_sites;
 DROP TABLE IF EXISTS medication_templates;
 DROP TABLE IF EXISTS medication_outcomes;
+DROP TABLE IF EXISTS general;
 
