@@ -9,6 +9,7 @@ import datetime as dt
 class PatientBase(BaseModel):
     age: Optional[int] = None
     gender: Optional[str] = None
+    health_card_version: Optional[str] = None
     aka: Optional[str] = None
     address: Optional[str] = None
     unit_number: Optional[str] = None
@@ -57,7 +58,6 @@ class PatientCreate(PatientBase):
     last_name: str
     dob: dt.date
     health_card: str
-    health_card_version: str
     force_create: bool = False
     status: Optional[str] = None
 
@@ -68,7 +68,6 @@ class PatientUpdate(PatientBase):
     last_name: Optional[str] = None
     dob: Optional[dt.date] = None
     health_card: Optional[str] = None
-    health_card_version: Optional[str] = None
     status: Optional[str] = None
     force_update: bool = False
 
@@ -85,7 +84,7 @@ class PatientRead(PatientBase):
     last_name: str
     dob: dt.date
     health_card: str
-    health_card_version: str
+    health_card_version: Optional[str] = None
     created_at: datetime
     updated_at: datetime
 

@@ -352,15 +352,6 @@ const AdminEdit = () => {
       return false;
     }
 
-    if (!formData.health_card_version) {
-      setIsSubmitting(false);
-      toast.error("Health Card Version required");
-      document
-        .querySelector("#healthcard")
-        ?.scrollIntoView({ behavior: "smooth" });
-      return false;
-    }
-
     return true;
   }
 
