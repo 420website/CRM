@@ -540,6 +540,10 @@ export default function Tests({ setActiveTab, currentRegistrationId }) {
                       <option value="">Select Type</option>
                       <option value="DBS">DBS</option>
                       <option value="Serum">Serum</option>
+                      {(testFormData.bloodwork_result === "Positive" ||
+                        testFormData.bloodwork_result === "Negative") && (
+                        <option value="Cepheid">Cepheid</option>
+                      )}
                     </select>
                   </div>
 
