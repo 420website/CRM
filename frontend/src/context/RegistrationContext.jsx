@@ -80,7 +80,9 @@ export function RegistrationProvider({ children }) {
       const pending = result.data.filter((reg) => reg.status === "pending");
       setPendingData(pending);
 
-      const finalized = result.data.filter((reg) => reg.status === "finalized");
+      const finalized = result.data.filter(
+        (reg) => reg.status === "finalized" || reg.status === "saved",
+      );
       setFinalizedData(finalized);
     } else {
       if (result.status === 400 || result.status === 409) {

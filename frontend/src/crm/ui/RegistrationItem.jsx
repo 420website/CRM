@@ -10,6 +10,7 @@ export function RegistrationItems({
   revertingId,
   finalizedData,
   pendingData,
+  handleSave,
   handleDelete,
   handleFinalize,
   handleRevertToPending,
@@ -84,6 +85,7 @@ export function RegistrationItems({
         finalizingId={finalizingId}
         revertingId={revertingId}
         handleDelete={handleDelete}
+        handleSave={handleSave}
         handleFinalize={handleFinalize}
         handleRevertToPending={handleRevertToPending}
         showPhoto={showPhoto}
@@ -114,6 +116,7 @@ export default function RegistrationItem({
   finalizingId,
   revertingId,
   handleDelete,
+  handleSave,
   handleFinalize,
   handleRevertToPending,
   showPhoto,
@@ -214,16 +217,28 @@ export default function RegistrationItem({
         </button>
 
         {activeTab === "pending" && (
-          <button
-            onClick={() => {
-              hidePhoto(item.id, index);
-              handleFinalize(item.id);
-            }}
-            disabled={finalizingId === item.id}
-            className="bg-green-600 hover:bg-green-700 text-white py-2 px-3 rounded-md transition-colors text-xs font-medium disabled:opacity-50 flex-1 min-w-[70px]"
-          >
-            {finalizingId === item.id ? "Submitting..." : "Submit"}
-          </button>
+          <>
+            <button
+              onClick={() => {
+                hidePhoto(item.id, index);
+                handleSave(item.id);
+              }}
+              disabled={finalizingId === item.id}
+              className="bg-gray-400 hover:bg-gray-300 text-white py-2 px-3 rounded-md transition-colors text-xs font-medium disabled:opacity-50 flex-1 min-w-[70px]"
+            >
+              {finalizingId === item.id ? "Saving..." : "Save"}
+            </button>
+            <button
+              onClick={() => {
+                hidePhoto(item.id, index);
+                handleFinalize(item.id);
+              }}
+              disabled={finalizingId === item.id}
+              className="bg-green-600 hover:bg-green-700 text-white py-2 px-3 rounded-md transition-colors text-xs font-medium disabled:opacity-50 flex-1 min-w-[70px]"
+            >
+              {finalizingId === item.id ? "Submitting..." : "Submit"}
+            </button>
+          </>
         )}
 
         {activeTab === "submitted" && (

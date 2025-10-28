@@ -50,6 +50,8 @@ const AdminDashboard = () => {
   const [deleteRegistrationId, setDeleteRegistrationId] = useState(null);
   const [finalizeRegistrationId, setFinalizeRegistrationId] = useState(null);
   const [revertRegistrationId, setRevertRegistrationId] = useState(null);
+  const [saveRegistrationId, setSaveRegistrationId] = useState(null);
+
   const [showConfirm, setShowConfirm] = useState("");
 
   // Data state - now paginated
@@ -198,6 +200,34 @@ const AdminDashboard = () => {
   const handleFinalize = async (id) => {
     setFinalizeRegistrationId(id);
     setShowConfirm("finalize");
+  };
+
+  const saveRegistration = async () => {
+    setError(null);
+
+    const result = await PatientServices.update_patient_status(
+      saveRegistrationId,
+      {
+        status: "saved",
+      },
+    );
+
+    if (result.success) {
+      getDashboardActivities();
+      getRegistrations();
+      toast.success("Registration saved successfully");
+    } else {
+      if (result.status === 400 || result.status === 409) {
+        toast.error(result.message || "Error updating patient status.");
+      } else {
+        toast.error("Error updating patient status. Please try again.");
+      }
+    }
+  };
+
+  const handleSave = async (id) => {
+    setSaveRegistrationId(id);
+    setShowConfirm("save");
   };
 
   const revertToPending = async () => {
@@ -360,6 +390,14 @@ const AdminDashboard = () => {
             message={"Confirm to delete registration"}
             subMessage={"This action cannot be undone"}
             confirm={deleteRegistration}
+            setShowConfirm={setShowConfirm}
+          />
+        )}
+        {showConfirm === "save" && (
+          <ConfirmModal
+            message={"Confirm save registration"}
+            subMessage={"This will save regsitration without sending email."}
+            confirm={saveRegistration}
             setShowConfirm={setShowConfirm}
           />
         )}
@@ -797,6 +835,7 @@ const AdminDashboard = () => {
                         finalizedData={finalizedData}
                         pendingData={pendingData}
                         handleDelete={handleDelete}
+                        handleSave={handleSave}
                         handleFinalize={handleFinalize}
                         handleRevertToPending={handleRevertToPending}
                         filteredData={getFilteredData()}
