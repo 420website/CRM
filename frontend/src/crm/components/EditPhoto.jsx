@@ -13,6 +13,7 @@ export default function EditPhoto({
 }) {
   const navigate = useNavigate();
   const [photoUploadStatus, setPhotoUploadStatus] = useState(null);
+  const [selectedFileName, setSelectedFileName] = useState(photoData.name);
 
   useEffect(() => {
     const compressAndSetPreview = async () => {
@@ -51,6 +52,7 @@ export default function EditPhoto({
 
       const compressedImage = await compressImageToBlob(file, 500);
 
+      setSelectedFileName(file ? file.name : "");
       setPhotoData({
         name: file.name,
         file: compressedImage,
@@ -64,6 +66,7 @@ export default function EditPhoto({
     setPhotoUploadStatus(null);
     setPhotoData({});
     setPhotoChanged(true);
+    setSelectedFileName("");
 
     // Clear both file inputs
     const cameraInput = document.getElementById("photo-camera");
@@ -165,44 +168,38 @@ export default function EditPhoto({
         <h2 className="text-lg font-medium text-gray-900 mb-4">Client Photo</h2>
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-3">
-              Photo Options
-            </label>
-
-            {/* Camera Option */}
-            <div className="mb-4">
-              <label
-                htmlFor="photo-camera"
-                className="block text-sm font-medium text-gray-600 mb-2"
-              >
-                📷 Take Photo with Camera
-              </label>
-              <input
-                type="file"
-                id="photo-camera"
-                accept="image/*"
-                capture="environment"
-                onChange={handlePhotoChange}
-                className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-black file:text-white hover:file:bg-gray-800"
-              />
-            </div>
-
             {/* Upload Option */}
             <div className="mb-4">
-              <label
-                htmlFor="photo-upload"
-                className="block text-sm font-medium text-gray-600 mb-2"
-              >
-                📁 Upload Existing Image
-              </label>
-              <input
-                type="file"
-                id="photo-upload"
-                accept="image/*"
-                onChange={handlePhotoChange}
-                className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-black file:text-white hover:file:bg-gray-800"
-              />
+              <div>
+                <div className="flex items-center gap-3">
+                  <button
+                    type="button"
+                    className="bg-black text-white text-sm font-semibold py-2 px-4 rounded-md hover:bg-gray-800"
+                    onClick={() =>
+                      document.getElementById("photo-upload").click()
+                    }
+                  >
+                    Upload Photo
+                  </button>
+
+                  <span className="text-sm text-gray-600 truncate max-w-[200px]">
+                    {photoData.name || "No file chosen"}
+                  </span>
+
+                  <input
+                    type="file"
+                    id="photo-upload"
+                    accept="image/*"
+                    onChange={handlePhotoChange}
+                    className="hidden"
+                  />
+                </div>
+              </div>
             </div>
+            <p className="mt-2 text-sm text-gray-500">
+              Photos are optimized to ~800KB while maintaining high quality.
+              Supported formats: JPG, PNG, GIF.
+            </p>
           </div>
 
           {photoPreview && (

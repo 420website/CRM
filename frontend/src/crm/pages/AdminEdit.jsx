@@ -185,6 +185,9 @@ const AdminEdit = () => {
         const blob = new Blob([photoRes.data], { type: "image/jpeg" });
         const url = URL.createObjectURL(blob);
         setPhotoPreview(url);
+        setPhotoData({
+          name: photoRes.headers["file-name"],
+        });
       }
     } else {
       if (result.status === 400 || result.status === 409) {

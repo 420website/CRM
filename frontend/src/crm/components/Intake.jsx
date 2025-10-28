@@ -7,6 +7,7 @@ import toast from "react-hot-toast";
 export default function Intake({ submitStatus, setPhotoData }) {
   const navigate = useNavigate();
   const [error, setError] = useState(null);
+  const [selectedFileName, setSelectedFileName] = useState("");
   const [systemTestStatus, setSystemTestStatus] = useState(null);
   const [photoPreview, setPhotoPreview] = useState(null);
   const [photoUploadStatus, setPhotoUploadStatus] = useState(null);
@@ -41,6 +42,7 @@ export default function Intake({ submitStatus, setPhotoData }) {
 
   const handlePhotoChange = async (e) => {
     const file = e.target.files[0];
+
     if (file) {
       // Validate file type
       if (!file.type.startsWith("image/")) {
@@ -48,6 +50,7 @@ export default function Intake({ submitStatus, setPhotoData }) {
         e.target.value = null;
         return;
       }
+      setSelectedFileName(file ? file.name : "");
 
       // Validate file size (10MB max before compression)
       if (file.size > 10 * 1024 * 1024) {
@@ -78,6 +81,7 @@ export default function Intake({ submitStatus, setPhotoData }) {
     setPhotoPreview(null);
     setPhotoUploadStatus(null);
     setPhotoData({});
+    setSelectedFileName("");
 
     // Clear both file inputs
     const cameraInput = document.getElementById("photo-camera");
@@ -268,51 +272,34 @@ export default function Intake({ submitStatus, setPhotoData }) {
           </h2>
           <div className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-3">
-                Photo Options
-              </label>
-
-              {/* Camera Option */}
-              <div className="mb-4">
-                <label
-                  htmlFor="photo-camera"
-                  className="block text-sm font-medium text-gray-600 mb-2"
-                >
-                  📷 Take Photo with Camera
-                </label>
-                <input
-                  type="file"
-                  id="photo-camera"
-                  accept="image/*"
-                  capture="environment"
-                  onChange={handlePhotoChange}
-                  className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-black file:text-white hover:file:bg-gray-800"
-                />
-                <p className="mt-1 text-xs text-gray-500">
-                  Use your device's camera to take a new photo
-                </p>
-              </div>
-
               {/* Upload Option */}
               <div className="mb-4">
-                <label
-                  htmlFor="photo-upload"
-                  className="block text-sm font-medium text-gray-600 mb-2"
-                >
-                  📁 Upload Existing Image
-                </label>
-                <input
-                  type="file"
-                  id="photo-upload"
-                  accept="image/*"
-                  onChange={handlePhotoChange}
-                  className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-black file:text-white hover:file:bg-gray-800"
-                />
-                <p className="mt-1 text-xs text-gray-500">
-                  Choose an existing image from your device
-                </p>
-              </div>
+                <div>
+                  <div className="flex items-center gap-3">
+                    <button
+                      type="button"
+                      className="bg-black text-white text-sm font-semibold py-2 px-4 rounded-md hover:bg-gray-800"
+                      onClick={() =>
+                        document.getElementById("photo-upload").click()
+                      }
+                    >
+                      Upload Photo
+                    </button>
 
+                    <span className="text-sm text-gray-600 truncate max-w-[200px]">
+                      {selectedFileName || "No file chosen"}
+                    </span>
+
+                    <input
+                      type="file"
+                      id="photo-upload"
+                      accept="image/*"
+                      onChange={handlePhotoChange}
+                      className="hidden"
+                    />
+                  </div>
+                </div>
+              </div>
               <p className="mt-2 text-sm text-gray-500">
                 Photos are optimized to ~800KB while maintaining high quality.
                 Supported formats: JPG, PNG, GIF.
