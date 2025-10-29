@@ -1,7 +1,8 @@
 from datetime import datetime
 import uuid
 from fastapi import Depends, File, APIRouter, HTTPException, UploadFile
-from app.analytics.services import AnalyticsService
+from app.analytics.rag import RagService
+from app.analytics.services import LegacyDataService
 from app.analytics.schema import (
     ClaudeChatRequest,
     ClaudeChatResponse,
@@ -20,7 +21,7 @@ router = APIRouter(prefix="/analytics", tags=["Analytics"])
 async def get_legacy_data_summary(user: UserRead = Depends(get_current_user)):
     """Get summary of uploaded legacy data"""
     try:
-        result = await AnalyticsService.get_legacy_data_summary(user.id)
+        result = await LegacyDataService.get_legacy_data_summary(user.id)
         return result
     except Exception as e:
         raise HTTPException(
@@ -34,7 +35,7 @@ async def clear_legacy_data_summary(
     user: UserRead = Depends(get_current_user),
 ):
     try:
-        result = await AnalyticsService.delete_all_legacy_data(user.id)
+        result = await LegacyDataService.delete_all_legacy_data(user.id)
         return result
     except Exception as e:
         raise HTTPException(
@@ -102,7 +103,7 @@ async def upload_legacy_data(
     )
 
     try:
-        await AnalyticsService.upload_legacy_data(data, user.id)
+        await LegacyDataService.upload_legacy_data(data, user.id)
 
         preview = data.data[:5] if len(data.data) > 5 else data.data
 
@@ -127,7 +128,10 @@ async def claude_chat(
 ):
     """Claude AI chat endpoint for admin analytics with legacy data access and chart generation"""
     try:
-        result = await AnalyticsService.claude_chat(request, user.id)
+        if request.legacy_data:
+            result = await RagService.claude_chat_file(request, user.id)
+        else:
+            result = await RagService.claude_chat_internal(request)
         return result
     except Exception as e:
         raise HTTPException(

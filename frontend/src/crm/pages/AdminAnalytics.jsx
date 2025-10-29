@@ -18,6 +18,7 @@ const AdminAnalytics = () => {
 
   // Excel upload states
   const [isUploading, setIsUploading] = useState(false);
+  const [isLegacyData, setIsLegacyData] = useState(false);
   const [uploadStatus, setUploadStatus] = useState(null);
   const [legacyDataSummary, setLegacyDataSummary] = useState(null);
   const [showUploadSection, setShowUploadSection] = useState(false);
@@ -91,6 +92,7 @@ const AdminAnalytics = () => {
     if (result.success) {
       setLegacyDataSummary(result.data);
       setShowUploadSection(false);
+      setIsLegacyData(true);
       return true;
     } else {
       setShowUploadSection(false);
@@ -103,6 +105,7 @@ const AdminAnalytics = () => {
     if (result.success) {
       setLegacyDataSummary(null);
       setUploadStatus(false);
+      setIsLegacyData(false);
     }
   };
 
@@ -133,6 +136,7 @@ const AdminAnalytics = () => {
         message: result.data?.message,
         data: result.data,
       });
+      setIsLegacyData(true);
       toast.success(result.data?.message);
 
       // Reload summary
@@ -171,6 +175,7 @@ const AdminAnalytics = () => {
       setError("");
 
       const data = {
+        legacy_data: isLegacyData,
         message: query,
         session_id: sessionId,
       };

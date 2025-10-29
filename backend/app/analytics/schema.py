@@ -39,6 +39,7 @@ class DataSummaryResponse(BaseModel):
 
 # Claude AI Chat Models
 class ClaudeChatRequest(BaseModel):
+    legacy_data: bool
     message: str
     session_id: Optional[str] = Field(
         default_factory=lambda: str(uuid.uuid4())

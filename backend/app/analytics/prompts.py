@@ -1,4 +1,7 @@
 # /app/analytics/prompts
+import json
+
+
 def legacy_context_prompt(
     total_records,
     rewards_stats,
@@ -203,10 +206,11 @@ Always note that your analysis is based solely on the uploaded legacy data file.
 REMEMBER: Be concise and direct. Provide only what is requested without additional insights unless asked."""
 
 
-def internal_system_message(context: str) -> str:
+def internal_system_message(context_json: str) -> str:
     return f"""You are 420 AI, an AI assistant specialized in medical data analytics for a Hepatitis C and HIV testing platform called my420.ca.
 
-{context}
+Context (query results in JSON):
+{context_json}
 
 IMPORTANT DATA LIMITATIONS:
 - You should ONLY analyze the data shown above
