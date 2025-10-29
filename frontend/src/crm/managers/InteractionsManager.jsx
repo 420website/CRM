@@ -332,6 +332,7 @@ export default function InteractionsManager() {
       </div>
       {showTemplateEditPopup && editingTemplate && (
         <EditModal
+          name={"Interaction"}
           editingTemplate={editingTemplate}
           setShowTemplateEditPopup={setShowTemplateEditPopup}
           updateTemplate={updateTemplate}

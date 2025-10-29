@@ -200,20 +200,19 @@ export default function RegistrationItem({
       {/* Action Buttons - Horizontal layout with intuitive colors */}
       <div className="flex gap-2 mt-4 flex-wrap">
         <button
+          onClick={() => handleDelete(item.id)}
+          disabled={deletingId === item.id}
+          className="bg-red-600 hover:bg-red-700 text-white py-2 px-3 rounded-md transition-colors text-xs font-medium disabled:opacity-50 flex-1 min-w-[60px]"
+        >
+          {deletingId === item.id ? "Deleting..." : "Delete"}
+        </button>
+        <button
           onClick={() => {
             navigate(`/admin-edit/${item.id}`);
           }}
           className="bg-black hover:bg-gray-800 text-white py-2 px-3 rounded-md transition-colors text-xs font-medium flex-1 min-w-[60px]"
         >
           Edit
-        </button>
-
-        <button
-          onClick={() => handleDelete(item.id)}
-          disabled={deletingId === item.id}
-          className="bg-red-600 hover:bg-red-700 text-white py-2 px-3 rounded-md transition-colors text-xs font-medium disabled:opacity-50 flex-1 min-w-[60px]"
-        >
-          {deletingId === item.id ? "Deleting..." : "Delete"}
         </button>
 
         {activeTab === "pending" && (
@@ -224,7 +223,7 @@ export default function RegistrationItem({
                 handleSave(item.id);
               }}
               disabled={finalizingId === item.id}
-              className="bg-gray-400 hover:bg-gray-300 text-white py-2 px-3 rounded-md transition-colors text-xs font-medium disabled:opacity-50 flex-1 min-w-[70px]"
+              className="bg-black hover:bg-gray-800 text-white py-2 px-3 rounded-md transition-colors text-xs font-medium disabled:opacity-50 flex-1 min-w-[60px]"
             >
               {finalizingId === item.id ? "Saving..." : "Save"}
             </button>
@@ -234,7 +233,7 @@ export default function RegistrationItem({
                 handleFinalize(item.id);
               }}
               disabled={finalizingId === item.id}
-              className="bg-green-600 hover:bg-green-700 text-white py-2 px-3 rounded-md transition-colors text-xs font-medium disabled:opacity-50 flex-1 min-w-[70px]"
+              className="bg-green-600 hover:bg-green-700 text-white py-2 px-3 rounded-md transition-colors text-xs font-medium disabled:opacity-50 flex-1 min-w-[60px]"
             >
               {finalizingId === item.id ? "Submitting..." : "Submit"}
             </button>
@@ -245,7 +244,7 @@ export default function RegistrationItem({
           <button
             onClick={() => handleRevertToPending(item.id)}
             disabled={revertingId === item.id}
-            className="bg-green-600 hover:bg-green-700 text-white py-2 px-3 rounded-md transition-colors text-xs font-medium disabled:opacity-50 flex-1 min-w-[70px]"
+            className="bg-green-600 hover:bg-green-700 text-white py-2 px-3 rounded-md transition-colors text-xs font-medium disabled:opacity-50 flex-1 min-w-[60px]"
           >
             {revertingId === item.id ? "Reverting..." : "Back to Pending"}
           </button>

@@ -4,6 +4,7 @@ import ConfirmModal from "../components/ConfirmModal";
 import { useRegistration } from "../../context/RegistrationContext";
 import DatePicker from "../ui/DatePicker";
 import toast from "react-hot-toast";
+import { newlineChars } from "pdf-lib";
 
 export default function Tests({ setActiveTab, currentRegistrationId }) {
   const { tests, getTests } = useRegistration();
@@ -295,6 +296,16 @@ export default function Tests({ setActiveTab, currentRegistrationId }) {
       newTestData.test_date = new Date().toISOString().split("T")[0];
       newTestData.hcv_result = "negative";
       newTestData.hcv_tester = "CM";
+    }
+
+    if (
+      name === "bloodwork_result" &&
+      value !== "Positive" &&
+      value !== "Negative"
+    ) {
+      if (newTestData.bloodwork_type === "Cepheid") {
+        newTestData.bloodwork_type = "";
+      }
     }
 
     setTestFormData(newTestData);

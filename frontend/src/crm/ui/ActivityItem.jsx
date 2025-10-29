@@ -269,7 +269,6 @@ export default function ActivityItem({
 function EditActivityItem({ index, item, activityData, setIsEditing }) {
   const { getDashboardActivities } = useRegistration();
 
-  console.log(activityData);
   const [activityForm, setActivityForm] = useState({
     date: activityData.date,
     time: activityData.time,

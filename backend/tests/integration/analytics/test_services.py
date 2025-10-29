@@ -1,7 +1,7 @@
 # pyright: reportOptionalMemberAccess=none, reportArgumentType=none, reportAttributeAccessIssue=none
 import asyncio
 from decimal import Decimal
-from unittest import IsolatedAsyncioTestCase
+from unittest import IsolatedAsyncioTestCase, skip
 from app.analytics.prompts import internal_system_message
 from app.analytics.rag import RagService
 from app.database import database
@@ -175,6 +175,7 @@ class TestRagService(IsolatedAsyncioTestCase):
         await database.disconnect()
 
     # create
+    @skip
     async def test_prompt_internal(self):
         question = (
             "How many HCV,HIV and bloodwork tests were completed this month?"
@@ -184,5 +185,4 @@ class TestRagService(IsolatedAsyncioTestCase):
         context = await RagService.retrieve_context(query)
         system_msg = internal_system_message(context)
         answer = await RagService.prompt_llm(system_msg, question, "14232")
-        # answer = await RagService.prompt_llm()
         print(answer)

@@ -191,7 +191,7 @@ export default function CoverageManager() {
                 value={newTemplateName}
                 onChange={(e) => setNewTemplateName(e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black"
-                placeholder="Enter coverage name (e.g., Epclusa)"
+                placeholder="Enter coverage name (e.g. OW)"
               />
             </div>
             <div className="flex items-center gap-2">
@@ -318,6 +318,7 @@ export default function CoverageManager() {
       </div>
       {showTemplateEditPopup && editingTemplate && (
         <EditModal
+          name={"Coverage"}
           editingTemplate={editingTemplate}
           setShowTemplateEditPopup={setShowTemplateEditPopup}
           updateTemplate={updateTemplate}

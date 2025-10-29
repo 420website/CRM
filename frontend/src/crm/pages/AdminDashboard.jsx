@@ -396,7 +396,7 @@ const AdminDashboard = () => {
         {showConfirm === "save" && (
           <ConfirmModal
             message={"Confirm save registration"}
-            subMessage={"This will save regsitration without sending email."}
+            subMessage={"This will save registration without sending an email"}
             confirm={saveRegistration}
             setShowConfirm={setShowConfirm}
           />
