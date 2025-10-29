@@ -673,9 +673,8 @@ export default function Client({
                   name="address"
                   value={formData.address}
                   onChange={handleChange}
-                  // onPlaceSelected={handlePlaceSelected}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black"
-                  placeholder="Start typing address..."
+                  // placeholder="Start typing address..."
                 />
               </div>
 
