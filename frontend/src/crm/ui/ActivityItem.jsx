@@ -5,7 +5,8 @@ import { useState } from "react";
 import toast from "react-hot-toast";
 import { useRegistration } from "../../context/RegistrationContext";
 import { PatientServices } from "../../services/patientServices";
-import { CheckCircleIcon, CircleIcon } from "lucide-react";
+import { CheckCircleIcon, CircleIcon, SquarePenIcon } from "lucide-react";
+import DatePicker from "./DatePicker";
 
 export function ActivityItems({ filteredData }) {
   const [showingPhotos, setShowingPhotos] = useState([]);
@@ -87,6 +88,7 @@ export default function ActivityItem({
   const navigate = useNavigate();
   const { getDashboardActivities, activityData } = useRegistration();
   const activity = activityData.find((activity) => activity.id === activityId);
+  const [isEditing, setIsEditing] = useState(false);
 
   const updateActivityStatus = async (isComplete) => {
     const result = await PatientServices.update_activity(
@@ -117,6 +119,10 @@ export default function ActivityItem({
     }
   };
 
+  const handleEdit = async () => {
+    setIsEditing(!isEditing);
+  };
+
   const isShowing = showingPhotos.some(
     ([id, idx]) => id === item.patient_id && idx === index,
   );
@@ -145,25 +151,53 @@ export default function ActivityItem({
       key={item.id}
       className="relative border rounded-lg p-4 bg-gray-50 hover:bg-gray-100 transition-colors cursor-pointer mb-2"
     >
+      {isEditing && (
+        <EditActivityItem
+          index={index}
+          item={item}
+          activityData={activity}
+          setIsEditing={setIsEditing}
+        />
+      )}
       <div className="flex justify-between items-start">
         <div className="flex-1">
-          <div className="flex items-center gap-3 mb-2">
+          <div className="flex justify-between ">
+            <div> </div>
+            <div className="flex flex-row items-center gap-0">
+              <span
+                className={`pl-2 pr-0  py-1 text-xs font-normal rounded-l-full rounded-r-none ${
+                  statusStyles[status] || "bg-gray-100 text-gray-800"
+                }`}
+              >
+                {status}
+              </span>
+              {/* Check icon */}
+              <button
+                onClick={() => handleToggleComplete()}
+                className={`top-3 right-3 p-1 rounded-l-none rounded-r-full transition-colors ${
+                  statusStyles[status] || "bg-gray-100 text-gray-800"
+                }`}
+                title={item.completed ? "Mark incomplete" : "Mark complete"}
+              >
+                {item.completed ? (
+                  <CheckCircleIcon className="w-5 h-4" />
+                ) : (
+                  <CircleIcon className="w-5 h-4" />
+                )}
+              </button>
+            </div>
+          </div>
+
+          {item.disposition && (
+            <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-xs font-normal ">
+              {item.disposition.charAt(0).toUpperCase() +
+                item.disposition.slice(1).toLowerCase()}
+            </span>
+          )}
+          <div className="flex items-center gap-3 mb-2 break-all">
             <h3 className="text-lg font-semibold text-gray-900">
               {item.description}
             </h3>
-            {item.disposition && (
-              <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-xs font-normal ">
-                {item.disposition.charAt(0).toUpperCase() +
-                  item.disposition.slice(1).toLowerCase()}
-              </span>
-            )}
-            <span
-              className={`px-2 py-1 text-xs font-medium rounded-full ${
-                statusStyles[status] || "bg-gray-100 text-gray-800"
-              }`}
-            >
-              {status}
-            </span>
           </div>
           <div className="text-sm text-gray-600 mt-1">
             <p className="font-medium">
@@ -174,22 +208,6 @@ export default function ActivityItem({
             {item.phone1 && <p>Phone: {item.phone1}</p>}
             <p className="text-xs text-gray-500 mt-1">Activity ID: {item.id}</p>
           </div>
-          {/* Check icon */}
-          <button
-            onClick={() => handleToggleComplete()}
-            className={`absolute top-3 right-3 p-1 rounded-full transition-colors ${
-              item.completed
-                ? "bg-green-100 text-green-700 hover:bg-green-200"
-                : "bg-gray-100 text-gray-500 hover:bg-gray-200"
-            }`}
-            title={item.completed ? "Mark incomplete" : "Mark complete"}
-          >
-            {item.completed ? (
-              <CheckCircleIcon className="w-5 h-5" />
-            ) : (
-              <CircleIcon className="w-5 h-5" />
-            )}
-          </button>
 
           {/* Lazy loaded photo */}
           {isShowing && (
@@ -231,7 +249,7 @@ export default function ActivityItem({
         </div>
       </div>
 
-      <div className="flex gap-2 mt-4">
+      <div className="flex gap-2 mt-4 justify-between">
         <button
           onClick={() => {
             navigate(`/admin-edit/${item.patient_id}`);
@@ -240,6 +258,181 @@ export default function ActivityItem({
         >
           View Client Profile
         </button>
+        <button onClick={handleEdit}>
+          <SquarePenIcon className="w-3 h-4" />
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function EditActivityItem({ index, item, activityData, setIsEditing }) {
+  const { getDashboardActivities } = useRegistration();
+
+  console.log(activityData);
+  const [activityForm, setActivityForm] = useState({
+    date: activityData.date,
+    time: activityData.time,
+    description: activityData.description,
+  });
+
+  const handleActivityChange = (e) => {
+    const { name, value } = e.target;
+    setActivityForm((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+  };
+
+  const closeEdit = () => {
+    setIsEditing(false);
+  };
+
+  function validateForm() {
+    if (!activityForm.date || activityForm.date === "") {
+      toast.error("Please select a date");
+      return false;
+    }
+
+    if (!activityForm.time || activityForm.time === "") {
+      toast.error("Please select a time");
+      return false;
+    }
+
+    if (!activityForm.description.trim() || activityForm.description === "") {
+      toast.error("Please add description");
+      return false;
+    }
+
+    return true;
+  }
+
+  const updateActivities = async () => {
+    if (!validateForm()) {
+      return;
+    }
+
+    const result = await PatientServices.update_activity(
+      item.patient_id,
+      item.id,
+      activityForm,
+    );
+
+    if (result.success) {
+      getDashboardActivities();
+      setIsEditing(false);
+      toast.success("Activity updated successfully");
+    } else {
+      if (result.status === 400 || result.status === 409) {
+        toast.error(result.message || "Error updating activity.");
+      } else {
+        toast.error("Error updating activity. Please try again.");
+      }
+    }
+  };
+
+  const deleteActivity = async () => {
+    const result = await PatientServices.delete_activity_by_id(
+      item.patient_id,
+      item.id,
+    );
+
+    if (result.success) {
+      getDashboardActivities();
+      toast.success("Activity deleted successfully");
+    } else {
+      if (result.status === 400 || result.status === 409) {
+        toast.error(result.message || "Error deleting activity.");
+      } else {
+        toast.error("Error deleting activity. Please try again.");
+      }
+    }
+  };
+
+  return (
+    <div
+      key={item.id}
+      className="relative border rounded-lg p-4 bg-gray-50 hover:bg-gray-100 transition-colors cursor-pointer mb-2"
+    >
+      <div className="flex justify-between items-start">
+        <div className="flex-1">
+          <div>
+            <label
+              htmlFor="activityDescription"
+              className="block text-sm font-medium text-gray-700 mb-2"
+            >
+              Date *
+            </label>
+            <DatePicker
+              name="date"
+              value={activityForm.date}
+              onChange={handleActivityChange}
+              className="w-full px-3 py-1.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black"
+              placeholder="mm/dd/yyyy"
+            />
+          </div>
+
+          <div>
+            <label
+              htmlFor="activityTime"
+              className="block text-sm font-medium text-gray-700 mb-2"
+            >
+              Time
+            </label>
+            <div className="flex w-full">
+              <input
+                type="time"
+                id="activityTime"
+                name="time"
+                value={activityForm.time}
+                onChange={handleActivityChange}
+                className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label
+              htmlFor="activityDescription"
+              className="block text-sm font-medium text-gray-700 mb-2"
+            >
+              Description
+            </label>
+            <textarea
+              id="activityDescription"
+              name="description"
+              rows={4}
+              value={activityForm.description}
+              onChange={handleActivityChange}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black resize-y"
+              placeholder="Enter activity description..."
+            />
+          </div>
+
+          <div className="flex gap-3">
+            <button
+              type="button"
+              onClick={updateActivities}
+              className="bg-black text-white text-xs px-4 py-2 rounded-md hover:bg-gray-800 disabled:bg-gray-400 transition-colors"
+            >
+              Update
+            </button>
+            <button
+              type="button"
+              onClick={deleteActivity}
+              className="bg-black text-white px-4 text-xs py-2 rounded-md hover:bg-gray-800 disabled:bg-gray-400 transition-colors"
+            >
+              Delete
+            </button>
+            <button
+              type="button"
+              onClick={closeEdit}
+              className="bg-gray-300 text-gray-700 text-xs px-4 py-2 rounded-md hover:bg-gray-400 transition-colors"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   );

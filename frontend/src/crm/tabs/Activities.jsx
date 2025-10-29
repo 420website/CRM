@@ -330,37 +330,37 @@ export default function Activities({ setActiveTab, currentRegistrationId }) {
                   >
                     <div className="flex justify-between items-start mb-2">
                       <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-2">
-                          <span className="text-lg font-semibold text-gray-900">
-                            {activity.description}
-                          </span>
-                          {/* Recent indicator */}
-                          {(() => {
-                            if (activity.completed) {
+                        {/* Recent indicator */}
+                        {(() => {
+                          if (activity.completed) {
+                            return (
+                              <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full">
+                                Completed
+                              </span>
+                            );
+                          } else {
+                            if (
+                              new Date(`${activity.date}T${activity.time}`) >
+                              new Date()
+                            ) {
                               return (
-                                <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full">
-                                  Completed
+                                <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">
+                                  Upcoming
                                 </span>
                               );
                             } else {
-                              if (
-                                new Date(`${activity.date}T${activity.time}`) >
-                                new Date()
-                              ) {
-                                return (
-                                  <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">
-                                    Upcoming
-                                  </span>
-                                );
-                              } else {
-                                return (
-                                  <span className="text-xs bg-red-100 text-red-700 px-2 py-0.5 rounded-full">
-                                    Late
-                                  </span>
-                                );
-                              }
+                              return (
+                                <span className="text-xs bg-red-100 text-red-700 px-2 py-0.5 rounded-full">
+                                  Late
+                                </span>
+                              );
                             }
-                          })()}
+                          }
+                        })()}
+                        <div className="flex items-center gap-2 mb-2">
+                          <span className="text-lg font-semibold text-gray-900 break-all">
+                            {activity.description}
+                          </span>
                         </div>
                         <div className="text-sm text-gray-700 space-y-1">
                           {activity.date && (
