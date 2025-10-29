@@ -367,7 +367,7 @@ export default function Interactions({ setActiveTab, currentRegistrationId }) {
                     onClick={() => setShowInteractionManager(true)}
                     className="text-blue-600 hover:text-blue-800 text-sm"
                   >
-                    Manage Templates
+                    Manage Descriptions
                   </button>
                 )}
               </div>
