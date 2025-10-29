@@ -308,6 +308,13 @@ export default function Tests({ setActiveTab, currentRegistrationId }) {
       }
     }
 
+    if (
+      newTestData.bloodwork_type !== "DBS" &&
+      newTestData.bloodwork_circles !== ""
+    ) {
+      newTestData.bloodwork_circles = "";
+    }
+
     setTestFormData(newTestData);
   };
 

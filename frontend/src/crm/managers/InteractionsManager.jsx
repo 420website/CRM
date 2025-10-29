@@ -205,7 +205,7 @@ export default function InteractionsManager() {
                 value={newTemplateName}
                 onChange={(e) => setNewTemplateName(e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black"
-                placeholder="Enter interaction name (e.g., Epclusa)"
+                placeholder="Enter interaction name"
               />
             </div>
             <div className="flex items-center gap-2">
