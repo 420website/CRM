@@ -33,10 +33,6 @@ CREATE TABLE patients (
     preferred_time VARCHAR(50),             -- morning, afternoon, evening
 
     -- Test results
-    hiv_date DATE,
-    hiv_result VARCHAR(50),                 -- positive / negative
-    hiv_tester VARCHAR(50),
-    hiv_type VARCHAR(50),
     rna_available VARCHAR(20),              -- Yes/No
     rna_result VARCHAR(50),                 -- Positive/Negative
     rna_sample_date DATE,
@@ -51,8 +47,6 @@ CREATE TABLE patients (
     instructions TEXT,
     selected_template VARCHAR(200),         -- foreign key if linking to templates
     summary_template TEXT,
-    test_type VARCHAR(50),                  -- e.g. "Tests"
-    -- photo TEXT,                             -- base64 or URL
 
     -- Timestamps
     finalized_at TIMESTAMPTZ DEFAULT NULL,

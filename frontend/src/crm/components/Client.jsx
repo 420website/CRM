@@ -278,28 +278,6 @@ export default function Client({
       newFormData.physician = "None";
     }
 
-    // Clear HIV fields when test type changes
-    if (name === "testType") {
-      if (value === "HIV") {
-        // Set HIV date to current date when HIV is selected
-        newFormData.hivDate = new Date().toISOString().split("T")[0];
-        newFormData.hivResult = "negative"; // Default to negative
-        newFormData.hivType = "";
-        newFormData.hivTester = "CM"; // Set default tester
-      } else if (value !== "HIV") {
-        // Clear all HIV fields when switching away from HIV
-        newFormData.hivDate = new Date().toISOString().split("T")[0];
-        newFormData.hivResult = "negative";
-        newFormData.hivType = "";
-        newFormData.hivTester = "CM"; // Reset to default
-      }
-    }
-
-    // Clear HIV type when result is not positive
-    if (name === "hivResult" && value !== "positive") {
-      newFormData.hivType = "";
-    }
-
     setFormData(newFormData);
   };
 

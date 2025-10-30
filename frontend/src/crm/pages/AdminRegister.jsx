@@ -54,7 +54,6 @@ const AdminRegister = () => {
   const getDefaultForm = () => ({
     ...DEFAULT_FORM,
     reg_date: new Date().toISOString().split("T")[0],
-    hiv_date: new Date().toISOString().split("T")[0],
     rna_sample_date: new Date().toISOString().split("T")[0],
   });
 

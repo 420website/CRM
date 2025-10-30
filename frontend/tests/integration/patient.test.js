@@ -48,11 +48,6 @@ describe("PatientServices.patients", () => {
     rna_result: "Positive",
     coverage_type: "Private",
     referral_person: "Dr. Smith",
-    test_type: "HIV Test",
-    hiv_date: new Date().toISOString().split("T")[0],
-    hiv_result: "negative",
-    hiv_type: "Type 1",
-    hiv_tester: "CM",
   };
 
   beforeEach(async () => {

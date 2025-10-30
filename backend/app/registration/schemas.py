@@ -25,30 +25,29 @@ class PatientBase(BaseModel):
     coverage_type: Optional[str] = None
     disposition: Optional[str] = None
     physician: Optional[str] = None
+
     # Consent / communication
     patient_consent: Optional[str] = None
     leave_message: bool = False
     voicemail: bool = False
     text: bool = False
     preferred_time: Optional[str] = None
+
     # Test results
-    hiv_date: Optional[dt.date] = None
-    hiv_result: Optional[str] = None
-    hiv_tester: Optional[str] = None
-    hiv_type: Optional[str] = None
     rna_available: Optional[str] = None
     rna_result: Optional[str] = None
     rna_sample_date: Optional[dt.date] = None
+
     # Referral / registration
     referral_site: Optional[str] = None
     referral_person: Optional[str] = None
     reg_date: Optional[dt.date] = None
+
     # Notes / misc
     special_attention: Optional[str] = None
     instructions: Optional[str] = None
     selected_template: Optional[str] = None
     summary_template: Optional[str] = None
-    test_type: Optional[str] = None
     finalized_at: Optional[datetime] = None
 
 

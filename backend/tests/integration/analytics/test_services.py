@@ -79,10 +79,6 @@ class TestRagService(IsolatedAsyncioTestCase):
             text=False,
             preferred_time="Morning 9-11 AM",
             # Test results
-            hiv_date=date(2023, 12, 1),
-            hiv_result="Negative",
-            hiv_tester="Lab Tech A",
-            hiv_type="Rapid Test",
             rna_available="Yes",
             rna_result="Not Detected",
             rna_sample_date=date(2023, 12, 1),
@@ -95,7 +91,7 @@ class TestRagService(IsolatedAsyncioTestCase):
             instructions="Call before 8 PM",
             selected_template="Standard HIV Template",
             summary_template="Brief Summary",
-            test_type="HIV Screening",
+            # test_type="HIV Screening",
         )
 
         await PatientService.create_patient(self.patient)

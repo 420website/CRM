@@ -35,10 +35,4 @@ export const DEFAULT_FORM = {
   rna_result: "Positive", // Add RNA result field
   coverage_type: "Select", // Add coverage type field
   referral_person: "", // Add referral person field
-  test_type: "Tests", // Add test type field with default
-  // HIV Test Fields
-  hiv_date: new Date().toISOString().split("T")[0], // Current date for HIV test
-  hiv_result: "negative", // HIV test result (default to negative)
-  hiv_type: "", // HIV type (Type 1 or Type 2)
-  hiv_tester: "CM", // HIV tester initials (default CM)
 };

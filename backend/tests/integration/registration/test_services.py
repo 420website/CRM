@@ -86,10 +86,6 @@ class TestPatientService(IsolatedAsyncioTestCase):
             text=False,
             preferred_time="Morning 9-11 AM",
             # Test results
-            hiv_date=date(2023, 12, 1),
-            hiv_result="Negative",
-            hiv_tester="Lab Tech A",
-            hiv_type="Rapid Test",
             rna_available="Yes",
             rna_result="Not Detected",
             rna_sample_date=date(2023, 12, 1),
@@ -102,7 +98,6 @@ class TestPatientService(IsolatedAsyncioTestCase):
             instructions="Call before 8 PM",
             selected_template="Standard HIV Template",
             summary_template="Brief Summary",
-            test_type="HIV Screening",
         )
 
         # Minimal PatientCreate instance with only required fields
@@ -138,7 +133,6 @@ class TestPatientService(IsolatedAsyncioTestCase):
             leave_message=False,
             voicemail=False,
             text=True,
-            hiv_date=date(2024, 1, 15),
             reg_date=date(2024, 1, 10),
         )
 
