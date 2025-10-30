@@ -86,6 +86,14 @@ export default function Tests({ setActiveTab, currentRegistrationId }) {
     }
 
     if (
+      !testFormData.bloodwork_result ||
+      testFormData.bloodwork_result === ""
+    ) {
+      toast.error("Please select test result");
+      return false;
+    }
+
+    if (
       testFormData.bloodwork_type === "DBS" &&
       testFormData.bloodwork_circles === ""
     ) {
@@ -299,13 +307,11 @@ export default function Tests({ setActiveTab, currentRegistrationId }) {
     }
 
     if (
-      name === "bloodwork_result" &&
-      value !== "Positive" &&
-      value !== "Negative"
+      value === "Cepheid" &&
+      newTestData.bloodwork_result !== "Positive" &&
+      newTestData.bloodwork_result !== "Negative"
     ) {
-      if (newTestData.bloodwork_type === "Cepheid") {
-        newTestData.bloodwork_type = "";
-      }
+      newTestData.bloodwork_result = "Positive";
     }
 
     if (
@@ -558,10 +564,7 @@ export default function Tests({ setActiveTab, currentRegistrationId }) {
                       <option value="">Select Type</option>
                       <option value="DBS">DBS</option>
                       <option value="Serum">Serum</option>
-                      {(testFormData.bloodwork_result === "Positive" ||
-                        testFormData.bloodwork_result === "Negative") && (
-                        <option value="Cepheid">Cepheid</option>
-                      )}
+                      <option value="Cepheid">Cepheid</option>
                     </select>
                   </div>
 
@@ -604,8 +607,12 @@ export default function Tests({ setActiveTab, currentRegistrationId }) {
                       onChange={handleTestChange}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black"
                     >
-                      <option value="Pending">Pending</option>
-                      <option value="Submitted">Submitted</option>
+                      {testFormData.bloodwork_type !== "Cepheid" && (
+                        <>
+                          <option value="Pending">Pending</option>
+                          <option value="Submitted">Submitted</option>
+                        </>
+                      )}
                       <option value="Positive">Positive</option>
                       <option value="Negative">Negative</option>
                     </select>
