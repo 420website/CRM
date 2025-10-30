@@ -530,7 +530,7 @@ async def create_general_type(
     user: UserRead = Depends(get_current_user),
 ):
 
-    if await GeneralService.check_exists(data.name, "general"):
+    if await GeneralService.check_general_exists(data.name, data.type):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"{data.type} already exists.",

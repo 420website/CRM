@@ -1744,6 +1744,44 @@ class TestGeneralServiceGeneralSite(IsolatedAsyncioTestCase):
         self.assertEqual(general_site[0].name, "test_general_site")
         await GeneralService.delete_general("test_general_site", "interaction")
 
+    async def test_check_general_exists(self):
+        """Test creation of a default general site"""
+        general_site = General(
+            name="default_general_site",
+            is_frequent=True,
+            is_default=True,
+            type="coverage",
+        )
+
+        await GeneralService.create_general_type(general_site)
+
+        # Test
+        result = await GeneralService.check_general_exists(
+            "default_general_site", "coverage"
+        )
+        self.assertTrue(result)
+
+        result = await GeneralService.check_general_exists(
+            "default_general_site", "interaction"
+        )
+        self.assertFalse(result)
+
+    async def test_create_duplicate_name_diff_type(self):
+        """Test creation of a default general site"""
+        general_site = General(
+            name="default_general_site",
+            is_frequent=True,
+            is_default=True,
+            type="coverage",
+        )
+
+        await GeneralService.create_general_type(general_site)
+
+        # Test
+        general_site.type = "interaction"
+        result = await GeneralService.create_general_type(general_site)
+        self.assertIsNotNone(result)
+
     async def test_create_general_site_with_default(self):
         """Test creation of a default general site"""
         general_site = General(

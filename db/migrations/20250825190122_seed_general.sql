@@ -23,14 +23,10 @@ VALUES
   ('SVR',True,True,'interaction'),
   ('Locate',True,True,'interaction'),
   ('Staff',True,True,'interaction'),
-  ('Staff',True,True,'interaction'),
-  ('Staff',True,True,'interaction'),
-  ('Staff',True,True,'interaction'),
-  ('Staff',True,True,'interaction'),
   ('OW',True,True,'coverage'),
   ('ODSP',True,True,'coverage'),
   ('No Coverage',True,True,'coverage')
-ON CONFLICT (name) DO NOTHING;
+ON CONFLICT (name, type) DO NOTHING;
 
 -- migrate:down
 DELETE FROM general 
@@ -60,5 +56,5 @@ WHERE name IN (
   'OW',
   'ODSP',
   'No Coverage'
-ON CONFLICT (name) DO NOTHING;
+ON CONFLICT (name, type) DO NOTHING;
 );

@@ -34,6 +34,21 @@ class GeneralService:
 
             return True if row else False
 
+    @staticmethod
+    async def check_general_exists(name: str, name_type: str) -> bool:
+        query = """
+            SELECT id 
+            FROM general 
+            WHERE 
+                name=$1 AND 
+                type=$2; 
+            """
+
+        async with database.get_connection() as conn:
+            row = await conn.fetch(query, name, name_type)
+
+            return True if row else False
+
     # NoteTemplate
     @staticmethod
     async def create_notes_template(template: NotesTemplate) -> Optional[int]:

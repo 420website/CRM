@@ -71,7 +71,7 @@ CREATE TABLE medication_outcomes (
 -- general type
 CREATE TABLE general (
     id SERIAL PRIMARY KEY,
-    name VARCHAR(200) NOT NULL UNIQUE,
+    name VARCHAR(200) NOT NULL,
     is_frequent BOOLEAN DEFAULT false,
     is_default BOOLEAN DEFAULT false,
     type VARCHAR(50) NOT NULL DEFAULT 'unknown', 

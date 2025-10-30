@@ -43,6 +43,7 @@ function EditPopup({
               id="editDispositionName"
               defaultValue={editingDisposition.name}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black"
+              maxLength={"30"}
             />
           </div>
 
@@ -310,6 +311,7 @@ export default function DispositionManager() {
                 onChange={(e) => setNewDispositionName(e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black"
                 placeholder="Enter disposition name (e.g., ACTIVE, PENDING)"
+                maxLength={"30"}
               />
             </div>
             <div className="flex items-center gap-2">
