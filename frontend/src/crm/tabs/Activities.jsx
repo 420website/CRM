@@ -326,55 +326,35 @@ export default function Activities({ setActiveTab, currentRegistrationId }) {
                 {activities.map((activity, index) => (
                   <div
                     key={activity.id}
-                    className="border border-gray-200 rounded-lg p-4 bg-white hover:shadow-md transition-shadow"
+                    className="border border-gray-200 rounded-lg bg-white hover:shadow-md transition-shadow"
                   >
-                    <div className="flex justify-between items-start mb-2">
-                      <div className="flex-1">
-                        {/* Recent indicator */}
-                        {(() => {
-                          if (activity.completed) {
+                    <div className="flex justify-between m-4 ml-2 mb-0">
+                      {(() => {
+                        if (activity.completed) {
+                          return (
+                            <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full">
+                              Completed
+                            </span>
+                          );
+                        } else {
+                          if (
+                            new Date(`${activity.date}T${activity.time}`) >
+                            new Date()
+                          ) {
                             return (
-                              <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full">
-                                Completed
+                              <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">
+                                Upcoming
                               </span>
                             );
                           } else {
-                            if (
-                              new Date(`${activity.date}T${activity.time}`) >
-                              new Date()
-                            ) {
-                              return (
-                                <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">
-                                  Upcoming
-                                </span>
-                              );
-                            } else {
-                              return (
-                                <span className="text-xs bg-red-100 text-red-700 px-2 py-0.5 rounded-full">
-                                  Late
-                                </span>
-                              );
-                            }
+                            return (
+                              <span className="text-xs bg-red-100 text-red-700 px-2 py-0.5 rounded-full">
+                                Late
+                              </span>
+                            );
                           }
-                        })()}
-                        <div className="flex items-center gap-2 mb-2">
-                          <span className="text-lg font-semibold text-gray-900 break-all">
-                            {activity.description}
-                          </span>
-                        </div>
-                        <div className="text-sm text-gray-700 space-y-1">
-                          {activity.date && (
-                            <p>
-                              <strong>Date:</strong> {activity.date}
-                            </p>
-                          )}
-                          {activity.time && (
-                            <p>
-                              <strong>Time:</strong> {activity.time}
-                            </p>
-                          )}
-                        </div>
-                      </div>
+                        }
+                      })()}
                       <div className="flex gap-2">
                         <button
                           type="button"
@@ -392,6 +372,27 @@ export default function Activities({ setActiveTab, currentRegistrationId }) {
                         >
                           Delete
                         </button>
+                      </div>
+                    </div>
+                    <div className="flex p-4 pt-0 justify-between items-start mb-2">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-2">
+                          <span className="text-lg font-semibold text-gray-900 break-all">
+                            {activity.description}
+                          </span>
+                        </div>
+                        <div className="text-sm text-gray-700 space-y-1">
+                          {activity.date && (
+                            <p>
+                              <strong>Date:</strong> {activity.date}
+                            </p>
+                          )}
+                          {activity.time && (
+                            <p>
+                              <strong>Time:</strong> {activity.time}
+                            </p>
+                          )}
+                        </div>
                       </div>
                     </div>
                   </div>

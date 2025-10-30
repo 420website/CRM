@@ -149,7 +149,7 @@ export default function ActivityItem({
   return (
     <div
       key={item.id}
-      className="relative border rounded-lg p-4 bg-gray-50 hover:bg-gray-100 transition-colors cursor-pointer mb-2"
+      className="relative border rounded-lg  bg-gray-50 hover:bg-gray-100 transition-colors cursor-pointer mb-2"
     >
       {isEditing && (
         <EditActivityItem
@@ -159,41 +159,39 @@ export default function ActivityItem({
           setIsEditing={setIsEditing}
         />
       )}
-      <div className="flex justify-between items-start">
+      <div className="flex justify-between items-center  m-4 ml-2 mb-0 ">
+        {item.disposition && (
+          <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-xs font-normal ">
+            {item.disposition.charAt(0).toUpperCase() +
+              item.disposition.slice(1).toLowerCase()}
+          </span>
+        )}
+        <div className="flex items-center">
+          <span
+            className={`pl-2 pr-0  py-1 text-xs font-normal rounded-l-full rounded-r-none ${
+              statusStyles[status] || "bg-gray-100 text-gray-800"
+            }`}
+          >
+            {status}
+          </span>
+          {/* Check icon */}
+          <button
+            onClick={() => handleToggleComplete()}
+            className={`top-3 right-3 p-1 rounded-l-none rounded-r-full transition-colors ${
+              statusStyles[status] || "bg-gray-100 text-gray-800"
+            }`}
+            title={item.completed ? "Mark incomplete" : "Mark complete"}
+          >
+            {item.completed ? (
+              <CheckCircleIcon className="w-5 h-4" />
+            ) : (
+              <CircleIcon className="w-5 h-4" />
+            )}
+          </button>
+        </div>
+      </div>
+      <div className="flex justify-between items-start pl-4 pr-4 ">
         <div className="flex-1">
-          <div className="flex justify-between ">
-            <div> </div>
-            <div className="flex flex-row items-center gap-0">
-              <span
-                className={`pl-2 pr-0  py-1 text-xs font-normal rounded-l-full rounded-r-none ${
-                  statusStyles[status] || "bg-gray-100 text-gray-800"
-                }`}
-              >
-                {status}
-              </span>
-              {/* Check icon */}
-              <button
-                onClick={() => handleToggleComplete()}
-                className={`top-3 right-3 p-1 rounded-l-none rounded-r-full transition-colors ${
-                  statusStyles[status] || "bg-gray-100 text-gray-800"
-                }`}
-                title={item.completed ? "Mark incomplete" : "Mark complete"}
-              >
-                {item.completed ? (
-                  <CheckCircleIcon className="w-5 h-4" />
-                ) : (
-                  <CircleIcon className="w-5 h-4" />
-                )}
-              </button>
-            </div>
-          </div>
-
-          {item.disposition && (
-            <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-xs font-normal ">
-              {item.disposition.charAt(0).toUpperCase() +
-                item.disposition.slice(1).toLowerCase()}
-            </span>
-          )}
           <div className="flex items-center gap-3 mb-2 break-all">
             <h3 className="text-lg font-semibold text-gray-900">
               {item.description}
@@ -249,7 +247,7 @@ export default function ActivityItem({
         </div>
       </div>
 
-      <div className="flex gap-2 mt-4 justify-between">
+      <div className="flex gap-2 mt-4 p-4 pt-0 justify-between">
         <button
           onClick={() => {
             navigate(`/admin-edit/${item.patient_id}`);
