@@ -88,6 +88,19 @@ services:
       - secret-reload
     command: ["--wait","up"]
 
+  redis:
+    image: redis:7
+    restart: unless-stopped
+    volumes: 
+      - redis_data:/data
+    networks:
+      - backend-net
+    profiles:
+      - dev
+      - prod
+      - cert-reload
+      - secret-reload
+
   minio:
     image: minio/minio:latest
     restart: unless-stopped
@@ -262,14 +275,14 @@ services:
       - backend
 
 volumes:
+  frontend_dist:
   mongo_data:
   postgres_data:
-  alloy-data:
-  frontend_dist:
+  minio_data:
+  redis_data:
   certbot-etc:
   certbot-var:
   certbot-www:
-  minio_data:
 
 networks:
   frontend-net:

@@ -61,9 +61,16 @@ class Settings:
     # claude
     anthropic_key = get_env("ANTHROPIC_API_KEY")
     anthropic_client = AsyncAnthropic(api_key=anthropic_key)
-    anthropic_max_tokens = os.getenv("MAX_TOKENS", 1024)
+    anthropic_max_tokens = int(os.getenv("MAX_TOKENS", 1024))
     anthropic_model = os.getenv("ANTHROPIC_MODEL", "claude-sonnet-4-20250514")
 
+    # redis
+    max_chat_length = 20
+    chat_history_ttl = 20 * 60
+    redis_host = "redis"
+    redis_port = 6379
+
+    # registration email
     support_email = get_env("SUPPORT_EMAIL")
 
     # env

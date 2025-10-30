@@ -44,6 +44,15 @@ services:
       - db
     command: ["--wait","up"]
 
+  redis:
+    image: redis:7
+    container_name: redis-dev
+    restart: unless-stopped
+    volumes: 
+      - redis_data:/data
+    networks: 
+      - backend-net
+
   minio:
     image: minio/minio:latest
     container_name: minio
@@ -196,8 +205,9 @@ services:
       "
 
 volumes:
-  postgres_data:
   node_modules:
+  postgres_data:
+  redis_data:
   mongo_data:
   minio_data:
 

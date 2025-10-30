@@ -75,6 +75,21 @@ services:
       - test_e2e_watch
     command: ["--wait","up"]
 
+  redis:
+    image: redis:7
+    container_name: redis-test
+    restart: unless-stopped
+    volumes: 
+      - redis_data:/data
+    networks: 
+      - backend-net
+    profiles:
+      - test
+      - database
+      - test_backend_integration_watch
+      - test_frontend_integration_watch
+      - test_e2e_watch
+
   minio:
     image: minio/minio:latest
     container_name: minio
@@ -312,6 +327,7 @@ volumes:
   postgres_test_data:
   node_modules:
   minio_data:
+  redis_data:
 
 networks:
   frontend-net:
