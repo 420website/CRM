@@ -1,5 +1,52 @@
-# /app/analytics/prompts
-import json
+from app.analytics.metadata import (
+    RELATIONSHIPS,
+    TABLE_DESCRIPTIONS,
+    FIELD_DESCRIPTIONS,
+)
+
+
+def query_prompt(schema_text: str) -> str:
+    relationship_text = "\n".join(
+        f"{a}.{col} = {b}.{col}" for a, b, col in RELATIONSHIPS
+    )
+    description_text = "\n".join(
+        f"{table}: {desc}" for table, desc in TABLE_DESCRIPTIONS.items()
+    )
+    field_text = "\n".join(
+        f"{table}: {desc}" for table, desc in FIELD_DESCRIPTIONS.items()
+    )
+
+    return f"""
+You are an expert SQL analyst generating queries over a Postgres CRM database.
+
+Table Relationships (foreign keys):
+{relationship_text}
+
+Database Overview:
+{description_text}
+
+Database Field Overview:
+{field_text}
+
+Important Notes:
+- The "patients" table may also be referred to as "registrations" in natural language.
+- All other tables connect to patients via patient_id.
+- HIV/HCV results exist both in patients and tests, depending on data entry context.
+
+Rules for SQL generation:
+1. Generate **valid PostgreSQL SELECT queries ONLY**.
+2. Always start your response with the keyword SELECT.
+3. Do NOT include any Markdown code fences or backticks.
+4. Use JOINs based on patient_id when needed.
+5. Use table aliases (e.g. p for patients, t for tests) to keep SQL concise.
+6. Only query relevant columns based on the question.
+7. Do NOT modify, update, or insert any data.
+8. Prefer aggregations (COUNT, AVG, GROUP BY) when the question asks for trends or totals.
+9. If asked about DBS, Cepheid or Serum tests those will be found in the tests.bloodwork_type
+
+Schema:
+{schema_text}
+"""
 
 
 def legacy_context_prompt(

@@ -35,6 +35,8 @@ async def clear_legacy_data_summary(
     user: UserRead = Depends(get_current_user),
 ):
     try:
+        await RagService.clear_chat_history(user.id)
+
         result = await LegacyDataService.delete_all_legacy_data(user.id)
         return result
     except Exception as e:
@@ -104,6 +106,7 @@ async def upload_legacy_data(
 
     try:
         await LegacyDataService.upload_legacy_data(data, user.id)
+        await RagService.clear_chat_history(user.id)
 
         preview = data.data[:5] if len(data.data) > 5 else data.data
 
@@ -131,7 +134,7 @@ async def claude_chat(
         if request.legacy_data:
             result = await RagService.claude_chat_file(request, user.id)
         else:
-            result = await RagService.claude_chat_internal(request)
+            result = await RagService.claude_chat_internal(request, user.id)
         return result
     except Exception as e:
         raise HTTPException(
