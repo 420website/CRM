@@ -211,6 +211,7 @@ const AdminAnalytics = () => {
     window.scrollTo({ top: 0, behavior: "smooth" });
 
     promptClaude(inputMessage.trim());
+    setInputMessage("");
   };
 
   const handleKeyPress = (e) => {
