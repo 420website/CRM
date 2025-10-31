@@ -166,7 +166,7 @@ export default function ActivityItem({
               item.disposition.slice(1).toLowerCase()}
           </span>
         )}
-        <div className="flex items-center">
+        <div className="flex items-center  ml-auto">
           <span
             className={`pl-2 pr-0  py-1 text-xs font-normal rounded-l-full rounded-r-none ${
               statusStyles[status] || "bg-gray-100 text-gray-800"
