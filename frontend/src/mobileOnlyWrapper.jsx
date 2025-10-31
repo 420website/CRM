@@ -113,17 +113,8 @@ export default function MobileOnlyWrapper({ children }) {
             only accessible on mobile devices.
           </p>
           <p className="text-gray-600 mb-6">
-            Please visit this site using your smartphone or tablet to continue.
+            Please visit this site using your smartphone.
           </p>
-
-          {!showAdminBypass && (
-            <button
-              onClick={() => setShowAdminBypass(true)}
-              className="text-sm text-gray-400 hover:text-gray-600 mb-6"
-            >
-              Admin Access
-            </button>
-          )}
 
           {showAdminBypass && (
             <div className="mb-6">
