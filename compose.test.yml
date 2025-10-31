@@ -20,6 +20,7 @@ x-backend-base: &backend_base
     - APP_URL=http://localhost:8001 
     - SMTP_EMAIL=email@exmaple.com
     - SMTP_PASSWORD=password
+    - SMTP_SERVER=mail.privateemail.com
     - SUPPORT_EMAIL=example@email.com
     - ENVIRONMENT=Testing
     - MINIO_SERVER_URL=http://minio:9000
@@ -179,6 +180,7 @@ services:
       - SUPPORT_EMAIL=email@exmaple.com
       - SMTP_EMAIL=email@exmaple.com
       - SMTP_PASSWORD=password
+      - SMTP_SERVER=mail.privateemail.com
       - ENVIRONMENT=Testing
       - MINIO_SERVER_URL=http://minio:9000
       - MINIO_KEY_ID=testuser

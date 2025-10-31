@@ -83,6 +83,12 @@ class EmailService:
         return self
 
     def send(self):
-        with smtplib.SMTP_SSL("mail.privateemail.com", 465) as smtp:
+        with smtplib.SMTP(settings.email_provider, 587) as smtp:
+            smtp.starttls()
+            smtp.login(settings.email, settings.email_pw)
+            smtp.send_message(self.msg)
+
+    def send_ssl(self):
+        with smtplib.SMTP_SSL(settings.email_provider, 465) as smtp:
             smtp.login(settings.email, settings.email_pw)
             smtp.send_message(self.msg)
