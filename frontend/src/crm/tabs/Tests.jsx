@@ -5,6 +5,7 @@ import { useRegistration } from "../../context/RegistrationContext";
 import DatePicker from "../ui/DatePicker";
 import toast from "react-hot-toast";
 import { newlineChars } from "pdf-lib";
+import { normalizeFormData } from "../../utils/formatData";
 
 export default function Tests({ setActiveTab, currentRegistrationId }) {
   const { tests, getTests } = useRegistration();
@@ -46,6 +47,15 @@ export default function Tests({ setActiveTab, currentRegistrationId }) {
       return false;
     }
 
+    testFormData.bloodwork_type = null;
+    testFormData.bloodwork_result = null;
+    testFormData.bloodwork_tester = null;
+    testFormData.bloodwork_circles = null;
+    testFormData.bloodwork_date_submitted = null;
+    testFormData.hcv_result = null;
+    testFormData.hcv_tester = null;
+    testFormData.hcv_result = null;
+
     return true;
   }
 
@@ -59,6 +69,15 @@ export default function Tests({ setActiveTab, currentRegistrationId }) {
       toast.error("Please select a tester");
       return false;
     }
+
+    testFormData.bloodwork_type = null;
+    testFormData.bloodwork_result = null;
+    testFormData.bloodwork_tester = null;
+    testFormData.bloodwork_circles = null;
+    testFormData.bloodwork_date_submitted = null;
+    testFormData.hiv_result = null;
+    testFormData.hiv_tester = null;
+    testFormData.hiv_type = null;
 
     return true;
   }
@@ -100,6 +119,12 @@ export default function Tests({ setActiveTab, currentRegistrationId }) {
       toast.error("Please select bloodwork circles");
       return false;
     }
+    testFormData.hiv_result = null;
+    testFormData.hiv_tester = null;
+    testFormData.hiv_type = null;
+    testFormData.hcv_result = null;
+    testFormData.hcv_tester = null;
+
     return true;
   }
 
@@ -141,9 +166,10 @@ export default function Tests({ setActiveTab, currentRegistrationId }) {
   const createTests = async () => {
     setLoading(true);
 
+    const data = normalizeFormData(testFormData);
     const result = await PatientServices.create_test(
       currentRegistrationId,
-      testFormData,
+      data,
     );
 
     if (result.success) {
@@ -179,10 +205,11 @@ export default function Tests({ setActiveTab, currentRegistrationId }) {
   const updateTests = async () => {
     setLoading(true);
 
+    const data = normalizeFormData(testFormData);
     const result = await PatientServices.update_test(
       currentRegistrationId,
       editingTestId,
-      testFormData,
+      data,
     );
 
     if (result.success) {

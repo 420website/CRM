@@ -27,10 +27,8 @@ export default function Notes({ setActiveTab, currentRegistrationId }) {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleteNoteId, setDeleteNoteId] = useState(null);
   const [notesData, setNotesData] = useState({
-    note_name: "General Note",
     note_date: new Date().toISOString().split("T")[0],
     note_text: "",
-    template_type: "General Note",
   });
 
   function validateForm() {
@@ -179,7 +177,7 @@ export default function Notes({ setActiveTab, currentRegistrationId }) {
     setNotesData({
       note_date: note.note_date || new Date().toISOString().split("T")[0],
       note_text: note.note_text || "",
-      template_type: note.template_type || "Select",
+      template_type: note.template_type || "General Note",
     });
     setEditingNoteId(note.id);
 

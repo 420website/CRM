@@ -6,6 +6,7 @@ import DatePicker from "../ui/DatePicker";
 import toast from "react-hot-toast";
 import { useAuth } from "../../context/AuthContext";
 import InteractionsManager from "../managers/InteractionsManager";
+import { normalizeFormData } from "../../utils/formatData";
 
 export default function Interactions({ setActiveTab, currentRegistrationId }) {
   const { userRole } = useAuth();
@@ -80,10 +81,17 @@ export default function Interactions({ setActiveTab, currentRegistrationId }) {
     setIsSavingInteraction(true);
 
     let data = interactionData;
+    data = { ...data, amount: parseFloat(interactionData.amount) || 0 };
 
-    if (!interactionData.amount) {
-      data = { ...data, amount: 0 };
+    if (interactionData.issued === "Select") {
+      data = { ...data, issued: null };
     }
+
+    if (data.referral_id !== "" && data.description !== "Referral") {
+      data.referral_id = null;
+    }
+
+    data = normalizeFormData(data);
 
     const result = await PatientServices.create_interaction(
       currentRegistrationId,
@@ -110,10 +118,21 @@ export default function Interactions({ setActiveTab, currentRegistrationId }) {
     setIsSavingInteraction(true);
 
     let data = interactionData;
+    data = { ...data, amount: parseFloat(interactionData.amount) || 0 };
 
-    if (!interactionData.amount) {
-      data = { ...data, amount: 0 };
+    if (data.amount === 0) {
+      data.payment_type = null;
     }
+
+    if (interactionData.issued === "Select") {
+      data = { ...data, issued: null };
+    }
+
+    if (data.referral_id !== "" && data.description !== "Referral") {
+      data.referral_id = null;
+    }
+
+    data = normalizeFormData(data);
 
     const result = await PatientServices.update_interaction(
       currentRegistrationId,
@@ -172,15 +191,18 @@ export default function Interactions({ setActiveTab, currentRegistrationId }) {
   };
 
   const editInteraction = (interaction) => {
+    const amount = parseFloat(interaction.amount) > 0 ? interaction.amount : "";
+
     setInteractionData({
       date: interaction.date || new Date().toISOString().split("T")[0],
       description: interaction.description || "",
       referral_id: interaction.referral_id || "",
-      amount: interaction.amount || "",
+      amount: amount,
       payment_type: interaction.payment_type || "",
       issued: interaction.issued || "Select",
     });
     setEditingInteractionId(interaction.id);
+
     // Scroll to top of interaction form
     document.querySelector("#tabs")?.scrollIntoView({ behavior: "smooth" });
   };
@@ -192,7 +214,6 @@ export default function Interactions({ setActiveTab, currentRegistrationId }) {
       referral_id: "",
       amount: "",
       payment_type: "",
-      location: "",
       issued: "Select",
     });
     setEditingInteractionId(null);

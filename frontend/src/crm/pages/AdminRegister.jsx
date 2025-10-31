@@ -13,7 +13,7 @@ import DispositionManager from "../managers/DispositionManager";
 import ReferralSiteManager from "../managers/ReferralSiteManager";
 import VoiceDataModal from "../components/VoiceDateModal";
 import { useAuth } from "../../context/AuthContext";
-import { calculateAge } from "../../utils/formatData";
+import { calculateAge, normalizeFormData } from "../../utils/formatData";
 import { copyFormData, copyLabelsData } from "../../utils/labelData";
 import { parseDateFromSpeech, parseFields } from "../../utils/parseFromSpeech";
 import { PatientServices } from "../../services/patientServices";
@@ -308,9 +308,6 @@ const AdminRegister = () => {
     // Clean the form data - remove empty strings for optional fields and convert to null
     const cleanedFormData = { ...payload };
 
-    // Add selectedTemplate to form data for database storage
-    // cleanedFormData.selectedTemplate = selectedTemplate; // Handle clincial template
-
     // Convert empty strings to null for date fields
     if (cleanedFormData.dob === "") {
       cleanedFormData.dob = null;
@@ -318,15 +315,22 @@ const AdminRegister = () => {
     if (cleanedFormData.reg_date === "") {
       cleanedFormData.reg_date = null;
     }
+    if (cleanedFormData.address === "") {
+      cleanedFormData.province = null;
+    }
+    if (cleanedFormData.coverage_type === "Select") {
+      cleanedFormData.coverage_type = null;
+    }
+    if (cleanedFormData.selected_template === "") {
+      cleanedFormData.rna_result = null;
+      cleanedFormData.rna_available = null;
+      cleanedFormData.rna_sample_date = null;
+      cleanedFormData.selected_template = null;
+    }
 
-    // Convert empty strings to null for optional fields
-    Object.keys(cleanedFormData).forEach((key) => {
-      if (cleanedFormData[key] === "") {
-        cleanedFormData[key] = null;
-      }
-    });
+    const data = normalizeFormData(cleanedFormData);
 
-    const result = await PatientServices.create_patient(cleanedFormData);
+    const result = await PatientServices.create_patient(data);
 
     if (result.success) {
       const id = result.data?.patient_id;
@@ -372,9 +376,9 @@ const AdminRegister = () => {
         ) {
           setShowForceButton(true);
         }
-        toast.error(result.message || "Invalid credentials.");
+        toast.error(result.message || "Registration failed.");
       } else {
-        toast.error("Login failed. Please try again.");
+        toast.error("Registration failed. Please try again.");
       }
     }
     window.scrollTo({ top: 0, behavior: "smooth" });

@@ -12,7 +12,7 @@ import DispositionManager from "../managers/DispositionManager";
 import ReferralSiteManager from "../managers/ReferralSiteManager";
 import VoiceDataModal from "../components/VoiceDateModal";
 import { useAuth } from "../../context/AuthContext";
-import { calculateAge } from "../../utils/formatData";
+import { calculateAge, normalizeFormData } from "../../utils/formatData";
 import { copyFormData, copyLabelsData } from "../../utils/labelData";
 import { parseDateFromSpeech, parseFields } from "../../utils/parseFromSpeech";
 import { PatientServices } from "../../services/patientServices";
@@ -159,16 +159,10 @@ const AdminEdit = () => {
     const result = await PatientServices.get_patient_by_id(registrationId);
 
     if (result.success) {
-      // Normalize: replace null with default
-      const normalized = Object.fromEntries(
-        Object.entries(result.data).map(([key, value]) => [
-          key,
-          value ?? DEFAULT_FORM[key] ?? "",
-        ]),
-      );
-
-      // Also ensure missing keys are filled from DEFAULT_FORM
-      const merged = { ...DEFAULT_FORM, ...normalized };
+      const merged = { ...DEFAULT_FORM, ...result.data };
+      for (const key in merged) {
+        if (merged[key] == null) merged[key] = DEFAULT_FORM[key] ?? "";
+      }
       setFormData(merged);
 
       // Load selectedTemplate from database instead of guessing
@@ -380,9 +374,6 @@ const AdminEdit = () => {
     // Clean the form data - remove empty strings for optional fields and convert to null
     const cleanedFormData = { ...payload };
 
-    // Add selectedTemplate to form data for database storage
-    // cleanedFormData.selectedTemplate = selectedTemplate; // Handle clincial template
-
     // Convert empty strings to null for date fields
     if (cleanedFormData.dob === "") {
       cleanedFormData.dob = null;
@@ -390,18 +381,22 @@ const AdminEdit = () => {
     if (cleanedFormData.reg_date === "") {
       cleanedFormData.reg_date = null;
     }
+    if (cleanedFormData.address === "") {
+      cleanedFormData.province = null;
+    }
+    if (cleanedFormData.coverage_type === "Select") {
+      cleanedFormData.coverage_type = null;
+    }
+    if (cleanedFormData.selected_template === "") {
+      cleanedFormData.rna_result = null;
+      cleanedFormData.rna_available = null;
+      cleanedFormData.rna_sample_date = null;
+      cleanedFormData.selected_template = null;
+    }
 
-    // Convert empty strings to null for optional fields
-    Object.keys(cleanedFormData).forEach((key) => {
-      if (cleanedFormData[key] === "") {
-        cleanedFormData[key] = null;
-      }
-    });
+    const data = normalizeFormData(cleanedFormData);
 
-    const result = await PatientServices.update_patient(
-      registrationId,
-      cleanedFormData,
-    );
+    const result = await PatientServices.update_patient(registrationId, data);
 
     if (result.success) {
       if (photoData.file) {
@@ -432,9 +427,9 @@ const AdminEdit = () => {
         ) {
           setShowForceButton(true);
         }
-        toast.error(result.message || "Invalid credentials.");
+        toast.error(result.message || "Failed editing registration.");
       } else {
-        toast.error("Failed. Please try again.");
+        toast.error("Failed editing registration. Please try again.");
       }
     }
 

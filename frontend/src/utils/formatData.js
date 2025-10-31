@@ -1,3 +1,12 @@
+export const normalizeFormData = (form) => {
+  return Object.fromEntries(
+    Object.entries(form).map(([key, value]) => [
+      key,
+      value === "" ? null : value,
+    ]),
+  );
+};
+
 export const calculateAge = (birthDate) => {
   if (!birthDate) return "";
 
