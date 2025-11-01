@@ -50,8 +50,13 @@ services:
     restart: unless-stopped
     volumes: 
       - redis_data:/data
+    environment:
+      REDIS_HOST: "redis"
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: password
     networks: 
       - backend-net
+    command: sh -c 'redis-server --requirepass $$REDIS_PASSWORD'
 
   minio:
     image: minio/minio:latest
@@ -138,29 +143,30 @@ services:
       context: ./backend
       dockerfile: Dockerfile.dev 
     environment:
+      - JWT_ALGORITHM=HS256
+      - JWT_ACCESS_SECRET=n-n0mNRllhooqQuRFWH07G78I33aX77Nyx3IlZtxEWa
+      - MFA_ENCRYPTION_KEY=HmFAA7X0L+MOx7lKk9TWPtTx+bxPSHodIX0SELL+mow=
+      - ALLOWED_ORIGINS=http://localhost:5173,http://bs-local.com:5173,http://localhost
+      - APP_URL=http://localhost
+      - APP_NAME=testing 
+      - DEBUG=True
+      - ENVIRONMENT=dev
+      - PYTHONPATH=/backend
+      - CA_FILE=/certs/ca.crt
       - POSTGRES_HOST=postgres_dev
       - POSTGRES_PORT=5432
       - POSTGRES_DATABASE=appdb 
       - POSTGRES_USER=admin 
       - POSTGRES_PASSWORD=example
-      - DATABASE_URL=postgres://admin:example@postgres_dev:5432/appdb?sslmode=require
-      - ALLOWED_ORIGINS=http://localhost:5173,http://bs-local.com:5173,http://localhost
-      - JWT_ALGORITHM=HS256
-      - JWT_ACCESS_SECRET=STUFRZH-MKLFj4j-6c9Z50WNWkvd9uqiWQJOpeCtI9Q
-      - JWT_REFRESH_SECRET=STUFRZH-MKLFj4j-6c9Z50WNWkvd9uqiWQJOpeCtI9Q
-      - MFA_ENCRYPTION_KEY=7CrUl1rG4NBNk4bSV2uU7RW79Z_dRdvrrZn3Eqgytqg=
-      # - APP_URL=http://localhost:5173 
-      - APP_URL=http://localhost
-      - APP_NAME=testing 
-      - DEBUG=True
-      - MONGO_URL=mongodb://root:example@mongodb:27017
-      - DB_NAME=my420_ca_db
-      - ENVIRONMENT=dev
-      - PYTHONPATH=/backend
-      - CA_FILE=/certs/ca.crt
+      - POSTRGES_URL=postgres://admin:example@postgres_dev:5432/appdb?sslmode=require
+      - MONGODB_URL=mongodb://root:example@mongodb:27017
+      - MONGODB_NAME=my420_ca_db
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - REDIS_PASSWORD=password
+      - MINIO_ROOT_USER=testuser
+      - MINIO_ROOT_PASSWORD=password
       - MINIO_SERVER_URL=https://minio:9000
-      - MINIO_KEY_ID=testuser
-      - MINIO_ACCESS_KEY=password
     env_file:
       - .env
     networks:
