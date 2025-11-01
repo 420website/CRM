@@ -61,8 +61,8 @@ class Settings:
     ca_file: str = os.getenv("CA_FILE", "/certs/ca-chain.crt")
 
     # mongodb
-    mongo_url: str = os.getenv("MONGODB_URL", "mongodb://localhost:27017")
-    mongo_name: str = os.getenv("MONGODB_NAME", "my420_ca_db")
+    mongo_url: str = get_env("MONGO_URL")
+    mongo_name: str = get_env("MONGO_NAME")
 
     # redis
     max_chat_length = 20
