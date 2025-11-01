@@ -77,6 +77,8 @@ services:
       - /etc/vault/certs:/certs:ro
     depends_on:
       - postgres
+    environment:
+    - DATABASE_URL=${POSTGRES_URL}
     env_file:
       - /etc/vault/secrets/.env
     networks:
