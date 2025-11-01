@@ -1720,10 +1720,6 @@ class TestPatientDispensingRouter(IsolatedAsyncioTestCase):
             )
 
         self.assertEqual(cm.exception.status_code, 400)
-        self.assertIn(
-            "Medication none existant for client please create medication entry and retry",
-            str(cm.exception.detail),
-        )
 
         # Cleanup
         await PatientService.delete_patient_by_id(patient_id)

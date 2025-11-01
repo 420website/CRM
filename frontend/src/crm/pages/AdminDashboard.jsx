@@ -1,29 +1,35 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { PatientServices } from "../../services/patientServices";
 import PaginationControls from "../ui/PaginationControls";
-import RegistrationItem from "../ui/RegistrationItem";
-import ActivityItem from "../ui/ActivityItem";
+import { RegistrationItems } from "../ui/RegistrationItem";
+import { ActivityItems } from "../ui/ActivityItem";
 import { useAuth } from "../../context/AuthContext";
-import { GeneralServices } from "../../services/generalService";
-import { ObjectServices } from "../../services/objectService";
+import ConfirmModal from "../components/ConfirmModal";
+import { useRegistration } from "../../context/RegistrationContext";
+import toast from "react-hot-toast";
+import DatePicker from "../ui/DatePicker";
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
   const { logout } = useAuth();
+  const {
+    referralSites,
+    dispositions,
+    pendingData,
+    finalizedData,
+    activityData,
+    getRegistrations,
+    getDashboardActivities,
+  } = useRegistration();
 
   // Core state
   const [activeTab, setActiveTab] = useState("activities");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  // Options
-  const [availableReferralSites, setAvailableReferralSites] = useState([]);
-  const [availableDispositions, setAvailableDispositions] = useState([]);
-
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize] = useState(20); // Fixed page size for optimal performance
   const [totalPages, setTotalPages] = useState(1);
   const [totalRecords, setTotalRecords] = useState(0);
 
@@ -35,66 +41,26 @@ const AdminDashboard = () => {
   const [activitySearchTerm, setActivitySearchTerm] = useState("");
   const [activityStatusFilter, setActivityStatusFilter] = useState("all");
 
-  // Photo lazy loading state
-  const [loadedPhotos, setLoadedPhotos] = useState({});
-  const [loadingPhotos, setLoadingPhotos] = useState(new Set());
-
   // Action states
   const [finalizingId, setFinalizingId] = useState(null);
   const [deletingId, setDeletingId] = useState(null);
   const [revertingId, setRevertingId] = useState(null);
 
+  // Confirmation
+  const [deleteRegistrationId, setDeleteRegistrationId] = useState(null);
+  const [finalizeRegistrationId, setFinalizeRegistrationId] = useState(null);
+  const [revertRegistrationId, setRevertRegistrationId] = useState(null);
+  const [saveRegistrationId, setSaveRegistrationId] = useState(null);
+
+  const [showConfirm, setShowConfirm] = useState("");
+
   // Data state - now paginated
   const [currentData, setCurrentData] = useState([]);
-  const [pendingData, setPendingData] = useState([]);
-  const [finalizedData, setFinalizedData] = useState([]);
-  const [activityData, setActivityData] = useState([]);
   const [dashboardStats, setDashboardStats] = useState({
     pending_registrations: 0,
     submitted_registrations: 0,
     total_activities: 0,
   });
-
-  useEffect(() => {
-    getDispositions();
-    getReferralSites();
-  }, []);
-
-  const getDispositions = async (e) => {
-    setLoading(true);
-    setError("");
-
-    const result = await GeneralServices.get_dispositions();
-
-    if (result.success) {
-      setAvailableDispositions(result.data);
-    } else {
-      if (result.status === 400 || result.status === 409) {
-        setError(result.message || "Error getting dispositions.");
-      } else {
-        setError("Error getting dispositions. Please try again.");
-      }
-    }
-    setLoading(false);
-  };
-
-  const getReferralSites = async () => {
-    setLoading(true);
-    setError("");
-
-    const result = await GeneralServices.get_referral_sites();
-
-    if (result.success) {
-      setAvailableReferralSites(result.data);
-    } else {
-      if (result.status === 400 || result.status === 409) {
-        setError(result.message || "Error getting referral sites.");
-      } else {
-        setError("Error getting referral sites. Please try again.");
-      }
-    }
-    setLoading(false);
-  };
 
   const handleLogout = async () => {
     try {
@@ -114,55 +80,8 @@ const AdminDashboard = () => {
     }
   };
 
-  const fetchDashboardStats = async (tab = activeTab) => {
-    fetch_registrations();
-    fetch_activities();
-    setDisplayed();
-  };
-
-  const fetch_registrations = async () => {
-    setLoading(true);
-    setError("");
-
-    const result = await PatientServices.get_patients();
-
-    if (result.success) {
-      const pending = result.data.filter((reg) => reg.status === "pending");
-      setPendingData(pending);
-
-      const finalized = result.data.filter((reg) => reg.status === "finalized");
-      setFinalizedData(finalized);
-    } else {
-      if (result.status === 400 || result.status === 409) {
-        setError(result.message || "Invalid credentials.");
-      } else {
-        setError("Login failed. Please try again.");
-      }
-    }
-    setLoading(false);
-  };
-
-  const fetch_activities = async () => {
-    setLoading(true);
-    setError("");
-
-    const result = await PatientServices.get_activities();
-
-    if (result.success) {
-      setActivityData(result.data);
-    } else {
-      if (result.status === 400 || result.status === 409) {
-        setError(result.message || "Invalid credentials.");
-      } else {
-        setError("Login failed. Please try again.");
-      }
-    }
-    setLoading(false);
-  };
-
   useEffect(() => {
     window.scrollTo(0, 0);
-    fetchDashboardStats();
   }, []);
 
   useEffect(() => {
@@ -175,22 +94,14 @@ const AdminDashboard = () => {
   }, [activityData, pendingData, finalizedData]);
 
   useEffect(() => {
-    setCurrentPage(1); // Reset to first page when changing tabs
-
-    if (activeTab === "activities") {
-      setCurrentData(activityData);
-    } else if (activeTab === "pending") {
-      setCurrentData(pendingData);
-    } else {
-      setCurrentData(finalizedData);
-    }
+    setCurrentPage(1);
+    setDisplayed();
   }, [activeTab]);
 
   // Handle search changes with debouncing
   useEffect(() => {
     const debounceTimer = setTimeout(() => {
       setCurrentPage(1); // Reset to first page when searching
-      // fetchPaginatedData(activeTab, 1, true);
     }, 300); // 300ms debounce
 
     return () => clearTimeout(debounceTimer);
@@ -206,14 +117,13 @@ const AdminDashboard = () => {
   // Handle page changes with scroll to top
   const handlePageChange = (newPage) => {
     if (newPage >= 1 && newPage <= totalPages && !loading) {
-      // fetchPaginatedData(activeTab, newPage, true);
-      // Scroll to top of page for easy navigation
       window.scrollTo({ top: 0, behavior: "smooth" });
     }
   };
 
   const handle_refresh = async () => {
-    await fetchDashboardStats();
+    getDashboardActivities();
+    getRegistrations();
   };
 
   // Optimized search handlers
@@ -242,108 +152,111 @@ const AdminDashboard = () => {
     setActivityStatusFilter("all");
   };
 
-  const handleDelete = async (registrationId, firstName, lastName) => {
-    const confirmed = window.confirm(
-      `Delete registration for ${firstName} ${lastName}?\n\nThis action cannot be undone.`,
-    );
-
-    if (!confirmed) return;
-
-    setDeletingId(registrationId);
-
-    const result = await PatientServices.delete_patient_by_id(registrationId);
+  const deleteRegistration = async () => {
+    const result =
+      await PatientServices.delete_patient_by_id(deleteRegistrationId);
 
     if (result.success) {
-      await fetchDashboardStats();
+      getDashboardActivities();
+      getRegistrations();
+      toast.success("Registration deleted successfully");
     } else {
       if (result.status === 400 || result.status === 409) {
-        setError(result.message || "Error deleting patient.");
+        toast.error(result.message || "Error deleting patient.");
       } else {
-        setError("Error deleting patient. Please try again.");
+        toast.error("Error deleting patient. Please try again.");
       }
     }
-    setDeletingId(null);
   };
 
-  const handleFinalize = async (registrationId, firstName, lastName, photo) => {
-    const photoText = photo ? " with photo attachment" : "";
-    const proceed = window.confirm(
-      `Finalize registration for ${firstName} ${lastName}?\n\nThis will send the email notification${photoText}.`,
-    );
+  const handleDelete = async (id) => {
+    setDeleteRegistrationId(id);
+    setShowConfirm("delete");
+  };
 
-    if (!proceed) return;
-
-    setFinalizingId(registrationId);
+  const finalizeRegistration = async () => {
     setError(null);
 
-    const result = await PatientServices.update_patient_status(registrationId, {
-      status: "finalized",
-    });
-
-    if (result.success) {
-      await fetchDashboardStats();
-    } else {
-      if (result.status === 400 || result.status === 409) {
-        setError(result.message || "Error updating patient status.");
-      } else {
-        setError("Error updating patient status. Please try again.");
-      }
-    }
-    setFinalizingId(null);
-  };
-
-  const handleRevertToPending = async (registrationId, firstName, lastName) => {
-    const proceed = window.confirm(
-      `Move ${firstName} ${lastName} back to pending status?\n\nThis will allow you to make corrections and resubmit with a new email notification.`,
+    const result = await PatientServices.update_patient_status(
+      finalizeRegistrationId,
+      {
+        status: "finalized",
+      },
     );
 
-    if (!proceed) return;
-
-    setFinalizingId(registrationId);
-    setError(null);
-
-    const result = await PatientServices.update_patient_status(registrationId, {
-      status: "pending",
-    });
-
     if (result.success) {
-      await fetchDashboardStats();
+      getDashboardActivities();
+      getRegistrations();
+      toast.success("Registration finalized successfully");
     } else {
       if (result.status === 400 || result.status === 409) {
-        setError(result.message || "Error updating patient status.");
+        toast.error(result.message || "Error updating patient status.");
       } else {
-        setError("Error updating patient status. Please try again.");
+        toast.error("Error updating patient status. Please try again.");
       }
     }
-    setFinalizingId(null);
   };
 
-  const renderRegistrationItem = useMemo(
-    () => (item, index) => (
-      <RegistrationItem
-        key={index}
-        activeTab={activeTab}
-        item={item}
-        setLoadedPhotos={setLoadedPhotos}
-        loadingPhotos={loadingPhotos}
-        loadedPhotos={loadedPhotos}
-        deletingId={deletingId}
-        finalizingId={finalizingId}
-        revertingId={revertingId}
-        finalizedData={finalizedData}
-        pendingData={pendingData}
-        handleDelete={handleDelete}
-        handleFinalize={handleFinalize}
-        handleRevertToPending={handleRevertToPending}
-      />
-    ),
-    [loadedPhotos, loadingPhotos, deletingId, finalizingId, activeTab],
-  );
+  const handleFinalize = async (id) => {
+    setFinalizeRegistrationId(id);
+    setShowConfirm("finalize");
+  };
 
-  const renderActivityItem = useMemo(
-    () => (item, index) => <ActivityItem key={index} item={item} />,
-    [],
-  );
+  const saveRegistration = async () => {
+    setError(null);
+
+    const result = await PatientServices.update_patient_status(
+      saveRegistrationId,
+      {
+        status: "saved",
+      },
+    );
+
+    if (result.success) {
+      getDashboardActivities();
+      getRegistrations();
+      toast.success("Registration saved successfully");
+    } else {
+      if (result.status === 400 || result.status === 409) {
+        toast.error(result.message || "Error updating patient status.");
+      } else {
+        toast.error("Error updating patient status. Please try again.");
+      }
+    }
+  };
+
+  const handleSave = async (id) => {
+    setSaveRegistrationId(id);
+    setShowConfirm("save");
+  };
+
+  const revertToPending = async () => {
+    setError(null);
+
+    const result = await PatientServices.update_patient_status(
+      revertRegistrationId,
+      {
+        status: "pending",
+      },
+    );
+
+    if (result.success) {
+      getDashboardActivities();
+      getRegistrations();
+      toast.success("Registration reverted to pending");
+    } else {
+      if (result.status === 400 || result.status === 409) {
+        toast.error(result.message || "Error updating patient status.");
+      } else {
+        toast.error("Error updating patient status. Please try again.");
+      }
+    }
+  };
+
+  const handleRevertToPending = async (id) => {
+    setRevertRegistrationId(id);
+    setShowConfirm("revert");
+  };
 
   // Compute filtered data based on active tab + filters
   const getFilteredData = () => {
@@ -364,13 +277,36 @@ const AdminDashboard = () => {
       if (searchDate) {
         data = data.filter((item) => item.date === searchDate);
       }
-      if (activityStatusFilter !== "all") {
+
+      if (searchDisposition) {
+        data = data.filter(
+          (item) =>
+            (item.disposition || "").toLowerCase() ===
+            searchDisposition.toLowerCase(),
+        );
+      }
+
+      if (searchReferralSite) {
+        data = data.filter(
+          (item) =>
+            (item.referral_site || "").toLowerCase() ===
+            searchReferralSite.toLowerCase(),
+        );
+      }
+
+      if (activityStatusFilter === "completed") {
+        data = data.filter((item) => item.completed === true);
+      } else if (
+        activityStatusFilter === "late" ||
+        activityStatusFilter === "upcoming"
+      ) {
         data = data.filter((item) => {
+          if (item.completed) return false;
+
           const itemDateTime = new Date(`${item.date}T${item.time}`);
           const now = new Date();
 
-          const computedStatus = itemDateTime > now ? "upcoming" : "completed";
-
+          const computedStatus = itemDateTime > now ? "upcoming" : "late";
           return (
             computedStatus.toLowerCase() === activityStatusFilter.toLowerCase()
           );
@@ -389,6 +325,7 @@ const AdminDashboard = () => {
       if (searchDate) {
         data = data.filter((item) => item.reg_date === searchDate);
       }
+
       if (searchDisposition) {
         data = data.filter(
           (item) =>
@@ -436,15 +373,54 @@ const AdminDashboard = () => {
     return data;
   };
 
+  useEffect(() => {
+    getDashboardActivities();
+    getRegistrations();
+  }, []);
+
   const goBack = () => {
     navigate("/");
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+    <div className="flex-grow flex flex-col bg-gray-50">
+      <div className="flex-grow flex flex-col max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+        {showConfirm === "delete" && (
+          <ConfirmModal
+            message={"Confirm to delete registration"}
+            subMessage={"This action cannot be undone"}
+            confirm={deleteRegistration}
+            setShowConfirm={setShowConfirm}
+          />
+        )}
+        {showConfirm === "save" && (
+          <ConfirmModal
+            message={"Confirm save registration"}
+            subMessage={"This will save registration without sending an email"}
+            confirm={saveRegistration}
+            setShowConfirm={setShowConfirm}
+          />
+        )}
+        {showConfirm === "finalize" && (
+          <ConfirmModal
+            message={"Confirm finalize registration"}
+            subMessage={"This will send the email notification"}
+            confirm={finalizeRegistration}
+            setShowConfirm={setShowConfirm}
+          />
+        )}
+        {showConfirm === "revert" && (
+          <ConfirmModal
+            message={"Confirm revert to pending"}
+            subMessage={
+              "This will allow you to make edits and resubmit with a new email notification"
+            }
+            confirm={revertToPending}
+            setShowConfirm={setShowConfirm}
+          />
+        )}
         {/* Header */}
-        <div className="bg-white rounded-lg shadow-md p-4 mb-6">
+        <div className="bg-white rounded-lg shadow-md p-4 mb-4">
           <h1 className="text-2xl font-bold text-gray-900 mb-4">
             Admin Dashboard
           </h1>
@@ -532,7 +508,7 @@ const AdminDashboard = () => {
         </div>
 
         {/* Main Content */}
-        <div className="bg-white rounded-lg shadow-md p-6">
+        <div className="flex-grow flex flex-col bg-white rounded-lg shadow-md p-6">
           {/* Tabs */}
           <div className="flex border-b mb-6">
             <button
@@ -686,8 +662,8 @@ const AdminDashboard = () => {
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Search by Date
                 </label>
-                <input
-                  type="date"
+                <DatePicker
+                  name="reg_date"
                   value={searchDate}
                   onChange={(e) => handleDateSearch(e.target.value)}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -699,7 +675,85 @@ const AdminDashboard = () => {
                 />
               </div>
 
-              {activeTab === "activities" ? (
+              <div className="min-w-0">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Disposition
+                </label>
+                <select
+                  value={searchDisposition}
+                  onChange={(e) => handleDispositionSearch(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  style={{
+                    height: "40px",
+                    minHeight: "40px",
+                    maxHeight: "40px",
+                  }}
+                >
+                  <option value="">All</option>
+                  {/* Most Frequently Used */}
+                  {dispositions
+                    .filter((d) => d.is_frequent)
+                    .map((disposition) => (
+                      <option key={disposition.id} value={disposition.name}>
+                        {disposition.name}
+                      </option>
+                    ))}
+                  {/* Separator */}
+                  {dispositions.filter((d) => !d.is_frequent).length > 0 && (
+                    <option disabled>-------</option>
+                  )}
+                  {/* All Others in Alphabetical Order */}
+                  {dispositions
+                    .filter((d) => !d.is_frequent)
+                    .sort((a, b) => a.name.localeCompare(b.name))
+                    .map((disposition) => (
+                      <option key={disposition.id} value={disposition.name}>
+                        {disposition.name}
+                      </option>
+                    ))}
+                </select>
+              </div>
+
+              <div className="min-w-0">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Referral Site
+                </label>
+                <select
+                  value={searchReferralSite}
+                  onChange={(e) => handleReferralSiteSearch(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  style={{
+                    height: "40px",
+                    minHeight: "40px",
+                    maxHeight: "40px",
+                  }}
+                >
+                  <option value="">Select Referral Site</option>
+                  {/* Most Frequently Used */}
+                  {referralSites
+                    .filter((s) => s.is_frequent)
+                    .map((site) => (
+                      <option key={site.id} value={site.name}>
+                        {site.name}
+                      </option>
+                    ))}
+                  {/* Separator */}
+                  {referralSites.filter((s) => !s.is_frequent).length > 0 && (
+                    <option disabled>-------</option>
+                  )}
+                  {/* All Others in Alphabetical Order */}
+                  {referralSites
+                    .filter((s) => !s.is_frequent)
+                    .sort((a, b) => a.name.localeCompare(b.name))
+                    .map((site) => (
+                      <option key={site.id} value={site.name}>
+                        {site.name}
+                      </option>
+                    ))}
+                </select>
+              </div>
+
+              {activeTab === "activities" && (
                 <div className="min-w-0 md:col-span-2 xl:col-span-1">
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Status
@@ -717,84 +771,9 @@ const AdminDashboard = () => {
                     <option value="all">All Activities</option>
                     <option value="upcoming">Upcoming</option>
                     <option value="completed">Completed</option>
+                    <option value="late">Late</option>
                   </select>
                 </div>
-              ) : (
-                <>
-                  <div className="min-w-0">
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Disposition
-                    </label>
-                    <select
-                      value={searchDisposition}
-                      onChange={(e) => handleDispositionSearch(e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      style={{
-                        height: "40px",
-                        minHeight: "40px",
-                        maxHeight: "40px",
-                      }}
-                    >
-                      {/* Most Frequently Used */}
-                      {availableDispositions
-                        .filter((d) => d.is_frequent)
-                        .map((disposition) => (
-                          <option key={disposition.id} value={disposition.name}>
-                            {disposition.name}
-                          </option>
-                        ))}
-                      {/* Separator */}
-                      {availableDispositions.filter((d) => !d.is_frequent)
-                        .length > 0 && <option disabled>-------</option>}
-                      {/* All Others in Alphabetical Order */}
-                      {availableDispositions
-                        .filter((d) => !d.is_frequent)
-                        .sort((a, b) => a.name.localeCompare(b.name))
-                        .map((disposition) => (
-                          <option key={disposition.id} value={disposition.name}>
-                            {disposition.name}
-                          </option>
-                        ))}
-                    </select>
-                  </div>
-                  <div className="min-w-0">
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Referral Site
-                    </label>
-                    <select
-                      value={searchReferralSite}
-                      onChange={(e) => handleReferralSiteSearch(e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      style={{
-                        height: "40px",
-                        minHeight: "40px",
-                        maxHeight: "40px",
-                      }}
-                    >
-                      <option value="">Select Referral Site</option>
-                      {/* Most Frequently Used */}
-                      {availableReferralSites
-                        .filter((s) => s.is_frequent)
-                        .map((site) => (
-                          <option key={site.id} value={site.name}>
-                            {site.name}
-                          </option>
-                        ))}
-                      {/* Separator */}
-                      {availableReferralSites.filter((s) => !s.is_frequent)
-                        .length > 0 && <option disabled>-------</option>}
-                      {/* All Others in Alphabetical Order */}
-                      {availableReferralSites
-                        .filter((s) => !s.is_frequent)
-                        .sort((a, b) => a.name.localeCompare(b.name))
-                        .map((site) => (
-                          <option key={site.id} value={site.name}>
-                            {site.name}
-                          </option>
-                        ))}
-                    </select>
-                  </div>
-                </>
               )}
             </div>
 
@@ -845,9 +824,23 @@ const AdminDashboard = () => {
                 <>
                   {/* Performance optimized rendering */}
                   <div className="space-y-4">
-                    {activeTab === "activities"
-                      ? getFilteredData().map(renderActivityItem)
-                      : getFilteredData().map(renderRegistrationItem)}
+                    {activeTab === "activities" ? (
+                      <ActivityItems filteredData={getFilteredData()} />
+                    ) : (
+                      <RegistrationItems
+                        activeTab={activeTab}
+                        deletingId={deletingId}
+                        finalizingId={finalizingId}
+                        revertingId={revertingId}
+                        finalizedData={finalizedData}
+                        pendingData={pendingData}
+                        handleDelete={handleDelete}
+                        handleSave={handleSave}
+                        handleFinalize={handleFinalize}
+                        handleRevertToPending={handleRevertToPending}
+                        filteredData={getFilteredData()}
+                      />
+                    )}
                   </div>
 
                   {/* Pagination Controls */}

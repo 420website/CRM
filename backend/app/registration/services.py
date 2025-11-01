@@ -39,15 +39,14 @@ class PatientService:
             city, province, postal_code, phone1, phone2, email, language, health_card, 
             health_card_version, coverage_type, disposition, physician, 
             patient_consent, leave_message, voicemail, text, preferred_time,
-            hiv_date, hiv_result, hiv_tester, hiv_type, rna_available, 
-            rna_result, rna_sample_date, referral_site, referral_person, 
+            rna_available, rna_result, rna_sample_date, referral_site, referral_person, 
             reg_date, special_attention, instructions, selected_template, 
-            summary_template, test_type
+            summary_template
         )
         VALUES (
             $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15,
             $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28,
-            $29, $30, $31, $32, $33, $34, $35, $36, $37, $38, $39, $40
+            $29, $30, $31, $32, $33, $34, $35
         )
         RETURNING id;
         """
@@ -81,10 +80,6 @@ class PatientService:
                     patient.voicemail,
                     patient.text,
                     patient.preferred_time,
-                    patient.hiv_date,
-                    patient.hiv_result,
-                    patient.hiv_tester,
-                    patient.hiv_type,
                     patient.rna_available,
                     patient.rna_result,
                     patient.rna_sample_date,
@@ -95,7 +90,6 @@ class PatientService:
                     patient.instructions,
                     patient.selected_template,
                     patient.summary_template,
-                    patient.test_type,
                 )
                 if row and "id" in row:
                     return row["id"]
@@ -653,16 +647,17 @@ class MedicationService:
 
 class DispensingService:
     @staticmethod
-    async def check_medication(medication: str) -> bool:
+    async def check_medication(patient_id: int, medication: str) -> bool:
         query = """
             SELECT EXISTS (
                 SELECT 1
                 FROM medications
-                WHERE medication = $1
+                WHERE patient_id = $1
+                AND medication =$2
             );
         """
         async with database.get_transaction() as conn:
-            return await conn.fetchval(query, medication)
+            return await conn.fetchval(query, patient_id, medication)
 
     @staticmethod
     async def create_dispensing(
@@ -797,7 +792,8 @@ class ActivityService:
             p.first_name, 
             p.last_name, 
             p.phone1,
-            p.disposition
+            p.disposition,
+            p.referral_site
         FROM activities a
         JOIN patients p ON a.patient_id = p.id
         ORDER BY a.date DESC, a.time DESC;
@@ -880,4 +876,19 @@ class ActivityService:
         values = list(updates.values()) + [activity_id]
         async with database.get_transaction() as conn:
             row = await conn.fetchrow(query, *values)
+            return bool(row)
+
+    @staticmethod
+    async def update_activity_status(
+        id: int,
+        status: bool,
+    ) -> bool:
+        query = """
+            UPDATE activities
+            SET completed = $1, updated_at = NOW()
+            WHERE id = $3
+            RETURNING id;
+        """
+        async with database.get_transaction() as conn:
+            row = await conn.fetchrow(query, status)
             return bool(row)

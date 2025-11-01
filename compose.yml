@@ -77,6 +77,8 @@ services:
       - /etc/vault/certs:/certs:ro
     depends_on:
       - postgres
+    environment:
+    - DATABASE_URL=${POSTGRES_URL}
     env_file:
       - /etc/vault/secrets/.env
     networks:
@@ -88,9 +90,24 @@ services:
       - secret-reload
     command: ["--wait","up"]
 
+  redis:
+    image: redis:7
+    restart: unless-stopped
+    volumes: 
+      - redis_data:/data
+    networks:
+      - backend-net
+    env_file:
+      - /etc/vault/secrets/.env
+    profiles:
+      - dev
+      - prod
+      - cert-reload
+      - secret-reload
+    command: sh -c 'redis-server --requirepass $$REDIS_PASSWORD'
+
   minio:
     image: minio/minio:latest
-    container_name: minio
     restart: unless-stopped
     env_file:
       - /etc/vault/secrets/.env
@@ -137,7 +154,6 @@ services:
 
   mongodb:
     image: mongodb/mongodb-community-server:latest
-    container_name: mongodb
     restart: unless-stopped
     volumes:
       - mongo_data:/data/db
@@ -264,14 +280,14 @@ services:
       - backend
 
 volumes:
+  frontend_dist:
   mongo_data:
   postgres_data:
-  alloy-data:
-  frontend_dist:
+  minio_data:
+  redis_data:
   certbot-etc:
   certbot-var:
   certbot-www:
-  minio_data:
 
 networks:
   frontend-net:

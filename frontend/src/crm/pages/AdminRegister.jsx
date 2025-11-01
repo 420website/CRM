@@ -1,31 +1,38 @@
 import { useState, useEffect } from "react";
 import Client from "../components/Client";
-import Tests from "../components/Tests";
+import Tests from "../tabs/Tests";
 import Intake from "../components/Intake";
-import Dispensing from "../components/Dispensing";
-import Medications from "../components/Medication";
-import Notes from "../components/Notes";
-import Activities from "../components/Activities";
-import Interactions from "../components/Interactions";
-import Attachments from "../components/Attachments";
-import ClinicalTemplateManager from "../components/ClinicalTemplateManager";
-import DispositionManager from "../components/DispositionManager";
-import ReferralSiteManager from "../components/ReferralSiteManager";
+import Dispensing from "../tabs/Dispensing";
+import Medications from "../tabs/Medication";
+import Notes from "../tabs/Notes";
+import Activities from "../tabs/Activities";
+import Interactions from "../tabs/Interactions";
+import Attachments from "../tabs/Attachments";
+import ClinicalTemplateManager from "../managers/ClinicalTemplateManager";
+import DispositionManager from "../managers/DispositionManager";
+import ReferralSiteManager from "../managers/ReferralSiteManager";
 import VoiceDataModal from "../components/VoiceDateModal";
 import { useAuth } from "../../context/AuthContext";
-import { calculateAge } from "../../utils/formatData";
+import { calculateAge, normalizeFormData } from "../../utils/formatData";
 import { copyFormData, copyLabelsData } from "../../utils/labelData";
 import { parseDateFromSpeech, parseFields } from "../../utils/parseFromSpeech";
-import { GeneralServices } from "../../services/generalService";
 import { PatientServices } from "../../services/patientServices";
 import RegistrationSaved from "../components/RegistrationSaved";
 import { DEFAULT_FORM } from "../forms/Registration";
 import VoiceFillModal from "../components/VoiceInput";
 import ForceRegisterModal from "../components/ForcePopupModal";
 import { ObjectServices } from "../../services/objectService";
+import { useRegistration } from "../../context/RegistrationContext";
+import toast from "react-hot-toast";
 
 const AdminRegister = () => {
-  const [error, setError] = useState("");
+  const {
+    showDispositionManager,
+    showReferralSiteManager,
+    showClinicalManager,
+    getRegistrations,
+  } = useRegistration();
+
   const [loading, setLoading] = useState(false);
   const [voiceInputText, setVoiceInputText] = useState("");
   const [submitStatus, setSubmitStatus] = useState(null);
@@ -33,16 +40,7 @@ const AdminRegister = () => {
   const { userRole, userPermissions } = useAuth();
   const [showVoiceDateModal, setShowVoiceDateModal] = useState(false);
   const [showVoiceFillModal, setShowVoiceFillModal] = useState(false);
-  const [showDispositionManager, setShowDispositionManager] = useState(false);
-  const [showReferralSiteManager, setShowReferralSiteManager] = useState(false);
-  const [showClinicalTemplateManager, setShowClinicalTemplateManager] =
-    useState(false);
   const [templates, setTemplates] = useState({});
-  const [availableReferralSites, setAvailableReferralSites] = useState([]);
-  const [availableDispositions, setAvailableDispositions] = useState([]);
-  const [availableClinicalTemplates, setAvailableClinicalTemplates] = useState(
-    [],
-  );
   const [selectedTemplate, setSelectedTemplate] = useState("Select");
   const [showForceButton, setShowForceButton] = useState(false);
   const [voiceDateInput, setVoiceDateInput] = useState("");
@@ -51,13 +49,11 @@ const AdminRegister = () => {
   const [photoPreview, setPhotoPreview] = useState(null);
   const [photoUploadStatus, setPhotoUploadStatus] = useState(null);
   const [currentVoiceDateField, setCurrentVoiceDateField] = useState("");
-  const [dispositionSearch, setDispositionSearch] = useState("");
   const [photoData, setPhotoData] = useState({});
 
   const getDefaultForm = () => ({
     ...DEFAULT_FORM,
     reg_date: new Date().toISOString().split("T")[0],
-    hiv_date: new Date().toISOString().split("T")[0],
     rna_sample_date: new Date().toISOString().split("T")[0],
   });
 
@@ -138,12 +134,6 @@ const AdminRegister = () => {
         formData={formData}
         setShowVoiceDateModal={setShowVoiceDateModal}
         setFormData={setFormData}
-        setShowDispositionManager={setShowDispositionManager}
-        setShowReferralSiteManager={setShowReferralSiteManager}
-        setShowClinicalTemplateManager={setShowClinicalTemplateManager}
-        availableDispositions={availableDispositions}
-        availableReferralSites={availableReferralSites}
-        availableClinicalTemplates={availableClinicalTemplates}
         setTemplates={setTemplates}
         templates={templates}
         selectedTemplate={selectedTemplate}
@@ -200,8 +190,6 @@ const AdminRegister = () => {
 
   // Check if user has permission for a tab
   const hasTabPermission = (tabId) => {
-    if (userRole === "admin") return true;
-
     return Array.isArray(userPermissions) && userPermissions.includes(tabId);
   };
 
@@ -221,74 +209,6 @@ const AdminRegister = () => {
     return allTabs.filter((tab) => hasTabPermission(tab.id));
   };
 
-  const getDispositions = async (e) => {
-    setLoading(true);
-    setError("");
-
-    const result = await GeneralServices.get_dispositions();
-
-    if (result.success) {
-      setAvailableDispositions(result.data);
-    } else {
-      if (result.status === 400 || result.status === 409) {
-        setError(result.message || "Error getting dispositions.");
-      } else {
-        setError("Error getting dispositions. Please try again.");
-      }
-    }
-    setLoading(false);
-  };
-
-  const getReferralSites = async () => {
-    setLoading(true);
-    setError("");
-
-    const result = await GeneralServices.get_referral_sites();
-
-    if (result.success) {
-      setAvailableReferralSites(result.data);
-    } else {
-      if (result.status === 400 || result.status === 409) {
-        setError(result.message || "Error getting referral sites.");
-      } else {
-        setError("Error getting referral sites. Please try again.");
-      }
-    }
-    setLoading(false);
-  };
-
-  const getClinicalTemplates = async () => {
-    setLoading(true);
-    setError("");
-
-    const result = await GeneralServices.get_clinical_templates();
-
-    if (result.success) {
-      setAvailableClinicalTemplates(result.data);
-
-      const templatesObject = {};
-      // Convert array to object for easier access
-      result.data.forEach((template) => {
-        templatesObject[template.name] = template.content;
-      });
-
-      setTemplates(templatesObject);
-    } else {
-      if (result.status === 400 || result.status === 409) {
-        setError(result.message || "Error getting clinical templates.");
-      } else {
-        setError("Error getting clinical templates. Please try again.");
-      }
-    }
-    setLoading(false);
-  };
-
-  useEffect(() => {
-    getDispositions();
-    getReferralSites();
-    getClinicalTemplates();
-  }, []);
-
   const resetForm = async () => {
     setFormData(getDefaultForm());
     setPhotoData({});
@@ -298,65 +218,69 @@ const AdminRegister = () => {
   };
 
   function validateForm() {
-    // Client-side validation for required fields
-    if (!formData.first_name.trim()) {
-      setError("First Name is required.");
+    if (formData.photo && formData.photo.length > 1200 * 1024) {
+      toast.error(
+        "Photo is too large for submission. Please try uploading a different photo.",
+      );
       setIsSubmitting(false);
-      window.scrollTo({ top: 0, behavior: "smooth" });
+      return false;
+    }
+
+    if (!formData.reg_date) {
+      setIsSubmitting(false);
+      toast.error("Registration date required");
+      document
+        .querySelector("#regDate")
+        ?.scrollIntoView({ behavior: "smooth" });
+
+      return false;
+    }
+
+    if (!formData.first_name.trim()) {
+      setIsSubmitting(false);
+      toast.error("First Name required");
+      document
+        .querySelector("#firstName")
+        ?.scrollIntoView({ behavior: "smooth" });
+
       return false;
     }
 
     if (!formData.last_name.trim()) {
-      setError("Last Name is required.");
       setIsSubmitting(false);
-      window.scrollTo({ top: 0, behavior: "smooth" });
+      toast.error("Last Name required");
+      document
+        .querySelector("#lastName")
+        ?.scrollIntoView({ behavior: "smooth" });
       return false;
     }
 
-    if (!formData.patient_consent) {
-      setError("Patient Consent is required.");
-      setIsSubmitting(false);
-      window.scrollTo({ top: 0, behavior: "smooth" });
-      return false;
-    }
     if (!formData.dob) {
-      setError("Date of birth is required.");
       setIsSubmitting(false);
-      window.scrollTo({ top: 0, behavior: "smooth" });
+      toast.error("Date of birth required");
+      document
+        .querySelector("#dateOfBirth")
+        ?.scrollIntoView({ behavior: "smooth" });
       return false;
     }
 
     if (!formData.health_card) {
-      setError("Health Card Number is required.");
       setIsSubmitting(false);
-      window.scrollTo({ top: 0, behavior: "smooth" });
+      toast.error("Health Card Number required.");
+      document
+        .querySelector("#healthcard")
+        ?.scrollIntoView({ behavior: "smooth" });
       return false;
     }
     if (formData.health_card.length != 10) {
-      setError("Health Card Number must be 10 digits exactly.");
       setIsSubmitting(false);
-      window.scrollTo({ top: 0, behavior: "smooth" });
+      toast.error("Health Card Number must be 10 digits");
+      document
+        .querySelector("#healthcard")
+        ?.scrollIntoView({ behavior: "smooth" });
       return false;
     }
 
-    if (!formData.health_card_version) {
-      setError("Health Card Version is required.");
-      setIsSubmitting(false);
-      window.scrollTo({ top: 0, behavior: "smooth" });
-      return false;
-    }
-
-    // Check if photo is too large before sending
-    if (formData.photo && formData.photo.length > 1200 * 1024) {
-      // Increased from 1MB to 1.2MB
-      setSubmitStatus({
-        type: "error",
-        message:
-          "Photo is too large for submission. Please try uploading a different photo.",
-      });
-      setIsSubmitting(false);
-      return false;
-    }
     return true;
   }
 
@@ -366,7 +290,6 @@ const AdminRegister = () => {
   };
 
   const cancelForceSubmit = async () => {
-    setError("");
     setShowForceButton(false);
   };
 
@@ -374,7 +297,6 @@ const AdminRegister = () => {
     e.preventDefault();
     setIsSubmitting(true);
     setSubmitStatus(null);
-    setError("");
     setShowForceButton(false);
 
     const payload = dataOverride || formData;
@@ -386,9 +308,6 @@ const AdminRegister = () => {
     // Clean the form data - remove empty strings for optional fields and convert to null
     const cleanedFormData = { ...payload };
 
-    // Add selectedTemplate to form data for database storage
-    // cleanedFormData.selectedTemplate = selectedTemplate; // Handle clincial template
-
     // Convert empty strings to null for date fields
     if (cleanedFormData.dob === "") {
       cleanedFormData.dob = null;
@@ -396,15 +315,22 @@ const AdminRegister = () => {
     if (cleanedFormData.reg_date === "") {
       cleanedFormData.reg_date = null;
     }
+    if (cleanedFormData.address === "") {
+      cleanedFormData.province = null;
+    }
+    if (cleanedFormData.coverage_type === "Select") {
+      cleanedFormData.coverage_type = null;
+    }
+    if (cleanedFormData.selected_template === "") {
+      cleanedFormData.rna_result = null;
+      cleanedFormData.rna_available = null;
+      cleanedFormData.rna_sample_date = null;
+      cleanedFormData.selected_template = null;
+    }
 
-    // Convert empty strings to null for optional fields
-    Object.keys(cleanedFormData).forEach((key) => {
-      if (cleanedFormData[key] === "") {
-        cleanedFormData[key] = null;
-      }
-    });
+    const data = normalizeFormData(cleanedFormData);
 
-    const result = await PatientServices.create_patient(cleanedFormData);
+    const result = await PatientServices.create_patient(data);
 
     if (result.success) {
       const id = result.data?.patient_id;
@@ -429,11 +355,9 @@ const AdminRegister = () => {
               "Registration saved for review! You can now access the dashboard to review and finalize registrations.",
             id: id,
           });
-
           resetForm();
         } else {
-          window.scrollTo({ top: 0, behavior: "smooth" });
-          setError(result.message || "Invalid credentials.");
+          toast.error(result.message || "Invalid credentials.");
         }
       } else {
         setSubmitStatus({
@@ -446,32 +370,26 @@ const AdminRegister = () => {
         resetForm();
       }
     } else {
-      window.scrollTo({ top: 0, behavior: "smooth" });
       if (result.status === 400 || result.status === 409) {
         if (
           result.message === "Patient with that name and dob already exists."
         ) {
           setShowForceButton(true);
         }
-        setError(result.message || "Invalid credentials.");
+        toast.error(result.message || "Registration failed.");
       } else {
-        setError("Login failed. Please try again.");
+        toast.error("Registration failed. Please try again.");
       }
     }
+    window.scrollTo({ top: 0, behavior: "smooth" });
 
+    getRegistrations();
     setLoading(false);
     setIsSubmitting(false);
   };
 
-  const handleCopyLabel = () => {
-    copyLabelsData(formData);
-  };
-
-  const handleCopy = () => {
-    copyFormData(currentRegistrationId, formData);
-  };
-
   if (submitStatus?.type === "success") {
+    window.scrollTo({ top: 0, behavior: "smooth" });
     return (
       <RegistrationSaved
         submitStatus={submitStatus}
@@ -481,16 +399,19 @@ const AdminRegister = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+    <div className="bg-gray-50">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
         <div className="bg-white rounded-lg shadow-md p-4">
           <form onSubmit={handleSubmit} className="space-y-6">
             <Intake submitStatus={submitStatus} setPhotoData={setPhotoData} />
 
             {/* Tabs Navigation */}
-            <div className="border-b border-gray-200 mb-6 relative">
+            <div
+              id="tabs"
+              className="border-b border-gray-200 mb-6 relative py-2 scroll-mt-[20px]"
+            >
               {getAllowedTabs().length > 0 ? (
-                <div className="flex space-x-1 overflow-x-auto scrollbar-hide">
+                <div className="flex space-x-1 overflow-x-auto overflow-y-hidden scrollbar-hide">
                   {getAllowedTabs().map((tab) => (
                     <button
                       key={tab.id}
@@ -526,11 +447,6 @@ const AdminRegister = () => {
 
             {/* Tab Content  */}
             <div className="tab-content">
-              {error && (
-                <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-2 rounded text-sm text-center">
-                  {error}
-                </div>
-              )}
               {tabComponents[activeTab] || null}
             </div>
 
@@ -540,7 +456,7 @@ const AdminRegister = () => {
                 {/* Labels Button */}
                 <button
                   type="button"
-                  onClick={handleCopyLabel}
+                  onClick={() => copyLabelsData(formData)}
                   className="w-full bg-black text-white py-3 px-6 rounded-md hover:bg-gray-800 transition-colors text-lg font-semibold"
                 >
                   Labels
@@ -548,7 +464,7 @@ const AdminRegister = () => {
                 {/* Copy Button */}
                 <button
                   type="button"
-                  onClick={handleCopy}
+                  onClick={() => copyFormData(currentRegistrationId, formData)}
                   className="w-full bg-black text-white py-3 px-6 rounded-md hover:bg-gray-800 transition-colors text-lg font-semibold"
                 >
                   Copy
@@ -584,37 +500,17 @@ const AdminRegister = () => {
           handleVoiceDateSubmit={handleVoiceDateSubmit}
         />
       )}
-      {showDispositionManager && (
-        <DispositionManager
-          setShowDispositionManager={setShowDispositionManager}
-          availableDispositions={availableDispositions}
-          getDispositions={getDispositions}
-        />
-      )}
-      {showReferralSiteManager && (
-        <ReferralSiteManager
-          setShowReferralSiteManager={setShowReferralSiteManager}
-          availableReferralSites={availableReferralSites}
-          getReferralSites={getReferralSites}
-        />
-      )}
-      {showClinicalTemplateManager && (
-        <ClinicalTemplateManager
-          setShowClinicalTemplateManager={setShowClinicalTemplateManager}
-          availableClinicalTemplates={availableClinicalTemplates}
-          getClinicalTemplates={getClinicalTemplates}
-        />
-      )}
       {showForceButton && (
         <ForceRegisterModal
           handleForceSubmit={handleForceSubmit}
           cancelForceSubmit={cancelForceSubmit}
-          errorMessage={error}
         />
       )}
+      {showDispositionManager && <DispositionManager />}
+      {showReferralSiteManager && <ReferralSiteManager />}
+      {showClinicalManager && <ClinicalTemplateManager />}
     </div>
   );
 };
 
 export default AdminRegister;
-// {isFullScreenPreview && documentPreview && <DocumentPreviewModal />}

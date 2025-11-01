@@ -1,52 +1,49 @@
 import { useState, useEffect } from "react";
 import Client from "../components/Client";
-import Tests from "../components/Tests";
-import Dispensing from "../components/Dispensing";
-import Medications from "../components/Medication";
-import Notes from "../components/Notes";
-import Activities from "../components/Activities";
-import Interactions from "../components/Interactions";
-import Attachments from "../components/Attachments";
-import ClinicalTemplateManager from "../components/ClinicalTemplateManager";
-import DispositionManager from "../components/DispositionManager";
-import ReferralSiteManager from "../components/ReferralSiteManager";
+import Tests from "../tabs/Tests";
+import Dispensing from "../tabs/Dispensing";
+import Medications from "../tabs/Medication";
+import Notes from "../tabs/Notes";
+import Activities from "../tabs/Activities";
+import Interactions from "../tabs/Interactions";
+import Attachments from "../tabs/Attachments";
+import ClinicalTemplateManager from "../managers/ClinicalTemplateManager";
+import DispositionManager from "../managers/DispositionManager";
+import ReferralSiteManager from "../managers/ReferralSiteManager";
 import VoiceDataModal from "../components/VoiceDateModal";
 import { useAuth } from "../../context/AuthContext";
-import { calculateAge } from "../../utils/formatData";
+import { calculateAge, normalizeFormData } from "../../utils/formatData";
 import { copyFormData, copyLabelsData } from "../../utils/labelData";
 import { parseDateFromSpeech, parseFields } from "../../utils/parseFromSpeech";
-import { GeneralServices } from "../../services/generalService";
 import { PatientServices } from "../../services/patientServices";
 import EditPhoto from "../components/EditPhoto";
-import { useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { DEFAULT_FORM } from "../forms/Registration";
 import VoiceFillModal from "../components/VoiceInput";
 import ForceRegisterModal from "../components/ForcePopupModal";
 import { ObjectServices } from "../../services/objectService";
+import DocumentTypeManager from "../managers/DocumentTypeManager";
+import { useRegistration } from "../../context/RegistrationContext";
+import toast from "react-hot-toast";
 
 const AdminEdit = () => {
+  const navigate = useNavigate();
+  const {
+    showDispositionManager,
+    showReferralSiteManager,
+    showClinicalManager,
+    showDocumentTypeManager,
+    getRegistrationData,
+  } = useRegistration();
   const { registrationId } = useParams();
-  const [error, setError] = useState("");
   const [voiceInputText, setVoiceInputText] = useState("");
   const [loading, setLoading] = useState(false);
   const [submitStatus, setSubmitStatus] = useState(null);
   const [saveStatus, setSaveStatus] = useState(null);
   const [selectedTemplate, setSelectedTemplate] = useState("Select");
-
-  const [activeTab, setActiveTab] = useState("client");
   const { userRole, userPermissions } = useAuth();
   const [showVoiceDateModal, setShowVoiceDateModal] = useState(false);
   const [showVoiceFillModal, setShowVoiceFillModal] = useState(false);
-  const [showDispositionManager, setShowDispositionManager] = useState(false);
-  const [showReferralSiteManager, setShowReferralSiteManager] = useState(false);
-  const [showClinicalTemplateManager, setShowClinicalTemplateManager] =
-    useState(false);
-  const [templates, setTemplates] = useState({});
-  const [availableReferralSites, setAvailableReferralSites] = useState([]);
-  const [availableDispositions, setAvailableDispositions] = useState([]);
-  const [availableClinicalTemplates, setAvailableClinicalTemplates] = useState(
-    [],
-  );
   const [currentVoiceDateField, setCurrentVoiceDateField] = useState("");
   const [voiceDateInput, setVoiceDateInput] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -54,18 +51,37 @@ const AdminEdit = () => {
     useState(registrationId);
   const [photoPreview, setPhotoPreview] = useState(null);
   const [photoUploadStatus, setPhotoUploadStatus] = useState(null);
-  const [dispositionSearch, setDispositionSearch] = useState("");
   const [showForceButton, setShowForceButton] = useState(false);
   const [photoData, setPhotoData] = useState({});
   const [photoChanged, setPhotoChanged] = useState(false);
+  const [templates, setTemplates] = useState({});
 
   const getDefaultForm = () => ({
     ...DEFAULT_FORM,
     reg_date: new Date().toISOString().split("T")[0],
-    hiv_date: new Date().toISOString().split("T")[0],
     rna_sample_date: new Date().toISOString().split("T")[0],
   });
 
+  // Check if user has permission for a tab
+  const hasTabPermission = (tabId) => {
+    return Array.isArray(userPermissions) && userPermissions.includes(tabId);
+  };
+
+  const getFirstAllowedTab = () => {
+    const allTabs = [
+      { id: "client", name: "Client" },
+      { id: "tests", name: "Tests" },
+      { id: "medication", name: "Medication" },
+      { id: "dispensing", name: "Dispensing" },
+      { id: "notes", name: "Notes" },
+      { id: "activities", name: "Activities" },
+      { id: "interactions", name: "Interactions" },
+      { id: "attachments", name: "Attachments" },
+    ];
+    return allTabs.find((tab) => hasTabPermission(tab.id))?.id || "client";
+  };
+
+  const [activeTab, setActiveTab] = useState(getFirstAllowedTab());
   const [formData, setFormData] = useState(getDefaultForm());
 
   const openVoiceDateInput = (dateField) => {
@@ -139,21 +155,14 @@ const AdminEdit = () => {
 
   const getRegistration = async () => {
     setLoading(true);
-    setError("");
 
     const result = await PatientServices.get_patient_by_id(registrationId);
 
     if (result.success) {
-      // Normalize: replace null with default
-      const normalized = Object.fromEntries(
-        Object.entries(result.data).map(([key, value]) => [
-          key,
-          value ?? DEFAULT_FORM[key] ?? "",
-        ]),
-      );
-
-      // Also ensure missing keys are filled from DEFAULT_FORM
-      const merged = { ...DEFAULT_FORM, ...normalized };
+      const merged = { ...DEFAULT_FORM, ...result.data };
+      for (const key in merged) {
+        if (merged[key] == null) merged[key] = DEFAULT_FORM[key] ?? "";
+      }
       setFormData(merged);
 
       // Load selectedTemplate from database instead of guessing
@@ -163,19 +172,25 @@ const AdminEdit = () => {
         setSelectedTemplate("Select");
       }
 
-      // Get Photo
-      const photoRes = await ObjectServices.get_photo_base64(registrationId);
+      const photoRes = await ObjectServices.get_photo_raw(registrationId);
 
       if (photoRes.success) {
-        setPhotoPreview(`data:image/jpeg;base64,${photoRes.data?.file}`);
+        const blob = new Blob([photoRes.data], { type: "image/jpeg" });
+        const url = URL.createObjectURL(blob);
+        setPhotoPreview(url);
+        setPhotoData({
+          name: photoRes.headers["file-name"],
+        });
       }
     } else {
       if (result.status === 400 || result.status === 409) {
-        setError(result.message || "Invalid credentials.");
+        toast.error(result.message || "Invalid credentials.");
       } else {
-        setError("Login failed. Please try again.");
+        toast.error("Login failed. Please try again.");
       }
     }
+
+    getRegistrationData(registrationId);
     setPhotoChanged(false);
     setLoading(false);
   };
@@ -192,12 +207,6 @@ const AdminEdit = () => {
         formData={formData}
         setShowVoiceDateModal={setShowVoiceDateModal}
         setFormData={setFormData}
-        setShowDispositionManager={setShowDispositionManager}
-        setShowReferralSiteManager={setShowReferralSiteManager}
-        setShowClinicalTemplateManager={setShowClinicalTemplateManager}
-        availableDispositions={availableDispositions}
-        availableReferralSites={availableReferralSites}
-        availableClinicalTemplates={availableClinicalTemplates}
         setTemplates={setTemplates}
         templates={templates}
         selectedTemplate={selectedTemplate}
@@ -252,13 +261,6 @@ const AdminEdit = () => {
     ),
   };
 
-  // Check if user has permission for a tab
-  const hasTabPermission = (tabId) => {
-    if (userRole === "admin") return true;
-
-    return Array.isArray(userPermissions) && userPermissions.includes(tabId);
-  };
-
   // Get allowed tabs based on user permissions
   const getAllowedTabs = () => {
     const allTabs = [
@@ -275,74 +277,6 @@ const AdminEdit = () => {
     return allTabs.filter((tab) => hasTabPermission(tab.id));
   };
 
-  const getDispositions = async (e) => {
-    setLoading(true);
-    setError("");
-
-    const result = await GeneralServices.get_dispositions();
-
-    if (result.success) {
-      setAvailableDispositions(result.data);
-    } else {
-      if (result.status === 400 || result.status === 409) {
-        setError(result.message || "Error getting dispositions.");
-      } else {
-        setError("Error getting dispositions. Please try again.");
-      }
-    }
-    setLoading(false);
-  };
-
-  const getReferralSites = async () => {
-    setLoading(true);
-    setError("");
-
-    const result = await GeneralServices.get_referral_sites();
-
-    if (result.success) {
-      setAvailableReferralSites(result.data);
-    } else {
-      if (result.status === 400 || result.status === 409) {
-        setError(result.message || "Error getting referral sites.");
-      } else {
-        setError("Error getting referral sites. Please try again.");
-      }
-    }
-    setLoading(false);
-  };
-
-  const getClinicalTemplates = async () => {
-    setLoading(true);
-    setError("");
-
-    const result = await GeneralServices.get_clinical_templates();
-
-    if (result.success) {
-      setAvailableClinicalTemplates(result.data);
-
-      const templatesObject = {};
-      // Convert array to object for easier access
-      result.data.forEach((template) => {
-        templatesObject[template.name] = template.content;
-      });
-
-      setTemplates(templatesObject);
-    } else {
-      if (result.status === 400 || result.status === 409) {
-        setError(result.message || "Error getting clinical templates.");
-      } else {
-        setError("Error getting clinical templates. Please try again.");
-      }
-    }
-    setLoading(false);
-  };
-
-  useEffect(() => {
-    getDispositions();
-    getReferralSites();
-    getClinicalTemplates();
-  }, []);
-
   const resetForm = async () => {
     setFormData(getDefaultForm());
     setPhotoPreview(null);
@@ -351,65 +285,69 @@ const AdminEdit = () => {
   };
 
   function validateForm() {
-    // Client-side validation for required fields
-    if (!formData.first_name.trim()) {
-      setError("First Name is required.");
+    if (formData.photo && formData.photo.length > 1200 * 1024) {
+      toast.error(
+        "Photo is too large for submission. Please try uploading a different photo.",
+      );
       setIsSubmitting(false);
-      window.scrollTo({ top: 0, behavior: "smooth" });
+      return false;
+    }
+
+    if (!formData.reg_date) {
+      setIsSubmitting(false);
+      toast.error("Registration date required");
+      document
+        .querySelector("#regDate")
+        ?.scrollIntoView({ behavior: "smooth" });
+
+      return false;
+    }
+
+    if (!formData.first_name.trim()) {
+      setIsSubmitting(false);
+      toast.error("First Name required");
+      document
+        .querySelector("#firstName")
+        ?.scrollIntoView({ behavior: "smooth" });
+
       return false;
     }
 
     if (!formData.last_name.trim()) {
-      setError("Last Name is required.");
       setIsSubmitting(false);
-      window.scrollTo({ top: 0, behavior: "smooth" });
+      toast.error("Last Name required");
+      document
+        .querySelector("#lastName")
+        ?.scrollIntoView({ behavior: "smooth" });
       return false;
     }
 
-    if (!formData.patient_consent) {
-      setError("Patient Consent is required.");
-      setIsSubmitting(false);
-      window.scrollTo({ top: 0, behavior: "smooth" });
-      return false;
-    }
     if (!formData.dob) {
-      setError("Date of birth is required.");
       setIsSubmitting(false);
-      window.scrollTo({ top: 0, behavior: "smooth" });
+      toast.error("Date of birth required");
+      document
+        .querySelector("#dateOfBirth")
+        ?.scrollIntoView({ behavior: "smooth" });
       return false;
     }
 
     if (!formData.health_card) {
-      setError("Health Card Number is required.");
       setIsSubmitting(false);
-      window.scrollTo({ top: 0, behavior: "smooth" });
+      toast.error("Health Card Number required.");
+      document
+        .querySelector("#healthcard")
+        ?.scrollIntoView({ behavior: "smooth" });
       return false;
     }
     if (formData.health_card.length != 10) {
-      setError("Health Card Number must be 10 digits exactly.");
       setIsSubmitting(false);
-      window.scrollTo({ top: 0, behavior: "smooth" });
+      toast.error("Health Card Number must be 10 digits.");
+      document
+        .querySelector("#healthcard")
+        ?.scrollIntoView({ behavior: "smooth" });
       return false;
     }
 
-    if (!formData.health_card_version) {
-      setError("Health Card Version is required.");
-      setIsSubmitting(false);
-      window.scrollTo({ top: 0, behavior: "smooth" });
-      return false;
-    }
-
-    // Check if photo is too large before sending
-    if (formData.photo && formData.photo.length > 1200 * 1024) {
-      // Increased from 1MB to 1.2MB
-      setSubmitStatus({
-        type: "error",
-        message:
-          "Photo is too large for submission. Please try uploading a different photo.",
-      });
-      setIsSubmitting(false);
-      return false;
-    }
     return true;
   }
 
@@ -419,15 +357,12 @@ const AdminEdit = () => {
   };
 
   const cancelForceSubmit = async () => {
-    setError("");
     setShowForceButton(false);
   };
 
   const handleSubmit = async (e, dataOverride = formData) => {
     e.preventDefault();
     setIsSubmitting(true);
-    setSubmitStatus(null);
-    setError("");
     setShowForceButton(false);
 
     const payload = dataOverride || formData;
@@ -439,9 +374,6 @@ const AdminEdit = () => {
     // Clean the form data - remove empty strings for optional fields and convert to null
     const cleanedFormData = { ...payload };
 
-    // Add selectedTemplate to form data for database storage
-    // cleanedFormData.selectedTemplate = selectedTemplate; // Handle clincial template
-
     // Convert empty strings to null for date fields
     if (cleanedFormData.dob === "") {
       cleanedFormData.dob = null;
@@ -449,18 +381,22 @@ const AdminEdit = () => {
     if (cleanedFormData.reg_date === "") {
       cleanedFormData.reg_date = null;
     }
+    if (cleanedFormData.address === "") {
+      cleanedFormData.province = null;
+    }
+    if (cleanedFormData.coverage_type === "Select") {
+      cleanedFormData.coverage_type = null;
+    }
+    if (cleanedFormData.selected_template === "") {
+      cleanedFormData.rna_result = null;
+      cleanedFormData.rna_available = null;
+      cleanedFormData.rna_sample_date = null;
+      cleanedFormData.selected_template = null;
+    }
 
-    // Convert empty strings to null for optional fields
-    Object.keys(cleanedFormData).forEach((key) => {
-      if (cleanedFormData[key] === "") {
-        cleanedFormData[key] = null;
-      }
-    });
+    const data = normalizeFormData(cleanedFormData);
 
-    const result = await PatientServices.update_patient(
-      registrationId,
-      cleanedFormData,
-    );
+    const result = await PatientServices.update_patient(registrationId, data);
 
     if (result.success) {
       if (photoData.file) {
@@ -470,26 +406,19 @@ const AdminEdit = () => {
           photoData.file,
         );
         if (photoRes.success) {
-          setSubmitStatus({
-            type: "success",
-            message:
-              "Changes saved successfully! You can continue editing or return to admin menu or dashboard.",
-          });
+          toast.success("Changes saved successfully");
         } else {
-          setError(result.message || "Error updatign photo.");
+          toast.error(result.message || "Error updating photo.");
         }
-      } else if (!photoPreview) {
+      } else if (!photoPreview && photoChanged) {
         const deleteRes = await ObjectServices.delete_photo(registrationId);
-
         if (deleteRes.success) {
-          setSubmitStatus({
-            type: "success",
-            message:
-              "Changes saved successfully! You can continue editing or return to admin menu or dashboard.",
-          });
+          toast.success("Changes saved successfully");
         } else {
-          setError(result.message || "Error updating photo.");
+          toast.error(result.message || "Error removing photo.");
         }
+      } else {
+        toast.success("Changes saved successfully");
       }
     } else {
       if (result.status === 400 || result.status === 409) {
@@ -498,23 +427,16 @@ const AdminEdit = () => {
         ) {
           setShowForceButton(true);
         }
-        setError(result.message || "Invalid credentials.");
+        toast.error(result.message || "Failed editing registration.");
       } else {
-        setError("Login failed. Please try again.");
+        toast.error("Failed editing registration. Please try again.");
       }
     }
 
     window.scrollTo({ top: 0, behavior: "smooth" });
     setLoading(false);
     setIsSubmitting(false);
-  };
-
-  const handleCopyLabel = () => {
-    copyLabelsData(formData);
-  };
-
-  const handleCopy = () => {
-    copyFormData(currentRegistrationId, formData);
+    setPhotoChanged(false);
   };
 
   useEffect(() => {
@@ -526,22 +448,42 @@ const AdminEdit = () => {
   }, [saveStatus]);
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+    <div className="bg-gray-50">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
         <div className="bg-white rounded-lg shadow-md p-4">
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <EditPhoto
-              saveStatus={saveStatus}
-              photoData={photoData}
-              setPhotoData={setPhotoData}
-              photoPreview={photoPreview}
-              setPhotoPreview={setPhotoPreview}
-            />
+          {getAllowedTabs().length == 0 ? (
+            <div className="text-center py-8">
+              <div className="text-gray-500 text-lg mb-2">
+                🔒 Access Restricted
+              </div>
+              <p className="text-gray-600 mb-4">
+                You don't have permission to access any registration tabs.
+              </p>
+              <button
+                type="button"
+                onClick={() => navigate("/admin-menu")}
+                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+              >
+                Back to Menu
+              </button>
+            </div>
+          ) : (
+            <form onSubmit={handleSubmit} className="space-y-6">
+              <EditPhoto
+                saveStatus={saveStatus}
+                photoData={photoData}
+                setPhotoData={setPhotoData}
+                photoPreview={photoPreview}
+                setPhotoPreview={setPhotoPreview}
+                setPhotoChanged={setPhotoChanged}
+              />
 
-            {/* Tabs Navigation */}
-            <div className="border-b border-gray-200 mb-6 relative">
-              {getAllowedTabs().length > 0 ? (
-                <div className="flex space-x-1 overflow-x-auto scrollbar-hide">
+              {/* Tabs Navigation */}
+              <div
+                id="tabs"
+                className="border-b border-gray-200 mb-6 relative py-2"
+              >
+                <div className="flex space-x-1 overflow-x-auto overflow-y-hidden scrollbar-hide">
                   {getAllowedTabs().map((tab) => (
                     <button
                       key={tab.id}
@@ -557,85 +499,46 @@ const AdminEdit = () => {
                     </button>
                   ))}
                 </div>
-              ) : (
-                <div className="text-center py-8">
-                  <div className="text-gray-500 text-lg mb-2">
-                    🔒 Access Restricted
-                  </div>
-                  <p className="text-gray-600 mb-4">
-                    You don't have permission to access any registration tabs.
-                  </p>
+              </div>
+
+              {/* Tab Content  */}
+              <div className="tab-content">
+                {tabComponents[activeTab] || null}
+              </div>
+
+              {/* Save Button - Only show in Patient tab */}
+              {activeTab === "client" && (
+                <div className="border-t pt-6 space-y-4">
+                  {/* Labels Button */}
                   <button
                     type="button"
-                    onClick={() => navigate("/admin-menu")}
-                    className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                    onClick={() => copyLabelsData(formData)}
+                    className="w-full bg-black text-white py-3 px-6 rounded-md hover:bg-gray-800 transition-colors text-lg font-semibold"
                   >
-                    Back to Menu
+                    Labels
+                  </button>
+                  {/* Copy Button */}
+                  <button
+                    type="button"
+                    onClick={() =>
+                      copyFormData(currentRegistrationId, formData)
+                    }
+                    className="w-full bg-black text-white py-3 px-6 rounded-md hover:bg-gray-800 transition-colors text-lg font-semibold"
+                  >
+                    Copy
+                  </button>
+                  {/* Submit Button */}
+                  <button
+                    type="submit"
+                    disabled={isSubmitting}
+                    className="w-full bg-black text-white py-3 px-6 rounded-md hover:bg-gray-800 disabled:bg-gray-400 transition-colors text-lg font-semibold"
+                  >
+                    {isSubmitting ? "Saving..." : "Save"}
                   </button>
                 </div>
               )}
-            </div>
-
-            {/* Tab Content  */}
-            <div className="tab-content">
-              {error && (
-                <div className="mb-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
-                  {error}
-                </div>
-              )}
-              {submitStatus && (
-                <div
-                  className={`mb-6 p-4 rounded-md ${
-                    submitStatus.type === "success"
-                      ? "bg-green-50 border border-green-200"
-                      : "bg-red-50 border border-red-200"
-                  }`}
-                >
-                  <p
-                    className={
-                      submitStatus.type === "success"
-                        ? "text-green-800"
-                        : "text-red-800"
-                    }
-                  >
-                    {submitStatus.message}
-                  </p>
-                </div>
-              )}
-
-              {tabComponents[activeTab] || null}
-            </div>
-
-            {/* Save Button - Only show in Patient tab */}
-            {activeTab === "client" && (
-              <div className="border-t pt-6 space-y-4">
-                {/* Labels Button */}
-                <button
-                  type="button"
-                  onClick={handleCopyLabel}
-                  className="w-full bg-black text-white py-3 px-6 rounded-md hover:bg-gray-800 transition-colors text-lg font-semibold"
-                >
-                  Labels
-                </button>
-                {/* Copy Button */}
-                <button
-                  type="button"
-                  onClick={handleCopy}
-                  className="w-full bg-black text-white py-3 px-6 rounded-md hover:bg-gray-800 transition-colors text-lg font-semibold"
-                >
-                  Copy
-                </button>
-                {/* Submit Button */}
-                <button
-                  type="submit"
-                  disabled={isSubmitting}
-                  className="w-full bg-black text-white py-3 px-6 rounded-md hover:bg-gray-800 disabled:bg-gray-400 transition-colors text-lg font-semibold"
-                >
-                  {isSubmitting ? "Saving..." : "Save"}
-                </button>
-              </div>
-            )}
-          </form>
+            </form>
+          )}
         </div>
       </div>
 
@@ -656,34 +559,16 @@ const AdminEdit = () => {
           handleVoiceDateSubmit={handleVoiceDateSubmit}
         />
       )}
-      {showDispositionManager && (
-        <DispositionManager
-          setShowDispositionManager={setShowDispositionManager}
-          availableDispositions={availableDispositions}
-          getDispositions={getDispositions}
-        />
-      )}
-      {showReferralSiteManager && (
-        <ReferralSiteManager
-          setShowReferralSiteManager={setShowReferralSiteManager}
-          availableReferralSites={availableReferralSites}
-          getReferralSites={getReferralSites}
-        />
-      )}
-      {showClinicalTemplateManager && (
-        <ClinicalTemplateManager
-          setShowClinicalTemplateManager={setShowClinicalTemplateManager}
-          availableClinicalTemplates={availableClinicalTemplates}
-          getClinicalTemplates={getClinicalTemplates}
-        />
-      )}
       {showForceButton && (
         <ForceRegisterModal
           handleForceSubmit={handleForceSubmit}
           cancelForceSubmit={cancelForceSubmit}
-          errorMessage={error}
         />
       )}
+      {showDispositionManager && <DispositionManager />}
+      {showReferralSiteManager && <ReferralSiteManager />}
+      {showClinicalManager && <ClinicalTemplateManager />}
+      {showDocumentTypeManager && <DocumentTypeManager />}
     </div>
   );
 };

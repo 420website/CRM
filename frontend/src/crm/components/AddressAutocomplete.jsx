@@ -1,8 +1,7 @@
 import "./AddressAutocomplete.css";
 import { useEffect, useRef } from "react";
 
-// Needed b/c for postal code there are two spaces
-// the second should not be split on
+// Needed for postal code there are two spaces the second should not be split on
 function splitFirstSpace(str) {
   const idx = str.indexOf(" ");
   if (idx === -1) return [str, ""];
@@ -18,6 +17,13 @@ const AddressAutocomplete = ({ onPlaceSelected }) => {
 
       // Load Places library
       await google.maps.importLibrary("places");
+
+      // Remove any existing gmp-place-autocomplete children
+      Array.from(containerRef.current.children).forEach((child) => {
+        if (child.tagName.toLowerCase() === "gmp-place-autocomplete") {
+          containerRef.current.removeChild(child);
+        }
+      });
 
       // Create the autocomplete element
       const placeAutocomplete =

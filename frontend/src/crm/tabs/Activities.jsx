@@ -1,71 +1,75 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { PatientServices } from "../../services/patientServices";
+import ConfirmModal from "../components/ConfirmModal";
+import { useRegistration } from "../../context/RegistrationContext";
+import DatePicker from "../ui/DatePicker";
+import toast from "react-hot-toast";
 
 export default function Activities({ setActiveTab, currentRegistrationId }) {
-  const [error, setError] = useState("");
+  const { activities, getActivities, getDashboardActivities } =
+    useRegistration();
   const [loading, setLoading] = useState(false);
   const [editingActivityId, setEditingActivityId] = useState(null);
   const [isSavingActivity, setIsSavingActivity] = useState(false);
-  const [savedActivities, setSavedActivities] = useState([]);
-
-  const [activityData, setActivityData] = useState({
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deleteActivityId, setDeleteActivityId] = useState(null);
+  const [activityForm, setActivityForm] = useState({
     date: new Date().toISOString().split("T")[0], // Default to today
     time: "",
     description: "",
   });
 
-  const saveActivity = async () => {
-    editingActivityId ? updateActivities() : createActivities();
-  };
-
-  const getActivities = async (registrationId) => {
-    setLoading(true);
-    setError("");
-
-    const result =
-      await PatientServices.get_activities_by_patient(registrationId);
-    if (result.success) {
-      setSavedActivities(result.data || []);
-    } else {
-      if (result.status === 400 || result.status === 409) {
-        setError(result.message || "Error getting activities.");
-      } else {
-        setError("Error getting activities. Please try again.");
-      }
+  function validateForm() {
+    if (!currentRegistrationId) {
+      alert("Please complete the Patient tab first to save notes.");
+      setActiveTab("patient");
+      return false;
     }
-    setLoading(false);
+
+    if (!activityForm.date || activityForm.date === "") {
+      toast.error("Please select a date");
+      return false;
+    }
+
+    if (!activityForm.time || activityForm.time === "") {
+      toast.error("Please select a time");
+      return false;
+    }
+
+    if (!activityForm.description.trim() || activityForm.description === "") {
+      toast.error("Please add description");
+      return false;
+    }
+
+    return true;
+  }
+
+  const saveActivity = async () => {
+    if (!validateForm()) {
+      return;
+    }
+    editingActivityId ? updateActivities() : createActivities();
   };
 
   const createActivities = async () => {
     setLoading(true);
-    setError("");
-
-    if (!currentRegistrationId) {
-      alert("Please complete the Client tab first to save activities.");
-      setActiveTab("client");
-      return;
-    }
-
-    if (!activityData.description.trim()) {
-      alert("Please enter an activity description before saving");
-      return;
-    }
-
     setIsSavingActivity(true);
 
     const result = await PatientServices.create_activity(
       currentRegistrationId,
-      activityData,
+      activityForm,
     );
 
     if (result.success) {
-      await getActivities(currentRegistrationId);
+      getActivities(currentRegistrationId);
+      getDashboardActivities();
       clearActivityForm();
+      toast.success("Activity created successfully");
     } else {
       if (result.status === 400 || result.status === 409) {
-        setError(result.message || "Error creating activity.");
+        toast.error(result.message || "Error creating activity.");
       } else {
-        setError("Error creating activity. Please try again.");
+        toast.error("Error creating activity. Please try again.");
       }
     }
     setIsSavingActivity(false);
@@ -74,95 +78,79 @@ export default function Activities({ setActiveTab, currentRegistrationId }) {
 
   const updateActivities = async () => {
     setLoading(true);
-    setError("");
-
-    if (!currentRegistrationId) {
-      alert("Please complete the Client tab first to save activities.");
-      setActiveTab("client");
-      return;
-    }
-
-    if (!activityData.description.trim()) {
-      alert("Please enter an activity description before saving");
-      return;
-    }
-
     setIsSavingActivity(true);
 
     const result = await PatientServices.update_activity(
       currentRegistrationId,
       editingActivityId,
-      activityData,
+      activityForm,
     );
 
     if (result.success) {
-      await getActivities(currentRegistrationId);
+      getActivities(currentRegistrationId);
+      getDashboardActivities();
       clearActivityForm();
+      toast.success("Activity updated successfully");
     } else {
       if (result.status === 400 || result.status === 409) {
-        setError(result.message || "Error updating activity.");
+        toast.error(result.message || "Error updating activity.");
       } else {
-        setError("Error updating activity. Please try again.");
+        toast.error("Error updating activity. Please try again.");
       }
     }
     setIsSavingActivity(false);
     setLoading(false);
   };
 
-  const deleteActivity = async (activityId) => {
-    if (!window.confirm("Are you sure you want to delete this activity?")) {
-      return;
-    }
-
+  const deleteActivity = async () => {
     setLoading(true);
-    setError("");
 
     const result = await PatientServices.delete_activity_by_id(
       currentRegistrationId,
-      activityId,
+      deleteActivityId,
     );
 
     if (result.success) {
-      await getActivities(currentRegistrationId);
+      getActivities(currentRegistrationId);
+      getDashboardActivities();
+      toast.success("Activity deleted successfully");
     } else {
       if (result.status === 400 || result.status === 409) {
-        setError(result.message || "Error deleting activity.");
+        toast.error(result.message || "Error deleting activity.");
       } else {
-        setError("Error deleting activity. Please try again.");
+        toast.error("Error deleting activity. Please try again.");
       }
     }
     setLoading(false);
   };
 
+  const handleDeleteActivity = async (id) => {
+    setDeleteActivityId(id);
+    setShowDeleteConfirm(true);
+  };
+
   const handleActivityChange = (e) => {
     const { name, value } = e.target;
-    setActivityData((prev) => ({
+    setActivityForm((prev) => ({
       ...prev,
       [name]: value,
     }));
   };
 
-  useEffect(() => {
-    if (currentRegistrationId) {
-      getActivities(currentRegistrationId);
-    }
-  }, [currentRegistrationId]);
-
   const editActivity = (activity) => {
-    setActivityData({
+    setActivityForm({
       date: activity.date || new Date().toISOString().split("T")[0],
       time: activity.time || "",
       description: activity.description || "",
     });
     setEditingActivityId(activity.id);
+
     // Scroll to top of activity form
-    document
-      .querySelector("#activityDescription")
-      ?.scrollIntoView({ behavior: "smooth" });
+    document.querySelector("#tabs")?.scrollIntoView({ behavior: "smooth" });
   };
 
   const clearActivityForm = () => {
-    setActivityData({
+    setActivityForm({
       date: new Date().toISOString().split("T")[0],
       time: "",
       description: "",
@@ -215,7 +203,14 @@ export default function Activities({ setActiveTab, currentRegistrationId }) {
               </div>
             </div>
           )}
-
+          {showDeleteConfirm && (
+            <ConfirmModal
+              message={"Confirm delete activity"}
+              subMessage={"This action cannot be undone"}
+              confirm={deleteActivity}
+              setShowConfirm={setShowDeleteConfirm}
+            />
+          )}
           <div
             className={
               !currentRegistrationId ? "opacity-50 pointer-events-none" : ""
@@ -230,15 +225,14 @@ export default function Activities({ setActiveTab, currentRegistrationId }) {
                   htmlFor="activityDescription"
                   className="block text-sm font-medium text-gray-700 mb-2"
                 >
-                  Description *
+                  Date *
                 </label>
-                <input
-                  type="date"
-                  id="activityDate"
+                <DatePicker
                   name="date"
-                  value={activityData.date}
+                  value={activityForm.date}
                   onChange={handleActivityChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black"
+                  className="w-full px-3 py-1.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black"
+                  placeholder="mm/dd/yyyy"
                 />
               </div>
 
@@ -249,14 +243,16 @@ export default function Activities({ setActiveTab, currentRegistrationId }) {
                 >
                   Time
                 </label>
-                <input
-                  type="time"
-                  id="activityTime"
-                  name="time"
-                  value={activityData.time}
-                  onChange={handleActivityChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black"
-                />
+                <div className="flex w-full">
+                  <input
+                    type="time"
+                    id="activityTime"
+                    name="time"
+                    value={activityForm.time}
+                    onChange={handleActivityChange}
+                    className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black"
+                  />
+                </div>
               </div>
 
               <div>
@@ -270,7 +266,7 @@ export default function Activities({ setActiveTab, currentRegistrationId }) {
                   id="activityDescription"
                   name="description"
                   rows={4}
-                  value={activityData.description}
+                  value={activityForm.description}
                   onChange={handleActivityChange}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black resize-y"
                   placeholder="Enter activity description..."
@@ -284,7 +280,7 @@ export default function Activities({ setActiveTab, currentRegistrationId }) {
                   onClick={saveActivity}
                   disabled={
                     isSavingActivity ||
-                    !activityData.description.trim() ||
+                    !activityForm.description.trim() ||
                     !currentRegistrationId
                   }
                   className="bg-black text-white px-6 py-2 rounded-md hover:bg-gray-800 disabled:bg-gray-400 transition-colors"
@@ -321,40 +317,69 @@ export default function Activities({ setActiveTab, currentRegistrationId }) {
               Saved Activities
             </h3>
 
-            {savedActivities.length === 0 ? (
+            {activities.length === 0 ? (
               <div className="text-center py-8 text-gray-500">
                 <p>No activities have been saved yet.</p>
               </div>
             ) : (
               <div className="space-y-3">
-                {savedActivities.map((activity, index) => (
+                {activities.map((activity, index) => (
                   <div
                     key={activity.id}
-                    className="border border-gray-200 rounded-lg p-4 bg-white hover:shadow-md transition-shadow"
+                    className="border border-gray-200 rounded-lg bg-white hover:shadow-md transition-shadow"
                   >
-                    <div className="flex justify-between items-start mb-2">
+                    <div className="flex justify-between m-4 ml-2 mb-0">
+                      {(() => {
+                        if (activity.completed) {
+                          return (
+                            <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full">
+                              Completed
+                            </span>
+                          );
+                        } else {
+                          if (
+                            new Date(`${activity.date}T${activity.time}`) >
+                            new Date()
+                          ) {
+                            return (
+                              <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">
+                                Upcoming
+                              </span>
+                            );
+                          } else {
+                            return (
+                              <span className="text-xs bg-red-100 text-red-700 px-2 py-0.5 rounded-full">
+                                Late
+                              </span>
+                            );
+                          }
+                        }
+                      })()}
+                      <div className="flex gap-2">
+                        <button
+                          type="button"
+                          onClick={() => editActivity(activity)}
+                          className="text-blue-600 hover:text-blue-800 text-sm"
+                          title="Edit activity"
+                        >
+                          Edit
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteActivity(activity.id)}
+                          className="text-red-600 hover:text-red-800 text-sm"
+                          title="Delete activity"
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    </div>
+                    <div className="flex p-4 pt-0 justify-between items-start mb-2">
                       <div className="flex-1">
                         <div className="flex items-center gap-2 mb-2">
-                          <span className="text-lg font-semibold text-gray-900">
+                          <span className="text-lg font-semibold text-gray-900 break-all">
                             {activity.description}
                           </span>
-                          {/* Recent indicator */}
-                          {(() => {
-                            const activityDateTime = new Date(
-                              activity.date + "T" + (activity.time || "00:00"),
-                            );
-                            const now = new Date();
-                            const diffHours =
-                              (now - activityDateTime) / (1000 * 60 * 60);
-                            if (diffHours < 24) {
-                              return (
-                                <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full">
-                                  Recent
-                                </span>
-                              );
-                            }
-                            return null;
-                          })()}
                         </div>
                         <div className="text-sm text-gray-700 space-y-1">
                           {activity.date && (
@@ -368,24 +393,6 @@ export default function Activities({ setActiveTab, currentRegistrationId }) {
                             </p>
                           )}
                         </div>
-                      </div>
-                      <div className="flex gap-2">
-                        <button
-                          type="button"
-                          onClick={() => editActivity(activity)}
-                          className="text-blue-600 hover:text-blue-800 text-sm"
-                          title="Edit activity"
-                        >
-                          Edit
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => deleteActivity(activity.id)}
-                          className="text-red-600 hover:text-red-800 text-sm"
-                          title="Delete activity"
-                        >
-                          Delete
-                        </button>
                       </div>
                     </div>
                   </div>

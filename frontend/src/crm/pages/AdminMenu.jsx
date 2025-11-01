@@ -1,16 +1,25 @@
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
+import { IoLogOutOutline } from "react-icons/io5";
 
 const AdminMenu = () => {
   const navigate = useNavigate();
-  const { userRole, userPermissions } = useAuth();
+  const { userRole, userPermissions, logout } = useAuth();
 
   const goBack = () => {
     navigate("/");
   };
 
+  const handleLogout = async () => {
+    try {
+      logout();
+    } catch (error) {
+      setError("Logout error:", error);
+    }
+  };
+
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+    <div className="flex-grow flex flex-col bg-gray-50 flex items-center justify-center m-4">
       <div className="max-w-md w-full mx-4">
         <div className="bg-white rounded-lg shadow-md p-8">
           <div className="text-center mb-8">
@@ -22,7 +31,7 @@ const AdminMenu = () => {
 
           {/* Dashboard  */}
           <div className="space-y-6">
-            {userPermissions.includes("client") && (
+            {userRole !== "guest" && (
               <button
                 onClick={() => navigate("/admin-dashboard")}
                 className="w-full py-4 px-6 rounded-lg text-lg font-medium flex items-center justify-center gap-3 text-white transition-colors"
@@ -39,7 +48,7 @@ const AdminMenu = () => {
             )}
 
             {/* Registration  */}
-            {userPermissions.includes("client") && (
+            {userPermissions.includes("client") && userRole !== "guest" && (
               <button
                 onClick={() => navigate("/admin-register")}
                 className="w-full py-4 px-6 rounded-lg text-lg font-medium flex items-center justify-center gap-3 text-white transition-colors"
@@ -56,15 +65,22 @@ const AdminMenu = () => {
             )}
 
             {/* Analytics  */}
-            <button
-              onClick={() => navigate("/admin-analytics")}
-              className="w-full py-4 px-6 rounded-lg text-lg font-medium flex items-center justify-center gap-3 text-white transition-colors"
-              style={{ backgroundColor: "#000000" }}
-              onMouseEnter={(e) => (e.target.style.backgroundColor = "#1f2937")}
-              onMouseLeave={(e) => (e.target.style.backgroundColor = "#000000")}
-            >
-              🤖 Analytics
-            </button>
+            {userRole !== "standard" && (
+              <button
+                onClick={() => navigate("/admin-analytics")}
+                className="w-full py-4 px-6 rounded-lg text-lg font-medium flex items-center justify-center gap-3 text-white transition-colors"
+                style={{ backgroundColor: "#000000" }}
+                onMouseEnter={(e) =>
+                  (e.target.style.backgroundColor = "#1f2937")
+                }
+                onMouseLeave={(e) =>
+                  (e.target.style.backgroundColor = "#000000")
+                }
+              >
+                <span className="text-lg">🤖</span>
+                Analytics
+              </button>
+            )}
 
             {/* Users */}
             {userRole === "admin" && (
@@ -80,6 +96,16 @@ const AdminMenu = () => {
                 }
               >
                 👥 Users
+              </button>
+            )}
+            {/* Logout for guests */}
+            {userRole === "guest" && (
+              <button
+                onClick={handleLogout}
+                className="w-full py-4 px-6 rounded-lg text-lg font-medium flex items-center justify-center gap-3 text-white transition-colors bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors  "
+              >
+                <IoLogOutOutline />
+                Logout
               </button>
             )}
           </div>

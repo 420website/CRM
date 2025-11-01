@@ -1,9 +1,16 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { PatientServices } from "../../services/patientServices";
+import ConfirmModal from "../components/ConfirmModal";
+import { useRegistration } from "../../context/RegistrationContext";
+import DatePicker from "../ui/DatePicker";
+import toast from "react-hot-toast";
+import { newlineChars } from "pdf-lib";
+import { normalizeFormData } from "../../utils/formatData";
 
 export default function Tests({ setActiveTab, currentRegistrationId }) {
-  const [savedTests, setSavedTests] = useState([]);
-  const [error, setError] = useState("");
+  const { tests, getTests } = useRegistration();
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deleteTestId, setDeleteTestId] = useState(null);
   const [loading, setLoading] = useState(false);
   const [editingTestId, setEditingTestId] = useState(null);
   const [testFormData, setTestFormData] = useState({
@@ -21,53 +28,152 @@ export default function Tests({ setActiveTab, currentRegistrationId }) {
     bloodwork_tester: "CM",
   });
 
-  const getTests = async (registrationId) => {
-    setLoading(true);
-    setError("");
-
-    const result = await PatientServices.get_tests_by_patient(registrationId);
-
-    if (result.success) {
-      setSavedTests(result.data || []);
-    } else {
-      if (result.status === 400 || result.status === 409) {
-        setError(result.message || "Error getting tests.");
-      } else {
-        setError("Error getting tests. Please try again.");
-      }
+  function validateHIV() {
+    if (!testFormData.hiv_result || testFormData.hiv_result === "") {
+      toast.error("Please select test result");
+      return false;
     }
-    setLoading(false);
-  };
+
+    if (
+      testFormData.hiv_result === "positive" &&
+      testFormData.hiv_type === ""
+    ) {
+      toast.error("Please select HIV Type");
+      return false;
+    }
+
+    if (!testFormData.hiv_tester || testFormData.hiv_tester === "") {
+      toast.error("Please select a tester");
+      return false;
+    }
+
+    testFormData.bloodwork_type = null;
+    testFormData.bloodwork_result = null;
+    testFormData.bloodwork_tester = null;
+    testFormData.bloodwork_circles = null;
+    testFormData.bloodwork_date_submitted = null;
+    testFormData.hcv_result = null;
+    testFormData.hcv_tester = null;
+    testFormData.hcv_result = null;
+
+    return true;
+  }
+
+  function validateHCV() {
+    if (!testFormData.hcv_result || testFormData.hcv_result === "") {
+      toast.error("Please select test result");
+      return false;
+    }
+
+    if (!testFormData.hcv_tester || testFormData.hcv_tester === "") {
+      toast.error("Please select a tester");
+      return false;
+    }
+
+    testFormData.bloodwork_type = null;
+    testFormData.bloodwork_result = null;
+    testFormData.bloodwork_tester = null;
+    testFormData.bloodwork_circles = null;
+    testFormData.bloodwork_date_submitted = null;
+    testFormData.hiv_result = null;
+    testFormData.hiv_tester = null;
+    testFormData.hiv_type = null;
+
+    return true;
+  }
+
+  function validateBloodwork() {
+    if (!testFormData.bloodwork_type || testFormData.bloodwork_type === "") {
+      toast.error("Please select bloodwork type");
+      return false;
+    }
+
+    if (
+      !testFormData.bloodwork_tester ||
+      testFormData.bloodwork_tester === ""
+    ) {
+      toast.error("Please select a tester");
+      return false;
+    }
+
+    if (
+      !testFormData.bloodwork_date_submitted ||
+      testFormData.bloodwork_date_submitted === ""
+    ) {
+      toast.error("Please select date submitted");
+      return false;
+    }
+
+    if (
+      !testFormData.bloodwork_result ||
+      testFormData.bloodwork_result === ""
+    ) {
+      toast.error("Please select test result");
+      return false;
+    }
+
+    if (
+      testFormData.bloodwork_type === "DBS" &&
+      testFormData.bloodwork_circles === ""
+    ) {
+      toast.error("Please select bloodwork circles");
+      return false;
+    }
+    testFormData.hiv_result = null;
+    testFormData.hiv_tester = null;
+    testFormData.hiv_type = null;
+    testFormData.hcv_result = null;
+    testFormData.hcv_tester = null;
+
+    return true;
+  }
+
+  function validateForm() {
+    if (!currentRegistrationId) {
+      alert("Please complete the Patient tab first to save tests.");
+      setActiveTab("patient");
+      return false;
+    }
+
+    if (!testFormData.test_type || testFormData.test_type === "") {
+      toast.error("Please select a test type");
+      return false;
+    }
+
+    if (!testFormData.test_date || testFormData.test_date === "") {
+      toast.error("Please select a test date");
+      return false;
+    }
+
+    if (testFormData.test_type === "HIV") {
+      return validateHIV();
+    } else if (testFormData.test_type === "HCV") {
+      return validateHCV();
+    } else if (testFormData.test_type == "Bloodwork") {
+      return validateBloodwork();
+    }
+
+    return true;
+  }
 
   const saveTest = async () => {
+    if (!validateForm()) {
+      return;
+    }
     editingTestId ? updateTests() : createTests();
   };
 
   const createTests = async () => {
     setLoading(true);
-    setError("");
 
-    if (!testFormData.test_type || testFormData.test_type === "") {
-      alert("Please select a test type");
-      return;
-    }
-
-    // Check if patient form has been submitted (registration ID exists)
-    if (!currentRegistrationId) {
-      alert(
-        "Please complete and save the Client tab form first before adding tests.",
-      );
-      setActiveTab("client");
-      return;
-    }
-
+    const data = normalizeFormData(testFormData);
     const result = await PatientServices.create_test(
       currentRegistrationId,
-      testFormData,
+      data,
     );
 
     if (result.success) {
-      await getTests(currentRegistrationId);
+      getTests(currentRegistrationId);
 
       // Reset form
       setTestFormData({
@@ -85,11 +191,12 @@ export default function Tests({ setActiveTab, currentRegistrationId }) {
         bloodwork_tester: "CM",
       });
       setEditingTestId(null);
+      toast.success("Test created successfully");
     } else {
       if (result.status === 400 || result.status === 409) {
-        setError(result.message || "Error creating test.");
+        toast.error(result.message || "Error creating test.");
       } else {
-        setError("Error creating test. Please try again.");
+        toast.error("Error creating test. Please try again.");
       }
     }
     setLoading(false);
@@ -97,30 +204,16 @@ export default function Tests({ setActiveTab, currentRegistrationId }) {
 
   const updateTests = async () => {
     setLoading(true);
-    setError("");
 
-    if (!testFormData.test_type || testFormData.test_type === "") {
-      alert("Please select a test type");
-      return;
-    }
-
-    // Check if patient form has been submitted (registration ID exists)
-    if (!currentRegistrationId) {
-      alert(
-        "Please complete and save the Patient tab form first before adding tests.",
-      );
-      setActiveTab("patient");
-      return;
-    }
-
+    const data = normalizeFormData(testFormData);
     const result = await PatientServices.update_test(
       currentRegistrationId,
       editingTestId,
-      testFormData,
+      data,
     );
 
     if (result.success) {
-      await getTests(currentRegistrationId);
+      getTests(currentRegistrationId);
 
       // Reset form
       setTestFormData({
@@ -138,42 +231,41 @@ export default function Tests({ setActiveTab, currentRegistrationId }) {
         bloodwork_tester: "CM",
       });
       setEditingTestId(null);
+      toast.success("Test updated successfully");
     } else {
       if (result.status === 400 || result.status === 409) {
-        setError(result.message || "Error updating test.");
+        toast.error(result.message || "Error updating test.");
       } else {
-        setError("Error updating test. Please try again.");
+        toast.error("Error updating test. Please try again.");
       }
     }
     setLoading(false);
   };
 
-  const deleteTest = async (testId) => {
-    if (
-      !window.confirm(
-        "Are you sure you want to delete this test? This action cannot be undone.",
-      )
-    ) {
-      return;
-    }
+  const deleteTest = async () => {
     setLoading(true);
-    setError("");
 
     const result = await PatientServices.delete_test_by_id(
       currentRegistrationId,
-      testId,
+      deleteTestId,
     );
 
     if (result.success) {
-      await getTests(currentRegistrationId);
+      getTests(currentRegistrationId);
+      toast.success("Deleted test successfully");
     } else {
       if (result.status === 400 || result.status === 409) {
-        setError(result.message || "Error deleting test.");
+        toast.error(result.message || "Error deleting test.");
       } else {
-        setError("Error deleting test. Please try again.");
+        toast.error("Error deleting test. Please try again.");
       }
     }
     setLoading(false);
+  };
+
+  const handleDeleteTest = async (testId) => {
+    setDeleteTestId(testId);
+    setShowDeleteConfirm(true);
   };
 
   const editTest = (test) => {
@@ -241,14 +333,23 @@ export default function Tests({ setActiveTab, currentRegistrationId }) {
       newTestData.hcv_tester = "CM";
     }
 
+    if (
+      value === "Cepheid" &&
+      newTestData.bloodwork_result !== "Positive" &&
+      newTestData.bloodwork_result !== "Negative"
+    ) {
+      newTestData.bloodwork_result = "Positive";
+    }
+
+    if (
+      newTestData.bloodwork_type !== "DBS" &&
+      newTestData.bloodwork_circles !== ""
+    ) {
+      newTestData.bloodwork_circles = "";
+    }
+
     setTestFormData(newTestData);
   };
-
-  useEffect(() => {
-    if (currentRegistrationId) {
-      getTests(currentRegistrationId);
-    }
-  }, [currentRegistrationId]);
 
   return (
     <div>
@@ -294,6 +395,14 @@ export default function Tests({ setActiveTab, currentRegistrationId }) {
                 </div>
               </div>
             </div>
+          )}
+          {showDeleteConfirm && (
+            <ConfirmModal
+              message={"Confirm delete test"}
+              subMessage={"This action cannot be undone"}
+              confirm={deleteTest}
+              setShowConfirm={setShowDeleteConfirm}
+            />
           )}
 
           {/* Test Form */}
@@ -342,13 +451,11 @@ export default function Tests({ setActiveTab, currentRegistrationId }) {
                     >
                       Test Date
                     </label>
-                    <input
-                      type="date"
-                      id="testDate"
+                    <DatePicker
                       name="test_date"
                       value={testFormData.test_date}
                       onChange={handleTestChange}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black"
+                      className="w-full px-3 py-1.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black"
                       style={{
                         lineHeight: "1.5",
                         height: "auto",
@@ -455,13 +562,11 @@ export default function Tests({ setActiveTab, currentRegistrationId }) {
                     >
                       Test Date
                     </label>
-                    <input
-                      type="date"
-                      id="bloodwork_test_date"
+                    <DatePicker
                       name="test_date"
                       value={testFormData.test_date}
                       onChange={handleTestChange}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black"
+                      className="w-full px-3 py-1.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black"
                       style={{
                         lineHeight: "1.5",
                         height: "auto",
@@ -486,6 +591,7 @@ export default function Tests({ setActiveTab, currentRegistrationId }) {
                       <option value="">Select Type</option>
                       <option value="DBS">DBS</option>
                       <option value="Serum">Serum</option>
+                      <option value="Cepheid">Cepheid</option>
                     </select>
                   </div>
 
@@ -528,8 +634,12 @@ export default function Tests({ setActiveTab, currentRegistrationId }) {
                       onChange={handleTestChange}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black"
                     >
-                      <option value="Pending">Pending</option>
-                      <option value="Submitted">Submitted</option>
+                      {testFormData.bloodwork_type !== "Cepheid" && (
+                        <>
+                          <option value="Pending">Pending</option>
+                          <option value="Submitted">Submitted</option>
+                        </>
+                      )}
                       <option value="Positive">Positive</option>
                       <option value="Negative">Negative</option>
                     </select>
@@ -542,13 +652,11 @@ export default function Tests({ setActiveTab, currentRegistrationId }) {
                     >
                       Date Submitted
                     </label>
-                    <input
-                      type="date"
-                      id="bloodwork_date_submitted"
+                    <DatePicker
                       name="bloodwork_date_submitted"
                       value={testFormData.bloodwork_date_submitted}
                       onChange={handleTestChange}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black"
+                      className="w-full px-3 py-1.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black"
                       style={{
                         lineHeight: "1.5",
                         height: "auto",
@@ -612,13 +720,11 @@ export default function Tests({ setActiveTab, currentRegistrationId }) {
                     >
                       Test Date
                     </label>
-                    <input
-                      type="date"
-                      id="hcvTestDate"
+                    <DatePicker
                       name="test_date"
                       value={testFormData.test_date}
                       onChange={handleTestChange}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black"
+                      className="w-full px-3 py-1.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black"
                       style={{
                         lineHeight: "1.5",
                         height: "auto",
@@ -695,13 +801,13 @@ export default function Tests({ setActiveTab, currentRegistrationId }) {
               Saved Tests
             </h3>
 
-            {savedTests.length === 0 ? (
+            {tests.length === 0 ? (
               <div className="text-center py-8 text-gray-500">
                 <p>No tests have been saved yet.</p>
               </div>
             ) : (
               <div className="space-y-3">
-                {savedTests.map((test) => (
+                {tests.map((test) => (
                   <div
                     key={test.id}
                     className="border rounded-lg p-4 bg-gray-50"
@@ -715,14 +821,19 @@ export default function Tests({ setActiveTab, currentRegistrationId }) {
                           <span className="text-sm text-gray-500 mr-3">
                             {test.test_date}
                           </span>
-                          {test.created_at && (
+                          {test.updated_at && (
                             <span className="text-xs text-gray-400 whitespace-nowrap">
                               Saved:{" "}
-                              {new Date(test.created_at).toLocaleTimeString(
+                              {new Date(test.updated_at).toLocaleString(
                                 "en-US",
                                 {
                                   timeZone: "America/New_York",
                                   hour12: true,
+                                  month: "short",
+                                  day: "numeric",
+                                  year: "numeric",
+                                  hour: "2-digit",
+                                  minute: "2-digit",
                                 },
                               )}
                             </span>
@@ -798,7 +909,7 @@ export default function Tests({ setActiveTab, currentRegistrationId }) {
                         </button>
                         <button
                           type="button"
-                          onClick={() => deleteTest(test.id)}
+                          onClick={() => handleDeleteTest(test.id)}
                           className="text-red-600 hover:text-red-800 text-sm"
                           title="Delete test"
                         >

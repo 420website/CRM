@@ -8,7 +8,6 @@ class TestSettings(unittest.TestCase):
         "os.environ",
         {
             "JWT_ACCESS_SECRET": "access_secret",
-            "JWT_REFRESH_SECRET": "refresh_secret",
             "JWT_ALGORITHM": "HS256",
             "MFA_ENCRYPTION_KEY": "mfa_key",
             "DATABASE_URL": "sqlite:///test.db",
@@ -28,7 +27,6 @@ class TestSettings(unittest.TestCase):
     #     settings = Settings()
     #
     #     self.assertEqual(settings.jwt_access_secret, "access_secret")
-    #     self.assertEqual(settings.jwt_refresh_secret, "refresh_secret")
     #     self.assertEqual(settings.jwt_algorithm, "HS256")
     #     self.assertEqual(settings.mfa_secret_key, "mfa_key")
     #     self.assertEqual(settings.database_url, "sqlite:///test.db")

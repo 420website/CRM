@@ -12,9 +12,6 @@ export default function DocumentFullScreen({
   totalPages,
   closeFullScreenPreview,
 }) {
-  // Sharing functionality state
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
   const [shareUrl, setShareUrl] = useState("");
   const [isSharing, setIsSharing] = useState(false);
   const [shareStatus, setShareStatus] = useState("");
@@ -92,7 +89,6 @@ export default function DocumentFullScreen({
 
   const resetZoom = () => {
     setPdfScale(defaultScale);
-    // setPdfScale(1.0);
   };
 
   // Generate shareable link for attachment
@@ -110,14 +106,12 @@ export default function DocumentFullScreen({
       setTimeout(() => setShareStatus(""), 5000);
     } else {
       if (result.status === 400 || result.status === 409) {
-        setError(result.message || "Error getting share link.");
         setShareStatus("Error generating shareable link");
         setTimeout(() => setShareStatus(""), 3000);
       } else {
-        setError(
+        setShareStatus(
           "Error getting share link. Please ensure attachment saved first and try again.",
         );
-        setShareStatus("Error generating shareable link");
         setTimeout(() => setShareStatus(""), 3000);
       }
     }
@@ -146,7 +140,6 @@ export default function DocumentFullScreen({
         if (error.name === "AbortError") {
           return; // User cancelled, don't show error
         }
-        console.log("Native sharing failed, falling back to clipboard");
       }
     }
 
@@ -161,8 +154,6 @@ export default function DocumentFullScreen({
     }
   };
 
-  // if (loading) return <div className="p-4">Loading...</div>;
-  if (error) return <div className="p-4 text-red-600">{error}</div>;
   if (!documentPreview) return <div className="p-4">Loading document...</div>;
 
   return (
@@ -274,9 +265,15 @@ export default function DocumentFullScreen({
       {/* Share Status Message */}
       {shareStatus && (
         <div className="absolute top-20 left-1/2 transform -translate-x-1/2 z-60">
-          <div className="bg-green-600 text-white px-4 py-2 rounded-md shadow-lg text-sm">
-            {shareStatus}
-          </div>
+          {shareStatus.startsWith("Error") ? (
+            <div className="bg-red-600 text-white px-4 py-2 rounded-md shadow-lg text-sm">
+              {shareStatus}
+            </div>
+          ) : (
+            <div className="bg-green-600 text-white px-4 py-2 rounded-md shadow-lg text-sm">
+              {shareStatus}
+            </div>
+          )}
         </div>
       )}
 
@@ -293,8 +290,6 @@ export default function DocumentFullScreen({
               ) : (
                 <Document
                   file={documentPreview.url}
-                  // onLoadSuccess={onDocumentLoadSuccess}
-                  // onLoadError={onDocumentLoadError}
                   loading={
                     <div className="p-8 text-center">
                       <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
@@ -313,7 +308,6 @@ export default function DocumentFullScreen({
                     height={undefined} // Let height auto-scale
                     width={undefined}
                     className="max-h-full max-w-full object-contain"
-                    // onLoadError={onPageLoadError}
                     onLoadSuccess={onPageLoadSuccess}
                     loading={
                       <div className="p-4 text-center">

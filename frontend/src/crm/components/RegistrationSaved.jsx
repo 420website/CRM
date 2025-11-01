@@ -1,6 +1,11 @@
+import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 
 export default function RegistrationSaved({ submitStatus, setSubmitStatus }) {
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }, [submitStatus]);
+
   const navigate = useNavigate();
 
   const goBack = () => {
@@ -8,8 +13,8 @@ export default function RegistrationSaved({ submitStatus, setSubmitStatus }) {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center py-2">
-      <div className="max-w-md w-full bg-white rounded-lg shadow-md p-4 mx-4 text-center">
+    <div className="flex-grow flex flex-col bg-gray-50 flex items-center justify-center m-4">
+      <div className="max-w-md w-full bg-white rounded-lg shadow-md p-4  text-center">
         <div className="mb-3">
           <div className="mx-auto w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mb-3">
             <svg

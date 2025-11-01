@@ -1,5 +1,40 @@
-// Format labels data helper function
-export const getFormattedLabelsData = (formData) => {
+import { PatientServices } from "../services/patientServices";
+import toast from "react-hot-toast";
+
+export const copyLabelsData = async (formData) => {
+  const labelsData = getFormattedLabelsData(formData);
+  if (labelsData) {
+    try {
+      await navigator.clipboard.writeText(labelsData);
+      toast.success("Label data copied to clipboard!");
+    } catch (error) {
+      toast.error("Error copying label data: " + error.message);
+    }
+  }
+};
+
+// ClipboardItem is required for safari to work with the async calls
+export const copyFormData = async (currentRegistrationId, formData) => {
+  try {
+    const item = new ClipboardItem({
+      "text/plain": new Promise(async (resolve) => {
+        const data = await getFormattedCopyData(
+          currentRegistrationId,
+          formData,
+        );
+        resolve(new Blob([data], { type: "text/plain" }));
+      }),
+    });
+
+    await navigator.clipboard.write([item]);
+    toast.success("Client data copied to clipboard!");
+  } catch (error) {
+    toast.error("Failed to copy data to clipboard: " + error.message);
+  }
+};
+
+// Format helper functions
+const getFormattedLabelsData = (formData) => {
   try {
     // Format date of birth for labels (YYYY-MM-DD format)
     let formattedDOB = "";
@@ -26,13 +61,8 @@ export const getFormattedLabelsData = (formData) => {
     });
 
     // Format labels data
-    const labelsData = `HCN: ${formData.health_card || ""} ${formData.health_card_version || ""}  Sex: ${formData.gender === "Male" ? "M" : formData.gender === "Female" ? "F" : formData.gender || ""}
-${formData.last_name}, ${formData.first_name}
-DOB: ${formattedDOB}
-${formData.address ? `Address: ${formData.address}` : "Address not available"}
-${formData.city || ""}, ${formData.province?.toUpperCase().substring(0, 2) || ""} ${formData.postal_code || ""}
-${formData.phone1 ? `Phone: ${formData.phone1}` : "Phone number not available"}
-${currentDate} ${currentTime}`;
+    //NOTE: Cannot start with 'HCN:' added \u200B as a 0 width space to about URI encoding
+    const labelsData = `HCN\u200B: ${formData.health_card || ""} ${formData.health_card_version || ""} Sex: ${formData.gender === "Male" ? "M" : formData.gender === "Female" ? "F" : formData.gender || ""}\n${formData.last_name}, ${formData.first_name}\nDOB: ${formattedDOB}\n${formData.address ? `Address: ${formData.address}` : "Address not available"}\n${formData.city || ""}, ${formData.province?.toUpperCase().substring(0, 2) || ""} ${formData.postal_code || ""}\n${formData.phone1 ? `Phone: ${formData.phone1}` : "Phone number not available"}\n${currentDate} ${currentTime}`;
 
     return labelsData;
   } catch (error) {
@@ -41,41 +71,25 @@ ${currentDate} ${currentTime}`;
   }
 };
 
-// Copy labels function - Copy to clipboard only
-export const copyLabelsData = (formData) => {
-  try {
-    const labelsData = getFormattedLabelsData(formData);
-    if (labelsData) {
-      navigator.clipboard.writeText(labelsData);
-      alert("✅ Label data copied to clipboard!");
-    }
-  } catch (error) {
-    alert("❌ Error copying label data: " + error.message);
-    console.error("Labels copy failed:", error);
-  }
-};
-
 // Copy form data function with test summary
-export const copyFormData = async (currentRegistrationId, formData) => {
+const getFormattedCopyData = async (currentRegistrationId, formData) => {
   try {
-    // Debug information
-    console.log("🔄 Copy button clicked");
-    console.log("📋 Current Registration ID:", currentRegistrationId);
-
     // Get fresh test data directly from API
     let currentTests = [];
     if (currentRegistrationId) {
-      console.log("🔄 Fetching fresh test data...");
       try {
-        const response = await fetch(
-          `${process.env.REACT_APP_BACKEND_URL}/api/admin-registration/${currentRegistrationId}/tests`,
+        const result = await PatientServices.get_tests_by_patient(
+          currentRegistrationId,
         );
-        if (response.ok) {
-          const data = await response.json();
-          currentTests = data.tests || [];
-          console.log("✅ Fresh test data loaded:", currentTests);
+
+        if (result.success) {
+          currentTests = result.data || [];
         } else {
-          console.warn("⚠️ Failed to load test data, proceeding without tests");
+          if (result.status === 400 || result.status === 409) {
+            console.log(result.message || "Error getting tests.");
+          } else {
+            console.log("Error getting tests. Please try again.");
+          }
         }
       } catch (error) {
         console.warn(
@@ -111,10 +125,8 @@ export const copyFormData = async (currentRegistrationId, formData) => {
     // Format test summary using fresh data
     let testSummary = "";
     if (currentTests && currentTests.length > 0) {
-      console.log("✅ Including test summary in copy");
       testSummary = "\n\nTEST SUMMARY:\n";
       currentTests.forEach((test, index) => {
-        console.log(`📝 Processing test ${index + 1}:`, test);
         const testDate = test.test_date
           ? new Date(test.test_date).toLocaleDateString()
           : "No date";
@@ -142,8 +154,6 @@ export const copyFormData = async (currentRegistrationId, formData) => {
           testSummary += "\n";
         }
       });
-    } else {
-      console.log("⚠️ No test data available for copy");
     }
 
     // Format data with actual form values and test summary
@@ -157,76 +167,9 @@ ${formData.city || ""}, ${formData.province?.toUpperCase().substring(0, 2) || ""
 MEDICAL INFORMATION:
 ${formData.summary_template || ""}${testSummary}`;
 
-    // Try modern clipboard API first, fallback to legacy method
-    let copySuccess = false;
-
-    // For iOS Safari, we need to use the more compatible approach
-    if (navigator.clipboard && navigator.clipboard.writeText) {
-      try {
-        await navigator.clipboard.writeText(formattedData);
-        copySuccess = true;
-        console.log("✅ Copy successful using modern clipboard API");
-      } catch (error) {
-        console.warn(
-          "⚠️ Modern clipboard API failed, trying fallback method:",
-          error,
-        );
-      }
-    }
-
-    // Enhanced fallback method with better mobile support
-    if (!copySuccess) {
-      try {
-        const textArea = document.createElement("textarea");
-        textArea.value = formattedData;
-        textArea.style.position = "fixed";
-        textArea.style.left = "-999999px";
-        textArea.style.top = "-999999px";
-        textArea.style.opacity = "0";
-        textArea.setAttribute("readonly", "");
-        textArea.setAttribute("contenteditable", "true");
-        document.body.appendChild(textArea);
-
-        // For iOS, we need to handle selection differently
-        if (/iPad|iPhone|iPod/.test(navigator.userAgent)) {
-          textArea.contentEditable = true;
-          textArea.readOnly = false;
-          const range = document.createRange();
-          range.selectNodeContents(textArea);
-          const selection = window.getSelection();
-          selection.removeAllRanges();
-          selection.addRange(range);
-          textArea.setSelectionRange(0, 999999);
-        } else {
-          textArea.focus();
-          textArea.select();
-        }
-
-        const successful = document.execCommand("copy");
-        document.body.removeChild(textArea);
-
-        if (successful) {
-          copySuccess = true;
-          console.log("✅ Copy successful using enhanced fallback method");
-        } else {
-          console.error("❌ Enhanced fallback copy method failed");
-        }
-      } catch (error) {
-        console.error("❌ Enhanced fallback copy method error:", error);
-      }
-    }
-
-    if (copySuccess) {
-      alert("✅ Client data copied to clipboard!");
-      console.log("✅ Copy successful:", formattedData);
-    } else {
-      alert(
-        "❌ Failed to copy data to clipboard. Please try again or copy manually.",
-      );
-      console.error("❌ All copy methods failed");
-    }
+    return formattedData;
   } catch (error) {
-    console.error("Copy failed:", error);
-    alert("❌ Failed to copy data to clipboard: " + error.message);
+    console.error("Error formatting labels data:", error);
+    return "";
   }
 };

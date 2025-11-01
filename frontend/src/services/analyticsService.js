@@ -8,6 +8,13 @@ export const AnalyticsServices = {
     );
   },
 
+  clear_legacy_data: async () => {
+    return apiCall(
+      () => api.delete("/analytics/legacy-data-summary"),
+      "Deleting legacy data failed.",
+    );
+  },
+
   upload_legacy_data: async (data) => {
     return apiCall(
       () =>

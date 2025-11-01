@@ -1,25 +1,24 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { AnalyticsServices } from "../../services/analyticsService";
+import toast from "react-hot-toast";
 
 const AdminAnalytics = () => {
   const navigate = useNavigate();
-
-  const [errors, setErrors] = useState({});
   const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [isTyping, setIsTyping] = useState(true);
+  const [typedText, setTypedText] = useState("");
+  const messagesEndRef = useRef(null);
   const [messages, setMessages] = useState([]);
   const [inputMessage, setInputMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [sessionId] = useState(
     () => `session_${Date.now()}_${Math.random().toString(36)}`,
   );
-  const [isTyping, setIsTyping] = useState(true);
-  const [typedText, setTypedText] = useState("");
-  const messagesEndRef = useRef(null);
 
   // Excel upload states
   const [isUploading, setIsUploading] = useState(false);
+  const [isLegacyData, setIsLegacyData] = useState(false);
   const [uploadStatus, setUploadStatus] = useState(null);
   const [legacyDataSummary, setLegacyDataSummary] = useState(null);
   const [showUploadSection, setShowUploadSection] = useState(false);
@@ -27,9 +26,9 @@ const AdminAnalytics = () => {
   const welcomeMessage =
     "Welcome to the Analytics dashboard powered by 420 AI. I can help you analyze enrollment statistics, dispositions, trends, and other data insights about the program's performance.";
 
-  // Scroll to top when component mounts
   useEffect(() => {
     window.scrollTo(0, 0);
+    loadLegacyDataSummary();
   }, []);
 
   // Handle scroll to top when upload status changes (same pattern as client registration)
@@ -47,11 +46,6 @@ const AdminAnalytics = () => {
       scrollToBottom();
     }
   }, [messages, isTyping]);
-
-  // Check for existing legacy data on load
-  useEffect(() => {
-    loadLegacyDataSummary();
-  }, []);
 
   // Typewriter effect for welcome message
   useEffect(() => {
@@ -97,6 +91,21 @@ const AdminAnalytics = () => {
     const result = await AnalyticsServices.get_legacy_data();
     if (result.success) {
       setLegacyDataSummary(result.data);
+      setShowUploadSection(false);
+      setIsLegacyData(true);
+      return true;
+    } else {
+      setShowUploadSection(false);
+      return false;
+    }
+  };
+
+  const clearLegacyDataSummary = async () => {
+    const result = await AnalyticsServices.clear_legacy_data();
+    if (result.success) {
+      setLegacyDataSummary(null);
+      setUploadStatus(false);
+      setIsLegacyData(false);
     }
   };
 
@@ -127,23 +136,29 @@ const AdminAnalytics = () => {
         message: result.data?.message,
         data: result.data,
       });
+      setIsLegacyData(true);
+      toast.success(result.data?.message);
 
       // Reload summary
-      await loadLegacyDataSummary();
-
-      // Add message to chat
-      const uploadMessage = {
-        role: "assistant",
-        content: `📊 Legacy data uploaded successfully! I now have access to ${result.records_count} historical records from ${file.name}. You can ask me questions about trends, dispositions, and patterns in your historical data.`,
-        timestamp: new Date().toISOString(),
-      };
-      setMessages((prev) => [...prev, uploadMessage]);
+      const status = await loadLegacyDataSummary();
+      if (status) {
+        // Add message to chat
+        const uploadMessage = {
+          role: "assistant",
+          content: `📊 Legacy data uploaded successfully! I now have access to ${result.records_count} historical records from ${file.name}. You can ask me questions about trends, dispositions, and patterns in your historical data.`,
+          timestamp: new Date().toISOString(),
+        };
+        setMessages((prev) => [...prev, uploadMessage]);
+      } else {
+        const error = await response.json();
+        throw new Error(error.detail || "Upload failed");
+      }
     } else {
-      const error = await response.json();
-      throw new Error(error.detail || "Upload failed");
+      setShowUploadSection(false);
+      toast.error(result.message);
     }
     setIsUploading(false);
-    // Clear the file input
+
     event.target.value = "";
   };
 
@@ -160,6 +175,7 @@ const AdminAnalytics = () => {
       setError("");
 
       const data = {
+        legacy_data: isLegacyData,
         message: query,
         session_id: sessionId,
       };
@@ -170,9 +186,6 @@ const AdminAnalytics = () => {
         const assistantMessage = {
           role: "assistant",
           content: result.data?.response,
-          // timestamp: data.timestamp,
-          // chart_html: data.chart_html,
-          // chart_image_url: data.chart_image_url,
         };
 
         setMessages((prev) => [...prev, assistantMessage]);
@@ -198,6 +211,7 @@ const AdminAnalytics = () => {
     window.scrollTo({ top: 0, behavior: "smooth" });
 
     promptClaude(inputMessage.trim());
+    setInputMessage("");
   };
 
   const handleKeyPress = (e) => {
@@ -211,6 +225,8 @@ const AdminAnalytics = () => {
     setMessages([]);
     setIsTyping(true);
     setTypedText("");
+
+    clearLegacyDataSummary();
 
     // Restart typewriter effect with improved logic
     const typeInterval = setInterval(() => {
@@ -239,10 +255,10 @@ const AdminAnalytics = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+    <div className="flex-grow flex flex-col bg-gray-50">
+      <div className="flex-grow flex flex-col max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
         {/* Header */}
-        <div className="bg-white rounded-lg shadow-md p-4 mb-6">
+        <div className="bg-white rounded-lg shadow-md p-4 mb-4">
           <h1 className="text-2xl font-bold text-gray-900 mb-4">
             AI Analytics
           </h1>
@@ -289,7 +305,7 @@ const AdminAnalytics = () => {
         </div>
 
         {/* Legacy Data Upload Section */}
-        <div className="bg-white rounded-lg shadow-md p-4 mb-6">
+        <div className="bg-white rounded-lg shadow-md p-4 mb-4">
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-lg font-semibold text-gray-900">
               📊 Legacy Data
@@ -375,8 +391,14 @@ const AdminAnalytics = () => {
                 </p>
                 <p className="text-sm text-gray-600 mb-4">
                   Upload your Excel file with 2000+ historical records.
-                  Supported formats: .xlsx, .xls, .csv
+                  Supported formats: .xlsx, .xls, .csv. For optimal performance
+                  ensure file has the follwing columns:
+                  <br></br>
+                  PatientID, DOB, Gender, Address, City, Province, PostalCode,
+                  Phone, HealthCard, Disposition, RegDate, ReferralSite,
+                  InteractionType, Amount
                 </p>
+                <p className="text-sm text-gray-600 mb-4"></p>
 
                 <label
                   htmlFor="excel-upload"
@@ -393,33 +415,14 @@ const AdminAnalytics = () => {
                   className="hidden"
                 />
               </div>
-
-              {/* Upload Status */}
-              {uploadStatus && (
-                <div
-                  className={`mt-4 p-4 rounded-md ${
-                    uploadStatus.type === "success"
-                      ? "bg-green-50 text-green-800"
-                      : "bg-red-50 text-red-800"
-                  }`}
-                >
-                  <p className="font-medium">{uploadStatus.message}</p>
-                  {uploadStatus.data && (
-                    <p className="text-sm mt-2">
-                      Preview: {uploadStatus.data.preview.length} sample records
-                      processed
-                    </p>
-                  )}
-                </div>
-              )}
             </div>
           )}
         </div>
 
         {/* Main Content */}
-        <div className="bg-white rounded-lg shadow-md p-6">
+        <div className="flex-1 flex flex-col bg-white rounded-lg shadow-md p-6">
           {/* Chat Interface */}
-          <div className="h-[calc(100vh-250px)] flex flex-col">
+          <div className="flex-grow flex flex-col">
             {/* Messages */}
             <div className="flex-1 overflow-y-auto bg-white">
               <div className="space-y-4">

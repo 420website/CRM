@@ -1,7 +1,10 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { UserServices } from "../../services/userServices";
 import PasswordInput from "../ui/PasswordInput";
+import ConfirmModal from "../components/ConfirmModal";
+import { useUsers } from "../../context/UserContext";
+import toast from "react-hot-toast";
 
 function EditUser({
   editingUser,
@@ -9,7 +12,6 @@ function EditUser({
   handleAddUser,
   handleInputChange,
   formData,
-  error,
   loading,
   handlePermissionChange,
   resetForm,
@@ -19,12 +21,6 @@ function EditUser({
       <h2 className="text-xl font-bold text-gray-900 mb-4">
         {editingUser ? "Edit User" : "Add New User"}
       </h2>
-
-      {error && (
-        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
-          {error}
-        </div>
-      )}
 
       <form onSubmit={editingUser ? handleUpdateUser : handleAddUser}>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
@@ -95,6 +91,7 @@ function EditUser({
         <PasswordInput
           formData={formData}
           handleInputChange={handleInputChange}
+          required={editingUser ? false : true}
         />
 
         {/* Role Selection Section */}
@@ -113,6 +110,7 @@ function EditUser({
                   checked={formData.role === roleOption}
                   onChange={handleInputChange}
                   className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
+                  // required
                 />
                 <label
                   htmlFor={`role-${roleOption}`}
@@ -191,13 +189,9 @@ function EditUser({
   );
 }
 
-function UserList({
-  users,
-  fetchUsers,
-  loading,
-  handleEditUser,
-  handleDeleteUser,
-}) {
+function UserList({ handleEditUser, handleDeleteUser }) {
+  const { users, fetchUsers, loading } = useUsers();
+
   function capitalizeFirstLetter(word = "") {
     return word.charAt(0).toUpperCase() + word.slice(1);
   }
@@ -246,9 +240,6 @@ function UserList({
                         <p>
                           <strong>Phone:</strong> {user.phone_number}
                         </p>
-                        {/* <p>
-                            //   <strong>PIN:</strong> {user.password}
-                            // </p> */}
                         <p>
                           <strong>Tab Access:</strong>{" "}
                           {Array.isArray(user.permissions) &&
@@ -275,7 +266,7 @@ function UserList({
                       Edit
                     </button>
                     <button
-                      onClick={() => handleDeleteUser(user)}
+                      onClick={() => handleDeleteUser(user.id)}
                       className="bg-red-600 hover:bg-red-700 text-white py-2 px-3 rounded-md transition-colors text-xs font-medium"
                     >
                       Delete
@@ -293,12 +284,13 @@ function UserList({
 
 const UserManagement = () => {
   const navigate = useNavigate();
-  const [users, setUsers] = useState([]);
+  const { fetchUsers } = useUsers();
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
   const [showAddUser, setShowAddUser] = useState(false);
   const [editingUser, setEditingUser] = useState(null);
   const [user, setUser] = useState(null);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deleteUserId, setDeleteUserId] = useState(null);
   const [formData, setFormData] = useState({
     first_name: "",
     last_name: "",
@@ -324,16 +316,32 @@ const UserManagement = () => {
   };
 
   const validateAddForm = () => {
-    setError("");
+    if (!formData.first_name) {
+      toast.error("First Name required");
+      return false;
+    }
 
-    if (
-      !formData.first_name ||
-      !formData.last_name ||
-      !formData.email ||
-      !formData.phone_number ||
-      !formData.password
-    ) {
-      setError("Please fill in all required fields");
+    if (!formData.last_name) {
+      toast.error("Last Name required");
+      return false;
+    }
+
+    if (!formData.email) {
+      toast.error("Please fill in all required fields");
+      return false;
+    }
+
+    if (!formData.phone_number) {
+      toast.error("Phone number required");
+      return false;
+    }
+
+    if (!formData.password) {
+      toast.error("Password required");
+      return false;
+    }
+    if (!formData.role) {
+      toast.error("Role required");
       return false;
     }
 
@@ -341,49 +349,32 @@ const UserManagement = () => {
   };
 
   const validateEditForm = () => {
-    setError("");
+    if (!formData.first_name) {
+      toast.error("First Name required");
+      return false;
+    }
 
-    if (
-      !formData.first_name ||
-      !formData.last_name ||
-      !formData.email ||
-      !formData.phone_number
-      // !formData.password
-    ) {
-      setError("Please fill in all required fields");
+    if (!formData.last_name) {
+      toast.error("Last Name required");
+      return false;
+    }
+
+    if (!formData.email) {
+      toast.error("Please fill in all required fields");
+      return false;
+    }
+
+    if (!formData.phone_number) {
+      toast.error("Phone number required");
       return false;
     }
 
     return true;
   };
 
-  // Fetch users
-  const fetchUsers = async () => {
-    setLoading(true);
-    setError(null);
-
-    const response = await UserServices.get_users();
-
-    if (response.success) {
-      setUsers(response.data);
-    } else {
-      if (response.status === 400 || response.status === 409) {
-        setError(response.message || "Invalid credentials.");
-      } else {
-        setError("Login failed. Please try again.");
-      }
-    }
-    setLoading(false);
-  };
-
-  useEffect(() => {
-    fetchUsers();
-  }, []);
-
   // Handle add user
   const handleAddUser = async (e) => {
     e.preventDefault();
-    setError("");
     setLoading(true);
 
     if (validateAddForm()) {
@@ -392,11 +383,12 @@ const UserManagement = () => {
       if (response.success) {
         resetForm();
         fetchUsers();
+        toast.success("User created successfully");
       } else {
         if (response.status === 400 || response.status === 409) {
-          setError(response.message || "Failed to create users.");
+          toast.error(response.message || "Failed to create users.");
         } else {
-          setError("Failed to create user. Please try again.");
+          toast.error("Failed to create user. Please try again.");
         }
       }
     }
@@ -406,7 +398,6 @@ const UserManagement = () => {
   // Handle update user
   const handleUpdateUser = async (e) => {
     e.preventDefault();
-    setError("");
     setLoading(true);
 
     if (validateEditForm()) {
@@ -415,11 +406,12 @@ const UserManagement = () => {
       if (response.success) {
         resetForm();
         fetchUsers();
+        toast.success("User updated successfully");
       } else {
         if (response.status === 400 || response.status === 409) {
-          setError(response.message || "Failed to create users.");
+          toast.error(response.message || "Failed to create users.");
         } else {
-          setError("Failed to create user. Please try again.");
+          toast.error("Failed to create user. Please try again.");
         }
       }
     }
@@ -427,30 +419,29 @@ const UserManagement = () => {
   };
 
   // Handle delete user
-  const handleDeleteUser = async (user) => {
-    const confirmed = window.confirm(
-      `Delete user ${user.first_name} ${user.last_name}?\n\nThis action cannot be undone.`,
-    );
-
-    if (!confirmed) return;
-
-    setError("");
+  const deleteUser = async () => {
     setLoading(true);
 
-    const response = await UserServices.delete_user(user.id);
+    const response = await UserServices.delete_user(deleteUserId);
 
     if (response.success) {
       resetForm();
       fetchUsers();
+      toast.success("User deleted successfully");
     } else {
       if (response.status === 400 || response.status === 409) {
-        setError(response.message || "Failed to create users.");
+        toast.error(response.message || "Failed to create users.");
       } else {
-        setError("Failed to create user. Please try again.");
+        toast.error("Failed to create user. Please try again.");
       }
     }
 
     setLoading(false);
+  };
+
+  const handleDeleteUser = async (id) => {
+    setDeleteUserId(id);
+    setShowDeleteConfirm(true);
   };
 
   // Handle edit user
@@ -467,6 +458,7 @@ const UserManagement = () => {
     setEditingUser(user);
     setUser(user);
     setShowAddUser(true);
+    window.scrollTo(0, 0);
   };
 
   // Handle form input changes
@@ -496,19 +488,11 @@ const UserManagement = () => {
     navigate("/admin-menu");
   };
 
-  function capitalizeFirstLetter(word = "") {
-    return word.charAt(0).toUpperCase() + word.slice(1);
-  }
-
-  useEffect(() => {
-    fetchUsers();
-  }, []);
-
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="bg-gray-50">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
         {/* Header */}
-        <div className="bg-white rounded-lg shadow-md p-4 mb-6">
+        <div className="bg-white rounded-lg shadow-md p-4 mb-4">
           <h1 className="text-2xl font-bold text-gray-900 mb-4">
             User Management
           </h1>
@@ -554,6 +538,15 @@ const UserManagement = () => {
           </div>
         </div>
 
+        {showDeleteConfirm && (
+          <ConfirmModal
+            message={"Confirm you would like to delete user"}
+            subMessage={"This action cannot be undone"}
+            confirm={deleteUser}
+            setShowConfirm={setShowDeleteConfirm}
+          />
+        )}
+
         {/* Add/Edit User Form */}
         {showAddUser && (
           <EditUser
@@ -563,7 +556,6 @@ const UserManagement = () => {
             handleAddUser={handleAddUser}
             handleInputChange={handleInputChange}
             formData={formData}
-            error={error}
             loading={loading}
             resetForm={resetForm}
           />
@@ -571,18 +563,9 @@ const UserManagement = () => {
 
         {/* Users List */}
         <UserList
-          users={users}
-          fetchUsers={fetchUsers}
-          loading={loading}
           handleEditUser={handleEditUser}
           handleDeleteUser={handleDeleteUser}
         />
-
-        {error && (
-          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
-            {error}
-          </div>
-        )}
       </div>
     </div>
   );

@@ -76,9 +76,13 @@ async def get_photo(
                 "name": key.split("/")[-1],
             }
         elif version == "raw":
-            return Response(
-                content=data, media_type="application/octet-stream"
+            response = Response(
+                content=data,
+                media_type="application/octet-stream",
             )
+
+            response.headers["file-name"] = key.split("/")[-1]
+            return response
         else:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,

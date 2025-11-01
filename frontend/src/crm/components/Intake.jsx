@@ -1,11 +1,13 @@
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";
 import { HealthServices } from "../../services/healthService";
-import { compressImage } from "../../utils/compressImage";
+import { compressImageToBlob } from "../../utils/compressImage";
+import toast from "react-hot-toast";
 
 export default function Intake({ submitStatus, setPhotoData }) {
   const navigate = useNavigate();
   const [error, setError] = useState(null);
+  const [selectedFileName, setSelectedFileName] = useState("");
   const [systemTestStatus, setSystemTestStatus] = useState(null);
   const [photoPreview, setPhotoPreview] = useState(null);
   const [photoUploadStatus, setPhotoUploadStatus] = useState(null);
@@ -40,28 +42,33 @@ export default function Intake({ submitStatus, setPhotoData }) {
 
   const handlePhotoChange = async (e) => {
     const file = e.target.files[0];
+
     if (file) {
       // Validate file type
       if (!file.type.startsWith("image/")) {
-        alert("Please select an image file");
+        toast.error("Please select an image file");
+        e.target.value = null;
         return;
       }
+      setSelectedFileName(file ? file.name : "");
 
       // Validate file size (10MB max before compression)
       if (file.size > 10 * 1024 * 1024) {
-        alert("Photo is too large. Please choose an image under 10MB.");
+        toast.error("Photo is too large. Please choose an image under 10MB.");
+        e.target.value = null;
         return;
       }
 
       try {
         // Create compressed preview for display only
-        const compressedImage = await compressImage(file, 500);
+        const compressedImage = await compressImageToBlob(file, 500);
+        const url = URL.createObjectURL(compressedImage);
 
-        setPhotoPreview(compressedImage);
+        setPhotoPreview(url);
 
         setPhotoData({
           name: file.name,
-          file: file,
+          file: compressedImage,
         });
       } catch (error) {
         setError("Error compressing image:", error);
@@ -74,6 +81,7 @@ export default function Intake({ submitStatus, setPhotoData }) {
     setPhotoPreview(null);
     setPhotoUploadStatus(null);
     setPhotoData({});
+    setSelectedFileName("");
 
     // Clear both file inputs
     const cameraInput = document.getElementById("photo-camera");
@@ -87,12 +95,13 @@ export default function Intake({ submitStatus, setPhotoData }) {
   };
 
   return (
-    <>
+    <div className="mb-0">
       <h1 className="text-2xl font-bold text-gray-900 mb-4">Intake</h1>
       <div className="flex gap-2 mb-4">
         <button
           onClick={() => navigate("/admin-menu")}
           className="inline-flex items-center gap-1 px-3 py-1 bg-black text-white rounded-md hover:bg-gray-800 transition-colors text-xs font-medium"
+          type="button"
         >
           <svg
             className="w-3 h-3"
@@ -112,6 +121,7 @@ export default function Intake({ submitStatus, setPhotoData }) {
         <button
           onClick={() => navigate("/admin-dashboard")}
           className="inline-flex items-center gap-1 px-3 py-1 bg-black text-white rounded-md hover:bg-gray-800 transition-colors text-xs font-medium"
+          type="button"
         >
           <svg
             className="w-3 h-3"
@@ -131,6 +141,7 @@ export default function Intake({ submitStatus, setPhotoData }) {
         <button
           onClick={goBack}
           className="inline-flex items-center gap-1 px-3 py-1 bg-white text-black border border-black rounded-md hover:bg-gray-100 transition-colors text-xs font-medium"
+          type="button"
         >
           <svg
             className="w-3 h-3"
@@ -253,7 +264,7 @@ export default function Intake({ submitStatus, setPhotoData }) {
         )}
       </div>
 
-      <div className="space-y-6">
+      <div id="intake" className="space-y-6">
         {/* Photo Upload Section */}
         <div className="border-b border-gray-200 pb-6">
           <h2 className="text-lg font-medium text-gray-900 mb-4">
@@ -261,51 +272,34 @@ export default function Intake({ submitStatus, setPhotoData }) {
           </h2>
           <div className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-3">
-                Photo Options
-              </label>
-
-              {/* Camera Option */}
-              <div className="mb-4">
-                <label
-                  htmlFor="photo-camera"
-                  className="block text-sm font-medium text-gray-600 mb-2"
-                >
-                  📷 Take Photo with Camera
-                </label>
-                <input
-                  type="file"
-                  id="photo-camera"
-                  accept="image/*"
-                  capture="environment"
-                  onChange={handlePhotoChange}
-                  className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-black file:text-white hover:file:bg-gray-800"
-                />
-                <p className="mt-1 text-xs text-gray-500">
-                  Use your device's camera to take a new photo
-                </p>
-              </div>
-
               {/* Upload Option */}
               <div className="mb-4">
-                <label
-                  htmlFor="photo-upload"
-                  className="block text-sm font-medium text-gray-600 mb-2"
-                >
-                  📁 Upload Existing Image
-                </label>
-                <input
-                  type="file"
-                  id="photo-upload"
-                  accept="image/*"
-                  onChange={handlePhotoChange}
-                  className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-black file:text-white hover:file:bg-gray-800"
-                />
-                <p className="mt-1 text-xs text-gray-500">
-                  Choose an existing image from your device
-                </p>
-              </div>
+                <div>
+                  <div className="flex items-center gap-3">
+                    <button
+                      type="button"
+                      className="bg-black text-white text-sm font-semibold py-2 px-4 rounded-md hover:bg-gray-800"
+                      onClick={() =>
+                        document.getElementById("photo-upload").click()
+                      }
+                    >
+                      Upload Photo
+                    </button>
 
+                    <span className="text-sm text-gray-600 truncate max-w-[200px]">
+                      {selectedFileName || "No file chosen"}
+                    </span>
+
+                    <input
+                      type="file"
+                      id="photo-upload"
+                      accept="image/*"
+                      onChange={handlePhotoChange}
+                      className="hidden"
+                    />
+                  </div>
+                </div>
+              </div>
               <p className="mt-2 text-sm text-gray-500">
                 Photos are optimized to ~800KB while maintaining high quality.
                 Supported formats: JPG, PNG, GIF.
@@ -336,7 +330,7 @@ export default function Intake({ submitStatus, setPhotoData }) {
           </div>
         </div>
       </div>
-    </>
+    </div>
   );
 }
 // {/* Photo Upload Status */}

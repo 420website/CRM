@@ -9,9 +9,42 @@ from motor.motor_asyncio import AsyncIOMotorClient
 import ssl
 import aioboto3
 from botocore.config import Config
+from redis.asyncio import Redis
 
 client = AsyncIOMotorClient(settings.mongo_url)
-mongo_db = client[settings.db_name]
+mongo_db = client[settings.mongo_name]
+
+
+class RedisClient:
+    def __init__(self) -> None:
+        self.client: Redis | None = None
+
+    async def connect(self):
+        self.client = Redis(
+            host=settings.redis_host,
+            port=settings.redis_port,
+            password=settings.redis_password,
+            decode_responses=True,
+        )
+
+    async def disconnect(self):
+        if self.client:
+            await self.client.aclose()
+
+    async def ping(self):
+        if not self.client:
+            raise RuntimeError("Redis client not connected")
+
+        result = await self.client.ping()  # pyright: ignore
+        print(f"Ping successful: {result}")
+
+    def get_client(self) -> Redis:
+        if not self.client:
+            raise RuntimeError("Redis client not connected")
+        return self.client
+
+
+redis_client = RedisClient()
 
 
 class MinioClient:
@@ -70,10 +103,10 @@ class Database:
 
     async def connect(self):
         self.pool = await asyncpg.create_pool(
-            host=settings.host,
-            user=settings.user,
-            password=settings.password,
-            database=settings.db,
+            host=settings.pg_host,
+            user=settings.pg_user,
+            password=settings.pg_password,
+            database=settings.pg_db,
             min_size=5,
             max_size=20,
             ssl=ssl_context(),

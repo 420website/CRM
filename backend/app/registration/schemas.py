@@ -9,6 +9,7 @@ import datetime as dt
 class PatientBase(BaseModel):
     age: Optional[int] = None
     gender: Optional[str] = None
+    health_card_version: Optional[str] = None
     aka: Optional[str] = None
     address: Optional[str] = None
     unit_number: Optional[str] = None
@@ -24,30 +25,29 @@ class PatientBase(BaseModel):
     coverage_type: Optional[str] = None
     disposition: Optional[str] = None
     physician: Optional[str] = None
+
     # Consent / communication
     patient_consent: Optional[str] = None
     leave_message: bool = False
     voicemail: bool = False
     text: bool = False
     preferred_time: Optional[str] = None
+
     # Test results
-    hiv_date: Optional[dt.date] = None
-    hiv_result: Optional[str] = None
-    hiv_tester: Optional[str] = None
-    hiv_type: Optional[str] = None
     rna_available: Optional[str] = None
     rna_result: Optional[str] = None
     rna_sample_date: Optional[dt.date] = None
+
     # Referral / registration
     referral_site: Optional[str] = None
     referral_person: Optional[str] = None
     reg_date: Optional[dt.date] = None
+
     # Notes / misc
     special_attention: Optional[str] = None
     instructions: Optional[str] = None
     selected_template: Optional[str] = None
     summary_template: Optional[str] = None
-    test_type: Optional[str] = None
     finalized_at: Optional[datetime] = None
 
 
@@ -57,7 +57,6 @@ class PatientCreate(PatientBase):
     last_name: str
     dob: dt.date
     health_card: str
-    health_card_version: str
     force_create: bool = False
     status: Optional[str] = None
 
@@ -68,7 +67,6 @@ class PatientUpdate(PatientBase):
     last_name: Optional[str] = None
     dob: Optional[dt.date] = None
     health_card: Optional[str] = None
-    health_card_version: Optional[str] = None
     status: Optional[str] = None
     force_update: bool = False
 
@@ -85,7 +83,7 @@ class PatientRead(PatientBase):
     last_name: str
     dob: dt.date
     health_card: str
-    health_card_version: str
+    health_card_version: Optional[str] = None
     created_at: datetime
     updated_at: datetime
 
@@ -251,6 +249,7 @@ class DispensingRead(DispensingBase):
 class ActivityBase(BaseModel):
     time: Optional[dt.time] = None
     date: Optional[dt.date] = None
+    # completed: Optional[bool] = False
 
 
 class ActivityCreate(ActivityBase):
@@ -261,12 +260,14 @@ class ActivityCreate(ActivityBase):
 class ActivityUpdate(ActivityBase):
     patient_id: Optional[int] = None
     description: Optional[str] = None
+    completed: Optional[bool] = None
 
 
 class ActivityRead(ActivityBase):
     id: int
     patient_id: int
     description: str
+    completed: bool
     created_at: datetime
     updated_at: datetime
 
@@ -281,7 +282,9 @@ class PatientActivity(ActivityBase):
     last_name: str
     phone1: Optional[str] = None
     disposition: Optional[str] = None
+    referral_site: Optional[str] = None
     description: str
+    completed: bool
     created_at: datetime
     updated_at: datetime
 

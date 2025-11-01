@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState } from "react";
-
 import { Document, Page, pdfjs } from "react-pdf";
 
 pdfjs.GlobalWorkerOptions.workerSrc = new URL(
@@ -13,9 +12,6 @@ export default function DocumentPreview({
   openFullScreenPreview,
 }) {
   const [currentPage, setCurrentPage] = useState(1);
-  const [hasSetDefaultScale, setHasSetDefaultScale] = useState(false);
-  const [defaultScale, setDefaultScale] = useState(1.0);
-  const [pdfScale, setPdfScale] = useState(1.0);
   const containerRef = useRef(null);
   const [pdfLoading, setPdfLoading] = useState(false);
   const [pdfError, setPdfError] = useState(null);
@@ -23,22 +19,31 @@ export default function DocumentPreview({
   const [containerHeight, setContainerHeight] = useState(0);
   const [pageAspectRatio, setPageAspectRatio] = useState(1);
 
+  // Watch container size dynamically
   useEffect(() => {
     if (!containerRef.current) return;
 
     const resizeObserver = new ResizeObserver((entries) => {
       for (let entry of entries) {
-        setContainerWidth(entry.contentRect.width);
-        setContainerHeight(entry.contentRect.height);
+        const newWidth = entry.contentRect.width;
+        setContainerWidth(newWidth);
+        setContainerHeight(newWidth / pageAspectRatio); // maintain aspect ratio
       }
     });
 
     resizeObserver.observe(containerRef.current);
     return () => resizeObserver.disconnect();
-  }, []);
+  }, [pageAspectRatio]);
 
+  // When page loads, update aspect ratio
   const onPageLoadSuccess = (page) => {
-    setPageAspectRatio(page.originalWidth / page.originalHeight);
+    const aspectRatio = page.originalWidth / page.originalHeight;
+    setPageAspectRatio(aspectRatio);
+
+    // Immediately adjust container height based on current width
+    if (containerWidth > 0) {
+      setContainerHeight(containerWidth / aspectRatio);
+    }
   };
 
   // Page navigation functions
@@ -71,7 +76,10 @@ export default function DocumentPreview({
       <div
         ref={containerRef}
         className="border-2 border-gray-300 rounded-lg overflow-hidden shadow-md flex items-center justify-center"
-        style={{ height: "600px" }}
+        style={{
+          width: "100%",
+          height: `${containerHeight}px`,
+        }}
       >
         <Document
           file={documentPreview.url}
@@ -91,17 +99,8 @@ export default function DocumentPreview({
         >
           <Page
             pageNumber={currentPage}
-            width={
-              containerWidth < containerHeight * pageAspectRatio
-                ? containerWidth
-                : undefined
-            }
-            height={
-              containerWidth >= containerHeight * pageAspectRatio
-                ? containerHeight
-                : undefined
-            }
-            className="max-h-full max-w-full object-contain"
+            width={containerWidth}
+            height={containerHeight}
             loading={
               <div className="p-4 text-center">
                 <div className="inline-block animate-spin rounded-full h-6 w-6 border-b-2 border-gray-900"></div>
@@ -127,7 +126,9 @@ export default function DocumentPreview({
           </button>
 
           <div className="flex items-center space-x-2">
-            <span className="text-sm text-gray-600">Page</span>
+            <span className="px-1 m-0 text-xs lg:text-sm text-gray-600">
+              Page
+            </span>
             <input
               type="number"
               value={currentPage}
@@ -139,9 +140,11 @@ export default function DocumentPreview({
               }}
               min="1"
               max={totalPages}
-              className="w-16 px-2 py-1 border border-gray-300 rounded text-center text-sm"
+              className="w-14 px-1 py-1 border m-0 border-gray-300 rounded text-center text-sm"
             />
-            <span className="text-sm text-gray-600">of {totalPages}</span>
+            <span className="text-xs lg:text-sm m-0 px-1 text-gray-600">
+              of {totalPages}
+            </span>
           </div>
 
           <button

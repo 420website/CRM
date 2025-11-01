@@ -1,33 +1,47 @@
 import { useNavigate } from "react-router-dom";
 import { ObjectServices } from "../../services/objectService";
+import { useCallback, useState } from "react";
+import toast from "react-hot-toast";
 
-export default function RegistrationItem({
+export function RegistrationItems({
   activeTab,
-  item,
-  setLoadedPhotos,
-  loadingPhotos,
-  loadedPhotos,
   deletingId,
   finalizingId,
   revertingId,
   finalizedData,
   pendingData,
+  handleSave,
   handleDelete,
   handleFinalize,
   handleRevertToPending,
+  filteredData,
 }) {
-  const navigate = useNavigate();
+  const [showingPhotos, setShowingPhotos] = useState([]);
+  const [loadedPhotos, setLoadedPhotos] = useState({});
+  const [loadingPhotos, setLoadingPhotos] = useState(new Set());
 
   const getPhoto = async (registrationId) => {
-    const result = await ObjectServices.get_photo_base64(registrationId);
+    const result = await ObjectServices.get_photo_raw(registrationId);
+
     if (result.success) {
-      return `data:image/jpeg;base64,${result.data?.file}`;
+      const blob = new Blob([result.data], { type: "image/jpeg" });
+      const url = URL.createObjectURL(blob);
+      return url;
+    } else {
+      toast.error("No photo found for this registration.");
     }
   };
 
-  // Lazy load photo for a specific registration
-  const loadPhoto = async (registrationId) => {
-    if (loadingPhotos.has(registrationId)) {
+  const showPhoto = async (registrationId, index) => {
+    if (loadedPhotos[registrationId]) {
+      const isShowing = showingPhotos.some(
+        ([id, idx]) => id === registrationId && idx === index,
+      );
+
+      if (!isShowing) {
+        setShowingPhotos([...showingPhotos, [registrationId, index]]);
+        return;
+      }
       return;
     }
 
@@ -48,11 +62,75 @@ export default function RegistrationItem({
         ...prev,
         [registrationId]: photo,
       }));
+      setShowingPhotos([...showingPhotos, [registrationId, index]]);
     }
   };
 
+  const hidePhoto = async (registrationId, index) => {
+    setShowingPhotos((prev) =>
+      prev.filter(([id, idx]) => !(id === registrationId && idx === index)),
+    );
+  };
+
+  const renderRegistrationItem = useCallback(
+    (item, index) => (
+      <RegistrationItem
+        key={index}
+        index={index}
+        activeTab={activeTab}
+        item={item}
+        loadingPhotos={loadingPhotos}
+        loadedPhotos={loadedPhotos}
+        deletingId={deletingId}
+        finalizingId={finalizingId}
+        revertingId={revertingId}
+        handleDelete={handleDelete}
+        handleSave={handleSave}
+        handleFinalize={handleFinalize}
+        handleRevertToPending={handleRevertToPending}
+        showPhoto={showPhoto}
+        hidePhoto={hidePhoto}
+        showingPhotos={showingPhotos}
+      />
+    ),
+    [
+      loadedPhotos,
+      loadingPhotos,
+      deletingId,
+      finalizingId,
+      activeTab,
+      showingPhotos,
+    ],
+  );
+
+  return <div>{filteredData.map(renderRegistrationItem)}</div>;
+}
+
+export default function RegistrationItem({
+  index,
+  activeTab,
+  item,
+  loadingPhotos,
+  loadedPhotos,
+  deletingId,
+  finalizingId,
+  revertingId,
+  handleDelete,
+  handleSave,
+  handleFinalize,
+  handleRevertToPending,
+  showPhoto,
+  hidePhoto,
+  showingPhotos,
+}) {
+  const navigate = useNavigate();
+
+  const isShowing = showingPhotos.some(
+    ([id, idx]) => id === item.id && idx === index,
+  );
+
   return (
-    <div key={item.id} className="border rounded-lg p-4 bg-gray-50">
+    <div key={item.id} className="border rounded-lg p-4 bg-gray-50 mb-2">
       <div className="flex justify-between items-start">
         <div className="flex-1">
           <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
@@ -80,11 +158,19 @@ export default function RegistrationItem({
           </div>
 
           {/* Lazy loaded photo */}
-          {loadedPhotos[item.id] && (
+          {isShowing && (
             <div className="mt-4 mb-4">
-              <p className="text-sm font-medium text-gray-700 mb-2">
-                Uploaded Photo:
-              </p>
+              <div className="flex flex-row justify-between sm:flex-row">
+                <p className="text-lg font-medium text-gray-700 mb-2">
+                  Uploaded Photo:
+                </p>
+                <button
+                  className="text-sm font-medium text-gray-700 mb-2"
+                  onClick={() => hidePhoto(item.id, index)}
+                >
+                  x
+                </button>
+              </div>
               <img
                 src={loadedPhotos[item.id]}
                 alt="Registration photo"
@@ -96,12 +182,12 @@ export default function RegistrationItem({
             </div>
           )}
 
-          {!loadedPhotos[item.id] && !loadingPhotos.has(item.id) && (
+          {!isShowing && (
             <button
-              onClick={() => loadPhoto(item.id)}
+              onClick={() => showPhoto(item.id, index)}
               className="mt-2 text-sm text-blue-600 hover:text-blue-800"
             >
-              Load Photo
+              Show Photo
             </button>
           )}
 
@@ -114,6 +200,13 @@ export default function RegistrationItem({
       {/* Action Buttons - Horizontal layout with intuitive colors */}
       <div className="flex gap-2 mt-4 flex-wrap">
         <button
+          onClick={() => handleDelete(item.id)}
+          disabled={deletingId === item.id}
+          className="bg-red-600 hover:bg-red-700 text-white py-2 px-3 rounded-md transition-colors text-xs font-medium disabled:opacity-50 flex-1 min-w-[60px]"
+        >
+          {deletingId === item.id ? "Deleting..." : "Delete"}
+        </button>
+        <button
           onClick={() => {
             navigate(`/admin-edit/${item.id}`);
           }}
@@ -122,38 +215,36 @@ export default function RegistrationItem({
           Edit
         </button>
 
-        <button
-          onClick={() => handleDelete(item.id, item.first_name, item.last_name)}
-          disabled={deletingId === item.id}
-          className="bg-red-600 hover:bg-red-700 text-white py-2 px-3 rounded-md transition-colors text-xs font-medium disabled:opacity-50 flex-1 min-w-[60px]"
-        >
-          {deletingId === item.id ? "Deleting..." : "Delete"}
-        </button>
-
         {activeTab === "pending" && (
-          <button
-            onClick={() =>
-              handleFinalize(
-                item.id,
-                item.first_name,
-                item.last_name,
-                loadedPhotos[item.id],
-              )
-            }
-            disabled={finalizingId === item.id}
-            className="bg-green-600 hover:bg-green-700 text-white py-2 px-3 rounded-md transition-colors text-xs font-medium disabled:opacity-50 flex-1 min-w-[70px]"
-          >
-            {finalizingId === item.id ? "Submitting..." : "Submit"}
-          </button>
+          <>
+            <button
+              onClick={() => {
+                hidePhoto(item.id, index);
+                handleSave(item.id);
+              }}
+              disabled={finalizingId === item.id}
+              className="bg-black hover:bg-gray-800 text-white py-2 px-3 rounded-md transition-colors text-xs font-medium disabled:opacity-50 flex-1 min-w-[60px]"
+            >
+              {finalizingId === item.id ? "Saving..." : "Save"}
+            </button>
+            <button
+              onClick={() => {
+                hidePhoto(item.id, index);
+                handleFinalize(item.id);
+              }}
+              disabled={finalizingId === item.id}
+              className="bg-green-600 hover:bg-green-700 text-white py-2 px-3 rounded-md transition-colors text-xs font-medium disabled:opacity-50 flex-1 min-w-[60px]"
+            >
+              {finalizingId === item.id ? "Submitting..." : "Submit"}
+            </button>
+          </>
         )}
 
         {activeTab === "submitted" && (
           <button
-            onClick={() =>
-              handleRevertToPending(item.id, item.first_name, item.last_name)
-            }
+            onClick={() => handleRevertToPending(item.id)}
             disabled={revertingId === item.id}
-            className="bg-green-600 hover:bg-green-700 text-white py-2 px-3 rounded-md transition-colors text-xs font-medium disabled:opacity-50 flex-1 min-w-[70px]"
+            className="bg-green-600 hover:bg-green-700 text-white py-2 px-3 rounded-md transition-colors text-xs font-medium disabled:opacity-50 flex-1 min-w-[60px]"
           >
             {revertingId === item.id ? "Reverting..." : "Back to Pending"}
           </button>

@@ -18,9 +18,8 @@ def get_env(key: str) -> Any:
 
 class Settings:
     # JWT
-    jwt_access_secret: str = get_env("JWT_ACCESS_SECRET")
-    jwt_refresh_secret: str = get_env("JWT_REFRESH_SECRET")
     jwt_algorithm: str = get_env("JWT_ALGORITHM")
+    jwt_access_secret: str = get_env("JWT_ACCESS_SECRET")
     access_token_expire_minutes: int = 30
     share_link_expire_minutes: int = 30
     refresh_token_expire_days: int = 7
@@ -32,44 +31,49 @@ class Settings:
     mfa_secret_key: str = get_env("MFA_ENCRYPTION_KEY")
     email_mfa_expire_minutes: int = 5
 
-    # Database
-    database_url: str = get_env("DATABASE_URL")
-    host: str = get_env("POSTGRES_HOST")
-    user: str = get_env("POSTGRES_USER")
-    password: str = get_env("POSTGRES_PASSWORD")
-    db: str = get_env("POSTGRES_DB")
-    ca_file: str = os.getenv("CA_FILE", "/certs/ca-chain.crt")
-
     # CORS
-    allowed_origins: List[str] = get_env("ALLOWED_ORIGINS")
+    allowed_origins: List[str] = get_env("ALLOWED_ORIGINS").split(",")
 
-    # App
+    # app
     app_url: str = get_env("APP_URL")
     app_name: str = get_env("APP_NAME")
     debug: bool = os.getenv("DEBUG") == "True"
+    environment: str = os.getenv("ENVIRONMENT", "Production")
+    support_email = get_env("SUPPORT_EMAIL")
 
-    # Email
+    # smtp
     email: str = get_env("SMTP_EMAIL")
     email_pw: str = get_env("SMTP_PASSWORD")
-
-    # database
-    mongo_url: str = os.getenv("MONGO_URL", "mongodb://localhost:27017")
-    db_name: str = os.getenv("DB_NAME", "my420_ca_db")
+    email_provider: str = get_env("SMTP_SERVER")
 
     # claude
     anthropic_key = get_env("ANTHROPIC_API_KEY")
     anthropic_client = AsyncAnthropic(api_key=anthropic_key)
-    anthropic_max_tokens = os.getenv("MAX_TOKENS", 1024)
+    anthropic_max_tokens = int(os.getenv("MAX_TOKENS", 1024))
     anthropic_model = os.getenv("ANTHROPIC_MODEL", "claude-sonnet-4-20250514")
 
-    support_email = get_env("SUPPORT_EMAIL")
+    # postgres
+    pg_url: str = get_env("POSTGRES_URL")
+    pg_host: str = get_env("POSTGRES_HOST")
+    pg_user: str = get_env("POSTGRES_USER")
+    pg_password: str = get_env("POSTGRES_PASSWORD")
+    pg_db: str = get_env("POSTGRES_DB")
+    ca_file: str = os.getenv("CA_FILE", "/certs/ca-chain.crt")
 
-    # env
-    environment: str = os.getenv("ENVIRONMENT", "Production")
+    # mongodb
+    mongo_url: str = get_env("MONGODB_URL")
+    mongo_name: str = get_env("MONGODB_NAME")
+
+    # redis
+    max_chat_length = 20
+    chat_history_ttl = 20 * 60
+    redis_host = get_env("REDIS_HOST")
+    redis_port = get_env("REDIS_PORT")
+    redis_password = get_env("REDIS_PASSWORD")
 
     # minio
-    minio_key_id: str = get_env("MINIO_KEY_ID")
-    minio_access_key: str = get_env("MINIO_ACCESS_KEY")
+    minio_key_id: str = get_env("MINIO_ROOT_USER")
+    minio_access_key: str = get_env("MINIO_ROOT_PASSWORD")
     minio_url: str = get_env("MINIO_SERVER_URL")
     minio_verify: str | bool = os.getenv("MINIO_VERIFY", False)
     minio_signature_version: str = os.getenv("MINIO_SIGNATURE_VERSION", "s3v4")

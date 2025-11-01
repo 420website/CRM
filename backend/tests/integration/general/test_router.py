@@ -7,22 +7,42 @@ from app.database import database
 from app.general.router import (
     create_clinical_template,
     create_disposition,
+    create_document_type,
+    create_general_type,
+    create_medication,
+    create_medication_outcome,
     create_note_template,
     create_referral_site,
     delete_clinical_template_id,
     delete_clinical_template_name,
     delete_disposition_id,
     delete_disposition_name,
+    delete_document_type_id,
+    delete_document_type_name,
+    delete_general_id,
+    delete_general_name,
+    delete_medication_id,
+    delete_medication_name,
+    delete_medication_outcome_id,
+    delete_medication_outcome_name,
     delete_note_template_id,
     delete_note_template_name,
     delete_referral_site_id,
     delete_referral_site_name,
     get_clinical_templates,
     get_dispositions,
+    get_document_types,
+    get_general_type,
+    get_medication_outcomes,
+    get_medications,
     get_note_templates,
     get_referral_sites,
     update_disposition,
     update_clinical_template,
+    update_document_type,
+    update_general,
+    update_medication,
+    update_medication_outcome,
     update_note_template,
     update_referral_site,
 )
@@ -31,6 +51,14 @@ from app.general.schemas import (
     ClinicalTemplateUpdate,
     Disposition,
     DispositionUpdate,
+    DocumentType,
+    DocumentTypeUpdate,
+    General,
+    GeneralUpdate,
+    Medication,
+    MedicationOutcome,
+    MedicationOutcomeUpdate,
+    MedicationUpdate,
     NotesTemplate,
     NotesTemplateUpdate,
     ReferralSite,
@@ -735,6 +763,315 @@ class TestClinicalTemplateAPI(IsolatedAsyncioTestCase):
         )
 
 
+class TestDocumentTypenAPI(IsolatedAsyncioTestCase):
+    async def _cleanup_test_data(self):
+        test_names = [
+            "Consultation Report",
+            "HCV Perscription",
+            "Treatment Consent",
+            "test_document",
+            "new_document",
+        ]
+        for name in test_names:
+            try:
+                await GeneralService.delete_document_type(name)
+            except Exception:
+                pass
+
+    async def asyncSetUp(self) -> None:
+        await database.connect()
+        asyncio.get_event_loop().set_debug(False)
+        await self._cleanup_test_data()
+
+        # Get authenticated user for all tests
+        self.user = UserRead(
+            id=1,
+            email=email,
+            role="admin",
+            permissions=[],
+            authenticator_mfa_enabled=True,
+        )
+
+    async def asyncTearDown(self) -> None:
+        await self._cleanup_test_data()
+        await database.disconnect()
+
+    # Create
+    async def test_create_document_type_success(self):
+        document_type = DocumentType(
+            name="Consultation Report",
+            is_default=False,
+            is_frequent=False,
+        )
+
+        # Test
+        result = await create_document_type(document_type, self.user)
+
+        self.assertEqual(
+            result["message"],
+            "Document type created successfully.",
+        )
+
+        # Validate by getting
+        result = await get_document_types(self.user)
+        doc_names = [d.name for d in result]
+        self.assertIn("Consultation Report", doc_names)
+
+    async def test_create_document_type_with_default(self):
+        document_type = DocumentType(
+            name="Consultation Report",
+            is_default=True,
+            is_frequent=False,
+        )
+
+        # Test
+        result = await create_document_type(document_type, self.user)
+        self.assertEqual(
+            result["message"],
+            "Document type created successfully.",
+        )
+
+        # Validate
+        result = await get_document_types(self.user)
+
+        default_doc = next(
+            (d for d in result if d.name == "Consultation Report"), None
+        )
+        self.assertIsNotNone(default_doc)
+        self.assertTrue(default_doc.is_default)
+
+    async def test_create_duplicate_doc_type_name(self):
+        document_type = DocumentType(
+            name="Consultation Report",
+            is_default=True,
+            is_frequent=False,
+        )
+
+        # Create first disposition
+        result = await create_document_type(document_type, self.user)
+        self.assertEqual(
+            result["message"],
+            "Document type created successfully.",
+        )
+
+        # Try to create duplicate - should raise HTTPException
+        with self.assertRaises(HTTPException) as context:
+            await create_document_type(document_type, self.user)
+
+        self.assertEqual(context.exception.status_code, 400)
+        self.assertIn(
+            "Document type already exists.", context.exception.detail
+        )
+
+    # Get
+    async def test_get_document_type_empty(self):
+        result = await get_document_types(self.user)
+
+        self.assertIsInstance(result, list)
+
+    async def test_get_document_type_with_data(self):
+        document_type1 = DocumentType(
+            name="Consultation Report",
+            is_default=True,
+            is_frequent=False,
+        )
+        document_type2 = DocumentType(
+            name="HCV Perscription",
+            is_default=True,
+            is_frequent=False,
+        )
+
+        await create_document_type(document_type1, self.user)
+        await create_document_type(document_type2, self.user)
+
+        # Test
+        result = await get_document_types(self.user)
+
+        self.assertIsInstance(result, list)
+        self.assertGreaterEqual(len(result), 2)
+
+        doc_names = [d.name for d in result]
+        self.assertIn("Consultation Report", doc_names)
+        self.assertIn("HCV Perscription", doc_names)
+
+        # Verify disposition structure
+        for doc in result:
+            self.assertIsInstance(doc, DocumentType)
+            self.assertIsInstance(doc.name, str)
+            self.assertIsInstance(doc.is_default, bool)
+            self.assertIsNotNone(doc.id)
+
+    # Delete
+    async def test_delete_document_type_by_name_success(self):
+        document_type = DocumentType(
+            name="HCV Perscription",
+            is_default=True,
+            is_frequent=False,
+        )
+        await create_document_type(document_type, self.user)
+
+        # Delete the disposition
+        result = await delete_document_type_name("HCV Perscription", self.user)
+        self.assertEqual(
+            result["message"], "Document type deleted successfully."
+        )
+
+        # Verify  was deleted
+        result = await get_document_types(self.user)
+        docs = [d.name for d in result]
+        self.assertNotIn("HCV Perscription", docs)
+
+    async def test_delete_document_type_by_id_success(self):
+        document_type = DocumentType(
+            name="HCV Perscription",
+            is_default=True,
+            is_frequent=False,
+        )
+        await create_document_type(document_type, self.user)
+
+        # Get doc type to find its ID
+        result = await get_document_types(self.user)
+        doc = next((d for d in result if d.name == "HCV Perscription"), None)
+        self.assertIsNotNone(doc)
+        doc_id = doc.id
+
+        # Delete  by ID
+        result = await delete_document_type_id(doc_id, self.user)
+        self.assertEqual(
+            result["message"], "Document type deleted successfully."
+        )
+
+        # Verify was deleted
+        result = await get_document_types(self.user)
+        doc_names = [d.name for d in result]
+        self.assertNotIn("HCV Perscription", doc_names)
+
+    async def test_delete_document_type_not_found_by_name(self):
+        with self.assertRaises(HTTPException) as context:
+            await delete_document_type_name("non_existent", self.user)
+
+        self.assertEqual(context.exception.status_code, 404)
+        self.assertIn("Document type not found", context.exception.detail)
+
+    async def test_delete_document_type_not_found_by_id(self):
+        with self.assertRaises(HTTPException) as context:
+            await delete_document_type_id(99999, self.user)  # Non-existent ID
+
+        self.assertEqual(context.exception.status_code, 404)
+        self.assertIn("Document type not found", context.exception.detail)
+
+    # Update
+    async def test_update_document_type_success(self):
+        document_type = DocumentType(
+            name="HCV Perscription",
+            is_default=True,
+            is_frequent=False,
+        )
+        await create_document_type(document_type, self.user)
+
+        # Get ID
+        result = await get_document_types(self.user)
+        doc = next((d for d in result if d.name == "HCV Perscription"), None)
+        doc_id = doc.id
+
+        # Update
+        update_data = DocumentTypeUpdate(
+            name="test_document",
+            is_default=True,
+        )
+
+        result = await update_document_type(doc_id, update_data, self.user)
+        self.assertEqual(
+            result["message"],
+            "Document type updated successfully.",
+        )
+
+        # Verify updated
+        docs = await get_document_types(self.user)
+        updated_doc = next(
+            (d for d in docs if d.name == "test_document"), None
+        )
+
+        self.assertIsNotNone(updated_doc)
+        self.assertTrue(updated_doc.is_default)
+
+        await delete_document_type_id(doc_id, self.user)
+
+    async def test_update_document_type_partial(self):
+        document_type = DocumentType(
+            name="Document1",
+            is_default=True,
+            is_frequent=False,
+        )
+        await create_document_type(document_type, self.user)
+
+        # Get ID
+        result = await get_document_types(self.user)
+        doc = next((d for d in result if d.name == "Document1"), None)
+        doc_id = doc.id
+
+        # Partial update - only is_frequent
+        update_data = DocumentTypeUpdate(name="new_document")
+
+        result = await update_document_type(doc_id, update_data, self.user)
+        self.assertEqual(
+            result["message"],
+            "Document type updated successfully.",
+        )
+
+        # Verify only is_frequent was updated
+        result = await get_document_types(self.user)
+        updated_doc = next(
+            (d for d in result if d.name == "new_document"), None
+        )
+
+        self.assertIsNotNone(updated_doc)
+        self.assertTrue(updated_doc.is_default)
+
+        # clean up
+        await delete_document_type_id(doc_id, self.user)
+
+    async def test_update_document_type_empty_updates(self):
+        document_type = DocumentType(
+            name="HCV Perscription",
+            is_default=True,
+            is_frequent=False,
+        )
+        await create_document_type(document_type, self.user)
+
+        # Get ID
+        result = await get_document_types(self.user)
+        doc = next((d for d in result if d.name == "HCV Perscription"), None)
+        doc_id = doc.id
+
+        # Empty update
+        update_data = DocumentTypeUpdate()
+
+        with self.assertRaises(HTTPException) as context:
+            await update_document_type(doc_id, update_data, self.user)
+
+        self.assertEqual(context.exception.status_code, 404)
+        self.assertIn(
+            "Document type not found or could not be updated",
+            context.exception.detail,
+        )
+
+        # clean up
+        await delete_document_type_id(doc_id, self.user)
+
+    async def test_update_document_type_not_found(self):
+        update_data = DocumentTypeUpdate(name="new_document")
+
+        with self.assertRaises(HTTPException) as context:
+            await update_document_type(99999, update_data, self.user)
+
+        self.assertEqual(context.exception.status_code, 404)
+        self.assertIn(
+            "Document type not found or could not be updated",
+            context.exception.detail,
+        )
+
+
 class TestDispositionAPI(IsolatedAsyncioTestCase):
     async def _cleanup_test_data(self):
         """Helper method to clean up test data"""
@@ -1430,5 +1767,1017 @@ class TestReferralSiteAPI(IsolatedAsyncioTestCase):
         self.assertEqual(context.exception.status_code, 404)
         self.assertIn(
             "Referral site not found or could not be updated",
+            context.exception.detail,
+        )
+
+
+class TestMedicationAPI(IsolatedAsyncioTestCase):
+    async def _cleanup_test_data(self):
+        """Helper method to clean up test data"""
+        test_names = [
+            "test_medication",
+            "test_medication_2",
+            "updated_medication",
+            "default_medication",
+        ]
+        for name in test_names:
+            try:
+                await GeneralService.delete_medication(name)
+            except Exception:
+                pass
+
+    async def asyncSetUp(self) -> None:
+        await database.connect()
+        asyncio.get_event_loop().set_debug(False)
+        await self._cleanup_test_data()
+        # Get authenticated user for all tests
+        self.user = UserRead(
+            id=1,
+            email=email,
+            role="admin",
+            permissions=[],
+            authenticator_mfa_enabled=True,
+        )
+
+    async def asyncTearDown(self) -> None:
+        await self._cleanup_test_data()
+        await database.disconnect()
+
+    # Create
+    async def test_create_medication_success(self):
+        """Test successful creation of a medication via API"""
+        medication_data = Medication(
+            name="test_medication",
+            is_frequent=False,
+            is_default=False,
+        )
+        # Test
+        result = await create_medication(medication_data, self.user)
+        self.assertEqual(
+            result["message"],
+            "Medication created successfully.",
+        )
+        # Validate by getting medications
+        medications = await get_medications(self.user)
+        medication_names = [m.name for m in medications]
+        self.assertIn("test_medication", medication_names)
+
+    async def test_create_medication_with_default(self):
+        """Test creation of a default medication via API"""
+        medication_data = Medication(
+            name="default_medication",
+            is_frequent=True,
+            is_default=True,
+        )
+        # Test
+        result = await create_medication(medication_data, self.user)
+        self.assertEqual(
+            result["message"],
+            "Medication created successfully.",
+        )
+        # Validate
+        medications = await get_medications(self.user)
+        default_medication = next(
+            (m for m in medications if m.name == "default_medication"),
+            None,
+        )
+        self.assertIsNotNone(default_medication)
+        self.assertTrue(default_medication.is_default)
+        self.assertTrue(default_medication.is_frequent)
+
+    async def test_create_duplicate_medication_name(self):
+        """Test creating medication with duplicate name via API"""
+        medication_data = Medication(
+            name="test_medication",
+            is_frequent=False,
+            is_default=False,
+        )
+        # Create first medication
+        result1 = await create_medication(medication_data, self.user)
+        self.assertEqual(
+            result1["message"],
+            "Medication created successfully.",
+        )
+        # Try to create duplicate - should raise HTTPException
+        with self.assertRaises(HTTPException) as context:
+            await create_medication(medication_data, self.user)
+        self.assertEqual(context.exception.status_code, 400)
+        self.assertIn("Medication already exists.", context.exception.detail)
+
+    # Get
+    async def test_get_medication_empty(self):
+        """Test getting medications when none exist via API"""
+        medications = await get_medications(self.user)
+        self.assertIsInstance(medications, list)
+        # self.assertEqual(len(medications), 0)
+
+    async def test_get_medication_with_data(self):
+        """Test getting medications when data exists via API"""
+        # Create test medications
+        medication1_data = Medication(
+            name="test_medication",
+            is_frequent=False,
+            is_default=False,
+        )
+        medication2_data = Medication(
+            name="test_medication_2",
+            is_frequent=True,
+            is_default=True,
+        )
+        await create_medication(medication1_data, self.user)
+        await create_medication(medication2_data, self.user)
+
+        # Test
+        medications = await get_medications(self.user)
+        self.assertIsInstance(medications, list)
+        self.assertGreaterEqual(len(medications), 2)
+
+        # Verify our medications are in the results
+        medication_names = [m.name for m in medications]
+        self.assertIn("test_medication", medication_names)
+        self.assertIn("test_medication_2", medication_names)
+
+        # Verify medication structure
+        for medication in medications:
+            self.assertIsInstance(medication, Medication)
+            self.assertIsInstance(medication.name, str)
+            self.assertIsInstance(medication.is_frequent, bool)
+            self.assertIsInstance(medication.is_default, bool)
+            self.assertIsNotNone(medication.id)
+
+    # Delete
+    async def test_delete_medication_by_name_success(self):
+        """Test successful deletion of a medication by name via API"""
+        # Create medication first
+        medication_data = Medication(
+            name="test_medication",
+            is_frequent=False,
+            is_default=False,
+        )
+        await create_medication(medication_data, self.user)
+        # Delete the medication
+        result = await delete_medication_name("test_medication", self.user)
+        self.assertEqual(result["message"], "Medication deleted successfully.")
+        # Verify medication was deleted
+        medications = await get_medications(self.user)
+        medication_names = [m.name for m in medications]
+        self.assertNotIn("test_medication", medication_names)
+
+    async def test_delete_medication_by_id_success(self):
+        """Test successful deletion of a medication by ID via API"""
+        # Create medication first
+        medication_data = Medication(
+            name="test_medication",
+            is_frequent=True,
+            is_default=False,
+        )
+        await create_medication(medication_data, self.user)
+        # Get medication to find its ID
+        medications = await get_medications(self.user)
+        medication = next(
+            (m for m in medications if m.name == "test_medication"), None
+        )
+        self.assertIsNotNone(medication)
+        medication_id = medication.id
+        # Delete the medication by ID
+        result = await delete_medication_id(medication_id, self.user)
+        self.assertEqual(result["message"], "Medication deleted successfully.")
+        # Verify medication was deleted
+        medications = await get_medications(self.user)
+        medication_names = [m.name for m in medications]
+        self.assertNotIn("test_medication", medication_names)
+
+    async def test_delete_medication_not_found_by_name(self):
+        """Test deletion of non-existent medication by name via API"""
+        with self.assertRaises(HTTPException) as context:
+            await delete_medication_name("non_existent_medication", self.user)
+        self.assertEqual(context.exception.status_code, 404)
+        self.assertIn("Medication not found", context.exception.detail)
+
+    async def test_delete_medication_not_found_by_id(self):
+        """Test deletion of non-existent medication by ID via API"""
+        with self.assertRaises(HTTPException) as context:
+            await delete_medication_id(99999, self.user)  # Non-existent ID
+        self.assertEqual(context.exception.status_code, 404)
+        self.assertIn("Medication not found", context.exception.detail)
+
+    # Update
+    async def test_update_medication_success(self):
+        """Test successful update of a medication via API"""
+        # Create medication first
+        medication_data = Medication(
+            name="test_medication",
+            is_frequent=False,
+            is_default=False,
+        )
+        await create_medication(medication_data, self.user)
+        # Get medication to find its ID
+        medications = await get_medications(self.user)
+        medication = next(
+            (m for m in medications if m.name == "test_medication"), None
+        )
+        medication_id = medication.id
+        # Update the medication
+        update_data = MedicationUpdate(
+            name="test_medication",
+            is_frequent=True,
+            is_default=True,
+        )
+        result = await update_medication(
+            medication_id,
+            update_data,
+            self.user,
+        )
+        self.assertEqual(
+            result["message"],
+            "Medication updated successfully.",
+        )
+        # Verify medication was updated
+        medications = await get_medications(self.user)
+        updated_medication = next(
+            (m for m in medications if m.name == "test_medication"), None
+        )
+        self.assertIsNotNone(updated_medication)
+        self.assertTrue(updated_medication.is_frequent)
+        self.assertTrue(updated_medication.is_default)
+
+    async def test_update_medication_partial(self):
+        """Test partial update of a medication via API"""
+        # Create medication first
+        medication_data = Medication(
+            name="test_medication",
+            is_frequent=False,
+            is_default=False,
+        )
+        await create_medication(medication_data, self.user)
+        # Get medication ID
+        medications = await get_medications(self.user)
+        medication = next(
+            (m for m in medications if m.name == "test_medication"), None
+        )
+        medication_id = medication.id
+        # Partial update - only is_frequent
+        update_data = MedicationUpdate(
+            is_frequent=True,
+        )
+        result = await update_medication(
+            medication_id,
+            update_data,
+            self.user,
+        )
+        self.assertEqual(
+            result["message"],
+            "Medication updated successfully.",
+        )
+        # Verify only is_frequent was updated
+        medications = await get_medications(self.user)
+        updated_medication = next(
+            (m for m in medications if m.name == "test_medication"), None
+        )
+        self.assertIsNotNone(updated_medication)
+        self.assertTrue(updated_medication.is_frequent)
+        self.assertFalse(updated_medication.is_default)
+
+    async def test_update_medication_empty_updates(self):
+        """Test update with no actual changes via API"""
+        # Create medication first
+        medication_data = Medication(
+            name="test_medication",
+            is_frequent=False,
+            is_default=False,
+        )
+        await create_medication(medication_data, self.user)
+        # Get medication ID
+        medications = await get_medications(self.user)
+        medication = next(
+            (m for m in medications if m.name == "test_medication"), None
+        )
+        medication_id = medication.id
+        # Empty update
+        update_data = MedicationUpdate()
+        with self.assertRaises(HTTPException) as context:
+            await update_medication(medication_id, update_data, self.user)
+        self.assertEqual(context.exception.status_code, 404)
+        self.assertIn(
+            "Medication not found or could not be updated",
+            context.exception.detail,
+        )
+
+    async def test_update_medication_not_found(self):
+        """Test update of non-existent medication via API"""
+        update_data = MedicationUpdate(
+            name="non_existent_medication",
+            is_frequent=True,
+        )
+        with self.assertRaises(HTTPException) as context:
+            await update_medication(99999, update_data, self.user)
+        self.assertEqual(context.exception.status_code, 404)
+        self.assertIn(
+            "Medication not found or could not be updated",
+            context.exception.detail,
+        )
+
+
+class TestMedicationOutcomeAPI(IsolatedAsyncioTestCase):
+    async def _cleanup_test_data(self):
+        """Helper method to clean up test data"""
+        test_names = [
+            "test_medication_outcome",
+            "test_medication_outcome_2",
+            "updated_medication_outcome",
+            "default_medication_outcome",
+        ]
+        for name in test_names:
+            try:
+                await GeneralService.delete_medication_outcome(name)
+            except Exception:
+                pass
+
+    async def asyncSetUp(self) -> None:
+        await database.connect()
+        asyncio.get_event_loop().set_debug(False)
+        await self._cleanup_test_data()
+        # Get authenticated user for all tests
+        self.user = UserRead(
+            id=1,
+            email=email,
+            role="admin",
+            permissions=[],
+            authenticator_mfa_enabled=True,
+        )
+
+    async def asyncTearDown(self) -> None:
+        await self._cleanup_test_data()
+        await database.disconnect()
+
+    # Create
+    async def test_create_medication_outcome_success(self):
+        """Test successful creation of a medication outcome via API"""
+        medication_outcome_data = MedicationOutcome(
+            name="test_medication_outcome",
+            is_frequent=False,
+            is_default=False,
+        )
+        # Test
+        result = await create_medication_outcome(
+            medication_outcome_data, self.user
+        )
+        self.assertEqual(
+            result["message"],
+            "Medication outcome created successfully.",
+        )
+        # Validate by getting medication outcomes
+        medication_outcomes = await get_medication_outcomes(self.user)
+        medication_outcome_names = [m.name for m in medication_outcomes]
+        self.assertIn("test_medication_outcome", medication_outcome_names)
+
+    async def test_create_medication_outcome_with_default(self):
+        """Test creation of a default medication outcome via API"""
+        medication_outcome_data = MedicationOutcome(
+            name="default_medication_outcome",
+            is_frequent=True,
+            is_default=True,
+        )
+        # Test
+        result = await create_medication_outcome(
+            medication_outcome_data, self.user
+        )
+        self.assertEqual(
+            result["message"],
+            "Medication outcome created successfully.",
+        )
+        # Validate
+        medication_outcomes = await get_medication_outcomes(self.user)
+        default_medication_outcome = next(
+            (
+                m
+                for m in medication_outcomes
+                if m.name == "default_medication_outcome"
+            ),
+            None,
+        )
+        self.assertIsNotNone(default_medication_outcome)
+        self.assertTrue(default_medication_outcome.is_default)
+        self.assertTrue(default_medication_outcome.is_frequent)
+
+    async def test_create_duplicate_medication_outcome_name(self):
+        """Test creating medication outcome with duplicate name via API"""
+        medication_outcome_data = MedicationOutcome(
+            name="test_medication_outcome",
+            is_frequent=False,
+            is_default=False,
+        )
+        # Create first medication outcome
+        result1 = await create_medication_outcome(
+            medication_outcome_data, self.user
+        )
+        self.assertEqual(
+            result1["message"],
+            "Medication outcome created successfully.",
+        )
+        # Try to create duplicate - should raise HTTPException
+        with self.assertRaises(HTTPException) as context:
+            await create_medication_outcome(medication_outcome_data, self.user)
+        self.assertEqual(context.exception.status_code, 400)
+        self.assertIn(
+            "Medication outcome already exists.", context.exception.detail
+        )
+
+    # Get
+    async def test_get_medication_outcome_empty(self):
+        """Test getting medication outcomes when none exist via API"""
+        medication_outcomes = await get_medication_outcomes(self.user)
+        self.assertIsInstance(medication_outcomes, list)
+        # self.assertEqual(len(medication_outcomes), 0)
+
+    async def test_get_medication_outcome_with_data(self):
+        """Test getting medication outcomes when data exists via API"""
+        # Create test medication outcomes
+        medication_outcome1_data = MedicationOutcome(
+            name="test_medication_outcome",
+            is_frequent=False,
+            is_default=False,
+        )
+        medication_outcome2_data = MedicationOutcome(
+            name="test_medication_outcome_2",
+            is_frequent=True,
+            is_default=True,
+        )
+        await create_medication_outcome(medication_outcome1_data, self.user)
+        await create_medication_outcome(medication_outcome2_data, self.user)
+        # Test
+        medication_outcomes = await get_medication_outcomes(self.user)
+        self.assertIsInstance(medication_outcomes, list)
+        self.assertGreaterEqual(len(medication_outcomes), 2)
+        # Verify our medication outcomes are in the results
+        medication_outcome_names = [m.name for m in medication_outcomes]
+        self.assertIn("test_medication_outcome", medication_outcome_names)
+        self.assertIn("test_medication_outcome_2", medication_outcome_names)
+        # Verify medication outcome structure
+        for medication_outcome in medication_outcomes:
+            self.assertIsInstance(medication_outcome, MedicationOutcome)
+            self.assertIsInstance(medication_outcome.name, str)
+            self.assertIsInstance(medication_outcome.is_frequent, bool)
+            self.assertIsInstance(medication_outcome.is_default, bool)
+            self.assertIsNotNone(medication_outcome.id)
+
+    # Delete
+    async def test_delete_medication_outcome_by_name_success(self):
+        """Test successful deletion of a medication outcome by name via API"""
+        # Create medication outcome first
+        medication_outcome_data = MedicationOutcome(
+            name="test_medication_outcome",
+            is_frequent=False,
+            is_default=False,
+        )
+        await create_medication_outcome(medication_outcome_data, self.user)
+        # Delete the medication outcome
+        result = await delete_medication_outcome_name(
+            "test_medication_outcome", self.user
+        )
+        self.assertEqual(
+            result["message"], "Medication outcome deleted successfully."
+        )
+        # Verify medication outcome was deleted
+        medication_outcomes = await get_medication_outcomes(self.user)
+        medication_outcome_names = [m.name for m in medication_outcomes]
+        self.assertNotIn("test_medication_outcome", medication_outcome_names)
+
+    async def test_delete_medication_outcome_by_id_success(self):
+        """Test successful deletion of a medication outcome by ID via API"""
+        # Create medication outcome first
+        medication_outcome_data = MedicationOutcome(
+            name="test_medication_outcome",
+            is_frequent=True,
+            is_default=False,
+        )
+        await create_medication_outcome(medication_outcome_data, self.user)
+        # Get medication outcome to find its ID
+        medication_outcomes = await get_medication_outcomes(self.user)
+        medication_outcome = next(
+            (
+                m
+                for m in medication_outcomes
+                if m.name == "test_medication_outcome"
+            ),
+            None,
+        )
+        self.assertIsNotNone(medication_outcome)
+        medication_outcome_id = medication_outcome.id
+        # Delete the medication outcome by ID
+        result = await delete_medication_outcome_id(
+            medication_outcome_id, self.user
+        )
+        self.assertEqual(
+            result["message"], "Medication outcome deleted successfully."
+        )
+        # Verify medication outcome was deleted
+        medication_outcomes = await get_medication_outcomes(self.user)
+        medication_outcome_names = [m.name for m in medication_outcomes]
+        self.assertNotIn("test_medication_outcome", medication_outcome_names)
+
+    async def test_delete_medication_outcome_not_found_by_name(self):
+        """Test deletion of non-existent medication outcome by name via API"""
+        with self.assertRaises(HTTPException) as context:
+            await delete_medication_outcome_name(
+                "non_existent_medication_outcome", self.user
+            )
+        self.assertEqual(context.exception.status_code, 404)
+        self.assertIn("Medication outcome not found", context.exception.detail)
+
+    async def test_delete_medication_outcome_not_found_by_id(self):
+        """Test deletion of non-existent medication outcome by ID via API"""
+        with self.assertRaises(HTTPException) as context:
+            await delete_medication_outcome_id(
+                99999, self.user
+            )  # Non-existent ID
+        self.assertEqual(context.exception.status_code, 404)
+        self.assertIn("Medication outcome not found", context.exception.detail)
+
+    # Update
+    async def test_update_medication_outcome_success(self):
+        """Test successful update of a medication outcome via API"""
+        # Create medication outcome first
+        medication_outcome_data = MedicationOutcome(
+            name="test_medication_outcome",
+            is_frequent=False,
+            is_default=False,
+        )
+        await create_medication_outcome(medication_outcome_data, self.user)
+        # Get medication outcome to find its ID
+        medication_outcomes = await get_medication_outcomes(self.user)
+        medication_outcome = next(
+            (
+                m
+                for m in medication_outcomes
+                if m.name == "test_medication_outcome"
+            ),
+            None,
+        )
+        medication_outcome_id = medication_outcome.id
+        # Update the medication outcome
+        update_data = MedicationOutcomeUpdate(
+            name="test_medication_outcome",
+            is_frequent=True,
+            is_default=True,
+        )
+        result = await update_medication_outcome(
+            medication_outcome_id,
+            update_data,
+            self.user,
+        )
+        self.assertEqual(
+            result["message"],
+            "Medication outcome updated successfully.",
+        )
+        # Verify medication outcome was updated
+        medication_outcomes = await get_medication_outcomes(self.user)
+        updated_medication_outcome = next(
+            (
+                m
+                for m in medication_outcomes
+                if m.name == "test_medication_outcome"
+            ),
+            None,
+        )
+        self.assertIsNotNone(updated_medication_outcome)
+        self.assertTrue(updated_medication_outcome.is_frequent)
+        self.assertTrue(updated_medication_outcome.is_default)
+
+    async def test_update_medication_outcome_partial(self):
+        """Test partial update of a medication outcome via API"""
+        # Create medication outcome first
+        medication_outcome_data = MedicationOutcome(
+            name="test_medication_outcome",
+            is_frequent=False,
+            is_default=False,
+        )
+        await create_medication_outcome(medication_outcome_data, self.user)
+        # Get medication outcome ID
+        medication_outcomes = await get_medication_outcomes(self.user)
+        medication_outcome = next(
+            (
+                m
+                for m in medication_outcomes
+                if m.name == "test_medication_outcome"
+            ),
+            None,
+        )
+        medication_outcome_id = medication_outcome.id
+        # Partial update - only is_frequent
+        update_data = MedicationOutcomeUpdate(
+            is_frequent=True,
+        )
+        result = await update_medication_outcome(
+            medication_outcome_id,
+            update_data,
+            self.user,
+        )
+        self.assertEqual(
+            result["message"],
+            "Medication outcome updated successfully.",
+        )
+        # Verify only is_frequent was updated
+        medication_outcomes = await get_medication_outcomes(self.user)
+        updated_medication_outcome = next(
+            (
+                m
+                for m in medication_outcomes
+                if m.name == "test_medication_outcome"
+            ),
+            None,
+        )
+        self.assertIsNotNone(updated_medication_outcome)
+        self.assertTrue(updated_medication_outcome.is_frequent)
+        self.assertFalse(updated_medication_outcome.is_default)
+
+    async def test_update_medication_outcome_empty_updates(self):
+        """Test update with no actual changes via API"""
+        # Create medication outcome first
+        medication_outcome_data = MedicationOutcome(
+            name="test_medication_outcome",
+            is_frequent=False,
+            is_default=False,
+        )
+        await create_medication_outcome(medication_outcome_data, self.user)
+        # Get medication outcome ID
+        medication_outcomes = await get_medication_outcomes(self.user)
+        medication_outcome = next(
+            (
+                m
+                for m in medication_outcomes
+                if m.name == "test_medication_outcome"
+            ),
+            None,
+        )
+        medication_outcome_id = medication_outcome.id
+        # Empty update
+        update_data = MedicationOutcomeUpdate()
+        with self.assertRaises(HTTPException) as context:
+            await update_medication_outcome(
+                medication_outcome_id, update_data, self.user
+            )
+        self.assertEqual(context.exception.status_code, 404)
+        self.assertIn(
+            "Medication outcome not found or could not be updated",
+            context.exception.detail,
+        )
+
+    async def test_update_medication_outcome_not_found(self):
+        """Test update of non-existent medication outcome via API"""
+        update_data = MedicationOutcomeUpdate(
+            name="non_existent_medication_outcome",
+            is_frequent=True,
+        )
+        with self.assertRaises(HTTPException) as context:
+            await update_medication_outcome(99999, update_data, self.user)
+        self.assertEqual(context.exception.status_code, 404)
+        self.assertIn(
+            "Medication outcome not found or could not be updated",
+            context.exception.detail,
+        )
+
+
+class TestGeneralAPI(IsolatedAsyncioTestCase):
+    async def _cleanup_test_data(self):
+        """Helper method to clean up test data"""
+        types = ["interaction", "coverage"]
+
+        test_names = [
+            "test_general",
+            "test_general_2",
+            "updated_general",
+            "default_general",
+        ]
+        for t in types:
+            for name in test_names:
+                try:
+                    await GeneralService.delete_general(name, t)
+                except Exception:
+                    pass  # Ignore if general site doesn't exist
+
+    async def asyncSetUp(self) -> None:
+        await database.connect()
+        asyncio.get_event_loop().set_debug(False)
+        await self._cleanup_test_data()
+
+        # Get authenticated user for all tests
+        self.user = UserRead(
+            id=1,
+            email=email,
+            role="admin",
+            permissions=[],
+            authenticator_mfa_enabled=True,
+        )
+
+    async def asyncTearDown(self) -> None:
+        await self._cleanup_test_data()
+        await database.disconnect()
+
+    # Create
+    async def test_create_general_success(self):
+        """Test successful creation of a general via API"""
+        general_data = General(
+            name="test_general",
+            is_frequent=False,
+            is_default=False,
+            type="interaction",
+        )
+        # Test
+        result = await create_general_type(general_data, self.user)
+        self.assertEqual(
+            result["message"],
+            "interaction created successfully.",
+        )
+        # Validate by getting generals
+        generals = await get_general_type("interaction", self.user)
+        general_names = [g.name for g in generals]
+        self.assertIn("test_general", general_names)
+
+    async def test_create_general_with_default(self):
+        """Test creation of a default general via API"""
+        general_data = General(
+            name="default_general",
+            is_frequent=True,
+            is_default=True,
+            type="coverage",
+        )
+
+        # Test
+        result = await create_general_type(general_data, self.user)
+        self.assertEqual(
+            result["message"],
+            "coverage created successfully.",
+        )
+
+        # Validate
+        generals = await get_general_type("coverage", self.user)
+        default_general = next(
+            (g for g in generals if g.name == "default_general"),
+            None,
+        )
+        self.assertIsNotNone(default_general)
+        self.assertTrue(default_general.is_default)
+        self.assertTrue(default_general.is_frequent)
+        self.assertEqual(default_general.type, "coverage")
+
+    async def test_create_duplicate_general_name(self):
+        """Test creating general with duplicate name via API"""
+        general_data = General(
+            name="test_general",
+            is_frequent=False,
+            is_default=False,
+            type="coverage",
+        )
+
+        # Create first general
+        result1 = await create_general_type(general_data, self.user)
+        self.assertEqual(
+            result1["message"],
+            "coverage created successfully.",
+        )
+
+        # Try to create duplicate - should raise HTTPException
+        with self.assertRaises(HTTPException) as context:
+            await create_general_type(general_data, self.user)
+
+        self.assertEqual(context.exception.status_code, 400)
+        self.assertIn("coverage already exists.", context.exception.detail)
+
+    # Get
+    async def test_get_general_empty(self):
+        """Test getting generals when none exist via API"""
+        generals = await get_general_type("interaction", self.user)
+        self.assertIsInstance(generals, list)
+        # self.assertEqual(len(generals), 0)
+
+    async def test_get_general_with_data(self):
+        """Test getting generals when data exists via API"""
+        # Create test generals
+        general1_data = General(
+            name="test_general",
+            is_frequent=False,
+            is_default=False,
+            type="coverage",
+        )
+        general2_data = General(
+            name="test_general_2",
+            is_frequent=True,
+            is_default=True,
+            type="coverage",
+        )
+        await create_general_type(general1_data, self.user)
+        await create_general_type(general2_data, self.user)
+
+        # Test
+        generals = await get_general_type("coverage", self.user)
+        self.assertIsInstance(generals, list)
+        self.assertGreaterEqual(len(generals), 2)
+
+        # Verify our generals are in the results
+        general_names = [g.name for g in generals]
+        self.assertIn("test_general", general_names)
+        self.assertIn("test_general_2", general_names)
+
+        # Verify general structure
+        for general in generals:
+            self.assertIsInstance(general, General)
+            self.assertIsInstance(general.name, str)
+            self.assertIsInstance(general.is_frequent, bool)
+            self.assertIsInstance(general.is_default, bool)
+            self.assertIsInstance(general.type, str)
+            self.assertIsNotNone(general.id)
+
+    # Delete
+    async def test_delete_general_by_name_success(self):
+        """Test successful deletion of a general by name via API"""
+        # Create general first
+        general_data = General(
+            name="test_general",
+            is_frequent=False,
+            is_default=False,
+            type="coverage",
+        )
+
+        await create_general_type(general_data, self.user)
+
+        # Delete the general
+        result = await delete_general_name(
+            "coverage", "test_general", self.user
+        )
+        self.assertEqual(result["message"], "coverage deleted successfully.")
+
+        # Verify general was deleted
+        generals = await get_general_type("coverage", self.user)
+        general_names = [g.name for g in generals]
+
+        self.assertNotIn("test_general", general_names)
+
+    async def test_delete_general_by_id_success(self):
+        """Test successful deletion of a general by ID via API"""
+        # Create general first
+        general_data = General(
+            name="test_general",
+            is_frequent=True,
+            is_default=False,
+            type="interaction",
+        )
+        await create_general_type(general_data, self.user)
+
+        # Get general to find its ID
+        generals = await get_general_type("interaction", self.user)
+        general = next((g for g in generals if g.name == "test_general"), None)
+        self.assertIsNotNone(general)
+        general_id = general.id
+
+        # Delete the general by ID
+        result = await delete_general_id(general_id, self.user)
+        self.assertEqual(result["message"], "Deleted successfully.")
+
+        # Verify general was deleted
+        generals = await get_general_type("interaction", self.user)
+        general_names = [g.name for g in generals]
+        self.assertNotIn("test_general", general_names)
+
+    async def test_delete_general_not_found_by_name(self):
+        """Test deletion of non-existent general by name via API"""
+        with self.assertRaises(HTTPException) as context:
+            await delete_general_name(
+                "interaction", "non_existent_general", self.user
+            )
+
+        self.assertEqual(context.exception.status_code, 404)
+        self.assertIn("interaction not found", context.exception.detail)
+
+    async def test_delete_general_not_found_by_id(self):
+        """Test deletion of non-existent general by ID via API"""
+        with self.assertRaises(HTTPException) as context:
+            await delete_general_id(99999, self.user)  # Non-existent ID
+
+        self.assertEqual(context.exception.status_code, 404)
+        self.assertIn(f"Id: {99999} not found", context.exception.detail)
+
+    # Update
+    async def test_update_general_success(self):
+        """Test successful update of a general via API"""
+        # Create general first
+        general_data = General(
+            name="test_general",
+            is_frequent=False,
+            is_default=False,
+            type="coverage",
+        )
+        await create_general_type(general_data, self.user)
+
+        # Get general to find its ID
+        generals = await get_general_type("coverage", self.user)
+        general = next((g for g in generals if g.name == "test_general"), None)
+        general_id = general.id
+
+        # Update the general
+        update_data = GeneralUpdate(
+            name="test_general",
+            is_frequent=True,
+            is_default=True,
+        )
+        result = await update_general(
+            general_id,
+            update_data,
+            self.user,
+        )
+        self.assertEqual(
+            result["message"],
+            f"Id: {general_id} updated successfully.",
+        )
+
+        # Verify general was updated
+        generals = await get_general_type("coverage", self.user)
+        updated_general = next(
+            (g for g in generals if g.name == "test_general"), None
+        )
+        self.assertIsNotNone(updated_general)
+        self.assertTrue(updated_general.is_frequent)
+        self.assertTrue(updated_general.is_default)
+
+    async def test_update_general_partial(self):
+        """Test partial update of a general via API"""
+        # Create general first
+        general_data = General(
+            name="test_general",
+            is_frequent=False,
+            is_default=False,
+            type="interaction",
+        )
+
+        await create_general_type(general_data, self.user)
+
+        # Get general ID
+        generals = await get_general_type("interaction", self.user)
+        general = next((g for g in generals if g.name == "test_general"), None)
+        general_id = general.id
+
+        # Partial update - only is_frequent
+        update_data = GeneralUpdate(
+            is_frequent=True,
+        )
+        result = await update_general(
+            general_id,
+            update_data,
+            self.user,
+        )
+        self.assertEqual(
+            result["message"],
+            f"Id: {general_id} updated successfully.",
+        )
+
+        # Verify only is_frequent was updated
+        generals = await get_general_type("interaction", self.user)
+        updated_general = next(
+            (g for g in generals if g.name == "test_general"), None
+        )
+        self.assertIsNotNone(updated_general)
+        self.assertTrue(updated_general.is_frequent)
+        self.assertFalse(updated_general.is_default)
+
+    async def test_update_general_empty_updates(self):
+        """Test update with no actual changes via API"""
+        # Create general first
+        general_data = General(
+            name="test_general",
+            is_frequent=False,
+            is_default=False,
+            type="interaction",
+        )
+        await create_general_type(general_data, self.user)
+
+        # Get general ID
+        generals = await get_general_type("interaction", self.user)
+        general = next((g for g in generals if g.name == "test_general"), None)
+        general_id = general.id
+
+        # Empty update
+        update_data = GeneralUpdate()
+        with self.assertRaises(HTTPException) as context:
+            await update_general(general_id, update_data, self.user)
+
+        self.assertEqual(context.exception.status_code, 404)
+        self.assertIn(
+            f"Id: {general_id} not found or could not be updated",
+            context.exception.detail,
+        )
+
+    async def test_update_general_not_found(self):
+        """Test update of non-existent general via API"""
+        update_data = GeneralUpdate(
+            name="non_existent_general",
+            is_frequent=True,
+        )
+
+        with self.assertRaises(HTTPException) as context:
+            await update_general(99999, update_data, self.user)
+
+        self.assertEqual(context.exception.status_code, 404)
+        self.assertIn(
+            f"Id: {99999} not found or could not be updated",
             context.exception.detail,
         )

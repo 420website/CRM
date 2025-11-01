@@ -1,13 +1,31 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { PatientServices } from "../../services/patientServices";
+import ConfirmModal from "../components/ConfirmModal";
+import { useRegistration } from "../../context/RegistrationContext";
+import DatePicker from "../ui/DatePicker";
+import toast from "react-hot-toast";
+import { useAuth } from "../../context/AuthContext";
+import MedicationTemplateManager from "../managers/MedicationManager";
+import MedicationOutcomeManager from "../managers/MedicationOutcomeManager";
 
 export default function Medications({ setActiveTab, currentRegistrationId }) {
-  const [error, setError] = useState("");
+  const { userRole } = useAuth();
+  const {
+    medications,
+    getMedications,
+    showMedicationManager,
+    setShowMedicationManager,
+    medicationTemplates,
+    getOutcomes,
+    outcomes,
+    setShowOutcomeManager,
+    showOutcomeManager,
+  } = useRegistration();
   const [loading, setLoading] = useState(false);
   const [editingMedicationId, setEditingMedicationId] = useState(null);
   const [isSavingMedication, setIsSavingMedication] = useState(false);
-  const [savedMedications, setSavedMedications] = useState([]);
-
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deleteMedicationId, setDeleteMedicationId] = useState(null);
   const [medicationData, setMedicationData] = useState({
     medication: "",
     start_date: "",
@@ -15,63 +33,68 @@ export default function Medications({ setActiveTab, currentRegistrationId }) {
     outcome: "",
   });
 
-  const getMedications = async (registrationId) => {
-    setLoading(true);
-    setError("");
+  function validateForm() {
+    if (!currentRegistrationId) {
+      alert("Please complete the Patient tab first to save medications.");
+      setActiveTab("patient");
+      return false;
+    }
 
-    const result =
-      await PatientServices.get_medications_by_patient(registrationId);
+    if (!medicationData.medication || medicationData.medication === "") {
+      toast.error("Please select a medication");
+      return false;
+    }
 
-    if (result.success) {
-      setSavedMedications(result.data || []);
-    } else {
-      if (result.status === 400 || result.status === 409) {
-        setError(result.message || "Error getting medications.");
-      } else {
-        setError("Error getting medications. Please try again.");
+    if (!medicationData.outcome || medicationData.outcome === "") {
+      toast.error("Please select an outcome");
+      return false;
+    }
+
+    if (medicationData.outcome !== "Tx Pending") {
+      if (!medicationData.start_date || medicationData.start_date === "") {
+        toast.error("Please select a start date");
+        return false;
       }
     }
-    setLoading(false);
-  };
+    return true;
+  }
 
   const saveMedication = async () => {
+    if (!validateForm()) {
+      return;
+    }
+
     editingMedicationId ? updateMedications() : createMedications();
   };
 
   const createMedications = async () => {
     setLoading(true);
-    setError("");
-
-    if (!currentRegistrationId) {
-      alert("Please complete the Client tab first to save medications.");
-      setActiveTab("client");
-      return;
-    }
-
-    if (!medicationData.medication || medicationData.medication === "") {
-      alert("Please select a medication");
-      return;
-    }
-
-    if (!medicationData.outcome || medicationData.outcome === "") {
-      alert("Please select an outcome");
-      return;
-    }
     setIsSavingMedication(true);
+
+    let data = { ...medicationData };
+
+    if (data.start_date === "") {
+      data = { ...data, start_date: null };
+    }
+
+    if (data.end_date === "") {
+      data = { ...data, end_date: null };
+    }
 
     const result = await PatientServices.create_medication(
       currentRegistrationId,
-      medicationData,
+      data,
     );
 
     if (result.success) {
-      await getMedications(currentRegistrationId);
+      getMedications(currentRegistrationId);
       clearMedicationForm();
+      toast.success("Medication created successfully");
     } else {
       if (result.status === 400 || result.status === 409) {
-        setError(result.message || "Error creating medications.");
+        toast.error(result.message || "Error creating medications.");
       } else {
-        setError("Error creating medications. Please try again.");
+        toast.error("Error creating medications. Please try again.");
       }
     }
     setIsSavingMedication(false);
@@ -80,68 +103,62 @@ export default function Medications({ setActiveTab, currentRegistrationId }) {
 
   const updateMedications = async () => {
     setLoading(true);
-    setError("");
-
-    if (!currentRegistrationId) {
-      alert("Please complete the Patient tab first to save medications.");
-      setActiveTab("patient");
-      return;
-    }
-
-    if (!medicationData.medication || medicationData.medication === "") {
-      alert("Please select a medication");
-      return;
-    }
-
-    if (!medicationData.outcome || medicationData.outcome === "") {
-      alert("Please select an outcome");
-      return;
-    }
     setIsSavingMedication(true);
 
+    let data = { ...medicationData };
+
+    if (data.start_date === "") {
+      data = { ...data, start_date: null };
+    }
+
+    if (data.end_date === "") {
+      data = { ...data, end_date: null };
+    }
     const result = await PatientServices.update_medication(
       currentRegistrationId,
       editingMedicationId,
-      medicationData,
+      data,
     );
 
     if (result.success) {
-      await getMedications(currentRegistrationId);
+      getMedications(currentRegistrationId);
       clearMedicationForm();
+      toast.success("Medication updated successfully");
     } else {
       if (result.status === 400 || result.status === 409) {
-        setError(result.message || "Error updating medication.");
+        toast.error(result.message || "Error updating medication.");
       } else {
-        setError("Error updating medication. Please try again.");
+        toast.error("Error updating medication. Please try again.");
       }
     }
     setIsSavingMedication(false);
     setLoading(false);
   };
 
-  const deleteMedication = async (medicationId) => {
-    if (!window.confirm("Are you sure you want to delete this medication?")) {
-      return;
-    }
-
+  const deleteMedication = async () => {
     setLoading(true);
-    setError("");
 
     const result = await PatientServices.delete_medication_by_id(
       currentRegistrationId,
-      medicationId,
+      deleteMedicationId,
     );
 
     if (result.success) {
-      await getMedications(currentRegistrationId);
+      getMedications(currentRegistrationId);
+      toast.success("Medication deleted successfully");
     } else {
       if (result.status === 400 || result.status === 409) {
-        setError(result.message || "Error deleting medication.");
+        toast.error(result.message || "Error deleting medication.");
       } else {
-        setError("Error deleting medication. Please try again.");
+        toast.error("Error deleting medication. Please try again.");
       }
     }
     setLoading(false);
+  };
+
+  const handleDeleteMedication = async (medicationId) => {
+    setDeleteMedicationId(medicationId);
+    setShowDeleteConfirm(true);
   };
 
   // Medication management functions
@@ -162,9 +179,7 @@ export default function Medications({ setActiveTab, currentRegistrationId }) {
     });
     setEditingMedicationId(medication.id);
     // Scroll to top of medication form
-    document
-      .querySelector("#medicationForm")
-      ?.scrollIntoView({ behavior: "smooth" });
+    document.querySelector("#tabs")?.scrollIntoView({ behavior: "smooth" });
   };
   const clearMedicationForm = () => {
     setMedicationData({
@@ -176,16 +191,11 @@ export default function Medications({ setActiveTab, currentRegistrationId }) {
     setEditingMedicationId(null);
   };
 
-  // Load medications when registration ID changes
-  useEffect(() => {
-    if (currentRegistrationId) {
-      getMedications(currentRegistrationId);
-    }
-  }, [currentRegistrationId]);
-
   return (
     <div>
       <div className="space-y-6">
+        {showMedicationManager && <MedicationTemplateManager />}
+        {showOutcomeManager && <MedicationOutcomeManager />}
         {/* Registration ID Check */}
         {!currentRegistrationId && (
           <div className="border-2 border-orange-200 bg-orange-50 p-4 rounded-lg">
@@ -227,7 +237,14 @@ export default function Medications({ setActiveTab, currentRegistrationId }) {
             </div>
           </div>
         )}
-
+        {showDeleteConfirm && (
+          <ConfirmModal
+            message={"Confirm delete medication"}
+            subMessage={"This action cannot be undone"}
+            confirm={deleteMedication}
+            setShowConfirm={setShowDeleteConfirm}
+          />
+        )}
         {/* Medication Form */}
         <div
           className={
@@ -239,12 +256,23 @@ export default function Medications({ setActiveTab, currentRegistrationId }) {
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
-              <label
-                htmlFor="medication"
-                className="block text-sm font-medium text-gray-700 mb-2"
-              >
-                Medication *
-              </label>
+              <div className="flex items-center justify-between mb-2">
+                <label
+                  htmlFor="medication"
+                  className="block text-sm font-medium text-gray-700 mb-2"
+                >
+                  Medication *
+                </label>
+                {userRole == "admin" && (
+                  <button
+                    type="button"
+                    onClick={() => setShowMedicationManager(true)}
+                    className="text-blue-600 hover:text-blue-800 text-sm"
+                  >
+                    Manage Medications
+                  </button>
+                )}
+              </div>
               <select
                 id="medication"
                 name="medication"
@@ -253,19 +281,47 @@ export default function Medications({ setActiveTab, currentRegistrationId }) {
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black"
               >
                 <option value="">Select</option>
-                <option value="Epclusa">Epclusa</option>
-                <option value="Maviret">Maviret</option>
-                <option value="Vosevi">Vosevi</option>
+                {/* Most Frequently Used */}
+                {medicationTemplates
+                  .filter((d) => d.is_frequent)
+                  .map((medication) => (
+                    <option key={medication.id} value={medication.name}>
+                      {medication.name}
+                    </option>
+                  ))}
+                {/* Separator */}
+                {medicationTemplates.filter((d) => !d.is_frequent).length >
+                  0 && <option disabled>-------</option>}
+                {/* All Others in Alphabetical Order */}
+                {medicationTemplates
+                  .filter((d) => !d.is_frequent)
+                  .sort((a, b) => a.name.localeCompare(b.name))
+                  .map((medication) => (
+                    <option key={medication.id} value={medication.name}>
+                      {medication.name}
+                    </option>
+                  ))}
               </select>
             </div>
 
             <div>
-              <label
-                htmlFor="outcome"
-                className="block text-sm font-medium text-gray-700 mb-2"
-              >
-                Outcome *
-              </label>
+              <div className="flex items-center justify-between mb-2">
+                <label
+                  htmlFor="outcome"
+                  className="block text-sm font-medium text-gray-700 mb-2"
+                >
+                  Outcome *
+                </label>
+                {userRole == "admin" && (
+                  <button
+                    type="button"
+                    onClick={() => setShowOutcomeManager(true)}
+                    className="text-blue-600 hover:text-blue-800 text-sm"
+                  >
+                    Manage Outcomes
+                  </button>
+                )}
+              </div>
               <select
                 id="outcome"
                 name="outcome"
@@ -274,12 +330,27 @@ export default function Medications({ setActiveTab, currentRegistrationId }) {
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black"
               >
                 <option value="">Select</option>
-                <option value="Active">Active</option>
-                <option value="Completed">Completed</option>
-                <option value="Non Compliance">Non Compliance</option>
-                <option value="Side Effect">Side Effect</option>
-                <option value="Did not start">Did not start</option>
-                <option value="Death">Death</option>
+                {/* Most Frequently Used */}
+                {outcomes
+                  .filter((d) => d.is_frequent)
+                  .map((outcome) => (
+                    <option key={outcome.id} value={outcome.name}>
+                      {outcome.name}
+                    </option>
+                  ))}
+                {/* Separator */}
+                {outcomes.filter((d) => !d.is_frequent).length > 0 && (
+                  <option disabled>-------</option>
+                )}
+                {/* All Others in Alphabetical Order */}
+                {outcomes
+                  .filter((d) => !d.is_frequent)
+                  .sort((a, b) => a.name.localeCompare(b.name))
+                  .map((outcome) => (
+                    <option key={outcome.id} value={outcome.name}>
+                      {outcome.name}
+                    </option>
+                  ))}
               </select>
             </div>
 
@@ -291,13 +362,12 @@ export default function Medications({ setActiveTab, currentRegistrationId }) {
                 >
                   Start Date
                 </label>
-                <input
-                  type="date"
-                  id="start_date"
+                <DatePicker
                   name="start_date"
                   value={medicationData.start_date}
                   onChange={handleMedicationChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black"
+                  className="w-full px-3 py-1.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black"
+                  placeholder="mm/dd/yyyy"
                 />
               </div>
 
@@ -308,13 +378,12 @@ export default function Medications({ setActiveTab, currentRegistrationId }) {
                 >
                   End Date
                 </label>
-                <input
-                  type="date"
-                  id="end_date"
+                <DatePicker
                   name="end_date"
                   value={medicationData.end_date}
                   onChange={handleMedicationChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black"
+                  className="w-full px-3 py-1.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black"
+                  placeholder="mm/dd/yyyy"
                 />
               </div>
             </div>
@@ -344,20 +413,19 @@ export default function Medications({ setActiveTab, currentRegistrationId }) {
             </button>
           </div>
         </div>
-
         {/* Saved Medications */}
         <div className="border-t pt-6">
           <h3 className="text-lg font-medium text-gray-900 mb-4">
             Saved Medications
           </h3>
 
-          {savedMedications.length === 0 ? (
+          {medications.length === 0 ? (
             <div className="text-center py-8 text-gray-500">
               <p>No medications have been saved yet.</p>
             </div>
           ) : (
             <div className="space-y-3">
-              {savedMedications.map((medication, index) => (
+              {medications.map((medication, index) => (
                 <div
                   key={medication.id}
                   className="border border-gray-200 rounded-lg p-4 bg-white hover:shadow-md transition-shadow"
@@ -423,7 +491,7 @@ export default function Medications({ setActiveTab, currentRegistrationId }) {
                       </button>
                       <button
                         type="button"
-                        onClick={() => deleteMedication(medication.id)}
+                        onClick={() => handleDeleteMedication(medication.id)}
                         className="text-red-600 hover:text-red-800 text-sm"
                         title="Delete medication"
                       >

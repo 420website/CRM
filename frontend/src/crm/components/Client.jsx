@@ -5,66 +5,57 @@ import {
   formatPhoneNumber,
   formatPostalCode,
 } from "../../utils/formatData";
+import { useRegistration } from "../../context/RegistrationContext";
+import DatePicker from "../ui/DatePicker";
+import { useAuth } from "../../context/AuthContext";
+import CoverageManager from "../managers/CoverageManager";
+
+// Map Google Places province codes to full province names
+const getProvince = (code) => {
+  const provinceMap = {
+    ON: "Ontario",
+    QC: "Quebec",
+    BC: "British Columbia",
+    AB: "Alberta",
+    MB: "Manitoba",
+    SK: "Saskatchewan",
+    NS: "Nova Scotia",
+    NB: "New Brunswick",
+    NL: "Newfoundland and Labrador",
+    PE: "Prince Edward Island",
+    NT: "Northwest Territories",
+    NU: "Nunavut",
+    YT: "Yukon",
+  };
+
+  return provinceMap[code] || code;
+};
 
 export default function Client({
   formData,
   setFormData,
-  setShowVoiceDateModal,
-  setShowDispositionManager,
-  setShowReferralSiteManager,
-  setShowClinicalTemplateManager,
-  availableDispositions,
-  availableReferralSites,
-  availableClinicalTemplates,
-  setTemplates,
-  templates,
   selectedTemplate,
   setSelectedTemplate,
+  templates,
   openVoiceDateInput,
   openVoiceFillInput,
-  currentVoiceDateField,
-  setCurrentVoiceDateField,
 }) {
+  const { userRole } = useAuth();
+
   const [error, setError] = useState("");
+  const {
+    dispositions,
+    genericCoverage,
+    referralSites,
+    clinicalTemplates,
+    setShowCoverageManager,
+    showCoverageManager,
+    setShowDispositionManager,
+    setShowClinicalManager,
+    setShowReferralSiteManager,
+  } = useRegistration();
 
-  // Voice-to-text input states (like Notes tab)
-  const [voiceInputText, setVoiceInputText] = useState("");
-  const [voiceDateInput, setVoiceDateInput] = useState("");
-  const [isVoiceRecording, setIsVoiceRecording] = useState(false);
-  const [voiceInputStatus, setVoiceInputStatus] = useState("");
-  const [hasAutoFilledData, setHasAutoFilledData] = useState(false);
-  // const [selectedTemplate, setSelectedTemplate] = useState("Select");
-  const [activeTab, setActiveTab] = useState("client");
-  const [showTemplateManager, setShowTemplateManager] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  // const [currentVoiceDateField, setCurrentVoiceDateField] = useState("");
-  const [isEditingTemplate, setIsEditingTemplate] = useState(false);
-  const [voiceAssistantStatus, setVoiceAssistantStatus] = useState("");
-
-  // Handle Google Places address selection
-  const getProvince = (code) => {
-    // Map Google Places province codes to full province names
-    const provinceMap = {
-      ON: "Ontario",
-      QC: "Quebec",
-      BC: "British Columbia",
-      AB: "Alberta",
-      MB: "Manitoba",
-      SK: "Saskatchewan",
-      NS: "Nova Scotia",
-      NB: "New Brunswick",
-      NL: "Newfoundland and Labrador",
-      PE: "Prince Edward Island",
-      NT: "Northwest Territories",
-      NU: "Nunavut",
-      YT: "Yukon",
-    };
-
-    // Get full province name from code or use as-is if already full name
-    return provinceMap[code] || code;
-  };
-
-  const updateClinicalSummary = async (formData) => {
+  const defaultPositiveClinicalSummary = async (formData) => {
     const baseTemplate = "Dx 10+ years ago and treated. ";
 
     let rnaSection = "";
@@ -85,7 +76,9 @@ export default function Client({
 
     let coverageSection = "";
     if (formData.coverage_type && formData.coverage_type !== "Select") {
-      coverageSection = `${formData.coverage_type}. `;
+      coverageSection = `Coverage Type: ${formData.coverage_type}. `;
+    } else {
+      coverageSection = `Coverage Type: not selected. `;
     }
 
     let referralSection = "";
@@ -124,6 +117,81 @@ export default function Client({
     );
   };
 
+  const updateClinicalSummary = async (formData) => {
+    if (
+      formData.selected_template === "Positive" &&
+      formData.summary_template
+    ) {
+      let updatedSummary = formData.summary_template;
+
+      // Update RNA section ONLY if it exists
+      const rnaRegex = /RNA - ([^,]+), ([^.]+)\.|RNA - no labs available\./;
+      if (rnaRegex.test(updatedSummary)) {
+        if (formData.rna_available === "No") {
+          updatedSummary = updatedSummary.replace(
+            rnaRegex,
+            "RNA - no labs available.",
+          );
+        } else if (formData.rna_available === "Yes") {
+          const date = formData.rna_sample_date || "[date]";
+          const result = formData.rna_result?.toLowerCase() || "positive";
+          updatedSummary = updatedSummary.replace(
+            rnaRegex,
+            `RNA - ${date}, ${result}.`,
+          );
+        }
+      }
+
+      // Update coverage ONLY if it exists
+      const coverageRegex = /Coverage Type: [^.]+\./;
+      if (coverageRegex.test(updatedSummary)) {
+        const newCoverage =
+          formData.coverage_type && formData.coverage_type !== "Select"
+            ? `Coverage Type: ${formData.coverage_type}.`
+            : "Coverage Type: not selected.";
+        updatedSummary = updatedSummary.replace(coverageRegex, newCoverage);
+      }
+
+      // Update referral ONLY if it exists
+      const referralRegex = /Referral: [^.]+\./;
+      if (referralRegex.test(updatedSummary)) {
+        const newReferral = formData.referral_person?.trim()
+          ? `Referral: ${formData.referral_person}.`
+          : "Referral: none.";
+        updatedSummary = updatedSummary.replace(referralRegex, newReferral);
+      }
+
+      // Update address/phone ONLY if it exists
+      const addressPhoneRegex = /Client does.*?results\./;
+      if (addressPhoneRegex.test(updatedSummary)) {
+        const hasAddress = formData.address?.trim();
+        const hasPhone = formData.phone1?.trim();
+        let newEndTemplate = "";
+        if (hasAddress && hasPhone) {
+          newEndTemplate =
+            "Client does have a valid address and has also provided a phone number for results.";
+        } else if (hasAddress) {
+          newEndTemplate =
+            "Client does have a valid address but no phone number for results.";
+        } else if (hasPhone) {
+          newEndTemplate =
+            "Client does not have a valid address but has provided a phone number for results.";
+        } else {
+          newEndTemplate =
+            "Client does not have a valid address or phone number for results.";
+        }
+        updatedSummary = updatedSummary.replace(
+          addressPhoneRegex,
+          newEndTemplate,
+        );
+      }
+
+      return updatedSummary;
+    } else {
+      return defaultPositiveClinicalSummary(formData);
+    }
+  };
+
   const handleTemplateChange = async (templateName) => {
     setSelectedTemplate(templateName);
 
@@ -142,10 +210,13 @@ export default function Client({
         selected_template: templateName,
       }));
     } else {
-      const templateContent = templates[templateName] || "";
+      const content =
+        clinicalTemplates.find((item) => item.name === templateName)?.content ||
+        "";
+
       setFormData((prev) => ({
         ...prev,
-        summary_template: templateContent,
+        summary_template: content,
         selected_template: templateName,
       }));
     }
@@ -156,16 +227,13 @@ export default function Client({
 
     let processedValue = type === "checkbox" ? checked : value;
 
-    // Format phone numbers
     if (name === "phone1" || name === "phone2") {
       processedValue = formatPhoneNumber(value);
     }
 
-    // Don't format postal code during typing - only on blur
-
     // Health card should only contain numeric characters
     if (name === "health_card") {
-      processedValue = value.replace(/\D/g, ""); // Remove all non-digit characters
+      processedValue = value.replace(/\D/g, "");
     }
 
     let newFormData = {
@@ -173,9 +241,7 @@ export default function Client({
       [name]: processedValue,
     };
 
-    // Update clinical summary ONLY if user has explicitly selected Positive template AND changed RNA/coverage fields
-    // This prevents auto-population when template is set to 'Select'
-
+    // Update clinical summary ONLY if user has explicitly selected Positive template
     if (
       selectedTemplate === "Positive" &&
       (name === "rna_available" ||
@@ -212,32 +278,19 @@ export default function Client({
       newFormData.physician = "None";
     }
 
-    // Clear HIV fields when test type changes
-    if (name === "testType") {
-      if (value === "HIV") {
-        // Set HIV date to current date when HIV is selected
-        newFormData.hivDate = new Date().toISOString().split("T")[0];
-        newFormData.hivResult = "negative"; // Default to negative
-        newFormData.hivType = "";
-        newFormData.hivTester = "CM"; // Set default tester
-      } else if (value !== "HIV") {
-        // Clear all HIV fields when switching away from HIV
-        newFormData.hivDate = new Date().toISOString().split("T")[0];
-        newFormData.hivResult = "negative";
-        newFormData.hivType = "";
-        newFormData.hivTester = "CM"; // Reset to default
-      }
-    }
-
-    // Clear HIV type when result is not positive
-    if (name === "hivResult" && value !== "positive") {
-      newFormData.hivType = "";
-    }
-
     setFormData(newFormData);
   };
 
   const onPlaceSelected = (place) => {
+    handleChange({
+      target: {
+        name: "address",
+        value: place.displayName,
+        type: "text",
+        checked: false,
+      },
+    });
+
     setFormData((prev) => ({
       ...prev,
       address: place.displayName,
@@ -251,12 +304,15 @@ export default function Client({
     <div>
       <div className="tab-content">
         <div className="space-y-6">
+          {showCoverageManager && <CoverageManager />}
+
           {/* Basic Information */}
           <div>
             <h2 className="text-lg font-medium text-gray-900 mb-4">
               Registration Information
             </h2>
 
+            {/* Voice to text icons
             <div>
               <div className="flex items-center space-x-2">
                 <div className="relative">
@@ -272,9 +328,10 @@ export default function Client({
                 </button>
               </div>
             </div>
+                */}
 
             {/* Registration Date Field */}
-            <div className="mb-6">
+            <div id="regDate" className="mb-6 scroll-mt-[60px]">
               <label
                 htmlFor="reg_date"
                 className="block text-sm font-medium text-gray-700 mb-2"
@@ -282,49 +339,16 @@ export default function Client({
                 Registration Date
               </label>
               <div className="flex items-center space-x-2">
-                <div className="relative">
-                  <input
-                    type="text"
-                    id="reg_date"
-                    name="reg_date"
-                    value={
-                      formData.reg_date
-                        ? (() => {
-                            // Create date in local timezone to avoid timezone conversion issues
-                            const dateParts = formData.reg_date.split("-");
-                            const date = new Date(
-                              dateParts[0],
-                              dateParts[1] - 1,
-                              dateParts[2],
-                            );
-                            return date.toLocaleDateString("en-US", {
-                              year: "numeric",
-                              month: "short",
-                              day: "numeric",
-                            });
-                          })()
-                        : ""
-                    }
-                    readOnly
-                    onClick={() =>
-                      document.getElementById("regDatePicker").showPicker()
-                    }
-                    className="px-3 py-2 bg-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-black text-left font-medium cursor-pointer border border-gray-300"
-                    style={{
-                      width: "160px", // Keep width for proper date display
-                    }}
-                    placeholder="Select date"
-                  />
-                  <input
-                    type="date"
-                    id="regDatePicker"
-                    value={formData.reg_date}
-                    onChange={handleChange}
-                    name="reg_date"
-                    className="absolute inset-0 opacity-0 cursor-pointer"
-                    style={{ width: "160px" }}
-                  />
-                </div>
+                <DatePicker
+                  name="reg_date"
+                  value={formData.reg_date}
+                  onChange={handleChange}
+                  className="px-3 py-2 bg-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-black text-left font-medium cursor-pointer border border-gray-300"
+                  style={{
+                    width: "160px",
+                  }}
+                />
+                {/*
                 <button
                   type="button"
                   onClick={() => openVoiceDateInput("reg_date")}
@@ -333,11 +357,12 @@ export default function Client({
                 >
                   🎤
                 </button>
+                */}
               </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
+              <div id="firstName" className="scroll-mt-[60px]">
                 <label
                   htmlFor="first_name"
                   className="block text-sm font-medium text-gray-700 mb-2"
@@ -357,7 +382,7 @@ export default function Client({
                 />
               </div>
 
-              <div>
+              <div id="lastName" className="scroll-mt-[60px]">
                 <label
                   htmlFor="last_name"
                   className="block text-sm font-medium text-gray-700 mb-2"
@@ -377,7 +402,7 @@ export default function Client({
                 />
               </div>
 
-              <div>
+              <div id="dateOfBirth" className="scroll-mt-[60px]">
                 <label
                   htmlFor="dob"
                   className="block text-sm font-medium text-gray-700 mb-2"
@@ -385,50 +410,16 @@ export default function Client({
                   Date of Birth<span className="text-red-500">*</span>
                 </label>
                 <div className="flex items-center space-x-2">
-                  <div className="relative">
-                    <input
-                      type="text"
-                      id="dob"
-                      name="dob"
-                      required
-                      value={
-                        formData.dob
-                          ? (() => {
-                              // Create date in local timezone to avoid timezone conversion issues
-                              const dateParts = formData.dob.split("-");
-                              const date = new Date(
-                                dateParts[0],
-                                dateParts[1] - 1,
-                                dateParts[2],
-                              );
-                              return date.toLocaleDateString("en-US", {
-                                year: "numeric",
-                                month: "short",
-                                day: "numeric",
-                              });
-                            })()
-                          : ""
-                      }
-                      readOnly
-                      onClick={() =>
-                        document.getElementById("dobPicker").showPicker()
-                      }
-                      className="px-3 py-2 bg-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-black text-left font-medium cursor-pointer border border-gray-300"
-                      style={{
-                        width: "160px", // Keep width for proper date display
-                      }}
-                      placeholder="Select date"
-                    />
-                    <input
-                      type="date"
-                      id="dobPicker"
-                      value={formData.dob}
-                      onChange={handleChange}
-                      name="dob"
-                      className="absolute inset-0 opacity-0 cursor-pointer"
-                      style={{ width: "160px" }}
-                    />
-                  </div>
+                  <DatePicker
+                    name="dob"
+                    value={formData.dob}
+                    onChange={handleChange}
+                    className="px-3 py-2 bg-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-black text-left font-medium cursor-pointer border border-gray-300"
+                    style={{
+                      width: "160px",
+                    }}
+                  />
+                  {/*
                   <button
                     type="button"
                     onClick={() => openVoiceDateInput("dob")}
@@ -437,6 +428,7 @@ export default function Client({
                   >
                     🎤
                   </button>
+                  */}
                 </div>
               </div>
 
@@ -486,13 +478,15 @@ export default function Client({
                   >
                     Disposition
                   </label>
-                  <button
-                    type="button"
-                    onClick={() => setShowDispositionManager(true)}
-                    className="text-blue-600 hover:text-blue-800 text-sm"
-                  >
-                    Manage Dispositions
-                  </button>
+                  {userRole == "admin" && (
+                    <button
+                      type="button"
+                      onClick={() => setShowDispositionManager(true)}
+                      className="text-blue-600 hover:text-blue-800 text-sm"
+                    >
+                      Manage Dispositions
+                    </button>
+                  )}
                 </div>
                 <select
                   id="disposition"
@@ -503,7 +497,7 @@ export default function Client({
                 >
                   <option value="">Select Disposition</option>
                   {/* Most Frequently Used */}
-                  {availableDispositions
+                  {dispositions
                     .filter((d) => d.is_frequent)
                     .map((disposition) => (
                       <option key={disposition.id} value={disposition.name}>
@@ -511,10 +505,11 @@ export default function Client({
                       </option>
                     ))}
                   {/* Separator */}
-                  {availableDispositions.filter((d) => !d.is_frequent).length >
-                    0 && <option disabled>-------</option>}
+                  {dispositions.filter((d) => !d.is_frequent).length > 0 && (
+                    <option disabled>-------</option>
+                  )}
                   {/* All Others in Alphabetical Order */}
-                  {availableDispositions
+                  {dispositions
                     .filter((d) => !d.is_frequent)
                     .sort((a, b) => a.name.localeCompare(b.name))
                     .map((disposition) => (
@@ -543,7 +538,7 @@ export default function Client({
               </div>
 
               <div className="flex gap-4">
-                <div className="flex-1">
+                <div id="healthcard" className="flex-1 scroll-mt-[60px]">
                   <label
                     htmlFor="health_card"
                     className="block text-sm font-medium text-gray-700 mb-2"
@@ -566,7 +561,7 @@ export default function Client({
                     htmlFor="health_card_version"
                     className="block text-sm font-medium text-gray-700 mb-2"
                   >
-                    Version Code<span className="text-red-500">*</span>
+                    Version Code
                   </label>
                   <input
                     type="text"
@@ -590,13 +585,15 @@ export default function Client({
                   >
                     Referral Site
                   </label>
-                  <button
-                    type="button"
-                    onClick={() => setShowReferralSiteManager(true)}
-                    className="text-blue-600 hover:text-blue-800 text-sm"
-                  >
-                    Manage Referral Sites
-                  </button>
+                  {userRole == "admin" && (
+                    <button
+                      type="button"
+                      onClick={() => setShowReferralSiteManager(true)}
+                      className="text-blue-600 hover:text-blue-800 text-sm"
+                    >
+                      Manage Referral Sites
+                    </button>
+                  )}
                 </div>
                 <select
                   id="referral_site"
@@ -607,7 +604,7 @@ export default function Client({
                 >
                   <option value="">Select Referral Site</option>
                   {/* Most Frequently Used */}
-                  {availableReferralSites
+                  {referralSites
                     .filter((s) => s.is_frequent)
                     .map((site) => (
                       <option key={site.id} value={site.name}>
@@ -615,10 +612,11 @@ export default function Client({
                       </option>
                     ))}
                   {/* Separator */}
-                  {availableReferralSites.filter((s) => !s.is_frequent).length >
-                    0 && <option disabled>-------</option>}
+                  {referralSites.filter((s) => !s.is_frequent).length > 0 && (
+                    <option disabled>-------</option>
+                  )}
                   {/* All Others in Alphabetical Order */}
-                  {availableReferralSites
+                  {referralSites
                     .filter((s) => !s.is_frequent)
                     .sort((a, b) => a.name.localeCompare(b.name))
                     .map((site) => (
@@ -653,9 +651,8 @@ export default function Client({
                   name="address"
                   value={formData.address}
                   onChange={handleChange}
-                  // onPlaceSelected={handlePlaceSelected}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black"
-                  placeholder="Start typing address..."
+                  // placeholder="Start typing address..."
                 />
               </div>
 
@@ -949,13 +946,15 @@ export default function Client({
                   >
                     Clinical Summary Template
                   </label>
-                  <button
-                    type="button"
-                    onClick={() => setShowClinicalTemplateManager(true)}
-                    className="text-blue-600 hover:text-blue-800 text-sm"
-                  >
-                    Manage Templates
-                  </button>
+                  {userRole == "admin" && (
+                    <button
+                      type="button"
+                      onClick={() => setShowClinicalManager(true)}
+                      className="text-blue-600 hover:text-blue-800 text-sm"
+                    >
+                      Manage Templates
+                    </button>
+                  )}
                 </div>
                 <select
                   id="selected_template"
@@ -964,7 +963,7 @@ export default function Client({
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black"
                 >
                   <option value="Select">Select</option>
-                  {availableClinicalTemplates.map((template) => (
+                  {clinicalTemplates.map((template) => (
                     <option key={template.id} value={template.name}>
                       {template.name}
                     </option>
@@ -1003,52 +1002,16 @@ export default function Client({
                           RNA Sample Date
                         </label>
                         <div className="flex items-center space-x-2">
-                          <div className="relative">
-                            <input
-                              type="text"
-                              id="rna_sample_date"
-                              name="rna_sample_date"
-                              value={
-                                formData.rna_sample_date
-                                  ? (() => {
-                                      // Create date in local timezone to avoid timezone conversion issues
-                                      const dateParts =
-                                        formData.rna_sample_date.split("-");
-                                      const date = new Date(
-                                        dateParts[0],
-                                        dateParts[1] - 1,
-                                        dateParts[2],
-                                      );
-                                      return date.toLocaleDateString("en-US", {
-                                        year: "numeric",
-                                        month: "short",
-                                        day: "numeric",
-                                      });
-                                    })()
-                                  : ""
-                              }
-                              readOnly
-                              onClick={() =>
-                                document
-                                  .getElementById("rna_sample_date_picker")
-                                  .showPicker()
-                              }
-                              className="px-3 py-2 bg-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-black text-left font-medium cursor-pointer border border-gray-300"
-                              style={{
-                                width: "160px", // Keep width for proper date display
-                              }}
-                              placeholder="Select date"
-                            />
-                            <input
-                              type="date"
-                              id="rna_sample_date_picker"
-                              value={formData.rna_sample_date}
-                              onChange={handleChange}
-                              name="rna_sample_date"
-                              className="absolute inset-0 opacity-0 cursor-pointer"
-                              style={{ width: "160px" }}
-                            />
-                          </div>
+                          <DatePicker
+                            name="rna_sample_date"
+                            value={formData.rna_sample_date}
+                            onChange={handleChange}
+                            className="px-3 py-2 bg-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-black text-left font-medium cursor-pointer border border-gray-300"
+                            style={{
+                              width: "160px",
+                            }}
+                          />
+                          {/*
                           <button
                             type="button"
                             onClick={() =>
@@ -1059,6 +1022,7 @@ export default function Client({
                           >
                             🎤
                           </button>
+                          */}
                         </div>
                       </div>
 
@@ -1084,12 +1048,23 @@ export default function Client({
                   )}
 
                   <div>
-                    <label
-                      htmlFor="coverage_type"
-                      className="block text-sm font-medium text-gray-700 mb-2"
-                    >
-                      Coverage Type
-                    </label>
+                    <div className="flex items-center justify-between mb-2">
+                      <label
+                        htmlFor="coverage_type"
+                        className="block text-sm font-medium text-gray-700 mb-2"
+                      >
+                        Coverage Type
+                      </label>
+                      {userRole == "admin" && (
+                        <button
+                          type="button"
+                          onClick={() => setShowCoverageManager(true)}
+                          className="text-blue-600 hover:text-blue-800 text-sm"
+                        >
+                          Manage Coverage
+                        </button>
+                      )}
+                    </div>
                     <select
                       id="coverage_type"
                       name="coverage_type"
@@ -1097,10 +1072,27 @@ export default function Client({
                       onChange={handleChange}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black"
                     >
-                      <option value="Select">Select</option>
-                      <option value="OW">OW</option>
-                      <option value="ODSP">ODSP</option>
-                      <option value="No coverage">No coverage</option>
+                      <option value="">Select</option>
+                      {/* Most Frequently Used */}
+                      {genericCoverage
+                        .filter((c) => c.is_frequent)
+                        .map((c) => (
+                          <option key={c.id} value={c.name}>
+                            {c.name}
+                          </option>
+                        ))}
+                      {/* Separator */}
+                      {genericCoverage.filter((c) => !c.is_frequent).length >
+                        0 && <option disabled>-------</option>}
+                      {/* All Others in Alphabetical Order */}
+                      {genericCoverage
+                        .filter((c) => !c.is_frequent)
+                        .sort((a, b) => a.name.localeCompare(b.name))
+                        .map((c) => (
+                          <option key={c.id} value={c.name}>
+                            {c.name}
+                          </option>
+                        ))}
                     </select>
                   </div>
 

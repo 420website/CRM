@@ -1,6 +1,7 @@
 import { useNavigate } from "react-router-dom";
-import React, { useEffect, useState } from "react";
-import { compressImage } from "../../utils/compressImage";
+import { useEffect, useState } from "react";
+import { compressImageToBlob } from "../../utils/compressImage";
+import toast from "react-hot-toast";
 
 export default function EditPhoto({
   saveStatus,
@@ -8,16 +9,16 @@ export default function EditPhoto({
   setPhotoData,
   photoPreview,
   setPhotoPreview,
+  setPhotoChanged,
 }) {
   const navigate = useNavigate();
-  const [error, setError] = useState(null);
   const [photoUploadStatus, setPhotoUploadStatus] = useState(null);
+  const [selectedFileName, setSelectedFileName] = useState(photoData.name);
 
   useEffect(() => {
     const compressAndSetPreview = async () => {
       if (photoData.file) {
-        const compressed = await compressImage(photoData.file, 500);
-        setPhotoPreview(compressed);
+        setPhotoPreview(URL.createObjectURL(photoData.file));
         setPhotoUploadStatus({
           type: "success",
           message:
@@ -37,37 +38,35 @@ export default function EditPhoto({
     if (file) {
       // Validate file type
       if (!file.type.startsWith("image/")) {
-        alert("Please select an image file");
+        toast.error("Please select an image file");
+        e.target.value = null;
         return;
       }
 
       // Validate file size (10MB max before compression)
       if (file.size > 10 * 1024 * 1024) {
-        alert("Photo is too large. Please choose an image under 10MB.");
+        toast.error("Photo is too large. Please choose an image under 10MB.");
+        e.target.value = null;
         return;
       }
 
+      const compressedImage = await compressImageToBlob(file, 500);
+
+      setSelectedFileName(file ? file.name : "");
       setPhotoData({
         name: file.name,
-        file: file,
+        file: compressedImage,
       });
-
-      try {
-      } catch (error) {
-        setError("Error compressing image:", error);
-        alert("Error processing image. Please try again.");
-      }
+      setPhotoChanged(true);
     }
-  };
-
-  const goBack = () => {
-    navigate("/");
   };
 
   const removePhoto = () => {
     setPhotoPreview(null);
     setPhotoUploadStatus(null);
     setPhotoData({});
+    setPhotoChanged(true);
+    setSelectedFileName("");
 
     // Clear both file inputs
     const cameraInput = document.getElementById("photo-camera");
@@ -81,10 +80,8 @@ export default function EditPhoto({
   };
 
   return (
-    <>
-      <h1 className="text-2xl font-bold text-gray-900 mb-4">
-        Edit Registration
-      </h1>
+    <div id="editPhoto" className="mb-0">
+      <h1 className="text-2xl font-bold text-gray-900">Edit Registration</h1>
       <div className="flex gap-2 mb-4">
         <button
           type="button"
@@ -171,44 +168,38 @@ export default function EditPhoto({
         <h2 className="text-lg font-medium text-gray-900 mb-4">Client Photo</h2>
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-3">
-              Photo Options
-            </label>
-
-            {/* Camera Option */}
-            <div className="mb-4">
-              <label
-                htmlFor="photo-camera"
-                className="block text-sm font-medium text-gray-600 mb-2"
-              >
-                📷 Take Photo with Camera
-              </label>
-              <input
-                type="file"
-                id="photo-camera"
-                accept="image/*"
-                capture="environment"
-                onChange={handlePhotoChange}
-                className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-black file:text-white hover:file:bg-gray-800"
-              />
-            </div>
-
             {/* Upload Option */}
             <div className="mb-4">
-              <label
-                htmlFor="photo-upload"
-                className="block text-sm font-medium text-gray-600 mb-2"
-              >
-                📁 Upload Existing Image
-              </label>
-              <input
-                type="file"
-                id="photo-upload"
-                accept="image/*"
-                onChange={handlePhotoChange}
-                className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-black file:text-white hover:file:bg-gray-800"
-              />
+              <div>
+                <div className="flex items-center gap-3">
+                  <button
+                    type="button"
+                    className="bg-black text-white text-sm font-semibold py-2 px-4 rounded-md hover:bg-gray-800"
+                    onClick={() =>
+                      document.getElementById("photo-upload").click()
+                    }
+                  >
+                    Upload Photo
+                  </button>
+
+                  <span className="text-sm text-gray-600 truncate max-w-[200px]">
+                    {photoData.name || "No file chosen"}
+                  </span>
+
+                  <input
+                    type="file"
+                    id="photo-upload"
+                    accept="image/*"
+                    onChange={handlePhotoChange}
+                    className="hidden"
+                  />
+                </div>
+              </div>
             </div>
+            <p className="mt-2 text-sm text-gray-500">
+              Photos are optimized to ~800KB while maintaining high quality.
+              Supported formats: JPG, PNG, GIF.
+            </p>
           </div>
 
           {photoPreview && (
@@ -218,7 +209,7 @@ export default function EditPhoto({
               </h3>
               <div className="w-48 h-48 border-2 border-gray-300 rounded-lg overflow-hidden">
                 <img
-                  src={photoPreview} //photoPreview}
+                  src={photoPreview}
                   alt="Client photo preview"
                   className="w-full h-full object-cover"
                 />
@@ -234,6 +225,6 @@ export default function EditPhoto({
           )}
         </div>
       </div>
-    </>
+    </div>
   );
 }

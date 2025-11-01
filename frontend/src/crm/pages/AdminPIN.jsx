@@ -3,27 +3,20 @@ import EmailTwoFactorVerify from "../components/EmailTwoFactorVerify";
 import { AuthServices } from "../../services/authService";
 import { tokenManager } from "../../tokenManager";
 import { useAuth } from "../../context/AuthContext";
-import { Navigate, useLocation, useNavigate } from "react-router-dom";
-import PasswordInput from "../ui/PasswordInput";
-import { Eye, EyeOff } from "lucide-react"; // optional: use lucide-react icons
+import { Link, Navigate, useLocation, useNavigate } from "react-router-dom";
+import { Eye, EyeOff } from "lucide-react";
 
 function InsertPin({ handleSubmit, formData, handleChange, error, loading }) {
   const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
+    <div className="lg:h-[calc(100vh-400px)] bg-gray-50 flex flex-col justify-center m-4">
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
-        <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-          Admin Access
-        </h2>
-        <p className="mt-2 text-center text-sm text-gray-600">
-          Enter your PIN to access the admin area
-        </p>
-      </div>
-
-      <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-        <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
+        <div className="bg-white py-8 px-4 shadow rounded-lg sm:px-10">
+          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
+            Admin Access
+          </h2>
           <form className="space-y-6" onSubmit={handleSubmit}>
             {error && (
               <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
@@ -46,7 +39,7 @@ function InsertPin({ handleSubmit, formData, handleChange, error, loading }) {
                   required
                   value={formData.email}
                   onChange={handleChange}
-                  className="appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-black focus:border-black focus:z-10 sm:text-sm text-left text-2xl tracking-widest"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black resize-y appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-black focus:border-black focus:z-10  text-left  tracking-widest text-sm"
                   placeholder="Enter your email"
                 />
               </div>
@@ -67,7 +60,7 @@ function InsertPin({ handleSubmit, formData, handleChange, error, loading }) {
                   required
                   value={formData.password}
                   onChange={handleChange}
-                  className="appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-black focus:border-black focus:z-10 sm:text-sm text-left text-2xl tracking-widest pr-10"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black resize-y appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-black focus:border-black focus:z-10  text-left  tracking-widest text-sm"
                   placeholder="Enter your password"
                 />
                 <button
@@ -78,6 +71,22 @@ function InsertPin({ handleSubmit, formData, handleChange, error, loading }) {
                   {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                 </button>
               </div>
+            </div>
+            <div>
+              {/* Conditionally render the verification hint */}
+              {error === "Please verify your email first" && (
+                <p className="text-sm text-gray-700">
+                  If you did not receive a verification email, please check your
+                  spam folder or{" "}
+                  <Link
+                    to="/verify-email"
+                    className="text-blue-600 hover:underline font-medium"
+                  >
+                    resend it here
+                  </Link>
+                  .
+                </p>
+              )}
             </div>
 
             <div>

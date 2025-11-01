@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { GeneralServices } from "../../services/generalService";
+import { useRegistration } from "../../context/RegistrationContext";
 
 function EditPopup({
   editingDisposition,
@@ -42,6 +43,7 @@ function EditPopup({
               id="editDispositionName"
               defaultValue={editingDisposition.name}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black"
+              maxLength={"30"}
             />
           </div>
 
@@ -115,11 +117,10 @@ function EditPopup({
   );
 }
 
-export default function DispositionManager({
-  setShowDispositionManager,
-  availableDispositions,
-  getDispositions,
-}) {
+export default function DispositionManager() {
+  const { setShowDispositionManager, dispositions, getDispositions } =
+    useRegistration();
+
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
@@ -234,11 +235,11 @@ export default function DispositionManager({
   // Filter dispositions based on search
   const getFilteredDispositions = () => {
     if (!dispositionSearch.trim()) {
-      return availableDispositions;
+      return dispositions;
     }
 
     const searchTerm = dispositionSearch.toLowerCase();
-    return availableDispositions.filter((disposition) =>
+    return dispositions.filter((disposition) =>
       disposition.name.toLowerCase().includes(searchTerm),
     );
   };
@@ -310,6 +311,7 @@ export default function DispositionManager({
                 onChange={(e) => setNewDispositionName(e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black"
                 placeholder="Enter disposition name (e.g., ACTIVE, PENDING)"
+                maxLength={"30"}
               />
             </div>
             <div className="flex items-center gap-2">

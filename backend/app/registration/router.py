@@ -10,7 +10,7 @@ from app.authentication.schemas import UserRead
 from app.email.messages import FinalizedEmailMessage
 from app.email.service import EmailService
 from app.config import settings
-from app.objects.services import ObjectService
+from app.objects.services import ObjectService, PhotoService
 from app.registration.schemas import (
     ActivityCreate,
     ActivityRead,
@@ -117,8 +117,13 @@ async def delete_patient_by_id(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Patient not found.",
         )
-    await ObjectService.delete_objects("photos", str(id))
-    await ObjectService.delete_objects("attachments", str(id))
+
+    # Fail quietly if objects don't exist
+    for bucket in ["photos", "attachments"]:
+        try:
+            await ObjectService.delete_objects(bucket, str(id))
+        except Exception:
+            pass
 
     return {"message": "Patient deleted successfully."}
 
@@ -219,16 +224,28 @@ async def update_patient_status(
         )
 
     if data.status == "finalized":
-        subject = (
-            f"New Registration - {patient.first_name} {patient.last_name}"
-        )
-        (
-            EmailService()
-            .recipient(settings.support_email)
-            .subject(subject)
-            .body(FinalizedEmailMessage(patient.model_dump()))
-            .send()
-        )
+        try:
+            subject = (
+                f"New Registration - {patient.first_name} {patient.last_name}"
+            )
+
+            email = (
+                EmailService()
+                .recipient(settings.support_email)
+                .subject(subject)
+                .body(FinalizedEmailMessage(patient.model_dump()))
+            )
+
+            photo_key = await PhotoService.get_patient_photo_key(id)
+            if photo_key:
+                await email.attach("photos", photo_key)
+
+            email.send()
+        except Exception:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Error sending registration email.",
+            )
     return {"message": "Patient updated successfully."}
 
 
@@ -511,10 +528,12 @@ async def create_dispensing(
     data: DispensingCreate,
     user: UserRead = Depends(get_current_user),
 ):
-    if not await DispensingService.check_medication(data.medication):
+    if not await DispensingService.check_medication(
+        patient_id, data.medication
+    ):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Medication none existant for client please create medication entry and retry.",
+            detail="Medication none existant for client please create medication and retry.",
         )
 
     if not await DispensingService.create_dispensing(patient_id, data):

@@ -224,8 +224,8 @@ const Services = () => {
                 Case Management
               </h3>
               <p className="text-gray-600">
-                Help navigating healthcare systems and connecting to community
-                resources.
+                Help navigating community resources and assistance with housing
+                applications.
               </p>
             </div>
 

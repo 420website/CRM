@@ -1,5 +1,4 @@
 import "./App.css";
-import { useEffect, useState } from "react";
 import { Navigate, Routes, Route, useLocation, Outlet } from "react-router-dom";
 import Header from "./components/Header";
 import Footer from "./components/Footer";
@@ -22,6 +21,8 @@ import { useAuth } from "./context/AuthContext";
 import VerifyEmail from "./crm/pages/VerifyEmail";
 import ShareViewer from "./crm/components/ShareViewer";
 import ScrollToTop from "./scroll.jsx";
+import { RegistrationProvider } from "./context/RegistrationContext.jsx";
+import { UsersProvider } from "./context/UserContext.jsx";
 import MobileOnlyWrapper from "./mobileOnlyWrapper.jsx";
 
 function AuthenticatedRoute() {
@@ -32,7 +33,11 @@ function AuthenticatedRoute() {
     return <Navigate to="/admin-pin" state={{ from: location }} replace />;
   }
 
-  return <Outlet />;
+  return (
+    <RegistrationProvider>
+      <Outlet />
+    </RegistrationProvider>
+  );
 }
 
 function AdminRoute() {
@@ -43,7 +48,11 @@ function AdminRoute() {
     return <Navigate to="/admin-menu" state={{ from: location }} replace />;
   }
 
-  return <Outlet />;
+  return (
+    <UsersProvider>
+      <Outlet />
+    </UsersProvider>
+  );
 }
 
 function StandardRoute() {
@@ -60,10 +69,10 @@ function StandardRoute() {
 function AppRoutes() {
   return (
     // <MobileOnlyWrapper>
-    <div className="App min-h-screen bg-gray-50">
+    <div className="App min-h-screen flex flex-col bg-gray-50">
       <ScrollToTop />
       <Header />
-      <main>
+      <main className="flex-grow flex flex-col">
         <Routes>
           {/* my420 website  */}
           <Route path="/" element={<Home />} />
@@ -79,7 +88,6 @@ function AppRoutes() {
           <Route path="/admin-pin" element={<AdminPIN />} />
           <Route path="/verify-email" element={<VerifyEmail />} />
           <Route path="/share-links" element={<ShareViewer />} />
-
           <Route element={<AuthenticatedRoute />}>
             <Route path="/admin-menu" element={<AdminMenu />} />
             <Route path="/admin-analytics" element={<AdminAnalytics />} />

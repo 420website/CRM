@@ -1,8 +1,23 @@
 import { useState, useEffect } from "react";
 import { PatientServices } from "../../services/patientServices";
+import ConfirmModal from "../components/ConfirmModal";
+import { useRegistration } from "../../context/RegistrationContext";
+import DatePicker from "../ui/DatePicker";
+import toast from "react-hot-toast";
+import { useAuth } from "../../context/AuthContext";
+import InteractionsManager from "../managers/InteractionsManager";
+import { normalizeFormData } from "../../utils/formatData";
 
 export default function Interactions({ setActiveTab, currentRegistrationId }) {
-  const [error, setError] = useState("");
+  const { userRole } = useAuth();
+  const {
+    interactions,
+    getInteractions,
+    setShowInteractionManager,
+    genericInteractions,
+    getGenericInteractions,
+    showInteractionManager,
+  } = useRegistration();
   const [loading, setLoading] = useState(false);
   const [interactionsFilter, setInteractionsFilter] = useState("all");
   const [interactionsSearch, setInteractionsSearch] = useState("");
@@ -10,68 +25,88 @@ export default function Interactions({ setActiveTab, currentRegistrationId }) {
   const [isSavingInteraction, setIsSavingInteraction] = useState(false);
   const [interactionsPerPage, setInteractionsPerPage] = useState(10);
   const [interactionsPage, setInteractionsPage] = useState(1);
-  const [savedInteractions, setSavedInteractions] = useState([]);
-
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deleteInteractionId, setDeleteInteractionId] = useState(null);
   const [interactionData, setInteractionData] = useState({
-    date: new Date().toISOString().split("T")[0], // Default to current date
+    date: new Date().toISOString().split("T")[0],
     description: "",
     referral_id: "",
     amount: "",
     payment_type: "",
     issued: "Select",
   });
-  const getInteractions = async (registrationId) => {
-    setLoading(true);
-    setError("");
 
-    const result =
-      await PatientServices.get_interactions_by_patient(registrationId);
-    if (result.success) {
-      setSavedInteractions(result.data || []);
-    } else {
-      if (result.status === 400 || result.status === 409) {
-        setError(result.message || "Error getting interactions.");
-      } else {
-        setError("Error getting interactions. Please try again.");
-      }
+  function validateForm() {
+    if (!currentRegistrationId) {
+      alert("Please complete the Patient tab first to save dispensing.");
+      setActiveTab("patient");
+      return false;
     }
-    setLoading(false);
-  };
+
+    if (!interactionData.date || interactionData.date === "") {
+      toast.error("Please select a date");
+      return false;
+    }
+
+    if (!interactionData.description || interactionData.description === "") {
+      toast.error("Please select a description");
+      return false;
+    }
+
+    if (interactionData.amount !== "" && interactionData.payment_type === "") {
+      toast.error("Please select a payment type");
+      return false;
+    }
+
+    if (
+      interactionData.description === "Referral" &&
+      interactionData.referral_id === ""
+    ) {
+      toast.error("Please set a referral id");
+      return false;
+    }
+
+    return true;
+  }
 
   const saveInteraction = async () => {
+    if (!validateForm()) {
+      return;
+    }
     editingInteractionId ? updateInteraction() : createInteraction();
   };
 
   const createInteraction = async () => {
     setLoading(true);
-    setError("");
-
-    if (!currentRegistrationId) {
-      alert("Please complete the Client tab first to save interactions.");
-      setActiveTab("client");
-      return;
-    }
-
-    if (!interactionData.description || interactionData.description === "") {
-      alert("Please select a description");
-      return;
-    }
-
     setIsSavingInteraction(true);
+
+    let data = interactionData;
+    data = { ...data, amount: parseFloat(interactionData.amount) || 0 };
+
+    if (interactionData.issued === "Select") {
+      data = { ...data, issued: null };
+    }
+
+    if (data.referral_id !== "" && data.description !== "Referral") {
+      data.referral_id = null;
+    }
+
+    data = normalizeFormData(data);
 
     const result = await PatientServices.create_interaction(
       currentRegistrationId,
-      interactionData,
+      data,
     );
 
     if (result.success) {
-      await getInteractions(currentRegistrationId);
+      getInteractions(currentRegistrationId);
       clearInteractionForm();
+      toast.success("Interaction saved successfully");
     } else {
       if (result.status === 400 || result.status === 409) {
-        setError(result.message || "Error creating interaction.");
+        toast.error(result.message || "Error creating interaction.");
       } else {
-        setError("Error creating interaction. Please try again.");
+        toast.error("Error creating interaction. Please try again.");
       }
     }
     setLoading(false);
@@ -80,64 +115,70 @@ export default function Interactions({ setActiveTab, currentRegistrationId }) {
 
   const updateInteraction = async () => {
     setLoading(true);
-    setError("");
-
-    if (!currentRegistrationId) {
-      alert("Please complete the Client tab first to save interactions.");
-      setActiveTab("client");
-      return;
-    }
-
-    if (!interactionData.description || interactionData.description === "") {
-      alert("Please select a description");
-      return;
-    }
-
     setIsSavingInteraction(true);
+
+    let data = interactionData;
+    data = { ...data, amount: parseFloat(interactionData.amount) || 0 };
+
+    if (data.amount === 0) {
+      data.payment_type = null;
+    }
+
+    if (interactionData.issued === "Select") {
+      data = { ...data, issued: null };
+    }
+
+    if (data.referral_id !== "" && data.description !== "Referral") {
+      data.referral_id = null;
+    }
+
+    data = normalizeFormData(data);
 
     const result = await PatientServices.update_interaction(
       currentRegistrationId,
       editingInteractionId,
-      interactionData,
+      data,
     );
 
     if (result.success) {
-      await getInteractions(currentRegistrationId);
+      getInteractions(currentRegistrationId);
       clearInteractionForm();
+      toast.success("Interaction updated successfully");
     } else {
       if (result.status === 400 || result.status === 409) {
-        setError(result.message || "Error updating interaction.");
+        toast.error(result.message || "Error updating interaction.");
       } else {
-        setError("Error updating interaction. Please try again.");
+        toast.error("Error updating interaction. Please try again.");
       }
     }
     setLoading(false);
     setIsSavingInteraction(false);
   };
 
-  const deleteInteraction = async (interactionId) => {
-    if (!window.confirm("Are you sure you want to delete this interaction?")) {
-      return;
-    }
-
+  const deleteInteraction = async () => {
     setLoading(true);
-    setError("");
 
     const result = await PatientServices.delete_interaction_by_id(
       currentRegistrationId,
-      interactionId,
+      deleteInteractionId,
     );
 
     if (result.success) {
-      await getInteractions(currentRegistrationId);
+      getInteractions(currentRegistrationId);
+      toast.success("Interaction deleted successfully");
     } else {
       if (result.status === 400 || result.status === 409) {
-        setError(result.message || "Error deleting interaction.");
+        toast.error(result.message || "Error deleting interaction.");
       } else {
-        setError("Error deleting interaction. Please try again.");
+        toast.error("Error deleting interaction. Please try again.");
       }
     }
     setLoading(false);
+  };
+
+  const handleDeleteInteraction = async (id) => {
+    setDeleteInteractionId(id);
+    setShowDeleteConfirm(true);
   };
 
   // Interaction management functions
@@ -150,19 +191,20 @@ export default function Interactions({ setActiveTab, currentRegistrationId }) {
   };
 
   const editInteraction = (interaction) => {
+    const amount = parseFloat(interaction.amount) > 0 ? interaction.amount : "";
+
     setInteractionData({
       date: interaction.date || new Date().toISOString().split("T")[0],
       description: interaction.description || "",
       referral_id: interaction.referral_id || "",
-      amount: interaction.amount || "",
+      amount: amount,
       payment_type: interaction.payment_type || "",
       issued: interaction.issued || "Select",
     });
     setEditingInteractionId(interaction.id);
+
     // Scroll to top of interaction form
-    document
-      .querySelector("#interactionForm")
-      ?.scrollIntoView({ behavior: "smooth" });
+    document.querySelector("#tabs")?.scrollIntoView({ behavior: "smooth" });
   };
 
   const clearInteractionForm = () => {
@@ -172,7 +214,6 @@ export default function Interactions({ setActiveTab, currentRegistrationId }) {
       referral_id: "",
       amount: "",
       payment_type: "",
-      location: "",
       issued: "Select",
     });
     setEditingInteractionId(null);
@@ -180,7 +221,7 @@ export default function Interactions({ setActiveTab, currentRegistrationId }) {
 
   // Enhanced filter and search for interactions
   const getFilteredInteractions = () => {
-    let filtered = [...savedInteractions];
+    let filtered = [...interactions];
 
     // Apply date filter
     const today = new Date();
@@ -252,16 +293,11 @@ export default function Interactions({ setActiveTab, currentRegistrationId }) {
     setInteractionsPage(1);
   }, [interactionsFilter, interactionsSearch]);
 
-  // Load interactions when registration ID changes
-  useEffect(() => {
-    if (currentRegistrationId) {
-      getInteractions(currentRegistrationId);
-    }
-  }, [currentRegistrationId]);
-
   return (
     <div>
       <div className="space-y-6">
+        {showInteractionManager && <InteractionsManager />}
+
         {/* Registration ID Check */}
         {!currentRegistrationId && (
           <div className="border-2 border-orange-200 bg-orange-50 p-4 rounded-lg">
@@ -303,7 +339,14 @@ export default function Interactions({ setActiveTab, currentRegistrationId }) {
             </div>
           </div>
         )}
-
+        {showDeleteConfirm && (
+          <ConfirmModal
+            message={"Confirm delete interaction"}
+            subMessage={"This action cannot be undone"}
+            confirm={deleteInteraction}
+            setShowConfirm={setShowDeleteConfirm}
+          />
+        )}
         {/* Interaction Form */}
         <div
           className={
@@ -322,23 +365,33 @@ export default function Interactions({ setActiveTab, currentRegistrationId }) {
               >
                 Date
               </label>
-              <input
-                type="date"
-                id="date"
+              <DatePicker
                 name="date"
                 value={interactionData.date}
                 onChange={handleInteractionChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black"
+                className="w-full px-3 py-1.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black"
+                placeholder="mm/dd/yyyy"
               />
             </div>
 
             <div>
-              <label
-                htmlFor="description"
-                className="block text-sm font-medium text-gray-700 mb-2"
-              >
-                Description *
-              </label>
+              <div className="flex items-center justify-between mb-2">
+                <label
+                  htmlFor="description"
+                  className="block text-sm font-medium text-gray-700 mb-2"
+                >
+                  Description *
+                </label>
+                {userRole == "admin" && (
+                  <button
+                    type="button"
+                    onClick={() => setShowInteractionManager(true)}
+                    className="text-blue-600 hover:text-blue-800 text-sm"
+                  >
+                    Manage Descriptions
+                  </button>
+                )}
+              </div>
               <select
                 id="description"
                 name="description"
@@ -347,28 +400,26 @@ export default function Interactions({ setActiveTab, currentRegistrationId }) {
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black"
               >
                 <option value="">Select</option>
-                <option value="Screening">Screening</option>
-                <option value="Adherence">Adherence</option>
-                <option value="Bloodwork">Bloodwork</option>
-                <option value="Discretionary">Discretionary</option>
-                <option value="Referral">Referral</option>
-                <option value="Consultation">Consultation</option>
-                <option value="Outreach">Outreach</option>
-                <option value="Repeat">Repeat</option>
-                <option value="Results">Results</option>
-                <option value="Safe Supply">Safe Supply</option>
-                <option value="Lab Req">Lab Req</option>
-                <option value="Telephone">Telephone</option>
-                <option value="Remittance">Remittance</option>
-                <option value="Update">Update</option>
-                <option value="Counselling">Counselling</option>
-                <option value="Trillium">Trillium</option>
-                <option value="Housing">Housing</option>
-                <option value="SOT">SOT</option>
-                <option value="EOT">EOT</option>
-                <option value="SVR">SVR</option>
-                <option value="Locate">Locate</option>
-                <option value="Staff">Staff</option>
+                {/* Most Frequently Used */}
+                {genericInteractions
+                  .filter((i) => i.is_frequent)
+                  .map((i) => (
+                    <option key={i.id} value={i.name}>
+                      {i.name}
+                    </option>
+                  ))}
+                {/* Separator */}
+                {genericInteractions.filter((i) => !i.is_frequent).length >
+                  0 && <option disabled>-------</option>}
+                {/* All Others in Alphabetical Order */}
+                {genericInteractions
+                  .filter((i) => !i.is_frequent)
+                  .sort((a, b) => a.name.localeCompare(b.name))
+                  .map((i) => (
+                    <option key={i.id} value={i.name}>
+                      {i.name}
+                    </option>
+                  ))}
               </select>
             </div>
 
@@ -501,11 +552,10 @@ export default function Interactions({ setActiveTab, currentRegistrationId }) {
               <h3 className="text-lg font-medium text-gray-900">
                 Saved Interactions
               </h3>
-              {savedInteractions.length !==
-                getFilteredInteractions().length && (
+              {interactions.length !== getFilteredInteractions().length && (
                 <p className="text-sm text-gray-500">
                   Showing {getFilteredInteractions().length} of{" "}
-                  {savedInteractions.length} total interactions
+                  {interactions.length} total interactions
                 </p>
               )}
             </div>
@@ -558,7 +608,7 @@ export default function Interactions({ setActiveTab, currentRegistrationId }) {
           </div>
 
           {/* Performance Warning for Large Interaction Sets */}
-          {savedInteractions.length > 50 && interactionsFilter === "all" && (
+          {interactions.length > 50 && interactionsFilter === "all" && (
             <div className="bg-blue-50 border border-blue-200 rounded-md p-3">
               <div className="flex items-center gap-2">
                 <svg
@@ -575,8 +625,8 @@ export default function Interactions({ setActiveTab, currentRegistrationId }) {
                   />
                 </svg>
                 <p className="text-sm text-blue-700">
-                  You have {savedInteractions.length} interactions. Consider
-                  using filters for better performance.
+                  You have {interactions.length} interactions. Consider using
+                  filters for better performance.
                 </p>
               </div>
             </div>
@@ -586,7 +636,7 @@ export default function Interactions({ setActiveTab, currentRegistrationId }) {
           {getFilteredInteractions().length === 0 ? (
             <div className="text-center py-8 text-gray-500">
               <p>
-                {savedInteractions.length === 0
+                {interactions.length === 0
                   ? "No interactions have been saved yet."
                   : "No interactions match your search criteria."}
               </p>
@@ -664,7 +714,9 @@ export default function Interactions({ setActiveTab, currentRegistrationId }) {
                         </button>
                         <button
                           type="button"
-                          onClick={() => deleteInteraction(interaction.id)}
+                          onClick={() =>
+                            handleDeleteInteraction(interaction.id)
+                          }
                           className="text-red-600 hover:text-red-800 text-sm"
                           title="Delete interaction"
                         >

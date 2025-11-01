@@ -116,6 +116,44 @@ export const GeneralServices = {
   },
 
   // ======================
+  // DOCUMENT TYPE
+  // ======================
+  create_document_type: async (data) => {
+    return apiCall(
+      () => api.post("/general/document-type", data),
+      "Creating document type failed.",
+    );
+  },
+
+  get_document_types: async () => {
+    return apiCall(
+      () => api.get("/general/document-type"),
+      "Fetching document type failed.",
+    );
+  },
+
+  delete_document_type_by_id: async (id) => {
+    return apiCall(
+      () => api.delete(`/general/document-type/${id}`),
+      "Deleting document type by ID failed.",
+    );
+  },
+
+  delete_document_type_by_name: async (name) => {
+    return apiCall(
+      () => api.delete(`/general/document-type/by-name/${name}`),
+      "Deleting document type by name failed.",
+    );
+  },
+
+  update_document_type: async (id, data) => {
+    return apiCall(
+      () => api.patch(`/general/document-type/${id}`, data),
+      "Updating document type failed.",
+    );
+  },
+
+  // ======================
   // REFERRAL SITE
   // ======================
   create_referral_site: async (data) => {
@@ -150,6 +188,122 @@ export const GeneralServices = {
     return apiCall(
       () => api.patch(`/general/referral-site/${id}`, data),
       "Updating referral site failed.",
+    );
+  },
+
+  // ======================
+  // Medication Templates
+  // ======================
+  create_medication_template: async (data) => {
+    return apiCall(
+      () => api.post("/general/medication-template", data),
+      "Creating medication templates failed.",
+    );
+  },
+
+  get_medication_template: async () => {
+    return apiCall(
+      () => api.get("/general/medication-template"),
+      "Fetching medication templates failed.",
+    );
+  },
+
+  delete_medication_template_by_id: async (id) => {
+    return apiCall(
+      () => api.delete(`/general/medication-template/${id}`),
+      "Deleting medication templates by ID failed.",
+    );
+  },
+
+  delete_medication_template_by_name: async (name) => {
+    return apiCall(
+      () => api.delete(`/general/medication-template/by-name/${name}`),
+      "Deleting medication templates by name failed.",
+    );
+  },
+
+  update_medication_template: async (id, data) => {
+    return apiCall(
+      () => api.patch(`/general/medication-template/${id}`, data),
+      "Updating medication templates failed.",
+    );
+  },
+  // ======================
+  // Medication outcomes
+  // ======================
+  create_medication_outcome: async (data) => {
+    return apiCall(
+      () => api.post("/general/medication-outcome", data),
+      "Creating medication outcomes failed.",
+    );
+  },
+
+  get_medication_outcomes: async () => {
+    return apiCall(
+      () => api.get("/general/medication-outcome"),
+      "Fetching medication outcomes failed.",
+    );
+  },
+
+  delete_medication_outcome_by_id: async (id) => {
+    return apiCall(
+      () => api.delete(`/general/medication-outcome/${id}`),
+      "Deleting medication outcome by ID failed.",
+    );
+  },
+
+  delete_medication_outcome_by_name: async (name) => {
+    return apiCall(
+      () => api.delete(`/general/medication-outcome/by-name/${name}`),
+      "Deleting medication outcome by name failed.",
+    );
+  },
+
+  update_medication_outcome: async (id, data) => {
+    return apiCall(
+      () => api.patch(`/general/medication-outcome/${id}`, data),
+      "Updating medication outcome failed.",
+    );
+  },
+  // ======================
+  // Medication Templates
+  // ======================
+  create_general: async (type, data) => {
+    data = { ...data, type: type };
+
+    return apiCall(
+      () => api.post("/general/general", data),
+      "Creating general failed.",
+    );
+  },
+
+  get_general_type: async (type) => {
+    return apiCall(
+      () => api.get(`/general/general/${type}`),
+      `Fetching ${type} failed.`,
+    );
+  },
+
+  delete_general_by_id: async (type, id) => {
+    return apiCall(
+      () => api.delete(`/general/general/${id}`),
+      `Deleting ${type} by ID failed.`,
+    );
+  },
+
+  delete_general_by_name: async (type, name) => {
+    return apiCall(
+      () => api.delete(`/general/general/by-name/${type}/${name}`),
+      `Deleting ${type} by name failed.`,
+    );
+  },
+
+  update_general: async (type, id, data) => {
+    data = { ...data, type: type };
+
+    return apiCall(
+      () => api.patch(`/general/general/${id}`, data),
+      `Updating ${type} failed.`,
     );
   },
 };

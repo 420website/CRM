@@ -11,13 +11,16 @@ from app.share_links.router import router as share_link_router
 from app.objects.router import router as object_router
 from app.config import settings
 from app.database import database, minio_client
+from app.database import redis_client
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     await database.connect()
     await minio_client.connect()
+    await redis_client.connect()
     yield
+    await redis_client.disconnect()
     await minio_client.disconnect()
     await database.disconnect()
 

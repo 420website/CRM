@@ -6,6 +6,14 @@ from app.general.schemas import (
     ClinicalTemplateUpdate,
     Disposition,
     DispositionUpdate,
+    DocumentType,
+    DocumentTypeUpdate,
+    General,
+    GeneralUpdate,
+    Medication,
+    MedicationOutcome,
+    MedicationOutcomeUpdate,
+    MedicationUpdate,
     NotesTemplate,
     NotesTemplateUpdate,
     ReferralSite,
@@ -508,6 +516,220 @@ class TestGeneralServiceClinical(IsolatedAsyncioTestCase):
         self.assertFalse(result)
 
 
+class TestGeneralServiceDocumentType(IsolatedAsyncioTestCase):
+
+    async def _cleanup_test_data(self):
+        """Helper method to clean up test data"""
+        test_names = [
+            "Consultation Report",
+            "HCV Perscription",
+            "Treatment Consent",
+            "test_document",
+        ]
+        for name in test_names:
+            try:
+                await GeneralService.delete_document_type(name)
+            except Exception:
+                pass  # Ignore if disposition doesn't exist
+
+    async def asyncSetUp(self) -> None:
+        asyncio.get_event_loop().set_debug(False)
+        await database.connect()
+        await self._cleanup_test_data()
+
+    async def asyncTearDown(self) -> None:
+        await database.disconnect()
+
+    async def test_create_document_type_success(self):
+        document_type = DocumentType(
+            name="Consultation Report",
+            is_default=False,
+            is_frequent=False,
+        )
+
+        # Test
+        result = await GeneralService.create_document_type(document_type)
+        self.assertTrue(result)
+
+        # Validate
+        doc_types = await GeneralService.get_document_types()
+        doc_type = [t for t in doc_types if t.name == "Consultation Report"]
+        self.assertEqual(doc_type[0].name, "Consultation Report")
+
+        await GeneralService.delete_disposition("test_disposition")
+
+    async def test_create_document_type_with_default(self):
+        doc_type = DocumentType(
+            name="HCV Perscription",
+            is_default=True,
+            is_frequent=False,
+        )
+
+        # Test
+        result = await GeneralService.create_document_type(doc_type)
+        self.assertTrue(result)
+
+        # Validate
+        doc_types = await GeneralService.get_document_types()
+        doc_type = [t for t in doc_types if t.name == "HCV Perscription"]
+
+        self.assertEqual(doc_types[0].name, "HCV Perscription")
+        self.assertTrue(doc_types[0].is_default)
+
+        await GeneralService.delete_document_type("HCV Persciption")
+
+    async def test_create_duplicate_document_type_name(self):
+        doc_type = DocumentType(
+            name="HCV Perscription",
+            is_default=True,
+            is_frequent=False,
+        )
+
+        # Create first disposition
+        result1 = await GeneralService.create_document_type(doc_type)
+        self.assertTrue(result1)
+
+        # This might raise an exception or return False depending on implementation
+        with self.assertRaises(Exception):
+            await GeneralService.create_document_type(doc_type)
+
+        await GeneralService.delete_disposition("HCV Perscription")
+
+    async def test_get_doc_types_empty(self):
+        doc_types = await GeneralService.get_document_types()
+
+        self.assertIsInstance(doc_types, list)
+
+    async def test_get_document_type_with_data(self):
+        # Create test dispositions
+        doc_type1 = DocumentType(
+            name="HCV Perscription",
+            is_default=True,
+            is_frequent=False,
+        )
+        doc_type2 = DocumentType(
+            name="Consultation Report",
+            is_default=True,
+            is_frequent=False,
+        )
+
+        await GeneralService.create_document_type(doc_type1)
+        await GeneralService.create_document_type(doc_type2)
+
+        docs = await GeneralService.get_document_types()
+
+        self.assertIsInstance(docs, list)
+        self.assertGreaterEqual(len(docs), 2)
+
+        # Verify our dispositions are in the results
+        doc_names = [d.name for d in docs]
+        self.assertIn("HCV Perscription", doc_names)
+        self.assertIn("Consultation Report", doc_names)
+
+        # Verify disposition structure
+        for doc in docs:
+            self.assertIsInstance(doc, DocumentType)
+            self.assertIsInstance(doc.name, str)
+            self.assertIsInstance(doc.is_default, bool)
+
+        await GeneralService.delete_disposition("HCV Perscription")
+        await GeneralService.delete_disposition("Consultation Report")
+
+    async def test_delete_document_type_success(self):
+        doc_type = DocumentType(
+            name="HCV Perscription",
+            is_default=True,
+            is_frequent=False,
+        )
+        await GeneralService.create_document_type(doc_type)
+
+        # Delete the disposition
+        result = await GeneralService.delete_document_type("HCV Perscription")
+        self.assertTrue(result)
+
+        # Verify disposition was deleted
+        docs = await GeneralService.get_document_types()
+        doc_names = [d.name for d in docs]
+        self.assertNotIn("HCV Perscription", doc_names)
+
+    async def test_delete_document_type_not_found(self):
+        result = await GeneralService.delete_document_type("non_existent")
+
+        self.assertFalse(result)
+
+    async def test_update_document_type_success(self):
+        doc = DocumentType(
+            name="HCV Perscription",
+            is_default=False,
+            is_frequent=False,
+        )
+        id = await GeneralService.create_document_type(doc)
+
+        # Update the disposition
+        update_data = DocumentTypeUpdate(
+            name="test_document",
+            is_default=True,
+        )
+
+        result = await GeneralService.update_document_type(id, update_data)
+        self.assertTrue(result)
+
+        # Verify disposition was updated
+        docs = await GeneralService.get_document_types()
+        doc = [t for t in docs if t.name == "test_document"]
+
+        self.assertIsNotNone(doc[0])
+        self.assertTrue(doc[0].is_default)
+
+        await GeneralService.delete_disposition("test_document")
+
+    async def test_update_document_type_partial(self):
+        doc = DocumentType(
+            name="HCV Perscription",
+            is_default=False,
+            is_frequent=False,
+        )
+        id = await GeneralService.create_document_type(doc)
+
+        # Partial update - only is_frequent
+        update_data = DocumentTypeUpdate(name="test_document")
+        result = await GeneralService.update_document_type(id, update_data)
+        self.assertTrue(result)
+
+        # Verify only is_frequent was updated
+        docs = await GeneralService.get_document_types()
+        doc = [t for t in docs if t.name == "test_document"]
+
+        self.assertIsNotNone(doc[0])
+        self.assertFalse(doc[0].is_default)
+
+        await GeneralService.delete_document_type("test_document")
+
+    async def test_update_document_type_empty_updates(self):
+        doc = DocumentType(
+            name="HCV Perscription",
+            is_default=False,
+            is_frequent=False,
+        )
+        id = await GeneralService.create_document_type(doc)
+
+        # Empty update
+        update_data = DocumentTypeUpdate()
+        result = await GeneralService.update_document_type(id, update_data)
+
+        self.assertFalse(result)
+
+        # Clean up
+        await GeneralService.delete_document_type("HCV Perscription")
+
+    async def test_update_document_type_not_found(self):
+        update_data = DocumentTypeUpdate(name="non_existent")
+
+        result = await GeneralService.update_document_type(1000, update_data)
+
+        self.assertFalse(result)
+
+
 class TestGeneralServiceDisposition(IsolatedAsyncioTestCase):
 
     async def _cleanup_test_data(self):
@@ -1005,4 +1227,768 @@ class TestGeneralServiceReferralSite(IsolatedAsyncioTestCase):
 
         result = await GeneralService.update_referral_site(1000, update_data)
 
+        self.assertFalse(result)
+
+
+class TestGeneralServiceMedication(IsolatedAsyncioTestCase):
+    async def _cleanup_test_data(self):
+        """Helper method to clean up test data"""
+        # Clean up test medications
+        test_names = [
+            "advil",
+            "tylenol",
+            "epculsa",
+            "test_medication",
+            "default_medication",
+            "test_medication_2",
+        ]
+        for name in test_names:
+            try:
+                await GeneralService.delete_medication(name)
+            except Exception:
+                pass  # Ignore if medication doesn't exist
+
+    async def asyncSetUp(self) -> None:
+        asyncio.get_event_loop().set_debug(False)
+        await database.connect()
+        await self._cleanup_test_data()
+
+    async def asyncTearDown(self) -> None:
+        await database.disconnect()
+
+    async def test_create_medication_success(self):
+        """Test successful creation of a medication"""
+        medication = Medication(
+            name="test_medication",
+            is_frequent=False,
+            is_default=False,
+        )
+        # Test
+        result = await GeneralService.create_medication(medication)
+        self.assertTrue(result)
+        # Validate
+        medications = await GeneralService.get_medications()
+        medication = [t for t in medications if t.name == "test_medication"]
+        self.assertEqual(medication[0].name, "test_medication")
+        await GeneralService.delete_medication("test_medication")
+
+    async def test_create_medication_with_default(self):
+        """Test creation of a default medication"""
+        medication = Medication(
+            name="default_medication",
+            is_frequent=True,
+            is_default=True,
+        )
+        # Test
+        result = await GeneralService.create_medication(medication)
+        self.assertTrue(result)
+        # Validate
+        medications = await GeneralService.get_medications()
+        medication = [t for t in medications if t.name == "default_medication"]
+        self.assertEqual(medication[0].name, "default_medication")
+        self.assertTrue(medication[0].is_default)
+        await GeneralService.delete_medication("default_medication")
+
+    async def test_create_duplicate_medication_name(self):
+        """Test creating medication with duplicate name (should handle gracefully)"""
+        medication = Medication(
+            name="test_medication",
+            is_frequent=False,
+            is_default=False,
+        )
+        # Create first medication
+        result1 = await GeneralService.create_medication(medication)
+        self.assertTrue(result1)
+        # This might raise an exception or return False depending on implementation
+        with self.assertRaises(Exception):
+            await GeneralService.create_medication(medication)
+        await GeneralService.delete_medication("test_medication")
+
+    async def test_get_medication_empty(self):
+        """Test getting medications when none exist"""
+        medications = await GeneralService.get_medications()
+        self.assertIsInstance(medications, list)
+        # self.assertEqual(len(medications), 0)
+
+    async def test_get_medication_with_data(self):
+        """Test getting medications when data exists"""
+        # Create test medications
+        medication1 = Medication(
+            name="test_medication",
+            is_frequent=False,
+            is_default=False,
+        )
+        medication2 = Medication(
+            name="test_medication_2",
+            is_frequent=True,
+            is_default=True,
+        )
+        await GeneralService.create_medication(medication1)
+        await GeneralService.create_medication(medication2)
+        medications = await GeneralService.get_medications()
+        self.assertIsInstance(medications, list)
+        self.assertGreaterEqual(len(medications), 2)
+        # Verify our medications are in the results
+        medication_names = [d.name for d in medications]
+        self.assertIn("test_medication", medication_names)
+        self.assertIn("test_medication_2", medication_names)
+        # Verify medication structure
+        for medication in medications:
+            self.assertIsInstance(medication, Medication)
+            self.assertIsInstance(medication.name, str)
+            self.assertIsInstance(medication.is_frequent, bool)
+            self.assertIsInstance(medication.is_default, bool)
+        await GeneralService.delete_medication("test_medication")
+        await GeneralService.delete_medication("test_medication_2")
+
+    async def test_delete_medication_success(self):
+        """Test successful deletion of a medication"""
+        # Create medication first
+        medication = Medication(
+            name="test_medication",
+            is_frequent=False,
+            is_default=False,
+        )
+        await GeneralService.create_medication(medication)
+        # Delete the medication
+        result = await GeneralService.delete_medication("test_medication")
+        self.assertTrue(result)
+        # Verify medication was deleted
+        medications = await GeneralService.get_medications()
+        medication_names = [d.name for d in medications]
+        self.assertNotIn("test_medication", medication_names)
+
+    async def test_delete_medication_not_found(self):
+        """Test deletion of non-existent medication"""
+        result = await GeneralService.delete_medication(
+            "non_existent_medication"
+        )
+        self.assertFalse(result)
+
+    async def test_update_medication_success(self):
+        """Test successful update of a medication"""
+        # Create medication first
+        medication = Medication(
+            name="test_medication",
+            is_frequent=False,
+            is_default=False,
+        )
+        id = await GeneralService.create_medication(medication)
+        # Update the medication
+        update_data = MedicationUpdate(
+            name="test_medication",
+            is_frequent=True,
+            is_default=True,
+        )
+        result = await GeneralService.update_medication(id, update_data)
+        self.assertTrue(result)
+        # Verify medication was updated
+        medications = await GeneralService.get_medications()
+        medication = [t for t in medications if t.name == "test_medication"]
+        self.assertIsNotNone(medication[0])
+        self.assertTrue(medication[0].is_frequent)
+        self.assertTrue(medication[0].is_default)
+        await GeneralService.delete_medication("test_medication")
+
+    async def test_update_medication_partial(self):
+        """Test partial update of a medication"""
+        # Create medication first
+        medication = Medication(
+            name="test_medication",
+            is_frequent=False,
+            is_default=False,
+        )
+        id = await GeneralService.create_medication(medication)
+        # Partial update - only is_frequent
+        update_data = MedicationUpdate(
+            name="test_medication",
+            is_frequent=True,
+        )
+        result = await GeneralService.update_medication(id, update_data)
+        self.assertTrue(result)
+        # Verify only is_frequent was updated
+        medications = await GeneralService.get_medications()
+        medication = [t for t in medications if t.name == "test_medication"]
+        self.assertIsNotNone(medication[0])
+        self.assertTrue(medication[0].is_frequent)
+        self.assertFalse(medication[0].is_default)
+        await GeneralService.delete_medication("test_medication")
+
+    async def test_update_medication_empty_updates(self):
+        """Test update with no actual changes"""
+        # Create medication first
+        medication = Medication(
+            name="test_medication",
+            is_frequent=False,
+            is_default=False,
+        )
+        id = await GeneralService.create_medication(medication)
+        # Empty update
+        update_data = MedicationUpdate()
+        result = await GeneralService.update_medication(id, update_data)
+        self.assertFalse(result)
+        await GeneralService.delete_medication("test_medication")
+
+    async def test_update_medication_not_found(self):
+        """Test update of non-existent medication"""
+        update_data = MedicationUpdate(
+            name="non_existent_medication",
+            is_frequent=True,
+        )
+        result = await GeneralService.update_medication(1000, update_data)
+        self.assertFalse(result)
+
+
+class TestGeneralServiceMedicationOutcome(IsolatedAsyncioTestCase):
+    async def _cleanup_test_data(self):
+        """Helper method to clean up test data"""
+        # Clean up test medication outcomes
+        test_names = [
+            "test_medication_outcome",
+            "test_medication_outcome_2",
+            "updated_medication_outcome",
+            "default_medication_outcome",
+        ]
+        for name in test_names:
+            try:
+                await GeneralService.delete_medication_outcome(name)
+            except Exception:
+                pass  # Ignore if medication outcome doesn't exist
+
+    async def asyncSetUp(self) -> None:
+        asyncio.get_event_loop().set_debug(False)
+        await database.connect()
+        await self._cleanup_test_data()
+
+    async def asyncTearDown(self) -> None:
+        await database.disconnect()
+
+    async def test_create_medication_outcome_success(self):
+        """Test successful creation of a medication outcome"""
+        medication_outcome = MedicationOutcome(
+            name="test_medication_outcome",
+            is_frequent=False,
+            is_default=False,
+        )
+        # Test
+        result = await GeneralService.create_medication_outcome(
+            medication_outcome
+        )
+        self.assertTrue(result)
+        # Validate
+        medication_outcomes = await GeneralService.get_medication_outcomes()
+        medication_outcome = [
+            t
+            for t in medication_outcomes
+            if t.name == "test_medication_outcome"
+        ]
+        self.assertEqual(medication_outcome[0].name, "test_medication_outcome")
+        await GeneralService.delete_medication_outcome(
+            "test_medication_outcome"
+        )
+
+    async def test_create_medication_outcome_with_default(self):
+        """Test creation of a default medication outcome"""
+        medication_outcome = MedicationOutcome(
+            name="default_medication_outcome",
+            is_frequent=True,
+            is_default=True,
+        )
+        # Test
+        result = await GeneralService.create_medication_outcome(
+            medication_outcome
+        )
+        self.assertTrue(result)
+        # Validate
+        medication_outcomes = await GeneralService.get_medication_outcomes()
+        medication_outcome = [
+            t
+            for t in medication_outcomes
+            if t.name == "default_medication_outcome"
+        ]
+        self.assertEqual(
+            medication_outcome[0].name, "default_medication_outcome"
+        )
+        self.assertTrue(medication_outcome[0].is_default)
+        await GeneralService.delete_medication_outcome(
+            "default_medication_outcome"
+        )
+
+    async def test_create_duplicate_medication_outcome_name(self):
+        """Test creating medication outcome with duplicate name (should handle gracefully)"""
+        medication_outcome = MedicationOutcome(
+            name="test_medication_outcome",
+            is_frequent=False,
+            is_default=False,
+        )
+        # Create first medication outcome
+        result1 = await GeneralService.create_medication_outcome(
+            medication_outcome
+        )
+        self.assertTrue(result1)
+        # This might raise an exception or return False depending on implementation
+        with self.assertRaises(Exception):
+            await GeneralService.create_medication_outcome(medication_outcome)
+        await GeneralService.delete_medication_outcome(
+            "test_medication_outcome"
+        )
+
+    async def test_get_medication_outcome_empty(self):
+        """Test getting medication outcomes when none exist"""
+        medication_outcomes = await GeneralService.get_medication_outcomes()
+        self.assertIsInstance(medication_outcomes, list)
+        # self.assertEqual(len(medication_outcomes), 0)
+
+    async def test_get_medication_outcome_with_data(self):
+        """Test getting medication outcomes when data exists"""
+        # Create test medication outcomes
+        medication_outcome1 = MedicationOutcome(
+            name="test_medication_outcome",
+            is_frequent=False,
+            is_default=False,
+        )
+        medication_outcome2 = MedicationOutcome(
+            name="test_medication_outcome_2",
+            is_frequent=True,
+            is_default=True,
+        )
+        await GeneralService.create_medication_outcome(medication_outcome1)
+        await GeneralService.create_medication_outcome(medication_outcome2)
+        medication_outcomes = await GeneralService.get_medication_outcomes()
+        self.assertIsInstance(medication_outcomes, list)
+        self.assertGreaterEqual(len(medication_outcomes), 2)
+        # Verify our medication outcomes are in the results
+        medication_outcome_names = [d.name for d in medication_outcomes]
+        self.assertIn("test_medication_outcome", medication_outcome_names)
+        self.assertIn("test_medication_outcome_2", medication_outcome_names)
+        # Verify medication outcome structure
+        for medication_outcome in medication_outcomes:
+            self.assertIsInstance(medication_outcome, MedicationOutcome)
+            self.assertIsInstance(medication_outcome.name, str)
+            self.assertIsInstance(medication_outcome.is_frequent, bool)
+            self.assertIsInstance(medication_outcome.is_default, bool)
+        await GeneralService.delete_medication_outcome(
+            "test_medication_outcome"
+        )
+        await GeneralService.delete_medication_outcome(
+            "test_medication_outcome_2"
+        )
+
+    async def test_delete_medication_outcome_success(self):
+        """Test successful deletion of a medication outcome"""
+        # Create medication outcome first
+        medication_outcome = MedicationOutcome(
+            name="test_medication_outcome",
+            is_frequent=False,
+            is_default=False,
+        )
+        await GeneralService.create_medication_outcome(medication_outcome)
+        # Delete the medication outcome
+        result = await GeneralService.delete_medication_outcome(
+            "test_medication_outcome"
+        )
+        self.assertTrue(result)
+        # Verify medication outcome was deleted
+        medication_outcomes = await GeneralService.get_medication_outcomes()
+        medication_outcome_names = [d.name for d in medication_outcomes]
+        self.assertNotIn("test_medication_outcome", medication_outcome_names)
+
+    async def test_delete_medication_outcome_not_found(self):
+        """Test deletion of non-existent medication outcome"""
+        result = await GeneralService.delete_medication_outcome(
+            "non_existent_medication_outcome"
+        )
+        self.assertFalse(result)
+
+    async def test_update_medication_outcome_success(self):
+        """Test successful update of a medication outcome"""
+        # Create medication outcome first
+        medication_outcome = MedicationOutcome(
+            name="test_medication_outcome",
+            is_frequent=False,
+            is_default=False,
+        )
+        id = await GeneralService.create_medication_outcome(medication_outcome)
+        # Update the medication outcome
+        update_data = MedicationOutcomeUpdate(
+            name="test_medication_outcome",
+            is_frequent=True,
+            is_default=True,
+        )
+        result = await GeneralService.update_medication_outcome(
+            id, update_data
+        )
+        self.assertTrue(result)
+        # Verify medication outcome was updated
+        medication_outcomes = await GeneralService.get_medication_outcomes()
+        medication_outcome = [
+            t
+            for t in medication_outcomes
+            if t.name == "test_medication_outcome"
+        ]
+        self.assertIsNotNone(medication_outcome[0])
+        self.assertTrue(medication_outcome[0].is_frequent)
+        self.assertTrue(medication_outcome[0].is_default)
+        await GeneralService.delete_medication_outcome(
+            "test_medication_outcome"
+        )
+
+    async def test_update_medication_outcome_partial(self):
+        """Test partial update of a medication outcome"""
+        # Create medication outcome first
+        medication_outcome = MedicationOutcome(
+            name="test_medication_outcome",
+            is_frequent=False,
+            is_default=False,
+        )
+        id = await GeneralService.create_medication_outcome(medication_outcome)
+        # Partial update - only is_frequent
+        update_data = MedicationOutcomeUpdate(
+            name="test_medication_outcome",
+            is_frequent=True,
+        )
+        result = await GeneralService.update_medication_outcome(
+            id, update_data
+        )
+        self.assertTrue(result)
+        # Verify only is_frequent was updated
+        medication_outcomes = await GeneralService.get_medication_outcomes()
+        medication_outcome = [
+            t
+            for t in medication_outcomes
+            if t.name == "test_medication_outcome"
+        ]
+        self.assertIsNotNone(medication_outcome[0])
+        self.assertTrue(medication_outcome[0].is_frequent)
+        self.assertFalse(medication_outcome[0].is_default)
+        await GeneralService.delete_medication_outcome(
+            "test_medication_outcome"
+        )
+
+    async def test_update_medication_outcome_empty_updates(self):
+        """Test update with no actual changes"""
+        # Create medication outcome first
+        medication_outcome = MedicationOutcome(
+            name="test_medication_outcome",
+            is_frequent=False,
+            is_default=False,
+        )
+        id = await GeneralService.create_medication_outcome(medication_outcome)
+        # Empty update
+        update_data = MedicationOutcomeUpdate()
+        result = await GeneralService.update_medication_outcome(
+            id, update_data
+        )
+        self.assertFalse(result)
+        await GeneralService.delete_medication_outcome(
+            "test_medication_outcome"
+        )
+
+    async def test_update_medication_outcome_not_found(self):
+        """Test update of non-existent medication outcome"""
+        update_data = MedicationOutcomeUpdate(
+            name="non_existent_medication_outcome",
+            is_frequent=True,
+        )
+        result = await GeneralService.update_medication_outcome(
+            1000, update_data
+        )
+        self.assertFalse(result)
+
+
+class TestGeneralServiceGeneralSite(IsolatedAsyncioTestCase):
+    async def _cleanup_test_data(self):
+        """Helper method to clean up test data"""
+        # Clean up test general sites
+        types = ["interaction", "coverage"]
+        test_names = [
+            "test_general_site",
+            "test_general_site_2",
+            "updated_general_site",
+            "default_general_site",
+        ]
+        for t in types:
+            for name in test_names:
+                try:
+                    await GeneralService.delete_general(name, t)
+                except Exception:
+                    pass  # Ignore if general site doesn't exist
+
+    async def asyncSetUp(self) -> None:
+        asyncio.get_event_loop().set_debug(False)
+        await database.connect()
+        await self._cleanup_test_data()
+
+    async def asyncTearDown(self) -> None:
+        await database.disconnect()
+
+    async def test_create_general_site_success(self):
+        """Test successful creation of a general site"""
+        general_site = General(
+            name="test_general_site",
+            is_frequent=False,
+            is_default=False,
+            type="interaction",
+        )
+
+        # Test
+        result = await GeneralService.create_general_type(general_site)
+        self.assertTrue(result)
+
+        # Validate
+        general_sites = await GeneralService.get_general("interaction")
+        general_site = [
+            t for t in general_sites if t.name == "test_general_site"
+        ]
+
+        self.assertEqual(general_site[0].name, "test_general_site")
+        await GeneralService.delete_general("test_general_site", "interaction")
+
+    async def test_check_general_exists(self):
+        """Test creation of a default general site"""
+        general_site = General(
+            name="default_general_site",
+            is_frequent=True,
+            is_default=True,
+            type="coverage",
+        )
+
+        await GeneralService.create_general_type(general_site)
+
+        # Test
+        result = await GeneralService.check_general_exists(
+            "default_general_site", "coverage"
+        )
+        self.assertTrue(result)
+
+        result = await GeneralService.check_general_exists(
+            "default_general_site", "interaction"
+        )
+        self.assertFalse(result)
+
+    async def test_create_duplicate_name_diff_type(self):
+        """Test creation of a default general site"""
+        general_site = General(
+            name="default_general_site",
+            is_frequent=True,
+            is_default=True,
+            type="coverage",
+        )
+
+        await GeneralService.create_general_type(general_site)
+
+        # Test
+        general_site.type = "interaction"
+        result = await GeneralService.create_general_type(general_site)
+        self.assertIsNotNone(result)
+
+    async def test_create_general_site_with_default(self):
+        """Test creation of a default general site"""
+        general_site = General(
+            name="default_general_site",
+            is_frequent=True,
+            is_default=True,
+            type="coverage",
+        )
+
+        # Test
+        result = await GeneralService.create_general_type(general_site)
+        self.assertTrue(result)
+
+        # Validate
+        general_sites = await GeneralService.get_general("coverage")
+        general_site = [
+            t for t in general_sites if t.name == "default_general_site"
+        ]
+
+        self.assertEqual(general_site[0].name, "default_general_site")
+        self.assertTrue(general_site[0].is_default)
+        await GeneralService.delete_general("default_general_site", "coverage")
+
+    async def test_create_duplicate_general_site_name(self):
+        """Test creating general site with duplicate name (should handle gracefully)"""
+        general_site = General(
+            name="test_general_site",
+            is_frequent=False,
+            is_default=False,
+            type="interaction",
+        )
+
+        # Create first general site
+        result1 = await GeneralService.create_general_type(general_site)
+        self.assertTrue(result1)
+
+        # This might raise an exception or return False depending on implementation
+        with self.assertRaises(Exception):
+            await GeneralService.create_general_type(general_site)
+
+        await GeneralService.delete_general("test_general_site", "interaction")
+
+    async def test_get_general_site_empty(self):
+        """Test getting general sites when none exist"""
+        general_sites = await GeneralService.get_general("other")
+        self.assertIsInstance(general_sites, list)
+        # self.assertEqual(len(general_sites), 0)
+
+    async def test_get_general_site_with_data(self):
+        """Test getting general sites when data exists"""
+        # Create test general sites
+        general_site1 = General(
+            name="test_general_site",
+            is_frequent=False,
+            is_default=False,
+            type="interaction",
+        )
+        general_site2 = General(
+            name="test_general_site_2",
+            is_frequent=True,
+            is_default=True,
+            type="interaction",
+        )
+
+        await GeneralService.create_general_type(general_site1)
+        await GeneralService.create_general_type(general_site2)
+
+        general_sites = await GeneralService.get_general("interaction")
+        self.assertIsInstance(general_sites, list)
+        self.assertGreaterEqual(len(general_sites), 2)
+
+        # Verify our general sites are in the results
+        general_site_names = [d.name for d in general_sites]
+        self.assertIn("test_general_site", general_site_names)
+        self.assertIn("test_general_site_2", general_site_names)
+
+        # Verify general site structure
+        for general_site in general_sites:
+            self.assertIsInstance(general_site, General)
+            self.assertIsInstance(general_site.name, str)
+            self.assertIsInstance(general_site.is_frequent, bool)
+            self.assertIsInstance(general_site.is_default, bool)
+
+        await GeneralService.delete_general("test_general_site", "interaction")
+        await GeneralService.delete_general(
+            "test_general_site_2", "interaction"
+        )
+
+    async def test_delete_general_site_success(self):
+        """Test successful deletion of a general site"""
+        # Create general site first
+        general_site = General(
+            name="test_general_site",
+            is_frequent=False,
+            is_default=False,
+            type="coverage",
+        )
+
+        await GeneralService.create_general_type(general_site)
+
+        # Delete the general site
+        result = await GeneralService.delete_general(
+            "test_general_site", "coverage"
+        )
+        self.assertTrue(result)
+
+        # Verify general site was deleted
+        general_sites = await GeneralService.get_general("coverage")
+        general_site_names = [d.name for d in general_sites]
+        self.assertNotIn("test_general_site", general_site_names)
+
+    async def test_delete_general_site_not_found(self):
+        """Test deletion of non-existent general site"""
+        result = await GeneralService.delete_general(
+            "non_existent_general_site", "other"
+        )
+        self.assertFalse(result)
+
+    async def test_update_general_site_success(self):
+        """Test successful update of a general site"""
+        # Create general site first
+        general_site = General(
+            name="test_general_site",
+            is_frequent=False,
+            is_default=False,
+            type="interaction",
+        )
+
+        id = await GeneralService.create_general_type(general_site)
+
+        # Update the general site
+        update_data = GeneralUpdate(
+            name="test_general_site",
+            is_frequent=True,
+            is_default=True,
+        )
+
+        result = await GeneralService.update_general(id, update_data)
+        self.assertTrue(result)
+
+        # Verify general site was updated
+        general_sites = await GeneralService.get_general("interaction")
+        general_site = [
+            t for t in general_sites if t.name == "test_general_site"
+        ]
+        self.assertIsNotNone(general_site[0])
+        self.assertTrue(general_site[0].is_frequent)
+        self.assertTrue(general_site[0].is_default)
+
+        await GeneralService.delete_general("test_general_site", "interaction")
+
+    async def test_update_general_site_partial(self):
+        """Test partial update of a general site"""
+        # Create general site first
+        general_site = General(
+            name="test_general_site",
+            is_frequent=False,
+            is_default=False,
+            type="coverage",
+        )
+        id = await GeneralService.create_general_type(general_site)
+
+        # Partial update - only is_frequent
+        update_data = GeneralUpdate(
+            name="test_general_site",
+            is_frequent=True,
+        )
+
+        # general_sites = await GeneralService.get_general_sites()
+        result = await GeneralService.update_general(id, update_data)
+        self.assertTrue(result)
+
+        # Verify only is_frequent was updated
+        general_sites = await GeneralService.get_general("coverage")
+        general_site = [
+            t for t in general_sites if t.name == "test_general_site"
+        ]
+        self.assertIsNotNone(general_site[0])
+        self.assertTrue(general_site[0].is_frequent)
+        self.assertFalse(general_site[0].is_default)
+
+        await GeneralService.delete_general("test_general_site", "coverage")
+
+    async def test_update_general_site_empty_updates(self):
+        """Test update with no actual changes"""
+        # Create general site first
+        general_site = General(
+            name="test_general_site",
+            is_frequent=False,
+            is_default=False,
+            type="interaction",
+        )
+        id = await GeneralService.create_general_type(general_site)
+
+        # Empty update
+        update_data = GeneralUpdate()
+        result = await GeneralService.update_general(id, update_data)
+        self.assertFalse(result)
+
+        await GeneralService.delete_general("test_general_site", "interaction")
+
+    async def test_update_general_site_not_found(self):
+        """Test update of non-existent general site"""
+        update_data = GeneralUpdate(
+            name="non_existent_general_site",
+            is_frequent=True,
+        )
+
+        result = await GeneralService.update_general(1000, update_data)
         self.assertFalse(result)

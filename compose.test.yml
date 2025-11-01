@@ -4,27 +4,32 @@ x-backend-base: &backend_base
     context: ./backend
     dockerfile: Dockerfile.test
   environment:
-    - POSTGRES_HOST=postgres_test
-    - POSTGRES_PORT=5432
-    - POSTGRES_DB=appdb 
-    - POSTGRES_USER=root 
-    - POSTGRES_PASSWORD=example
-    - DATABASE_URL=postgres://root:example@postgres_test:5432/appdb
-    - ALLOWED_ORIGINS=["http://localhost:8000", "http://localhost:3000"]
     - JWT_ALGORITHM=HS256
     - JWT_ACCESS_SECRET=STUFRZH-MKLFj4j-6c9Z50WNWkvd9uqiWQJOpeCtI9Q
-    - JWT_REFRESH_SECRET=STUFRZH-MKLFj4j-6c9Z50WNWkvd9uqiWQJOpeCtI9Q
     - MFA_ENCRYPTION_KEY=7CrUl1rG4NBNk4bSV2uU7RW79Z_dRdvrrZn3Eqgytqg=
+    - ALLOWED_ORIGINS=http://localhost:8000,http://localhost:3000
     - ANTHROPIC_API_KEY=7CrUl1rG4NBNk4bSV2uU7RW79Z_dRdvrrZn3Eqgytqg
     - APP_NAME=testing
     - APP_URL=http://localhost:8001 
     - SMTP_EMAIL=email@exmaple.com
     - SMTP_PASSWORD=password
+    - SMTP_SERVER=mail.privateemail.com
     - SUPPORT_EMAIL=example@email.com
     - ENVIRONMENT=Testing
+    - POSTGRES_HOST=postgres_test
+    - POSTGRES_PORT=5432
+    - POSTGRES_DB=appdb 
+    - POSTGRES_USER=root 
+    - POSTGRES_PASSWORD=example
+    - POSTGRES_URL=postgres://root:example@postgres_test:5432/appdb
     - MINIO_SERVER_URL=http://minio:9000
-    - MINIO_KEY_ID=testuser
-    - MINIO_ACCESS_KEY=password
+    - MINIO_ROOT_USER=testuser
+    - MINIO_ROOT_PASSWORD=password
+    - REDIS_HOST=redis
+    - REDIS_PORT=6379
+    - REDIS_PASSWORD=password
+    - MONGODB_URL=mongodb://root:example@mongodb:27017
+    - MONGODB_NAME=my420_ca_db
   networks:
       - frontend-net 
       - backend-net 
@@ -74,6 +79,21 @@ services:
       - test_frontend_integration_watch
       - test_e2e_watch
     command: ["--wait","up"]
+
+  redis:
+    image: redis:7
+    container_name: redis-test
+    restart: unless-stopped
+    volumes: 
+      - redis_data:/data
+    networks: 
+      - backend-net
+    profiles:
+      - test
+      - database
+      - test_backend_integration_watch
+      - test_frontend_integration_watch
+      - test_e2e_watch
 
   minio:
     image: minio/minio:latest
@@ -143,31 +163,34 @@ services:
       context: ./backend
       dockerfile : Dockerfile.test
     environment:
+      - JWT_ALGORITHM=HS256
+      - JWT_ACCESS_SECRET=STUFRZH-MKLFj4j-6c9Z50WNWkvd9uqiWQJOpeCtI9Q
+      - MFA_ENCRYPTION_KEY=7CrUl1rG4NBNk4bSV2uU7RW79Z_dRdvrrZn3Eqgytqg=
+      - ALLOWED_ORIGINS=http://localhost:3000
+      - APP_NAME=dummy
+      - APP_URL=http://localhost:5174 
+      - DEBUG=True
+      - ENVIRONMENT=dev
+      - ANTHROPIC_API_KEY=7CrUl1rG4NBNk4bSV2uU7RW79Z_dRdvrrZn3Eqgytqg
+      - SUPPORT_EMAIL=email@exmaple.com
+      - ENVIRONMENT=Testing
+      - SMTP_EMAIL=email@exmaple.com
+      - SMTP_PASSWORD=password
+      - SMTP_SERVER=mail.privateemail.com
       - POSTGRES_HOST=postgres_test
       - POSTGRES_PORT=5432
       - POSTGRES_DB=appdb 
       - POSTGRES_USER=root 
       - POSTGRES_PASSWORD=example
-      - DATABASE_URL=postgres://root:example@postgres_test:5432/appdb
-      - ALLOWED_ORIGINS=["http://localhost:3000"]
-      - JWT_ALGORITHM=HS256
-      - JWT_ACCESS_SECRET=STUFRZH-MKLFj4j-6c9Z50WNWkvd9uqiWQJOpeCtI9Q
-      - JWT_REFRESH_SECRET=STUFRZH-MKLFj4j-6c9Z50WNWkvd9uqiWQJOpeCtI9Q
-      - MFA_ENCRYPTION_KEY=7CrUl1rG4NBNk4bSV2uU7RW79Z_dRdvrrZn3Eqgytqg=
-      - APP_NAME=dummy
-      - APP_URL=http://localhost:5174 
-      - DEBUG=True
-      - MONGO_URL=mongodb://root:example@mongodb:27017
-      - DB_NAME=my420_ca_db
-      - ENVIRONMENT=dev
-      - ANTHROPIC_API_KEY=7CrUl1rG4NBNk4bSV2uU7RW79Z_dRdvrrZn3Eqgytqg
-      - SUPPORT_EMAIL=email@exmaple.com
-      - SMTP_EMAIL=email@exmaple.com
-      - SMTP_PASSWORD=password
-      - ENVIRONMENT=Testing
+      - POSTGRES_URL=postgres://root:example@postgres_test:5432/appdb
+      - MONGODB_URL=mongodb://root:example@mongodb:27017
+      - MONGODB_NAME=my420_ca_db
       - MINIO_SERVER_URL=http://minio:9000
-      - MINIO_KEY_ID=testuser
-      - MINIO_ACCESS_KEY=password
+      - MINIO_ROOT_USER=testuser
+      - MINIO_ROOT_PASSWORD=password
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - REDIS_PASSWORD=password
     volumes:
       - ./scripts/wait-for-db.sh:/scripts/wait-for-db.sh
       - ./backend:/backend 
@@ -312,6 +335,7 @@ volumes:
   postgres_test_data:
   node_modules:
   minio_data:
+  redis_data:
 
 networks:
   frontend-net:

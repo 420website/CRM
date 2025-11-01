@@ -193,13 +193,13 @@ const Home = () => {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
             <div
               className="text-center bg-gray-900 rounded-lg p-8 border border-gray-700 cursor-pointer hover:bg-gray-800 transition-colors duration-200"
               onClick={handleStatsClick}
             >
               <div className="text-4xl font-bold text-white mb-2">
-                <AnimatedCounter target={2000} suffix="+" />
+                <AnimatedCounter target={2500} suffix="+" />
               </div>
               <div className="text-gray-300 text-lg">Participants Screened</div>
               <div className="text-gray-400 text-sm mt-2">
@@ -245,6 +245,22 @@ const Home = () => {
               </div>
               <div className="text-gray-400 text-sm mt-2">
                 Financial Support Provided
+              </div>
+            </div>
+
+            <div
+              className="text-center bg-gray-900 rounded-lg p-8 border border-gray-700 cursor-pointer hover:bg-gray-800 transition-colors duration-200"
+              onClick={handleStatsClick}
+            >
+              <div className="text-4xl font-bold text-white mb-2">
+                <AnimatedCounter target={2} />
+              </div>
+              <div className="text-gray-300 text-lg">Participants Housed</div>
+              <div className="text-gray-400 text-sm mt-2">
+                Homelessness Prevention
+              </div>
+              <div className="text-gray-400 text-sm">
+                Effective: September 2025
               </div>
             </div>
           </div>
