@@ -97,11 +97,14 @@ services:
       - redis_data:/data
     networks:
       - backend-net
+    env_file:
+      - /etc/vault/secrets/.env
     profiles:
       - dev
       - prod
       - cert-reload
       - secret-reload
+    command: sh -c 'redis-server --requirepass $$REDIS_PASSWORD'
 
   minio:
     image: minio/minio:latest
