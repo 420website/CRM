@@ -23,7 +23,6 @@ import ShareViewer from "./crm/components/ShareViewer";
 import ScrollToTop from "./scroll.jsx";
 import { RegistrationProvider } from "./context/RegistrationContext.jsx";
 import { UsersProvider } from "./context/UserContext.jsx";
-import MobileOnlyWrapper from "./mobileOnlyWrapper.jsx";
 
 function AuthenticatedRoute() {
   const { isAuthenticated } = useAuth();
