@@ -43,7 +43,7 @@ source /etc/vault/secrets/.env
 set +a
 
 echo "Starting staging services..."
-docker compose -f comopose.dev.yml --profile staging up -d --build
+docker compose -f compose.dev.yml --profile staging up -d --build
 
 echo "Waiting for certbot container to finish..."
 
