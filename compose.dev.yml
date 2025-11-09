@@ -14,9 +14,9 @@ services:
     profiles:
       - vault-agent
       - prod
-    mem_reservation: 110m
-    mem_limit: 145m
-    memswap_limit: 145m
+    # mem_reservation: 110m
+    # mem_limit: 145m
+    # memswap_limit: 145m
 
   setup-watcher:
     image: alpine:latest
