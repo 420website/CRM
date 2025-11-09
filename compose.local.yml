@@ -183,6 +183,7 @@ services:
       - ./backend/app:/backend/app
       - ./backend/scripts:/backend/scripts 
       - ./certs:/certs:ro
+      - logs:/logs  
     entrypoint: ["/scripts/create_admin.sh"]
     command: 'python -m app.main'
 
@@ -216,6 +217,13 @@ volumes:
   redis_data:
   mongo_data:
   minio_data:
+
+  logs:
+    driver: local
+    driver_opts:
+      o: bind
+      type: none
+      device: ./logs
 
 networks:
   frontend-net:

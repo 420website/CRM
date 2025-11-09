@@ -6,6 +6,7 @@ from fastapi import (
     HTTPException,
     status,
 )
+from app.logger import logger
 from app.authentication.schemas import UserRead
 from app.email.messages import FinalizedEmailMessage
 from app.email.service import EmailService
@@ -72,10 +73,14 @@ async def create_patient(
         id = await PatientService.create_patient(data)
 
         if not id:
+            logger.error(
+                f"Failed to create patient - service returned None. User: {user.id}"
+            )
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Patient not created.",
             )
+        logger.info(f"Patient created successfully. ID: {id}, User: {user.id}")
         return {"patient_id": id}
 
     except UniqueViolationError:
@@ -87,6 +92,10 @@ async def create_patient(
     except HTTPException:
         raise
     except Exception as e:
+        logger.error(
+            f"Unexpected error creating patient. User: {user.id}, Error: {str(e)}",
+            exc_info=True,
+        )
         # Fallback for unexpected errors
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -122,8 +131,10 @@ async def delete_patient_by_id(
     for bucket in ["photos", "attachments"]:
         try:
             await ObjectService.delete_objects(bucket, str(id))
-        except Exception:
-            pass
+        except Exception as e:
+            logger.warning(
+                f"Failed to delete objects from {bucket} for patient {id}: {e}"
+            )
 
     return {"message": "Patient deleted successfully."}
 
@@ -192,6 +203,9 @@ async def update_patient(
     except HTTPException:
         raise
     except Exception as e:
+        logger.error(
+            f"Unexpected error updating patient {id}: {e}", exc_info=True
+        )
         # Fallback for unexpected errors
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -241,7 +255,11 @@ async def update_patient_status(
                 await email.attach("photos", photo_key)
 
             email.send()
-        except Exception:
+        except Exception as e:
+            logger.error(
+                f"Failed to send finalization email for patient {id}: {e}",
+                exc_info=True,
+            )
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail="Error sending registration email.",
@@ -260,6 +278,9 @@ async def create_test(
 ):
     # Ensure the patient_id in the URL matches the data
     if not await TestService.create_test(patient_id, data):
+        logger.error(
+            f"Failed to create test for patient {patient_id}. User: {user.id}"
+        )
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Test not created.",
@@ -349,6 +370,9 @@ async def create_note(
 ):
 
     if not await NoteService.create_note(patient_id, data):
+        logger.error(
+            f"Failed to create note for patient {patient_id}. User: {user.id}"
+        )
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Note not created.",
@@ -434,6 +458,9 @@ async def create_activity(
     user: UserRead = Depends(get_current_user),
 ):
     if not await ActivityService.create_activity(patient_id, data):
+        logger.error(
+            f"Failed to create activity for patient {patient_id}. User: {user.id}"
+        )
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Activity not created.",
@@ -531,6 +558,9 @@ async def create_dispensing(
     if not await DispensingService.check_medication(
         patient_id, data.medication
     ):
+        logger.error(
+            f"Failed to create dispensing for patient {patient_id}. User: {user.id}"
+        )
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Medication none existant for client please create medication and retry.",
@@ -624,6 +654,9 @@ async def create_medication(
     user: UserRead = Depends(get_current_user),
 ):
     if not await MedicationService.create_medication(patient_id, data):
+        logger.error(
+            f"Failed to create medication for patient {patient_id}. User: {user.id}"
+        )
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Medication not created.",
@@ -712,6 +745,9 @@ async def create_interaction(
     user: UserRead = Depends(get_current_user),
 ):
     if not await InteractionService.create_interaction(patient_id, data):
+        logger.error(
+            f"Failed to create interaction for patient {patient_id}. User: {user.id}"
+        )
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Interaction not created.",

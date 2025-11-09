@@ -8,6 +8,7 @@
 ca.cert 
 role_id 
 secret_id
+/logs
 
 # database 
 db/migrations/*_seed_admin.sql

@@ -28,25 +28,26 @@ services:
       - setup
       - prod
 
-  # alloy:
-  #   image: grafana/alloy:latest
-  #   env_file:
-  #     - /etc/vault/secrets/.env
-  #   extra_hosts:
-  #     - "loki.internal:139.177.195.180"
-  #     - "prometheus.internal:139.177.195.180"
-  #   volumes:
-  #     - ./grafana/config.alloy:/etc/alloy/config.alloy:ro
-  #     - postgres_data:/var/lib/postgresql/data:ro
-  #     - /etc/vault/certs:/certs:ro
-  #   command: run /etc/alloy/config.alloy
-  #   profiles:
-  #     - dev
-  #     - prod
-  #     - cert-reload
-  #     - secret-reload
-  #   depends_on:
-  #     - postgres
+  alloy:
+    image: grafana/alloy:latest
+    env_file:
+      - /etc/vault/secrets/.env
+    extra_hosts:
+      - "loki.internal:139.177.195.180"
+      - "prometheus.internal:139.177.195.180"
+    volumes:
+      - /etc/vault/certs:/certs:ro
+      - postgres_data:/var/lib/postgresql/data:ro
+      - backend-logs:/backend/logs:ro
+      - ./grafana/config.alloy:/etc/alloy/config.alloy:ro
+    command: run /etc/alloy/config.alloy
+    profiles:
+      - dev
+      - prod
+      - cert-reload
+      - secret-reload
+    depends_on:
+      - postgres
 
   postgres:
     image: postgres:16
@@ -174,6 +175,7 @@ services:
       - ./scripts/wait-for-db.sh:/scripts/wait-for-db.sh
       - ./scripts/create_admin.sh:/scripts/create_admin.sh
       - /etc/vault/certs:/certs:ro
+      - backend-logs:/logs
     env_file:
       - /etc/vault/secrets/.env
     depends_on:
@@ -288,6 +290,7 @@ volumes:
   certbot-etc:
   certbot-var:
   certbot-www:
+  backend-logs:
 
 networks:
   frontend-net:
