@@ -1,6 +1,7 @@
 services:
   vault-agent:
     image: hashicorp/vault
+    restart: unless-stopped
     command: agent -config=/vault/config/agent-config.hcl
     env_file:
       - /etc/vault/.env
@@ -13,6 +14,9 @@ services:
     profiles:
       - vault-agent
       - prod
+    mem_reservation: 110m
+    mem_limit: 145m
+    memswap_limit: 145m
 
   setup-watcher:
     image: alpine:latest
@@ -30,6 +34,7 @@ services:
 
   alloy:
     image: grafana/alloy:latest
+    restart: unless-stopped
     env_file:
       - /etc/vault/secrets/.env
     extra_hosts:
@@ -48,6 +53,9 @@ services:
       - secret-reload
     depends_on:
       - postgres
+    mem_reservation: 220m
+    mem_limit: 290m
+    memswap_limit: 290m
 
   postgres:
     image: postgres:16
@@ -70,6 +78,9 @@ services:
       - cert-reload
       - secret-reload
     entrypoint: ["/postgres-start.sh"]
+    mem_reservation: 120m
+    mem_limit: 150m
+    memswap_limit: 150m
 
   dbmate:
     image: amacneil/dbmate
@@ -106,6 +117,9 @@ services:
       - cert-reload
       - secret-reload
     command: sh -c 'redis-server --requirepass $$REDIS_PASSWORD'
+    mem_reservation: 50m
+    mem_limit: 75m
+    memswap_limit: 75m
 
   minio:
     image: minio/minio:latest
@@ -128,6 +142,9 @@ services:
       - cert-reload
       - secret-reload
     command: server /data --console-address ":9001" --address ":9000"
+    mem_reservation: 165m
+    mem_limit: 220m
+    memswap_limit: 220m
 
   minio_init:
     image: minio/mc:latest
@@ -168,9 +185,13 @@ services:
       - prod
       - cert-reload
       - secret-reload
+    mem_reservation: 150m
+    mem_limit: 180m
+    memswap_limit: 180m
 
   backend:
     build: ./backend
+    restart: unless-stopped
     volumes:
       - ./scripts/wait-for-db.sh:/scripts/wait-for-db.sh
       - ./scripts/create_admin.sh:/scripts/create_admin.sh
@@ -193,7 +214,9 @@ services:
       - secret-reload
     entrypoint: ["/scripts/create_admin.sh"]
     command: 'python -m app.main'
-    # command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "5000"]
+    mem_reservation: 400m
+    mem_limit: 500m
+    memswap_limit: 500m
 
   frontend-builder:
     build: ./frontend
@@ -223,6 +246,7 @@ services:
     volumes:
       - frontend_dist:/usr/share/nginx/html:ro
       - ./nginx/nginx.dev.conf:/etc/nginx/conf.d/default.conf:ro
+
 
   nginx-setup:
     image: nginx:alpine
@@ -259,6 +283,7 @@ services:
 
   nginx-prod:
     image: nginx:alpine
+    restart: unless-stopped
     ports:
       - 80:80
       - 443:443
@@ -280,6 +305,9 @@ services:
       - frontend-net
     depends_on:
       - backend
+    mem_reservation: 50m
+    mem_limit: 80m
+    memswap_limit: 80m
 
 volumes:
   frontend_dist:
