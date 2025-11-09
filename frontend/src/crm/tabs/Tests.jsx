@@ -333,12 +333,20 @@ export default function Tests({ setActiveTab, currentRegistrationId }) {
       newTestData.hcv_tester = "CM";
     }
 
+    const cephied_results = ["Positive", "Negative", "Pending", "Error"];
     if (
       value === "Cepheid" &&
-      newTestData.bloodwork_result !== "Positive" &&
-      newTestData.bloodwork_result !== "Negative"
+      !cephied_results.includes(newTestData.bloodwork_result)
     ) {
-      newTestData.bloodwork_result = "Positive";
+      newTestData.bloodwork_result = "Pending";
+    }
+
+    const other_results = ["Positive", "Negative", "Pending", "Submitted"];
+    if (
+      (value === "DBS" || value === "Serum") &&
+      !other_results.includes(newTestData.bloodwork_result)
+    ) {
+      newTestData.bloodwork_result = "Pending";
     }
 
     if (
@@ -634,12 +642,16 @@ export default function Tests({ setActiveTab, currentRegistrationId }) {
                       onChange={handleTestChange}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black"
                     >
-                      {testFormData.bloodwork_type !== "Cepheid" && (
+                      {testFormData.bloodwork_type !== "Cepheid" ? (
                         <>
-                          <option value="Pending">Pending</option>
                           <option value="Submitted">Submitted</option>
                         </>
+                      ) : (
+                        <>
+                          <option value="Error">Error</option>
+                        </>
                       )}
+                      <option value="Pending">Pending</option>
                       <option value="Positive">Positive</option>
                       <option value="Negative">Negative</option>
                     </select>
