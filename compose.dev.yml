@@ -290,7 +290,13 @@ volumes:
   certbot-etc:
   certbot-var:
   certbot-www:
+
   backend-logs:
+    driver: local
+    driver_opts:
+      o: bind
+      type: none
+      device: /opt/app/logs
 
 networks:
   frontend-net:
