@@ -185,9 +185,9 @@ services:
       - prod
       - cert-reload
       - secret-reload
-    mem_reservation: 150m
-    mem_limit: 180m
-    memswap_limit: 180m
+    mem_reservation: 210m
+    mem_limit: 280m
+    memswap_limit: 280m
 
   backend:
     build: ./backend
