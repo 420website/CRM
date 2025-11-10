@@ -194,6 +194,7 @@ services:
     volumes:
       - ./scripts/wait-for-db.sh:/scripts/wait-for-db.sh
       - ./backend:/backend 
+      - dummy-logs:/logs
     profiles:
       - backend
       - test_frontend_integration_watch
@@ -263,6 +264,7 @@ services:
       - ./scripts/wait-for-db.sh:/scripts/wait-for-db.sh
       - ./backend/app:/backend/app 
       - ./backend/tests:/backend/tests
+      - backend-logs:/logs
     profiles:
       - test
       - test_integration 
@@ -279,6 +281,7 @@ services:
       - ./scripts/wait-for-db.sh:/scripts/wait-for-db.sh
       - ./backend/app:/backend/app 
       - ./backend/tests:/backend/tests 
+      - backend-logs:/logs
     profiles:
       - test_backend_integration_watch
     ports:
@@ -336,6 +339,8 @@ volumes:
   node_modules:
   minio_data:
   redis_data:
+  backend-logs:
+  dummy-logs:
 
 networks:
   frontend-net:

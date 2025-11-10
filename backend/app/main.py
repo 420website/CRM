@@ -2,6 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 
+from app.logger import logger
 from app.authentication.router import router as auth_router
 from app.general.router import router as general_router
 from app.registration.router import router as patient_router
@@ -19,10 +20,14 @@ async def lifespan(app: FastAPI):
     await database.connect()
     await minio_client.connect()
     await redis_client.connect()
+    logger.info("Application startup complete")
     yield
+
+    logger.info("Application shutdown initiated")
     await redis_client.disconnect()
     await minio_client.disconnect()
     await database.disconnect()
+    logger.info("Application shutdown complete")
 
 
 app = FastAPI(

@@ -11,7 +11,14 @@ import aioboto3
 from botocore.config import Config
 from redis.asyncio import Redis
 
-client = AsyncIOMotorClient(settings.mongo_url)
+# client = AsyncIOMotorClient(settings.mongo_url)
+client = AsyncIOMotorClient(
+    settings.mongo_url,
+    maxPoolSize=5,  # For 1-2GB server
+    # maxPoolSize=8,    # For 4GB+ server
+    minPoolSize=1,
+    maxIdleTimeMS=30000,
+)
 mongo_db = client[settings.mongo_name]
 
 
@@ -107,8 +114,8 @@ class Database:
             user=settings.pg_user,
             password=settings.pg_password,
             database=settings.pg_db,
-            min_size=5,
-            max_size=20,
+            min_size=2,  # Adjust based on server size
+            max_size=5,  # Adjust based on server size
             ssl=ssl_context(),
         )
 
