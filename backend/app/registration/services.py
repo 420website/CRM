@@ -230,7 +230,7 @@ class PatientService:
         patient_id: int,
         status: str,
     ) -> bool:
-        if status == "finalized":
+        if status == "finalized" or status == "saved":
             finalized_at = datetime.now(timezone.utc)
         else:
             finalized_at = None

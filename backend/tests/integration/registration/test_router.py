@@ -584,6 +584,7 @@ class TestPatientRouter(IsolatedAsyncioTestCase):
         # Verify status change
         updated_patient = await get_patient(patient_id, self.user)
         self.assertEqual(updated_patient.status, "finalized")
+        self.assertIsNotNone(updated_patient.finalized_at)
 
         # Cleanup
         await PatientService.delete_patient_by_id(patient_id)
@@ -615,6 +616,58 @@ class TestPatientRouter(IsolatedAsyncioTestCase):
 
         self.assertEqual(cm.exception.status_code, 404)
         self.assertIn("Patient not found.", str(cm.exception.detail))
+
+    async def test_update_patient_status_patient_saved(self):
+        """Expecting the patient to have a finalized date when saved."""
+        result = await create_patient(self.patient_data, self.user)
+        patient_id = result["patient_id"]
+
+        status_data = PatientStatus(status="saved")
+        result = await update_patient_status(
+            patient_id,
+            status_data,
+            self.user,
+        )
+
+        self.assertEqual(result["message"], "Patient updated successfully.")
+
+        # Verify status change
+        updated_patient = await get_patient(patient_id, self.user)
+        self.assertEqual(updated_patient.status, "saved")
+        self.assertIsNotNone(updated_patient.finalized_at)
+
+        # Cleanup
+        await PatientService.delete_patient_by_id(patient_id)
+
+    async def test_update_patient_status_to_pending(self):
+        """Expecting the patient to have a finalized date when saved."""
+        result = await create_patient(self.patient_data, self.user)
+        patient_id = result["patient_id"]
+
+        status_data = PatientStatus(status="saved")
+        result = await update_patient_status(
+            patient_id,
+            status_data,
+            self.user,
+        )
+
+        self.assertEqual(result["message"], "Patient updated successfully.")
+
+        # Test
+        status_data = PatientStatus(status="pending")
+        result = await update_patient_status(
+            patient_id,
+            status_data,
+            self.user,
+        )
+
+        # Verify status change
+        updated_patient = await get_patient(patient_id, self.user)
+        self.assertEqual(updated_patient.status, "pending")
+        self.assertIsNone(updated_patient.finalized_at)
+
+        # Cleanup
+        await PatientService.delete_patient_by_id(patient_id)
 
 
 ###############
