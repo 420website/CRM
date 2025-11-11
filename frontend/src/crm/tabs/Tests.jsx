@@ -4,7 +4,6 @@ import ConfirmModal from "../components/ConfirmModal";
 import { useRegistration } from "../../context/RegistrationContext";
 import DatePicker from "../ui/DatePicker";
 import toast from "react-hot-toast";
-import { newlineChars } from "pdf-lib";
 import { normalizeFormData } from "../../utils/formatData";
 
 export default function Tests({ setActiveTab, currentRegistrationId }) {
@@ -27,6 +26,23 @@ export default function Tests({ setActiveTab, currentRegistrationId }) {
     bloodwork_date_submitted: new Date().toISOString().split("T")[0],
     bloodwork_tester: "CM",
   });
+
+  function resetForm() {
+    setTestFormData({
+      test_type: "",
+      test_date: new Date().toISOString().split("T")[0],
+      hiv_result: "negative",
+      hiv_type: "",
+      hiv_tester: "CM",
+      hcv_result: "negative",
+      hcv_tester: "CM",
+      bloodwork_type: "",
+      bloodwork_circles: "",
+      bloodwork_result: "Pending",
+      bloodwork_date_submitted: new Date().toISOString().split("T")[0],
+      bloodwork_tester: "CM",
+    });
+  }
 
   function validateHIV() {
     if (!testFormData.hiv_result || testFormData.hiv_result === "") {
@@ -93,14 +109,6 @@ export default function Tests({ setActiveTab, currentRegistrationId }) {
       testFormData.bloodwork_tester === ""
     ) {
       toast.error("Please select a tester");
-      return false;
-    }
-
-    if (
-      !testFormData.bloodwork_date_submitted ||
-      testFormData.bloodwork_date_submitted === ""
-    ) {
-      toast.error("Please select date submitted");
       return false;
     }
 
@@ -174,22 +182,7 @@ export default function Tests({ setActiveTab, currentRegistrationId }) {
 
     if (result.success) {
       getTests(currentRegistrationId);
-
-      // Reset form
-      setTestFormData({
-        test_type: "",
-        test_date: new Date().toISOString().split("T")[0],
-        hiv_result: "negative",
-        hiv_type: "",
-        hiv_tester: "CM",
-        hcv_result: "negative",
-        hcv_tester: "CM",
-        bloodwork_type: "",
-        bloodwork_circles: "",
-        bloodwork_result: "Pending",
-        bloodwork_date_submitted: new Date().toISOString().split("T")[0],
-        bloodwork_tester: "CM",
-      });
+      resetForm();
       setEditingTestId(null);
       toast.success("Test created successfully");
     } else {
@@ -214,22 +207,7 @@ export default function Tests({ setActiveTab, currentRegistrationId }) {
 
     if (result.success) {
       getTests(currentRegistrationId);
-
-      // Reset form
-      setTestFormData({
-        test_type: "",
-        test_date: new Date().toISOString().split("T")[0],
-        hiv_result: "negative",
-        hiv_type: "",
-        hiv_tester: "CM",
-        hcv_result: "negative",
-        hcv_tester: "CM",
-        bloodwork_type: "",
-        bloodwork_circles: "",
-        bloodwork_result: "Pending",
-        bloodwork_date_submitted: new Date().toISOString().split("T")[0],
-        bloodwork_tester: "CM",
-      });
+      resetForm();
       setEditingTestId(null);
       toast.success("Test updated successfully");
     } else {
@@ -269,7 +247,7 @@ export default function Tests({ setActiveTab, currentRegistrationId }) {
   };
 
   const editTest = (test) => {
-    setTestFormData({
+    const testForm = {
       test_type: test.test_type,
       test_date: test.test_date,
       hiv_result: test.hiv_result || "negative",
@@ -280,28 +258,16 @@ export default function Tests({ setActiveTab, currentRegistrationId }) {
       bloodwork_type: test.bloodwork_type || "",
       bloodwork_circles: test.bloodwork_circles || "",
       bloodwork_result: test.bloodwork_result || "Pending",
-      bloodwork_date_submitted:
-        test.bloodwork_date_submitted || new Date().toISOString().split("T")[0],
+      bloodwork_date_submitted: test.bloodwork_date_submitted || "",
       bloodwork_tester: test.bloodwork_tester || "CM",
-    });
+    };
+
+    setTestFormData(testForm);
     setEditingTestId(test.id);
   };
 
   const cancelTestEdit = () => {
-    setTestFormData({
-      test_type: "",
-      test_date: new Date().toISOString().split("T")[0],
-      hiv_result: "negative",
-      hiv_type: "",
-      hiv_tester: "CM",
-      hcv_result: "negative",
-      hcv_tester: "CM",
-      bloodwork_type: "",
-      bloodwork_circles: "",
-      bloodwork_result: "Pending",
-      bloodwork_date_submitted: new Date().toISOString().split("T")[0],
-      bloodwork_tester: "CM",
-    });
+    resetForm();
     setEditingTestId(null);
   };
 
