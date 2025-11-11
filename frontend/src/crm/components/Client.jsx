@@ -543,7 +543,7 @@ export default function Client({
                     htmlFor="health_card"
                     className="block text-sm font-medium text-gray-700 mb-2"
                   >
-                    Health Card Number<span className="text-red-500">*</span>
+                    Health Card Number
                   </label>
                   <input
                     type="text"

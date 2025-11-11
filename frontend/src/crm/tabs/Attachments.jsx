@@ -591,9 +591,6 @@ export default function Attachments({ setActiveTab, currentRegistrationId }) {
                           <p className="text-sm font-medium text-gray-900">
                             {attachment.document_type}
                           </p>
-                          <p className="text-xs text-gray-500">
-                            {attachment.file_name}
-                          </p>
                           <p className="text-xs text-gray-400">
                             Saved: {attachment.uploaded_at.split("T")[0]},{" "}
                             {new Date(

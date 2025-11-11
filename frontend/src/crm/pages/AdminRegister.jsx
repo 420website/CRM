@@ -264,15 +264,7 @@ const AdminRegister = () => {
       return false;
     }
 
-    if (!formData.health_card) {
-      setIsSubmitting(false);
-      toast.error("Health Card Number required.");
-      document
-        .querySelector("#healthcard")
-        ?.scrollIntoView({ behavior: "smooth" });
-      return false;
-    }
-    if (formData.health_card.length != 10) {
+    if (formData.health_card && formData.health_card.length != 10) {
       setIsSubmitting(false);
       toast.error("Health Card Number must be 10 digits");
       document

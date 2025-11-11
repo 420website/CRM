@@ -105,8 +105,8 @@ class TestPatientService(IsolatedAsyncioTestCase):
             first_name="John",
             last_name="Doe",
             dob=date(1990, 3, 22),
-            health_card="1234567890",
-            health_card_version="AB",
+            # health_card="1234567890",
+            # health_card_version="AB",
         )
 
         self.minimal_patient2 = PatientCreate(
@@ -167,6 +167,8 @@ class TestPatientService(IsolatedAsyncioTestCase):
 
     async def test_create_patient_duplicate_healthcard(self):
         """Test creation of a default patient"""
+        self.minimal_patient.health_card = "1234567890"
+        self.minimal_patient.health_card_version = "AB"
 
         result = await PatientService.create_patient(self.minimal_patient)
         self.assertTrue(result)
