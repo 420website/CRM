@@ -378,10 +378,11 @@ class NoteService:
         query = """
         SELECT * 
         FROM notes 
-        ORDER BY note_date DESC; 
+        ORDER BY note_date DESC, updated_at DESC; 
         """
         async with database.get_connection() as conn:
             rows = await conn.fetch(query)
+
         result = []
         if rows:
             for row in rows:
@@ -394,10 +395,11 @@ class NoteService:
         SELECT * 
         FROM notes 
         WHERE patient_id = $1 
-        ORDER BY note_date DESC;
+        ORDER BY note_date DESC, updated_at DESC;
         """
         async with database.get_connection() as conn:
             rows = await conn.fetch(query, patient_id)
+
         result = []
         if rows:
             for row in rows:

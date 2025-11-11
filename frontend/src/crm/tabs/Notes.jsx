@@ -408,10 +408,10 @@ export default function Notes({ setActiveTab, currentRegistrationId }) {
                           <strong>Date:</strong>{" "}
                           {note.note_date ? note.note_date : "No date"}
                         </p>
-                        {note.created_at && (
+                        {note.updated_at && (
                           <p className="text-xs text-gray-400">
                             Saved:{" "}
-                            {new Date(note.created_at).toLocaleTimeString(
+                            {new Date(note.updated_at).toLocaleTimeString(
                               "en-US",
                               {
                                 timeZone: "America/New_York",
