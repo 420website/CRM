@@ -574,6 +574,39 @@ class TestNotesService(IsolatedAsyncioTestCase):
         self.assertGreaterEqual(len(notes), 2)
         self.assertEqual(notes[0].note_text, "Follow-up note")  # newest first
 
+    async def test_get_notes_by_patient_chronological_order(self):
+        """Expecting th  notes to be returned in order of note_date and updated_at."""
+        await NoteService.create_note(self.patient_id, self.note_data)
+        note = NoteCreate(
+            note_text="Follow-up note",
+            note_date=date(2025, 11, 1),
+            template_type="testing",
+        )
+        await NoteService.create_note(self.patient_id, note)
+
+        note = NoteCreate(
+            note_text="Follow-up note",
+            note_date=date(2025, 11, 1),
+            template_type="new-testing",
+        )
+        await NoteService.create_note(self.patient_id, note)
+
+        note = NoteCreate(
+            note_text="Follow-up note",
+            note_date=date(2025, 10, 1),
+            template_type="old-testing",
+        )
+        await NoteService.create_note(self.patient_id, note)
+
+        # Test
+        notes = await NoteService.get_notes_by_patient(self.patient_id)
+
+        # Validation
+        self.assertGreaterEqual(len(notes), 3)
+        self.assertEqual(notes[0].template_type, "new-testing")
+        self.assertEqual(notes[1].template_type, "testing")
+        self.assertEqual(notes[2].template_type, "old-testing")
+
     #### UPDATE
     async def test_update_note_success(self):
         await NoteService.create_note(self.patient_id, self.note_data)
