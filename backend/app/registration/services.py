@@ -8,6 +8,9 @@ from app.registration.schemas import (
     DispensingCreate,
     DispensingRead,
     DispensingUpdate,
+    HealthcardCheck,
+    HealthcardUser,
+    IdentityCheck,
     InteractionCreate,
     InteractionRead,
     InteractionUpdate,
@@ -123,6 +126,56 @@ class PatientService:
 
         if row:
             return PatientRead(**dict(row)) if row else None
+
+    @staticmethod
+    async def check_identity(data: IdentityCheck) -> bool:
+        if data.id is None:
+            query = """
+                SELECT EXISTS(
+                    SELECT 1 FROM patients 
+                    WHERE first_name=$1 AND last_name=$2 AND dob=$3
+                ) AS exists;
+            """
+            params = [data.first_name, data.last_name, data.dob]
+        else:
+            query = """
+                SELECT EXISTS(
+                    SELECT 1 FROM patients 
+                    WHERE first_name=$1 AND last_name=$2 AND dob=$3 AND id != $4
+                ) AS exists;
+            """
+            params = [data.first_name, data.last_name, data.dob, data.id]
+
+        async with database.get_connection() as conn:
+            check = await conn.fetchrow(query, *params)
+
+        return check["exists"]
+
+    @staticmethod
+    async def check_healthcard(
+        data: HealthcardCheck,
+    ) -> Union[HealthcardUser, None]:
+        if data.id is None:
+            query = """
+                SELECT id, first_name, last_name 
+                FROM patients 
+                WHERE health_card=$1
+            """
+            params = [data.health_card]
+        else:
+            query = """
+                SELECT id, first_name, last_name 
+                FROM patients 
+                WHERE health_card=$1
+                    AND id!=$2
+            """
+            params = [data.health_card, data.id]
+
+        async with database.get_connection() as conn:
+            row = await conn.fetchrow(query, *params)
+
+        if row:
+            return HealthcardUser(**dict(row)) if row else None
 
     @staticmethod
     async def get_patient_by_name_dob(

@@ -9,6 +9,8 @@ from app.registration.schemas import (
     ActivityUpdate,
     DispensingCreate,
     DispensingUpdate,
+    HealthcardCheck,
+    IdentityCheck,
     InteractionCreate,
     InteractionUpdate,
     MedicationCreate,
@@ -43,6 +45,7 @@ class TestPatientService(IsolatedAsyncioTestCase):
             ("Bobby", "Doe"),
             ("Tim", "Tom"),
             ("Jane", "Smith"),
+            ("Jane", "Doe"),
         ]
         for first, last in test_names:
             try:
@@ -391,6 +394,95 @@ class TestPatientService(IsolatedAsyncioTestCase):
         )
 
         self.assertIsNone(patients)
+
+    # Checks
+    async def test_check_identity_exists_create(self):
+        patient = PatientCreate(
+            first_name="Jane",
+            last_name="Doe",
+            dob=date(1990, 3, 22),
+            health_card="1234567890",
+            health_card_version="AB",
+        )
+        await PatientService.create_patient(patient)
+
+        # Test
+        identity = IdentityCheck(
+            first_name="Jane",
+            last_name="Doe",
+            dob=date(1990, 3, 22),
+        )
+        result = await PatientService.check_identity(identity)
+        self.assertTrue(result)
+
+    async def test_check_identity_exists_edit(self):
+        patient = PatientCreate(
+            first_name="Jane",
+            last_name="Doe",
+            dob=date(1990, 3, 22),
+            health_card="1234567890",
+            health_card_version="AB",
+        )
+        id = await PatientService.create_patient(patient)
+
+        # Test
+        identity = IdentityCheck(
+            first_name="Jane",
+            last_name="Doe",
+            dob=date(1990, 3, 22),
+            id=id,
+        )
+        result = await PatientService.check_identity(identity)
+        self.assertFalse(result)
+
+    async def test_check_identity_nonexistant_create(self):
+        # Test
+        identity = IdentityCheck(
+            first_name="Jane",
+            last_name="Doe",
+            dob=date(1990, 3, 22),
+        )
+        result = await PatientService.check_identity(identity)
+        self.assertFalse(result)
+
+    async def test_check_healthcard_exists_create(self):
+        patient = PatientCreate(
+            first_name="Jane",
+            last_name="Doe",
+            dob=date(1990, 3, 22),
+            health_card="1234567890",
+            health_card_version="AB",
+        )
+        id = await PatientService.create_patient(patient)
+
+        # Test
+        check_data = HealthcardCheck(health_card="1234567890")
+        result = await PatientService.check_healthcard(check_data)
+
+        self.assertEqual(result.id, id)
+        self.assertEqual(result.first_name, patient.first_name)
+        self.assertEqual(result.last_name, patient.last_name)
+
+    async def test_check_healthcard_nonexists_create(self):
+        # Test
+        check_data = HealthcardCheck(health_card="9999999999")
+        result = await PatientService.check_healthcard(check_data)
+        self.assertFalse(result)
+
+    async def test_check_healthcard_exists_edit(self):
+        patient = PatientCreate(
+            first_name="Jane",
+            last_name="Doe",
+            dob=date(1990, 3, 22),
+            health_card="1234567890",
+            health_card_version="AB",
+        )
+        id = await PatientService.create_patient(patient)
+
+        # Test
+        check_data = HealthcardCheck(health_card="1234567890", id=id)
+        result = await PatientService.check_healthcard(check_data)
+        self.assertFalse(result)
 
 
 class TestTestsService(IsolatedAsyncioTestCase):

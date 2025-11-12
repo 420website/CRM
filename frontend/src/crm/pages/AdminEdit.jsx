@@ -25,6 +25,7 @@ import { ObjectServices } from "../../services/objectService";
 import DocumentTypeManager from "../managers/DocumentTypeManager";
 import { useRegistration } from "../../context/RegistrationContext";
 import toast from "react-hot-toast";
+import DuplicateModal from "../components/DuplicateModal";
 
 const AdminEdit = () => {
   const navigate = useNavigate();
@@ -38,7 +39,6 @@ const AdminEdit = () => {
   const { registrationId } = useParams();
   const [voiceInputText, setVoiceInputText] = useState("");
   const [loading, setLoading] = useState(false);
-  const [submitStatus, setSubmitStatus] = useState(null);
   const [saveStatus, setSaveStatus] = useState(null);
   const [selectedTemplate, setSelectedTemplate] = useState("Select");
   const { userRole, userPermissions } = useAuth();
@@ -47,14 +47,16 @@ const AdminEdit = () => {
   const [currentVoiceDateField, setCurrentVoiceDateField] = useState("");
   const [voiceDateInput, setVoiceDateInput] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [currentRegistrationId, setCurrentRegistrationId] =
-    useState(registrationId);
   const [photoPreview, setPhotoPreview] = useState(null);
   const [photoUploadStatus, setPhotoUploadStatus] = useState(null);
   const [showForceButton, setShowForceButton] = useState(false);
   const [photoData, setPhotoData] = useState({});
   const [photoChanged, setPhotoChanged] = useState(false);
   const [templates, setTemplates] = useState({});
+  const [showNavigateModal, setShowNavigateModal] = useState(false);
+  const [duplicateHealthcardPatient, setDuplicateHealthcardPatient] = useState(
+    {},
+  );
 
   const getDefaultForm = () => ({
     ...DEFAULT_FORM,
@@ -220,43 +222,43 @@ const AdminEdit = () => {
     tests: (
       <Tests
         setActiveTab={setActiveTab}
-        currentRegistrationId={currentRegistrationId}
+        currentRegistrationId={registrationId}
       />
     ),
     medication: (
       <Medications
         setActiveTab={setActiveTab}
-        currentRegistrationId={currentRegistrationId}
+        currentRegistrationId={registrationId}
       />
     ),
     dispensing: (
       <Dispensing
         setActiveTab={setActiveTab}
-        currentRegistrationId={currentRegistrationId}
+        currentRegistrationId={registrationId}
       />
     ),
     notes: (
       <Notes
         setActiveTab={setActiveTab}
-        currentRegistrationId={currentRegistrationId}
+        currentRegistrationId={registrationId}
       />
     ),
     activities: (
       <Activities
         setActiveTab={setActiveTab}
-        currentRegistrationId={currentRegistrationId}
+        currentRegistrationId={registrationId}
       />
     ),
     interactions: (
       <Interactions
         setActiveTab={setActiveTab}
-        currentRegistrationId={currentRegistrationId}
+        currentRegistrationId={registrationId}
       />
     ),
     attachments: (
       <Attachments
         setActiveTab={setActiveTab}
-        currentRegistrationId={currentRegistrationId}
+        currentRegistrationId={registrationId}
       />
     ),
   };
@@ -418,8 +420,9 @@ const AdminEdit = () => {
           result.message === "Patient with that name and dob already exists."
         ) {
           setShowForceButton(true);
+        } else {
+          toast.error(result.message || "Failed editing registration.");
         }
-        toast.error(result.message || "Failed editing registration.");
       } else {
         toast.error("Failed editing registration. Please try again.");
       }
@@ -431,6 +434,85 @@ const AdminEdit = () => {
     setPhotoChanged(false);
   };
 
+  const checkIfUserExists = async (firstName, lastName, dob) => {
+    const data = {
+      first_name: firstName,
+      last_name: lastName,
+      dob: dob,
+      id: registrationId,
+    };
+
+    const result = await PatientServices.check_identity_exists(data);
+
+    if (result.success) {
+      const exists = result.data?.exists;
+
+      if (!exists) {
+        return;
+      } else {
+        toast("Name and DOB match another registration", {
+          icon: "⚠️",
+          style: {
+            fontSize: "14px",
+          },
+        });
+      }
+    }
+  };
+
+  useEffect(() => {
+    if (!formData.first_name || !formData.last_name || !formData.dob) return;
+
+    const timer = setTimeout(() => {
+      checkIfUserExists(formData.first_name, formData.last_name, formData.dob);
+    }, 800);
+
+    return () => {
+      clearTimeout(timer);
+    };
+  }, [formData.first_name, formData.last_name, formData.dob]);
+
+  const checkIfHealthcardExists = async (healthCard) => {
+    const data = {
+      health_card: healthCard,
+      id: registrationId,
+    };
+
+    const result = await PatientServices.check_healthcard_exists(data);
+
+    if (result.success) {
+      const exists = result.data?.exists;
+
+      if (!exists) {
+        return;
+      } else {
+        setDuplicateHealthcardPatient({
+          id: result.data?.user?.id,
+          firstName: result.data?.user?.first_name,
+          lastName: result.data?.user?.last_name,
+        });
+        setShowNavigateModal(true);
+      }
+    }
+  };
+
+  useEffect(() => {
+    if (
+      formData.health_card.length != 10 ||
+      !formData.health_card ||
+      formData.health_card === "0000000000"
+    )
+      return;
+
+    const timer = setTimeout(() => {
+      checkIfHealthcardExists(formData.health_card);
+    }, 800);
+
+    return () => {
+      clearTimeout(timer);
+    };
+  }, [formData.health_card]);
+
   useEffect(() => {
     if (saveStatus?.type === "success") {
       window.scrollTo(0, 0);
@@ -441,6 +523,12 @@ const AdminEdit = () => {
 
   return (
     <div className="bg-gray-50">
+      {showNavigateModal && (
+        <DuplicateModal
+          userData={duplicateHealthcardPatient}
+          setShowConfirm={setShowNavigateModal}
+        />
+      )}
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
         <div className="bg-white rounded-lg shadow-md p-4">
           {getAllowedTabs().length == 0 ? (
@@ -512,9 +600,7 @@ const AdminEdit = () => {
                   {/* Copy Button */}
                   <button
                     type="button"
-                    onClick={() =>
-                      copyFormData(currentRegistrationId, formData)
-                    }
+                    onClick={() => copyFormData(registrationId, formData)}
                     className="w-full bg-black text-white py-3 px-6 rounded-md hover:bg-gray-800 transition-colors text-lg font-semibold"
                   >
                     Copy

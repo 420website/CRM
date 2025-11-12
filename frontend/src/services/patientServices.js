@@ -44,6 +44,21 @@ export const PatientServices = {
       "Updating patient failed.",
     );
   },
+
+  check_identity_exists: async (data) => {
+    return apiCall(
+      () => api.post(`/patients/identity/verify`, data),
+      "Verifying name and dob failed.",
+    );
+  },
+
+  check_healthcard_exists: async (data) => {
+    return apiCall(
+      () => api.post(`/patients/healthcard/verify`, data),
+      "Verifying healthcard failed.",
+    );
+  },
+
   // ======================
   // Test
   // ======================
