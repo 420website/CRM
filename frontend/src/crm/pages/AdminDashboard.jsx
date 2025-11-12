@@ -323,7 +323,11 @@ const AdminDashboard = () => {
         );
       }
       if (searchDate) {
-        data = data.filter((item) => item.reg_date === searchDate);
+        data = data.filter(
+          (item) =>
+            new Date(item.created_at).toLocaleDateString("en-CA") ===
+            searchDate,
+        );
       }
 
       if (searchDisposition) {
@@ -351,7 +355,9 @@ const AdminDashboard = () => {
       }
       if (searchDate) {
         data = data.filter(
-          (item) => item.finalized_at.split("T")[0] === searchDate,
+          (item) =>
+            new Date(item.created_at).toLocaleDateString("en-CA") ===
+            searchDate,
         );
       }
       if (searchDisposition) {
