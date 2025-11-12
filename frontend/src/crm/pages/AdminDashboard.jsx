@@ -12,7 +12,7 @@ import DatePicker from "../ui/DatePicker";
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
-  const { logout } = useAuth();
+  const { logout, userRole } = useAuth();
   const {
     referralSites,
     dispositions,
@@ -24,7 +24,9 @@ const AdminDashboard = () => {
   } = useRegistration();
 
   // Core state
-  const [activeTab, setActiveTab] = useState("activities");
+  const [activeTab, setActiveTab] = useState(
+    userRole !== "limited" ? "activities" : "submitted",
+  );
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
@@ -517,26 +519,30 @@ const AdminDashboard = () => {
         <div className="flex-grow flex flex-col bg-white rounded-lg shadow-md p-6">
           {/* Tabs */}
           <div className="flex border-b mb-6">
-            <button
-              onClick={() => setActiveTab("activities")}
-              className={`py-2 px-4 font-medium border-b-2 transition-colors ${
-                activeTab === "activities"
-                  ? "border-blue-600 text-blue-600"
-                  : "border-transparent text-gray-500 hover:text-gray-700"
-              }`}
-            >
-              Activities ({dashboardStats.total_activities})
-            </button>
-            <button
-              onClick={() => setActiveTab("pending")}
-              className={`py-2 px-4 font-medium border-b-2 transition-colors ${
-                activeTab === "pending"
-                  ? "border-blue-600 text-blue-600"
-                  : "border-transparent text-gray-500 hover:text-gray-700"
-              }`}
-            >
-              Pending ({dashboardStats.pending_registrations})
-            </button>
+            {userRole !== "limited" && (
+              <>
+                <button
+                  onClick={() => setActiveTab("activities")}
+                  className={`py-2 px-4 font-medium border-b-2 transition-colors ${
+                    activeTab === "activities"
+                      ? "border-blue-600 text-blue-600"
+                      : "border-transparent text-gray-500 hover:text-gray-700"
+                  }`}
+                >
+                  Activities ({dashboardStats.total_activities})
+                </button>
+                <button
+                  onClick={() => setActiveTab("pending")}
+                  className={`py-2 px-4 font-medium border-b-2 transition-colors ${
+                    activeTab === "pending"
+                      ? "border-blue-600 text-blue-600"
+                      : "border-transparent text-gray-500 hover:text-gray-700"
+                  }`}
+                >
+                  Pending ({dashboardStats.pending_registrations})
+                </button>
+              </>
+            )}
             <button
               onClick={() => setActiveTab("submitted")}
               className={`py-2 px-4 font-medium border-b-2 transition-colors ${

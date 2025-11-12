@@ -1152,6 +1152,18 @@ export default function Client({
                   individual patients.
                 </p>
               </div>
+              <div className="space-y-2">
+                <label className="flex items-center">
+                  <input
+                    type="checkbox"
+                    name="limited"
+                    checked={formData.limited}
+                    onChange={handleChange}
+                    className="mr-2"
+                  />
+                  Limited
+                </label>
+              </div>
 
               <div>
                 <div className="flex items-center justify-between mb-2">

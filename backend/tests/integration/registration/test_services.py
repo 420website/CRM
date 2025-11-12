@@ -167,7 +167,44 @@ class TestPatientService(IsolatedAsyncioTestCase):
         self.assertEqual(
             patients[0].first_name, self.minimal_patient.first_name
         )
+        self.assertTrue(patients[0].limited)
         self.assertIsNotNone(patients[0].id)
+
+    async def test_create_patient_limited(self):
+        """Test creation of a default patient"""
+        self.minimal_patient.limited = True
+
+        # Test
+        id = await PatientService.create_patient(self.minimal_patient)
+
+        # Validate
+        patients = await PatientService.get_patient_by_id(id)
+        self.assertTrue(patients.limited)
+        self.assertEqual(patients.first_name, self.minimal_patient.first_name)
+
+    async def test_create_patient_unlimited(self):
+        """Test creation of a default patient"""
+        self.minimal_patient.limited = False
+
+        # Test
+        id = await PatientService.create_patient(self.minimal_patient)
+
+        # Validate
+        patients = await PatientService.get_patient_by_id(id)
+        self.assertFalse(patients.limited)
+        self.assertEqual(patients.first_name, self.minimal_patient.first_name)
+
+    async def test_update_patient_unlimited(self):
+        """Test creation of a default patient"""
+        id = await PatientService.create_patient(self.minimal_patient)
+
+        # Test
+        update_data = PatientUpdate(limited=False)
+        await PatientService.update_patient(id, update_data)
+
+        # Validate
+        patients = await PatientService.get_patient_by_id(id)
+        self.assertFalse(patients.limited)
 
     async def test_create_patient_duplicate_healthcard(self):
         """Test creation of a default patient"""
