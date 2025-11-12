@@ -28,6 +28,7 @@ export function RegistrationProvider({ children }) {
   const [outcomes, setOutcomes] = useState([]);
   const [genericInteractions, setGenericInteractions] = useState([]);
   const [genericCoverage, setGenericCoverage] = useState([]);
+  const [genericPhysicians, setGenericPhysicians] = useState([]);
 
   // Patient
   const [registrationId, setRegistrationId] = useState(null);
@@ -39,6 +40,7 @@ export function RegistrationProvider({ children }) {
   const [notes, setNotes] = useState([]);
 
   // Modals
+  const [showPhysicianManager, setShowPhysicianManager] = useState(false);
   const [showInteractionManager, setShowInteractionManager] = useState(false);
   const [showCoverageManager, setShowCoverageManager] = useState(false);
   const [showNoteManager, setShowNoteManager] = useState(false);
@@ -388,6 +390,24 @@ export function RegistrationProvider({ children }) {
     setLoading(false);
   };
 
+  const getPhysicians = async () => {
+    setLoading(true);
+    setError("");
+
+    const result = await GeneralServices.get_general_type("physician");
+
+    if (result.success) {
+      setGenericPhysicians(result.data);
+    } else {
+      if (result.status === 400 || result.status === 409) {
+        setError(result.message || "Error getting physicians.");
+      } else {
+        setError("Error getting physicians. Please try again.");
+      }
+    }
+    setLoading(false);
+  };
+
   // clinical templates
   const getClinicalTemplates = async () => {
     setLoading(true);
@@ -448,6 +468,7 @@ export function RegistrationProvider({ children }) {
       getRegistrations();
       getGenericInteractions();
       getCoverageTypes();
+      getPhysicians();
     };
 
     getInitialData();
@@ -456,11 +477,15 @@ export function RegistrationProvider({ children }) {
   return (
     <RegistrationContext.Provider
       value={{
+        setShowPhysicianManager,
+        showPhysicianManager,
+        getPhysicians,
         genericCoverage,
         genericInteractions,
         getGenericInteractions,
         getCoverageTypes,
         medicationTemplates,
+        genericPhysicians,
         outcomes,
         referralSites,
         dispositions,

@@ -9,6 +9,7 @@ import { useRegistration } from "../../context/RegistrationContext";
 import DatePicker from "../ui/DatePicker";
 import { useAuth } from "../../context/AuthContext";
 import CoverageManager from "../managers/CoverageManager";
+import PhysicianManager from "../managers/PhysicianManager";
 
 // Map Google Places province codes to full province names
 const getProvince = (code) => {
@@ -46,6 +47,7 @@ export default function Client({
   const {
     dispositions,
     genericCoverage,
+    genericPhysicians,
     referralSites,
     clinicalTemplates,
     setShowCoverageManager,
@@ -53,6 +55,8 @@ export default function Client({
     setShowDispositionManager,
     setShowClinicalManager,
     setShowReferralSiteManager,
+    setShowPhysicianManager,
+    showPhysicianManager,
   } = useRegistration();
 
   const defaultPositiveClinicalSummary = async (formData) => {
@@ -305,6 +309,7 @@ export default function Client({
       <div className="tab-content">
         <div className="space-y-6">
           {showCoverageManager && <CoverageManager />}
+          {showPhysicianManager && <PhysicianManager />}
 
           {/* Basic Information */}
           <div>
@@ -1149,12 +1154,23 @@ export default function Client({
               </div>
 
               <div>
-                <label
-                  htmlFor="physician"
-                  className="block text-sm font-medium text-gray-700 mb-2"
-                >
-                  Physician
-                </label>
+                <div className="flex items-center justify-between mb-2">
+                  <label
+                    htmlFor="physician"
+                    className="block text-sm font-medium text-gray-700 mb-2"
+                  >
+                    Physician
+                  </label>
+                  {userRole == "admin" && (
+                    <button
+                      type="button"
+                      onClick={() => setShowPhysicianManager(true)}
+                      className="text-blue-600 hover:text-blue-800 text-sm"
+                    >
+                      Manage Physicians
+                    </button>
+                  )}
+                </div>
                 <select
                   id="physician"
                   name="physician"
@@ -1162,8 +1178,27 @@ export default function Client({
                   onChange={handleChange}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black"
                 >
-                  <option value="Dr. David Fletcher">Dr. David Fletcher</option>
                   <option value="None">None</option>
+                  {/* Most Frequently Used */}
+                  {genericPhysicians
+                    .filter((c) => c.is_frequent)
+                    .map((c) => (
+                      <option key={c.id} value={c.name}>
+                        {c.name}
+                      </option>
+                    ))}
+                  {/* Separator */}
+                  {genericPhysicians.filter((c) => !c.is_frequent).length >
+                    0 && <option disabled>-------</option>}
+                  {/* All Others in Alphabetical Order */}
+                  {genericPhysicians
+                    .filter((c) => !c.is_frequent)
+                    .sort((a, b) => a.name.localeCompare(b.name))
+                    .map((c) => (
+                      <option key={c.id} value={c.name}>
+                        {c.name}
+                      </option>
+                    ))}
                 </select>
                 <p className="mt-1 text-sm text-gray-500">
                   Automatically set to "None" when disposition is "POCT NEG"
