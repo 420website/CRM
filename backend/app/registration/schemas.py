@@ -116,6 +116,7 @@ class PatientRead(PatientBase):
     dob: dt.date
     health_card: Optional[str] = None
     health_card_version: Optional[str] = None
+    file_id: Optional[str] = None
     created_at: datetime
     updated_at: datetime
 

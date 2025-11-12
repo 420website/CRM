@@ -159,7 +159,9 @@ export default function RegistrationItem({
                   Finalized: {new Date(item.finalized_at).toLocaleString()}
                 </p>
               )}
-            <p className="text-xs text-gray-500 mt-1">ID: {item.id}</p>
+            <p className="text-xs text-gray-500 mt-1">
+              {`File: ${item.file_id || "N/A"} ID: ${item.id}`}
+            </p>
           </div>
 
           {/* Photo and buttons*/}
