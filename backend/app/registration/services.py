@@ -280,22 +280,29 @@ class PatientService:
 
     @staticmethod
     async def update_patient_status(
-        patient_id: int,
-        status: str,
+        patient_id: int, status: str, is_first_finalize: bool
     ) -> bool:
-        if status == "finalized" or status == "saved":
+        if status != "pending" and is_first_finalize:
             finalized_at = datetime.now(timezone.utc)
-        else:
-            finalized_at = None
 
-        query = """
-            UPDATE patients
-            SET status = $1, finalized_at=$2, updated_at = NOW()
-            WHERE id = $3
-            RETURNING id;
-        """
+            query = """
+                UPDATE patients
+                SET status = $1, finalized_at=$2, updated_at = NOW()
+                WHERE id = $3
+                RETURNING id;
+            """
+            params = [status, finalized_at, patient_id]
+        else:
+            query = """
+                UPDATE patients
+                SET status = $1, updated_at = NOW()
+                WHERE id = $2
+                RETURNING id;
+            """
+            params = [status, patient_id]
+
         async with database.get_transaction() as conn:
-            row = await conn.fetchrow(query, status, finalized_at, patient_id)
+            row = await conn.fetchrow(query, *params)
             return bool(row)
 
 
