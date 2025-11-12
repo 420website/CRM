@@ -23,6 +23,8 @@ from app.authentication.services import UserService
 from app.dependencies import get_current_user, get_user_pending_mfa
 import pyotp
 from app.registration.router import (
+    check_healthcard,
+    check_name_dob,
     create_activity,
     create_dispensing,
     create_interaction,
@@ -66,6 +68,8 @@ from app.registration.schemas import (
     ActivityUpdate,
     DispensingCreate,
     DispensingUpdate,
+    HealthcardCheck,
+    IdentityCheck,
     InteractionCreate,
     InteractionUpdate,
     MedicationCreate,
@@ -122,6 +126,22 @@ async def mock_register(mock_email_service_class) -> str:
 # Patient
 ###############
 class TestPatientRouter(IsolatedAsyncioTestCase):
+    async def _cleanup_test_data(self):
+        """Helper method to clean up test data"""
+        # Clean up test patients
+        test_names = [
+            ("John", "Doe"),
+            ("Bobby", "Doe"),
+            ("Tim", "Tom"),
+            ("Jane", "Smith"),
+            ("Jane", "Doe"),
+        ]
+        for first, last in test_names:
+            try:
+                await PatientService.delete_patient(first, last)
+            except Exception:
+                pass  # Ignore if patient doesn't exist
+
     @classmethod
     async def get_validated_user(cls):
         token = await mock_register()
@@ -176,6 +196,7 @@ class TestPatientRouter(IsolatedAsyncioTestCase):
         await minio_client.connect()
 
         asyncio.get_event_loop().set_debug(False)
+        await self._cleanup_test_data()
 
         self.patient_data = PatientCreate(
             first_name="Jim",
@@ -665,6 +686,118 @@ class TestPatientRouter(IsolatedAsyncioTestCase):
         updated_patient = await get_patient(patient_id, self.user)
         self.assertEqual(updated_patient.status, "pending")
         self.assertIsNone(updated_patient.finalized_at)
+
+        # Cleanup
+        await PatientService.delete_patient_by_id(patient_id)
+
+    # Checks
+    async def test_check_identity_exists_create(self):
+        patient = PatientCreate(
+            first_name="Jane",
+            last_name="Doe",
+            dob=date(1990, 3, 22),
+            health_card="1234567890",
+            health_card_version="AB",
+        )
+        result = await create_patient(patient, self.user)
+        patient_id = result["patient_id"]
+
+        # Test
+        identity = IdentityCheck(
+            first_name="Jane",
+            last_name="Doe",
+            dob=date(1990, 3, 22),
+        )
+        result = await check_name_dob(identity, self.user)
+        self.assertTrue(result["exists"])
+
+        # Cleanup
+        await PatientService.delete_patient_by_id(patient_id)
+
+    async def test_check_identity_exists_edit(self):
+        patient = PatientCreate(
+            first_name="Jane",
+            last_name="Doe",
+            dob=date(1990, 3, 22),
+            health_card="1234567890",
+            health_card_version="AB",
+        )
+        result = await create_patient(patient, self.user)
+        patient_id = result["patient_id"]
+
+        # Test
+        identity = IdentityCheck(
+            first_name="Jane",
+            last_name="Doe",
+            dob=date(1990, 3, 22),
+            id=patient_id,
+        )
+        result = await check_name_dob(identity, self.user)
+        self.assertFalse(result["exists"])
+
+        # Cleanup
+        await PatientService.delete_patient_by_id(patient_id)
+
+    async def test_check_identity_nonexistant_create(self):
+        # Test
+        identity = IdentityCheck(
+            first_name="Jane",
+            last_name="Doe",
+            dob=date(1990, 3, 22),
+        )
+        result = await check_name_dob(identity, self.user)
+        self.assertFalse(result["exists"])
+
+    async def test_check_healthcard_exists_create(self):
+        patient = PatientCreate(
+            first_name="Jane",
+            last_name="Doe",
+            dob=date(1990, 3, 22),
+            health_card="1234567890",
+            health_card_version="AB",
+        )
+        result = await create_patient(patient, self.user)
+        patient_id = result["patient_id"]
+
+        # Test
+        check_data = HealthcardCheck(health_card="1234567890")
+        result = await check_healthcard(check_data, self.user)
+
+        self.assertTrue(result["exists"])
+        self.assertEqual(result["user"]["id"], patient_id)  # pyright: ignore
+        self.assertEqual(
+            result["user"]["first_name"],  # pyright: ignore
+            patient.first_name,
+        )
+        self.assertEqual(
+            result["user"]["last_name"],  # pyright: ignore
+            patient.last_name,
+        )
+
+        # Cleanup
+        await PatientService.delete_patient_by_id(patient_id)
+
+    async def test_check_healthcard_nonexists_create(self):
+        # Test
+        check_data = HealthcardCheck(health_card="9999999999")
+        result = await check_healthcard(check_data)
+        self.assertFalse(result["exists"])
+
+    async def test_check_healthcard_exists_edit(self):
+        patient = PatientCreate(
+            first_name="Jane",
+            last_name="Doe",
+            dob=date(1990, 3, 22),
+            health_card="1234567890",
+            health_card_version="AB",
+        )
+        result = await create_patient(patient, self.user)
+        patient_id = result["patient_id"]
+
+        # Test
+        check_data = HealthcardCheck(health_card="1234567890", id=patient_id)
+        result = await check_healthcard(check_data)
+        self.assertFalse(result["exists"])
 
         # Cleanup
         await PatientService.delete_patient_by_id(patient_id)

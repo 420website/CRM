@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Client from "../components/Client";
 import Tests from "../tabs/Tests";
 import Intake from "../components/Intake";
@@ -24,6 +24,7 @@ import ForceRegisterModal from "../components/ForcePopupModal";
 import { ObjectServices } from "../../services/objectService";
 import { useRegistration } from "../../context/RegistrationContext";
 import toast from "react-hot-toast";
+import DuplicateModal from "../components/DuplicateModal";
 
 const AdminRegister = () => {
   const {
@@ -50,6 +51,9 @@ const AdminRegister = () => {
   const [photoUploadStatus, setPhotoUploadStatus] = useState(null);
   const [currentVoiceDateField, setCurrentVoiceDateField] = useState("");
   const [photoData, setPhotoData] = useState({});
+  const [showNavigateModal, setShowNavigateModal] = useState(false);
+  const [duplicateHealthcardPatient, setDuplicateHealthcardPatient] =
+    useState(null);
 
   const getDefaultForm = () => ({
     ...DEFAULT_FORM,
@@ -367,8 +371,9 @@ const AdminRegister = () => {
           result.message === "Patient with that name and dob already exists."
         ) {
           setShowForceButton(true);
+        } else {
+          toast.error(result.message || "Registration failed.");
         }
-        toast.error(result.message || "Registration failed.");
       } else {
         toast.error("Registration failed. Please try again.");
       }
@@ -379,6 +384,85 @@ const AdminRegister = () => {
     setLoading(false);
     setIsSubmitting(false);
   };
+
+  const checkIfUserExists = async (firstName, lastName, dob) => {
+    const data = {
+      first_name: firstName,
+      last_name: lastName,
+      dob: dob,
+      id: currentRegistrationId,
+    };
+
+    const result = await PatientServices.check_identity_exists(data);
+
+    if (result.success) {
+      const exists = result.data?.exists;
+
+      if (!exists) {
+        return;
+      } else {
+        toast("Name and DOB match another registration", {
+          icon: "⚠️",
+          style: {
+            fontSize: "14px",
+          },
+        });
+      }
+    }
+  };
+
+  useEffect(() => {
+    if (!formData.first_name || !formData.last_name || !formData.dob) return;
+
+    const timer = setTimeout(() => {
+      checkIfUserExists(formData.first_name, formData.last_name, formData.dob);
+    }, 800);
+
+    return () => {
+      clearTimeout(timer);
+    };
+  }, [formData.first_name, formData.last_name, formData.dob]);
+
+  const checkIfHealthcardExists = async (healthCard) => {
+    const data = {
+      health_card: healthCard,
+      id: currentRegistrationId,
+    };
+
+    const result = await PatientServices.check_healthcard_exists(data);
+
+    if (result.success) {
+      const exists = result.data?.exists;
+
+      if (!exists) {
+        return;
+      } else {
+        setDuplicateHealthcardPatient({
+          id: result.data?.user?.id,
+          firstName: result.data?.user?.first_name,
+          lastName: result.data?.user?.last_name,
+        });
+        setShowNavigateModal(true);
+      }
+    }
+  };
+
+  useEffect(() => {
+    if (
+      formData.health_card.length != 10 ||
+      !formData.health_card ||
+      formData.health_card === "0000000000"
+    )
+      return;
+
+    const timer = setTimeout(() => {
+      checkIfHealthcardExists(formData.health_card);
+    }, 800);
+
+    return () => {
+      clearTimeout(timer);
+    };
+  }, [formData.health_card]);
 
   if (submitStatus?.type === "success") {
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -392,6 +476,12 @@ const AdminRegister = () => {
 
   return (
     <div className="bg-gray-50">
+      {showNavigateModal && (
+        <DuplicateModal
+          userData={duplicateHealthcardPatient}
+          setShowConfirm={setShowNavigateModal}
+        />
+      )}
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
         <div className="bg-white rounded-lg shadow-md p-4">
           <form onSubmit={handleSubmit} className="space-y-6">

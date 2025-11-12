@@ -1,8 +1,33 @@
 from decimal import Decimal
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, field_validator
 from typing import Optional
 from datetime import datetime
 import datetime as dt
+
+
+class IdentityCheck(BaseModel):
+    first_name: str
+    last_name: str
+    dob: dt.date
+    id: Optional[int] = None
+
+    @field_validator("first_name", "last_name")
+    def normalize_name(cls, v):
+        return v.strip().title() if v else v
+
+
+class HealthcardCheck(BaseModel):
+    health_card: str
+    id: Optional[int] = None
+
+
+class HealthcardUser(BaseModel):
+    id: int
+    first_name: str
+    last_name: str
+
+    class Config:
+        from_attributes = True
 
 
 # Shared attributes - all optional for maximum flexibility
@@ -60,6 +85,10 @@ class PatientCreate(PatientBase):
     force_create: bool = False
     status: Optional[str] = None
 
+    @field_validator("first_name", "last_name", "aka")
+    def normalize_name(cls, v):
+        return v.strip().title() if v else v
+
 
 # Schema for updating patient data - inherits all optional fields
 class PatientUpdate(PatientBase):
@@ -68,6 +97,10 @@ class PatientUpdate(PatientBase):
     dob: Optional[dt.date] = None
     force_update: bool = False
     status: Optional[str] = None
+
+    @field_validator("first_name", "last_name", "aka")
+    def normalize_name(cls, v):
+        return v.strip().title() if v else v
 
 
 class PatientStatus(BaseModel):

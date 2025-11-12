@@ -142,6 +142,95 @@ describe("PatientServices.patients", () => {
     const stillThere = listRes.data.find((p) => p.id === createdId);
     expect(stillThere).toBeUndefined();
   });
+
+  it("should get a true that identity exists", async () => {
+    const createRes = await PatientServices.create_patient(patientForm);
+    createdId = createRes.data?.patient_id;
+
+    const data = {
+      first_name: "Johnathon",
+      last_name: "Doe",
+      dob: "1990-05-15",
+    };
+
+    const result = await PatientServices.check_identity_exists(data);
+    expect(result.success).toBe(true);
+    expect(result.data?.exists).toBe(true);
+
+    await PatientServices.delete_patient_by_id(createdId);
+  });
+
+  it("should get a false that identity exists because same id", async () => {
+    const createRes = await PatientServices.create_patient(patientForm);
+    createdId = createRes.data?.patient_id;
+
+    const data = {
+      first_name: "Johnathon",
+      last_name: "Doe",
+      dob: "1990-05-15",
+      id: createdId,
+    };
+
+    const result = await PatientServices.check_identity_exists(data);
+    expect(result.success).toBe(true);
+    expect(result.data?.exists).toBe(false);
+
+    await PatientServices.delete_patient_by_id(createdId);
+  });
+
+  it("should get a false that identity exists", async () => {
+    const data = {
+      first_name: "Johnathon",
+      last_name: "Doe",
+      dob: "1990-05-15",
+    };
+    const result = await PatientServices.check_identity_exists(data);
+    expect(result.success).toBe(true);
+    expect(result.data?.exists).toBe(false);
+  });
+
+  it("should get user that already has healthcard", async () => {
+    const createRes = await PatientServices.create_patient(patientForm);
+    createdId = createRes.data?.patient_id;
+
+    const data = {
+      health_card: "1234567890",
+    };
+
+    const result = await PatientServices.check_healthcard_exists(data);
+    expect(result.success).toBe(true);
+    expect(result.data?.exists).toBe(true);
+    expect(result.data?.user?.id).toBe(createdId);
+    expect(result.data?.user?.first_name).toBe(patientForm.first_name);
+    expect(result.data?.user?.last_name).toBe(patientForm.last_name);
+
+    await PatientServices.delete_patient_by_id(createdId);
+  });
+
+  it("should get false that healthcard already in use because for current user", async () => {
+    const createRes = await PatientServices.create_patient(patientForm);
+    createdId = createRes.data?.patient_id;
+
+    const data = {
+      health_card: "1234567890",
+      id: createdId,
+    };
+
+    const result = await PatientServices.check_healthcard_exists(data);
+    expect(result.success).toBe(true);
+    expect(result.data?.exists).toBe(false);
+
+    await PatientServices.delete_patient_by_id(createdId);
+  });
+
+  it("should get a false that healthcard exists in database", async () => {
+    const data = {
+      health_card: "1234567890",
+    };
+    const result = await PatientServices.check_healthcard_exists(data);
+    expect(result.success).toBe(true);
+    expect(result.data?.exists).toBe(false);
+  });
 });
 
 ////////////////
