@@ -6,6 +6,7 @@ import DocumentPreview from "../components/DocumentPreview";
 import { useRegistration } from "../../context/RegistrationContext";
 import toast from "react-hot-toast";
 import { useAuth } from "../../context/AuthContext";
+import { Download } from "lucide-react";
 
 export default function Attachments({ setActiveTab, currentRegistrationId }) {
   const { userRole } = useAuth();
@@ -103,6 +104,24 @@ export default function Attachments({ setActiveTab, currentRegistrationId }) {
       }
     }
     setLoading(false);
+  };
+
+  const downloadAttachment = async (attachment) => {
+    const result = await ObjectServices.get_attachment_raw(
+      currentRegistrationId,
+      attachment.file_name,
+    );
+
+    if (result.success) {
+      // Create blob and trigger download
+      const blob = new Blob([result.data], { type: attachment.mime_type });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = attachment.file_name;
+      a.click();
+      URL.revokeObjectURL(url);
+    }
   };
 
   const viewAttachment = async (attachment) => {
@@ -558,51 +577,58 @@ export default function Attachments({ setActiveTab, currentRegistrationId }) {
                 {savedAttachments.map((attachment) => (
                   <div
                     key={attachment.id}
-                    className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow"
+                    className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow flex flex-col"
                   >
                     <div className="flex items-center justify-between">
-                      <div className="flex items-center">
-                        {attachment.mime_type === "application/pdf" ? (
-                          <svg
-                            className="h-6 w-6 mr-3 text-red-600"
-                            fill="currentColor"
-                            viewBox="0 0 20 20"
-                          >
-                            <path
-                              fillRule="evenodd"
-                              d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z"
-                              clipRule="evenodd"
-                            />
-                          </svg>
-                        ) : (
-                          <svg
-                            className="h-6 w-6 mr-3 text-green-600"
-                            fill="currentColor"
-                            viewBox="0 0 20 20"
-                          >
-                            <path
-                              fillRule="evenodd"
-                              d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z"
-                              clipRule="evenodd"
-                            />
-                          </svg>
-                        )}
-                        <div>
-                          <p className="text-sm font-medium text-gray-900">
-                            {attachment.document_type}
-                          </p>
-                          <p className="text-xs text-gray-400">
-                            Saved: {attachment.uploaded_at.split("T")[0]},{" "}
-                            {new Date(
-                              attachment.uploaded_at,
-                            ).toLocaleTimeString("en-US", {
+                      {attachment.mime_type === "application/pdf" ? (
+                        <svg
+                          className="h-6 w-6 mr-3 text-red-600"
+                          fill="currentColor"
+                          viewBox="0 0 20 20"
+                        >
+                          <path
+                            fillRule="evenodd"
+                            d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z"
+                            clipRule="evenodd"
+                          />
+                        </svg>
+                      ) : (
+                        <svg
+                          className="h-6 w-6 mr-3 text-green-600"
+                          fill="currentColor"
+                          viewBox="0 0 20 20"
+                        >
+                          <path
+                            fillRule="evenodd"
+                            d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z"
+                            clipRule="evenodd"
+                          />
+                        </svg>
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => downloadAttachment(attachment)}
+                      >
+                        <Download size={16} color="gray" />
+                      </button>
+                    </div>
+                    <div className="flex mt-2 justify-between">
+                      <div>
+                        <p className="text-sm font-medium text-gray-900">
+                          {attachment.document_type}
+                        </p>
+                        <p className="text-xs text-gray-400">
+                          Saved: {attachment.uploaded_at.split("T")[0]},{" "}
+                          {new Date(attachment.uploaded_at).toLocaleTimeString(
+                            "en-US",
+                            {
                               timeZone: "America/New_York",
                               hour12: true,
-                            })}
-                          </p>
-                        </div>
+                            },
+                          )}
+                        </p>
                       </div>
-                      <div className="flex gap-2">
+                      <div className="flex gap-2 justify-end items-center">
                         <button
                           type="button"
                           onClick={() => viewAttachment(attachment)}
