@@ -46,6 +46,7 @@ class TestPatientService(IsolatedAsyncioTestCase):
             ("Tim", "Tom"),
             ("Jane", "Smith"),
             ("Jane", "Doe"),
+            ("Bob", "Doe"),
         ]
         for first, last in test_names:
             try:
@@ -519,6 +520,74 @@ class TestPatientService(IsolatedAsyncioTestCase):
         result2 = await PatientService.get_patient_by_id(id)
 
         self.assertEqual(result.finalized_at, result2.finalized_at)
+
+    async def test_create_patient_file_id_creation(self):
+        patient = PatientCreate(
+            first_name="Jane",
+            last_name="Doe",
+            dob=date(1990, 3, 22),
+            health_card="1234567890",
+            health_card_version="AB",
+        )
+        id = await PatientService.create_patient(patient)
+
+        # Test
+        result = await PatientService.get_patient_by_id(id)
+        self.assertEqual(result.file_id, "JD0390")
+
+    async def test_create_patient_file_id_non_creation(self):
+        patient = PatientCreate(
+            first_name="Jane",
+            last_name="Doe",
+            dob=date(1990, 3, 22),
+        )
+        id = await PatientService.create_patient(patient)
+
+        # Test
+        result = await PatientService.get_patient_by_id(id)
+        self.assertIsNone(result.file_id)
+
+    async def test_create_patient_file_id_update(self):
+        patient = PatientCreate(
+            first_name="Jane",
+            last_name="Doe",
+            dob=date(1990, 3, 22),
+            health_card="1234567890",
+            health_card_version="AB",
+        )
+        id = await PatientService.create_patient(patient)
+        result = await PatientService.get_patient_by_id(id)
+        self.assertEqual(result.file_id, "JD0390")
+
+        # Test
+        update_data = PatientUpdate(
+            first_name="Bob",
+            dob=date(1985, 6, 15),
+            health_card="1234567887",
+        )
+        await PatientService.update_patient(id, update_data)
+        result = await PatientService.get_patient_by_id(id)
+
+        self.assertEqual(result.file_id, "BD0687")
+
+    async def test_create_patient_file_id_update_none(self):
+        patient = PatientCreate(
+            first_name="Jane",
+            last_name="Doe",
+            dob=date(1990, 3, 22),
+            health_card="1234567890",
+            health_card_version="AB",
+        )
+        id = await PatientService.create_patient(patient)
+        result = await PatientService.get_patient_by_id(id)
+        self.assertEqual(result.file_id, "JD0390")
+
+        # Test
+        update_data = PatientUpdate(health_card=None)
+        await PatientService.update_patient(id, update_data)
+        result = await PatientService.get_patient_by_id(id)
+
+        self.assertIsNone(result.file_id)
 
 
 class TestTestsService(IsolatedAsyncioTestCase):
