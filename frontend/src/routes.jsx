@@ -40,6 +40,36 @@ function AuthenticatedRoute() {
   );
 }
 
+function GuestRoute() {
+  const { userRole } = useAuth();
+  const location = useLocation();
+
+  if (!["guest", "admin"].includes(userRole)) {
+    return <Navigate to="/admin-menu" state={{ from: location }} replace />;
+  }
+  return <Outlet />;
+}
+
+function LimitedRoute() {
+  const { userRole } = useAuth();
+  const location = useLocation();
+  if (!["limited", "standard", "admin"].includes(userRole)) {
+    return <Navigate to="/admin-menu" state={{ from: location }} replace />;
+  }
+  return <Outlet />;
+}
+
+function StandardRoute() {
+  const { userRole } = useAuth();
+  const location = useLocation();
+
+  if (!["standard", "admin"].includes(userRole)) {
+    return <Navigate to="/admin-menu" state={{ from: location }} replace />;
+  }
+
+  return <Outlet />;
+}
+
 function AdminRoute() {
   const { userRole } = useAuth();
   const location = useLocation();
@@ -53,17 +83,6 @@ function AdminRoute() {
       <Outlet />
     </UsersProvider>
   );
-}
-
-function StandardRoute() {
-  const { userRole } = useAuth();
-  const location = useLocation();
-
-  if (userRole === "guest") {
-    return <Navigate to="/admin-menu" state={{ from: location }} replace />;
-  }
-
-  return <Outlet />;
 }
 
 function AppRoutes() {
@@ -88,19 +107,33 @@ function AppRoutes() {
           <Route path="/admin-pin" element={<AdminPIN />} />
           <Route path="/verify-email" element={<VerifyEmail />} />
           <Route path="/share-links" element={<ShareViewer />} />
+
+          {/* Authenticate Routes */}
           <Route element={<AuthenticatedRoute />}>
             <Route path="/admin-menu" element={<AdminMenu />} />
-            <Route path="/admin-analytics" element={<AdminAnalytics />} />
-            <Route element={<StandardRoute />}>
-              <Route path="/admin-register" element={<AdminRegister />} />
+
+            {/* Authenticate Routes */}
+            <Route element={<LimitedRoute />}>
               <Route path="/admin-dashboard" element={<AdminDashboard />} />
               <Route
                 path="/admin-edit/:registrationId"
                 element={<AdminEdit />}
               />
-              <Route element={<AdminRoute />}>
-                <Route path="/admin-users" element={<UserManagement />} />
-              </Route>
+            </Route>
+
+            {/* Authenticate Routes */}
+            <Route element={<GuestRoute />}>
+              <Route path="/admin-analytics" element={<AdminAnalytics />} />
+            </Route>
+
+            {/* Authenticate Routes */}
+            <Route element={<StandardRoute />}>
+              <Route path="/admin-register" element={<AdminRegister />} />
+            </Route>
+
+            {/* Authenticate Routes */}
+            <Route element={<AdminRoute />}>
+              <Route path="/admin-users" element={<UserManagement />} />
             </Route>
           </Route>
         </Routes>

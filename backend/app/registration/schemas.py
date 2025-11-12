@@ -83,6 +83,7 @@ class PatientCreate(PatientBase):
     last_name: str
     dob: dt.date
     force_create: bool = False
+    limited: bool = True
     status: Optional[str] = None
 
     @field_validator("first_name", "last_name", "aka")
@@ -96,6 +97,7 @@ class PatientUpdate(PatientBase):
     last_name: Optional[str] = None
     dob: Optional[dt.date] = None
     force_update: bool = False
+    limited: bool = True
     status: Optional[str] = None
 
     @field_validator("first_name", "last_name", "aka")
@@ -114,6 +116,7 @@ class PatientRead(PatientBase):
     first_name: str
     last_name: str
     dob: dt.date
+    limited: bool
     health_card: Optional[str] = None
     health_card_version: Optional[str] = None
     file_id: Optional[str] = None

@@ -44,12 +44,12 @@ class PatientService:
             patient_consent, leave_message, voicemail, text, preferred_time,
             rna_available, rna_result, rna_sample_date, referral_site, referral_person, 
             reg_date, special_attention, instructions, selected_template, 
-            summary_template
+            summary_template, limited
         )
         VALUES (
             $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15,
             $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28,
-            $29, $30, $31, $32, $33, $34, $35
+            $29, $30, $31, $32, $33, $34, $35, $36
         )
         RETURNING id;
         """
@@ -93,6 +93,7 @@ class PatientService:
                     patient.instructions,
                     patient.selected_template,
                     patient.summary_template,
+                    patient.limited,
                 )
                 if row and "id" in row:
                     return row["id"]
