@@ -144,7 +144,11 @@ export default function RegistrationItem({
           </h3>
           <div className="text-sm text-gray-600 mt-1">
             <p style={{ whiteSpace: "nowrap", fontSize: "14px" }}>
-              Registration Date: {item.reg_date || "Not provided"}
+              {`
+              Registration Date: ${
+                new Date(item.created_at).toLocaleDateString("en-CA") ||
+                "Not provided"
+              }`}
             </p>
             <p style={{ whiteSpace: "nowrap", fontSize: "14px" }}>
               Submitted: {new Date(item.created_at).toLocaleString()}
@@ -157,98 +161,102 @@ export default function RegistrationItem({
             <p className="text-xs text-gray-500 mt-1">ID: {item.id}</p>
           </div>
 
-          {/* Lazy loaded photo */}
-          {isShowing && (
-            <div className="mt-4 mb-4">
-              <div className="flex flex-row justify-between sm:flex-row">
-                <p className="text-lg font-medium text-gray-700 mb-2">
-                  Uploaded Photo:
-                </p>
-                <button
-                  className="text-sm font-medium text-gray-700 mb-2"
-                  onClick={() => hidePhoto(item.id, index)}
-                >
-                  x
-                </button>
-              </div>
-              <img
-                src={loadedPhotos[item.id]}
-                alt="Registration photo"
-                className="lg:max-w-xs md:w-3/4 max-h-48 object-contain border rounded"
-                onError={(e) => {
-                  e.target.style.display = "none";
-                }}
-              />
-            </div>
-          )}
-
-          {!isShowing && (
-            <button
-              onClick={() => showPhoto(item.id, index)}
-              className="mt-2 text-sm text-blue-600 hover:text-blue-800"
-            >
-              Show Photo
-            </button>
-          )}
-
-          {loadingPhotos.has(item.id) && (
-            <div className="mt-2 text-sm text-gray-500">Loading photo...</div>
-          )}
-        </div>
-      </div>
-
-      {/* Action Buttons - Horizontal layout with intuitive colors */}
-      <div className="flex gap-2 mt-4 flex-wrap">
-        <button
-          onClick={() => handleDelete(item.id)}
-          disabled={deletingId === item.id}
-          className="bg-red-600 hover:bg-red-700 text-white py-2 px-3 rounded-md transition-colors text-xs font-medium disabled:opacity-50 flex-1 min-w-[60px]"
-        >
-          {deletingId === item.id ? "Deleting..." : "Delete"}
-        </button>
-        <button
-          onClick={() => {
-            navigate(`/admin-edit/${item.id}`);
-          }}
-          className="bg-black hover:bg-gray-800 text-white py-2 px-3 rounded-md transition-colors text-xs font-medium flex-1 min-w-[60px]"
-        >
-          Edit
-        </button>
-
-        {activeTab === "pending" && (
-          <>
-            <button
-              onClick={() => {
-                hidePhoto(item.id, index);
-                handleSave(item.id);
-              }}
-              disabled={finalizingId === item.id}
-              className="bg-black hover:bg-gray-800 text-white py-2 px-3 rounded-md transition-colors text-xs font-medium disabled:opacity-50 flex-1 min-w-[60px]"
-            >
-              {finalizingId === item.id ? "Saving..." : "Save"}
-            </button>
-            <button
-              onClick={() => {
-                hidePhoto(item.id, index);
-                handleFinalize(item.id);
-              }}
-              disabled={finalizingId === item.id}
-              className="bg-green-600 hover:bg-green-700 text-white py-2 px-3 rounded-md transition-colors text-xs font-medium disabled:opacity-50 flex-1 min-w-[60px]"
-            >
-              {finalizingId === item.id ? "Submitting..." : "Submit"}
-            </button>
-          </>
-        )}
-
-        {activeTab === "submitted" && (
-          <button
-            onClick={() => handleRevertToPending(item.id)}
-            disabled={revertingId === item.id}
-            className="bg-green-600 hover:bg-green-700 text-white py-2 px-3 rounded-md transition-colors text-xs font-medium disabled:opacity-50 flex-1 min-w-[60px]"
+          {/* Photo and buttons*/}
+          <div
+            className={`flex gap-2 justify-between ${isShowing ? "flex-row" : "flex-col"}`}
           >
-            {revertingId === item.id ? "Reverting..." : "Back to Pending"}
-          </button>
-        )}
+            {/* Lazy loaded photo */}
+            {isShowing && (
+              <div className="flex-grow">
+                <div className="flex flex-row items-center justify-between sm:flex-row">
+                  <button
+                    onClick={() => hidePhoto(item.id, index)}
+                    className="flex justify-start mt-2 mb-2 text-sm text-blue-600 hover:text-blue-800"
+                  >
+                    Hide Photo
+                  </button>
+                </div>
+                <img
+                  src={loadedPhotos[item.id]}
+                  alt="Registration photo"
+                  className="w-64 h-48 object-cover border rounded"
+                  onError={(e) => {
+                    e.target.style.display = "none";
+                  }}
+                />
+              </div>
+            )}
+
+            {!isShowing && (
+              <button
+                onClick={() => showPhoto(item.id, index)}
+                className="flex justify-start mt-2 text-sm text-blue-600 hover:text-blue-800"
+              >
+                Show Photo
+              </button>
+            )}
+
+            {loadingPhotos.has(item.id) && (
+              <div className="mt-2 text-sm text-gray-500">Loading photo...</div>
+            )}
+
+            {/* Action Buttons - Horizontal layout with intuitive colors */}
+            <div
+              className={`flex gap-2  ${isShowing ? "flex-col" : "flex-row"}`}
+            >
+              <button
+                onClick={() => handleDelete(item.id)}
+                disabled={deletingId === item.id}
+                className={`bg-red-600 hover:bg-red-700 text-white ${isShowing ? "py-1 px-2" : "py-2 px-3"} rounded-md transition-colors text-xs font-medium disabled:opacity-50 flex-1 min-w-[60px]`}
+              >
+                {deletingId === item.id ? "Deleting..." : "Delete"}
+              </button>
+              <button
+                onClick={() => {
+                  navigate(`/admin-edit/${item.id}`);
+                }}
+                className={`bg-black hover:bg-gray-800 text-white ${isShowing ? "py-1 px-2" : "py-2 px-3"} rounded-md transition-colors text-xs font-medium flex-1 min-w-[60px]`}
+              >
+                Edit
+              </button>
+
+              {activeTab === "pending" && (
+                <>
+                  <button
+                    onClick={() => {
+                      hidePhoto(item.id, index);
+                      handleSave(item.id);
+                    }}
+                    disabled={finalizingId === item.id}
+                    className={`bg-black hover:bg-gray-800 text-white ${isShowing ? "py-1 px-2" : "py-2 px-3"} rounded-md transition-colors text-xs font-medium disabled:opacity-50 flex-1 min-w-[60px]`}
+                  >
+                    {finalizingId === item.id ? "Saving..." : "Save"}
+                  </button>
+                  <button
+                    onClick={() => {
+                      hidePhoto(item.id, index);
+                      handleFinalize(item.id);
+                    }}
+                    disabled={finalizingId === item.id}
+                    className={`bg-green-600 hover:bg-green-700 text-white ${isShowing ? "py-1 px-2" : "py-2 px-3"} rounded-md transition-colors text-xs font-medium disabled:opacity-50 flex-1 min-w-[60px]`}
+                  >
+                    {finalizingId === item.id ? "Submitting..." : "Submit"}
+                  </button>
+                </>
+              )}
+
+              {activeTab === "submitted" && (
+                <button
+                  onClick={() => handleRevertToPending(item.id)}
+                  disabled={revertingId === item.id}
+                  className="bg-green-600 hover:bg-green-700 text-white py-2 px-3 rounded-md transition-colors text-xs font-medium disabled:opacity-50 flex-1 min-w-[60px]"
+                >
+                  {revertingId === item.id ? "Reverting..." : "Back to Pending"}
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );
