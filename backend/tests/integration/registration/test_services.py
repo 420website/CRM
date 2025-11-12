@@ -484,6 +484,42 @@ class TestPatientService(IsolatedAsyncioTestCase):
         result = await PatientService.check_healthcard(check_data)
         self.assertFalse(result)
 
+    async def test_update_patient_status_first_finalization(self):
+        patient = PatientCreate(
+            first_name="Jane",
+            last_name="Doe",
+            dob=date(1990, 3, 22),
+            health_card="1234567890",
+            health_card_version="AB",
+        )
+        id = await PatientService.create_patient(patient)
+
+        # Test
+        await PatientService.update_patient_status(id, "finalized", True)
+        patient = await PatientService.get_patient_by_id(id)
+
+        self.assertIsNotNone(patient.finalized_at)
+
+    async def test_update_patient_status_notfirst_finalization(self):
+        patient = PatientCreate(
+            first_name="Jane",
+            last_name="Doe",
+            dob=date(1990, 3, 22),
+            health_card="1234567890",
+            health_card_version="AB",
+        )
+        id = await PatientService.create_patient(patient)
+
+        # Test
+        await PatientService.update_patient_status(id, "finalized", True)
+        result = await PatientService.get_patient_by_id(id)
+
+        await PatientService.update_patient_status(id, "pending", False)
+        await PatientService.update_patient_status(id, "finalized", False)
+        result2 = await PatientService.get_patient_by_id(id)
+
+        self.assertEqual(result.finalized_at, result2.finalized_at)
+
 
 class TestTestsService(IsolatedAsyncioTestCase):
     async def asyncSetUp(self) -> None:

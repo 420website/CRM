@@ -264,7 +264,9 @@ async def update_patient_status(
             detail=f"Patient status already {data.status}.",
         )
 
-    if not await PatientService.update_patient_status(id, data.status):
+    if not await PatientService.update_patient_status(
+        id, data.status, patient.finalized_at is None
+    ):
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Patient could not be updated.",

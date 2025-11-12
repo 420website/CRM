@@ -153,11 +153,12 @@ export default function RegistrationItem({
             <p style={{ whiteSpace: "nowrap", fontSize: "14px" }}>
               Submitted: {new Date(item.created_at).toLocaleString()}
             </p>
-            {item.finalized_at && (
-              <p style={{ whiteSpace: "nowrap", fontSize: "14px" }}>
-                Finalized: {new Date(item.finalized_at).toLocaleString()}
-              </p>
-            )}
+            {(item.status === "finalized" || item.status === "saved") &&
+              item.finalized_at && (
+                <p style={{ whiteSpace: "nowrap", fontSize: "14px" }}>
+                  Finalized: {new Date(item.finalized_at).toLocaleString()}
+                </p>
+              )}
             <p className="text-xs text-gray-500 mt-1">ID: {item.id}</p>
           </div>
 

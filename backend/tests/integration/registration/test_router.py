@@ -685,7 +685,46 @@ class TestPatientRouter(IsolatedAsyncioTestCase):
         # Verify status change
         updated_patient = await get_patient(patient_id, self.user)
         self.assertEqual(updated_patient.status, "pending")
-        self.assertIsNone(updated_patient.finalized_at)
+        self.assertIsNotNone(updated_patient.finalized_at)
+
+        # Cleanup
+        await PatientService.delete_patient_by_id(patient_id)
+
+    async def test_update_patient_status_back_to_submitted(self):
+        """Expecting the patient to have a finalized date when saved."""
+        result = await create_patient(self.patient_data, self.user)
+        patient_id = result["patient_id"]
+
+        status_data = PatientStatus(status="saved")
+        result = await update_patient_status(
+            patient_id,
+            status_data,
+            self.user,
+        )
+        updated_patient_1 = await get_patient(patient_id, self.user)
+        self.assertEqual(result["message"], "Patient updated successfully.")
+
+        status_data = PatientStatus(status="pending")
+        result = await update_patient_status(
+            patient_id,
+            status_data,
+            self.user,
+        )
+
+        # Test
+        status_data = PatientStatus(status="saved")
+        result = await update_patient_status(
+            patient_id,
+            status_data,
+            self.user,
+        )
+
+        # Verify status change
+        updated_patient_2 = await get_patient(patient_id, self.user)
+        self.assertEqual(updated_patient_2.status, "saved")
+        self.assertEqual(
+            updated_patient_1.finalized_at, updated_patient_2.finalized_at
+        )
 
         # Cleanup
         await PatientService.delete_patient_by_id(patient_id)
