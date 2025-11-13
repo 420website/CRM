@@ -780,12 +780,15 @@ export default function Client({
                   </label>
 
                   {/* Use an anchor tag instead of JS handler */}
-                  <a
-                    href={`tel:${formData.phone1.replace(/[^+\d]/g, "")}`}
+                  <button
+                    type="button"
+                    onClick={() =>
+                      (window.location.href = `tel:${formData.phone1.replace(/[^+\d]/g, "")}`)
+                    }
                     className="pr-1"
                   >
                     <PhoneCall className="w-4 h-4 text-gray-700 mb-2" />
-                  </a>
+                  </button>
                 </div>
 
                 <input
@@ -810,12 +813,15 @@ export default function Client({
                   </label>
 
                   {/* Use an anchor tag instead of JS handler */}
-                  <a
-                    href={`tel:${formData.phone2.replace(/[^+\d]/g, "")}`}
+                  <button
+                    type="button"
+                    onClick={() =>
+                      (window.location.href = `tel:${formData.phone2.replace(/[^+\d]/g, "")}`)
+                    }
                     className="pr-1"
                   >
                     <PhoneCall className="w-4 h-4 text-gray-700 mb-2" />
-                  </a>
+                  </button>
                 </div>
                 <input
                   type="tel"
