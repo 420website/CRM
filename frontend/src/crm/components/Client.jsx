@@ -305,14 +305,6 @@ export default function Client({
     }));
   };
 
-  const handleCall = (phoneNumber) => {
-    // Sanitize the number (remove spaces, parentheses, dashes, etc.)
-    const cleanNumber = phoneNumber.replace(/[^+\d]/g, "");
-
-    // Trigger the phone dialer
-    window.location.href = `tel:${cleanNumber}`;
-  };
-
   return (
     <div>
       <div className="tab-content">
@@ -787,15 +779,13 @@ export default function Client({
                     Primary
                   </label>
 
-                  <div className="mb-2">
-                    <button
-                      type="button"
-                      onClick={() => handleCall(formData.phone1)}
-                      className="pr-1"
-                    >
-                      <PhoneCall className="w-4 h-4 text-gray-700" />
-                    </button>
-                  </div>
+                  {/* Use an anchor tag instead of JS handler */}
+                  <a
+                    href={`tel:${formData.phone1.replace(/[^+\d]/g, "")}`}
+                    className="pr-1"
+                  >
+                    <PhoneCall className="w-4 h-4 text-gray-700 mb-2" />
+                  </a>
                 </div>
 
                 <input
@@ -819,16 +809,13 @@ export default function Client({
                     Secondary
                   </label>
 
-                  {/* Wrap just the button + dropdown in a relative container */}
-                  <div className="relative mb-2">
-                    <button
-                      type="button"
-                      onClick={() => handleCall(formData.phone2)}
-                      className="pr-1"
-                    >
-                      <PhoneCall className="w-4 h-4 text-gray-700" />
-                    </button>
-                  </div>
+                  {/* Use an anchor tag instead of JS handler */}
+                  <a
+                    href={`tel:${formData.phone2.replace(/[^+\d]/g, "")}`}
+                    className="pr-1"
+                  >
+                    <PhoneCall className="w-4 h-4 text-gray-700 mb-2" />
+                  </a>
                 </div>
                 <input
                   type="tel"
