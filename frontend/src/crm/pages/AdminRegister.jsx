@@ -221,7 +221,7 @@ const AdminRegister = () => {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
-  function validateForm() {
+  async function validateForm() {
     if (formData.photo && formData.photo.length > 1200 * 1024) {
       toast.error(
         "Photo is too large for submission. Please try uploading a different photo.",
@@ -277,6 +277,15 @@ const AdminRegister = () => {
       return false;
     }
 
+    if (formData.health_card) {
+      if (await checkIfHealthcardExists(formData.health_card)) {
+        document
+          .querySelector("#healthcard")
+          ?.scrollIntoView({ behavior: "smooth" });
+        return false;
+      }
+    }
+
     return true;
   }
 
@@ -297,7 +306,8 @@ const AdminRegister = () => {
 
     const payload = dataOverride || formData;
 
-    if (!validateForm()) {
+    if (!(await validateForm())) {
+      setIsSubmitting(false);
       return;
     }
 
@@ -435,7 +445,7 @@ const AdminRegister = () => {
       const exists = result.data?.exists;
 
       if (!exists) {
-        return;
+        return false;
       } else {
         setDuplicateHealthcardPatient({
           id: result.data?.user?.id,
@@ -443,6 +453,7 @@ const AdminRegister = () => {
           lastName: result.data?.user?.last_name,
         });
         setShowNavigateModal(true);
+        return true;
       }
     }
   };

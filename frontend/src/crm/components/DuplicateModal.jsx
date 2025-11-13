@@ -9,7 +9,7 @@ export default function DuplicateModal({ userData, setShowConfirm }) {
           Health Card Already Registered
         </h3>
         <p className="mb-4 flex justify-center text-center">
-          {`Registered to ${userData.firstName} ${userData.lastName}`}
+          {`Registered to: ${userData.firstName} ${userData.lastName}`}
         </p>
         <div className="flex gap-5 justify-center">
           <button

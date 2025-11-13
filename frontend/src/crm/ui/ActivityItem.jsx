@@ -199,15 +199,15 @@ export default function ActivityItem({
               </h3>
             </div>
             <div className="text-sm text-gray-600 mt-1">
+              <p className="text-xs text-gray-500 mt-1">
+                Activity ID: {item.id}
+              </p>
               <p className="font-medium">
                 Client: {item.first_name} {item.last_name}
               </p>
               <p>Date: {item.date}</p>
               {item.time && <p>Time: {item.time}</p>}
               {item.phone1 && <p>Phone: {item.phone1}</p>}
-              <p className="text-xs text-gray-500 mt-1">
-                Activity ID: {item.id}
-              </p>
             </div>
 
             {/* Lazy loaded photo */}

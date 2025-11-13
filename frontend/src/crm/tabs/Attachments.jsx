@@ -113,8 +113,13 @@ export default function Attachments({ setActiveTab, currentRegistrationId }) {
     );
 
     if (result.success) {
+      const type =
+        attachment.mime_type !== "application/pdf"
+          ? attachment.mime_type
+          : "application/octet-stream";
+
       // Create blob and trigger download
-      const blob = new Blob([result.data], { type: attachment.mime_type });
+      const blob = new Blob([result.data], { type: type });
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
@@ -617,7 +622,7 @@ export default function Attachments({ setActiveTab, currentRegistrationId }) {
                         <p className="text-sm font-medium text-gray-900">
                           {attachment.document_type}
                         </p>
-                        <p className="text-xs text-gray-400">
+                        <p className="text-[11px] text-gray-400">
                           Saved: {attachment.uploaded_at.split("T")[0]},{" "}
                           {new Date(attachment.uploaded_at).toLocaleTimeString(
                             "en-US",
@@ -632,14 +637,14 @@ export default function Attachments({ setActiveTab, currentRegistrationId }) {
                         <button
                           type="button"
                           onClick={() => viewAttachment(attachment)}
-                          className="bg-black text-white px-3 py-1 rounded text-xs hover:bg-gray-800 transition-colors"
+                          className="bg-black text-white px-2 py-1 rounded text-xs hover:bg-gray-800 transition-colors"
                         >
                           View
                         </button>
                         <button
                           type="button"
                           onClick={() => deleteAttachment(attachment.file_name)}
-                          className="bg-red-600 text-white px-3 py-1 rounded text-xs hover:bg-red-700 transition-colors"
+                          className="bg-red-600 text-white px-2 py-1 rounded text-xs hover:bg-red-700 transition-colors"
                         >
                           Remove
                         </button>
