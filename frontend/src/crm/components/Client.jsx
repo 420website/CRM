@@ -782,9 +782,12 @@ export default function Client({
                   {/* Use an anchor tag instead of JS handler */}
                   <button
                     type="button"
-                    onClick={() =>
-                      (window.location.href = `tel:${formData.phone1.replace(/[^+\d]/g, "")}`)
-                    }
+                    onClick={() => {
+                      const cleaned = formData.phone1.replace(/[^+\d]/g, "");
+                      if (cleaned.length >= 10) {
+                        window.location.href = `tel:${cleaned}`;
+                      }
+                    }}
                     className="pr-1"
                   >
                     <PhoneCall className="w-4 h-4 text-gray-700 mb-2" />
@@ -815,9 +818,12 @@ export default function Client({
                   {/* Use an anchor tag instead of JS handler */}
                   <button
                     type="button"
-                    onClick={() =>
-                      (window.location.href = `tel:${formData.phone2.replace(/[^+\d]/g, "")}`)
-                    }
+                    onClick={() => {
+                      const cleaned = formData.phone2.replace(/[^+\d]/g, "");
+                      if (cleaned.length >= 10) {
+                        window.location.href = `tel:${cleaned}`;
+                      }
+                    }}
                     className="pr-1"
                   >
                     <PhoneCall className="w-4 h-4 text-gray-700 mb-2" />
