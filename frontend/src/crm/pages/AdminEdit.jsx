@@ -342,7 +342,7 @@ const AdminEdit = () => {
       return false;
     }
 
-    if (formData.health_card) {
+    if (formData.health_card && formData.health_card !== "0000000000") {
       if (await checkIfHealthcardExists(formData.health_card)) {
         document
           .querySelector("#healthcard")
