@@ -10,6 +10,7 @@ import DatePicker from "../ui/DatePicker";
 import { useAuth } from "../../context/AuthContext";
 import CoverageManager from "../managers/CoverageManager";
 import PhysicianManager from "../managers/PhysicianManager";
+import { PhoneCall } from "lucide-react";
 
 // Map Google Places province codes to full province names
 const getProvince = (code) => {
@@ -302,6 +303,14 @@ export default function Client({
       postal_code: place.postal_code,
       province: getProvince(place.province),
     }));
+  };
+
+  const handleCall = (phoneNumber) => {
+    // Sanitize the number (remove spaces, parentheses, dashes, etc.)
+    const cleanNumber = phoneNumber.replace(/[^+\d]/g, "");
+
+    // Trigger the phone dialer
+    window.location.href = `tel:${cleanNumber}`;
   };
 
   return (
@@ -770,12 +779,25 @@ export default function Client({
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
-                <label
-                  htmlFor="phone1"
-                  className="block text-sm font-medium text-gray-700 mb-2"
-                >
-                  Primary
-                </label>
+                <div className="flex justify-between items-center">
+                  <label
+                    htmlFor="phone1"
+                    className="block text-sm font-medium text-gray-700 mb-2"
+                  >
+                    Primary
+                  </label>
+
+                  <div className="mb-2">
+                    <button
+                      type="button"
+                      onClick={() => handleCall(formData.phone1)}
+                      className="pr-1"
+                    >
+                      <PhoneCall className="w-4 h-4 text-gray-700" />
+                    </button>
+                  </div>
+                </div>
+
                 <input
                   type="tel"
                   id="phone1"
@@ -789,12 +811,25 @@ export default function Client({
               </div>
 
               <div>
-                <label
-                  htmlFor="phone2"
-                  className="block text-sm font-medium text-gray-700 mb-2"
-                >
-                  Secondary
-                </label>
+                <div className="flex justify-between items-center">
+                  <label
+                    htmlFor="phone1"
+                    className="block text-sm font-medium text-gray-700 mb-2"
+                  >
+                    Secondary
+                  </label>
+
+                  {/* Wrap just the button + dropdown in a relative container */}
+                  <div className="relative mb-2">
+                    <button
+                      type="button"
+                      onClick={() => handleCall(formData.phone2)}
+                      className="pr-1"
+                    >
+                      <PhoneCall className="w-4 h-4 text-gray-700" />
+                    </button>
+                  </div>
+                </div>
                 <input
                   type="tel"
                   id="phone2"
