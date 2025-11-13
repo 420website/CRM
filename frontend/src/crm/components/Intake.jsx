@@ -50,7 +50,6 @@ export default function Intake({ submitStatus, setPhotoData }) {
         e.target.value = null;
         return;
       }
-      setSelectedFileName(file ? file.name : "");
 
       // Validate file size (10MB max before compression)
       if (file.size > 10 * 1024 * 1024) {
@@ -60,14 +59,18 @@ export default function Intake({ submitStatus, setPhotoData }) {
       }
 
       try {
-        // Create compressed preview for display only
+        // generate unique name
+        const timestamp = Date.now();
+        const extension = file.name.split(".").pop();
+        const newFileName = `image_${timestamp}.${extension}`;
+        setSelectedFileName(file ? newFileName : "");
+
         const compressedImage = await compressImageToBlob(file, 500);
         const url = URL.createObjectURL(compressedImage);
-
         setPhotoPreview(url);
 
         setPhotoData({
-          name: file.name,
+          name: newFileName,
           file: compressedImage,
         });
       } catch (error) {

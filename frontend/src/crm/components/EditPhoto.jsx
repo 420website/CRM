@@ -49,12 +49,17 @@ export default function EditPhoto({
         e.target.value = null;
         return;
       }
-
+      // Compress for viewing
       const compressedImage = await compressImageToBlob(file, 500);
 
-      setSelectedFileName(file ? file.name : "");
+      // generate unique name
+      const timestamp = Date.now();
+      const extension = file.name.split(".").pop();
+      const newFileName = `image_${timestamp}.${extension}`;
+
+      setSelectedFileName(file ? newFileName : "");
       setPhotoData({
-        name: file.name,
+        name: newFileName,
         file: compressedImage,
       });
       setPhotoChanged(true);
