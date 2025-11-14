@@ -188,6 +188,7 @@ const AdminRegister = () => {
       <Attachments
         setActiveTab={setActiveTab}
         currentRegistrationId={currentRegistrationId}
+        fileId={formData.file_id}
       />
     ),
   };

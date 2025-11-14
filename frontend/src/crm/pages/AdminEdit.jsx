@@ -259,6 +259,7 @@ const AdminEdit = () => {
       <Attachments
         setActiveTab={setActiveTab}
         currentRegistrationId={registrationId}
+        fileId={formData.file_id}
       />
     ),
   };

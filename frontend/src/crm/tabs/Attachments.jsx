@@ -8,7 +8,11 @@ import toast from "react-hot-toast";
 import { useAuth } from "../../context/AuthContext";
 import { Download } from "lucide-react";
 
-export default function Attachments({ setActiveTab, currentRegistrationId }) {
+export default function Attachments({
+  setActiveTab,
+  currentRegistrationId,
+  fileId,
+}) {
   const { userRole } = useAuth();
   const { setShowDocumentTypeManager, documentTypes } = useRegistration();
   const [loading, setLoading] = useState(false);
@@ -118,12 +122,16 @@ export default function Attachments({ setActiveTab, currentRegistrationId }) {
           ? attachment.mime_type
           : "application/octet-stream";
 
+      const prefix = fileId ? `${fileId}-` : "";
+      const extension = attachment.file_name.split(".").pop();
+      const name = `${prefix}${attachment.document_type.replace(/\s/g, "")}.${extension}`;
+
       // Create blob and trigger download
       const blob = new Blob([result.data], { type: type });
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = attachment.file_name;
+      a.download = name;
       a.click();
       URL.revokeObjectURL(url);
     }
