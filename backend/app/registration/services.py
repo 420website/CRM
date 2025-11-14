@@ -11,6 +11,7 @@ from app.registration.schemas import (
     HealthcardCheck,
     HealthcardUser,
     IdentityCheck,
+    IdentityUser,
     InteractionCreate,
     InteractionRead,
     InteractionUpdate,
@@ -129,28 +130,32 @@ class PatientService:
             return PatientRead(**dict(row)) if row else None
 
     @staticmethod
-    async def check_identity(data: IdentityCheck) -> bool:
+    async def check_identity(data: IdentityCheck) -> Union[IdentityUser, None]:
         if data.id is None:
             query = """
-                SELECT EXISTS(
-                    SELECT 1 FROM patients 
-                    WHERE first_name=$1 AND last_name=$2 AND dob=$3
-                ) AS exists;
+                SELECT id, first_name, last_name 
+                FROM patients 
+                WHERE first_name=$1 
+                    AND last_name=$2 
+                    AND dob=$3
             """
             params = [data.first_name, data.last_name, data.dob]
         else:
             query = """
-                SELECT EXISTS(
-                    SELECT 1 FROM patients 
-                    WHERE first_name=$1 AND last_name=$2 AND dob=$3 AND id != $4
-                ) AS exists;
+                SELECT id, first_name, last_name 
+                FROM patients 
+                WHERE first_name=$1 
+                    AND last_name=$2 
+                    AND dob=$3 
+                    AND id!=$4
             """
             params = [data.first_name, data.last_name, data.dob, data.id]
 
         async with database.get_connection() as conn:
-            check = await conn.fetchrow(query, *params)
+            row = await conn.fetchrow(query, *params)
 
-        return check["exists"]
+        if row:
+            return IdentityUser(**dict(row)) if row else None
 
     @staticmethod
     async def check_healthcard(

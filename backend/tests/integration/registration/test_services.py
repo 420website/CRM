@@ -442,7 +442,7 @@ class TestPatientService(IsolatedAsyncioTestCase):
             health_card="1234567890",
             health_card_version="AB",
         )
-        await PatientService.create_patient(patient)
+        id = await PatientService.create_patient(patient)
 
         # Test
         identity = IdentityCheck(
@@ -451,7 +451,9 @@ class TestPatientService(IsolatedAsyncioTestCase):
             dob=date(1990, 3, 22),
         )
         result = await PatientService.check_identity(identity)
-        self.assertTrue(result)
+        self.assertEqual(result.id, id)
+        self.assertEqual(result.first_name, patient.first_name)
+        self.assertEqual(result.last_name, patient.last_name)
 
     async def test_check_identity_exists_edit(self):
         patient = PatientCreate(

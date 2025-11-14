@@ -16,6 +16,15 @@ class IdentityCheck(BaseModel):
         return v.strip().title() if v else v
 
 
+class IdentityUser(BaseModel):
+    id: int
+    first_name: str
+    last_name: str
+
+    class Config:
+        from_attributes = True
+
+
 class HealthcardCheck(BaseModel):
     health_card: str
     id: Optional[int] = None

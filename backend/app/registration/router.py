@@ -108,10 +108,17 @@ async def check_name_dob(
     data: IdentityCheck,
     user: UserRead = Depends(get_current_user),
 ):
-    exists = await PatientService.check_identity(data)
+    existing_user = await PatientService.check_identity(data)
 
-    if exists:
-        return {"exists": True}
+    if existing_user:
+        return {
+            "exists": True,
+            "user": {
+                "id": existing_user.id,
+                "first_name": existing_user.first_name,
+                "last_name": existing_user.last_name,
+            },
+        }
 
     return {"exists": False}
 
