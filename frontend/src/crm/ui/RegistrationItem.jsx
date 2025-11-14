@@ -164,6 +164,24 @@ export default function RegistrationItem({
               )}
           </div>
 
+          {!isShowing && (
+            <button
+              onClick={() => showPhoto(item.id, index)}
+              className="flex justify-start mt-2 mb-2 text-sm text-blue-600 hover:text-blue-800"
+            >
+              Show Photo
+            </button>
+          )}
+
+          {isShowing && (
+            <button
+              onClick={() => hidePhoto(item.id, index)}
+              className="flex justify-start mt-2 mb-2 text-sm text-blue-600 hover:text-blue-800"
+            >
+              Hide Photo
+            </button>
+          )}
+
           {/* Photo and buttons*/}
           <div
             className={`flex gap-2 justify-between ${isShowing ? "flex-row" : "flex-col"}`}
@@ -171,14 +189,6 @@ export default function RegistrationItem({
             {/* Lazy loaded photo */}
             {isShowing && (
               <div className="flex-grow">
-                <div className="flex flex-row items-center justify-between sm:flex-row">
-                  <button
-                    onClick={() => hidePhoto(item.id, index)}
-                    className="flex justify-start mt-2 mb-2 text-sm text-blue-600 hover:text-blue-800"
-                  >
-                    Hide Photo
-                  </button>
-                </div>
                 <img
                   src={loadedPhotos[item.id]}
                   alt="Registration photo"
@@ -188,15 +198,6 @@ export default function RegistrationItem({
                   }}
                 />
               </div>
-            )}
-
-            {!isShowing && (
-              <button
-                onClick={() => showPhoto(item.id, index)}
-                className="flex justify-start mt-2 text-sm text-blue-600 hover:text-blue-800"
-              >
-                Show Photo
-              </button>
             )}
 
             {loadingPhotos.has(item.id) && (
