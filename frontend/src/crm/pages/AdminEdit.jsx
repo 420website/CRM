@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Client from "../components/Client";
 import Tests from "../tabs/Tests";
 import Dispensing from "../tabs/Dispensing";
@@ -20,7 +20,6 @@ import EditPhoto from "../components/EditPhoto";
 import { useNavigate, useParams } from "react-router-dom";
 import { DEFAULT_FORM } from "../forms/Registration";
 import VoiceFillModal from "../components/VoiceInput";
-import ForceRegisterModal from "../components/ForcePopupModal";
 import { ObjectServices } from "../../services/objectService";
 import DocumentTypeManager from "../managers/DocumentTypeManager";
 import { useRegistration } from "../../context/RegistrationContext";
@@ -29,6 +28,7 @@ import DuplicateModal from "../components/DuplicateModal";
 
 const AdminEdit = () => {
   const navigate = useNavigate();
+  const hasRun = useRef(false);
   const {
     showDispositionManager,
     showReferralSiteManager,
@@ -49,14 +49,16 @@ const AdminEdit = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [photoPreview, setPhotoPreview] = useState(null);
   const [photoUploadStatus, setPhotoUploadStatus] = useState(null);
-  const [showForceButton, setShowForceButton] = useState(false);
   const [photoData, setPhotoData] = useState({});
   const [photoChanged, setPhotoChanged] = useState(false);
   const [templates, setTemplates] = useState({});
   const [showNavigateModal, setShowNavigateModal] = useState(false);
-  const [duplicateHealthcardPatient, setDuplicateHealthcardPatient] = useState(
-    {},
-  );
+  const [duplicateHealthcardPatient, setDuplicateHealthcardPatient] =
+    useState(null);
+  const [duplicateIdentity, setDuplicateIdentity] = useState(null);
+  const [showNavigateIdentityModal, setShowNavigateIdentityModal] =
+    useState(false);
+  const [forceSave, setForceSave] = useState(true);
 
   const getDefaultForm = () => ({
     ...DEFAULT_FORM,
@@ -355,19 +357,15 @@ const AdminEdit = () => {
     return true;
   }
 
-  const handleForceSubmit = async (e) => {
-    const forcedData = { ...formData, force_update: true };
-    await handleSubmit(e, forcedData);
-  };
-
-  const cancelForceSubmit = async () => {
-    setShowForceButton(false);
+  const handleNavigateToRegistration = (id) => {
+    setShowNavigateModal(false);
+    setShowNavigateIdentityModal(false);
+    navigate(`/admin-edit/${id}`);
   };
 
   const handleSubmit = async (e, dataOverride = formData) => {
     e.preventDefault();
     setIsSubmitting(true);
-    setShowForceButton(false);
 
     const payload = dataOverride || formData;
 
@@ -399,6 +397,7 @@ const AdminEdit = () => {
       cleanedFormData.selected_template = null;
     }
 
+    cleanedFormData.force_update = forceSave;
     const data = normalizeFormData(cleanedFormData);
 
     const result = await PatientServices.update_patient(registrationId, data);
@@ -427,13 +426,7 @@ const AdminEdit = () => {
       }
     } else {
       if (result.status === 400 || result.status === 409) {
-        if (
-          result.message === "Patient with that name and dob already exists."
-        ) {
-          setShowForceButton(true);
-        } else {
-          toast.error(result.message || "Failed editing registration.");
-        }
+        toast.error(result.message || "Failed editing registration.");
       } else {
         toast.error("Failed editing registration. Please try again.");
       }
@@ -459,22 +452,34 @@ const AdminEdit = () => {
       const exists = result.data?.exists;
 
       if (!exists) {
-        return;
+        return false;
       } else {
-        toast("Name and DOB match another registration", {
-          icon: "⚠️",
-          style: {
-            fontSize: "14px",
-          },
+        setDuplicateIdentity({
+          id: result.data?.user?.id,
+          firstName: result.data?.user?.first_name,
+          lastName: result.data?.user?.last_name,
         });
+        setShowNavigateIdentityModal(true);
+        return true;
       }
     }
+  };
+
+  const handleContinueDuplicateIdentity = () => {
+    setForceSave(true);
+    setShowNavigateIdentityModal(null);
   };
 
   useEffect(() => {
     if (!formData.first_name || !formData.last_name || !formData.dob) return;
 
+    if (!hasRun.current) {
+      hasRun.current = true;
+      return;
+    }
+
     const timer = setTimeout(() => {
+      setForceSave(false);
       checkIfUserExists(formData.first_name, formData.last_name, formData.dob);
     }, 800);
 
@@ -508,6 +513,10 @@ const AdminEdit = () => {
     }
   };
 
+  const handleContinueDuplicateHealthcard = () => {
+    setShowNavigateModal(null);
+  };
+
   useEffect(() => {
     if (
       formData.health_card.length != 10 ||
@@ -537,8 +546,18 @@ const AdminEdit = () => {
     <div className="bg-gray-50">
       {showNavigateModal && (
         <DuplicateModal
+          title={"Health Card Already Registered"}
+          handleGoTo={handleNavigateToRegistration}
           userData={duplicateHealthcardPatient}
-          setShowConfirm={setShowNavigateModal}
+          handleContinue={handleContinueDuplicateHealthcard}
+        />
+      )}
+      {showNavigateIdentityModal && (
+        <DuplicateModal
+          title={"Name and DOB Match Another Registration"}
+          handleGoTo={handleNavigateToRegistration}
+          userData={duplicateIdentity}
+          handleContinue={handleContinueDuplicateIdentity}
         />
       )}
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
@@ -647,12 +666,6 @@ const AdminEdit = () => {
           voiceDateInput={voiceDateInput}
           setVoiceDateInput={setVoiceDateInput}
           handleVoiceDateSubmit={handleVoiceDateSubmit}
-        />
-      )}
-      {showForceButton && (
-        <ForceRegisterModal
-          handleForceSubmit={handleForceSubmit}
-          cancelForceSubmit={cancelForceSubmit}
         />
       )}
       {showDispositionManager && <DispositionManager />}
