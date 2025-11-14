@@ -392,7 +392,7 @@ const AdminDashboard = () => {
 
   return (
     <div className="flex-grow flex flex-col bg-gray-50">
-      <div className="flex-grow flex flex-col max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+      <div className="flex-grow flex flex-col max-w-6xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-4 overflow-x-hidden">
         {showConfirm === "delete" && (
           <ConfirmModal
             message={"Confirm to delete registration"}

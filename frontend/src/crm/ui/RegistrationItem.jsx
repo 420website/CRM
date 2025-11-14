@@ -1,6 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { ObjectServices } from "../../services/objectService";
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import toast from "react-hot-toast";
 
 export function RegistrationItems({
@@ -124,24 +124,51 @@ export default function RegistrationItem({
   showingPhotos,
 }) {
   const navigate = useNavigate();
+  const nameRef = useRef(null);
+  const [nameOnOneLine, setNameOnOneLine] = useState(true);
 
   const isShowing = showingPhotos.some(
     ([id, idx]) => id === item.id && idx === index,
   );
 
+  useEffect(() => {
+    if (nameRef.current) {
+      const height = nameRef.current.offsetHeight;
+      const lineHeight = parseFloat(
+        getComputedStyle(nameRef.current).lineHeight,
+      );
+      setNameOnOneLine(height <= lineHeight * 1.5); // Allow small tolerance
+    }
+  }, [item.first_name, item.last_name]);
+
   return (
     <div key={item.id} className="border rounded-lg p-4 bg-gray-50 mb-2">
       <div className="flex justify-between items-start">
-        <div className="flex-1">
-          <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
-            {item.first_name} {item.last_name}
+        <div className="flex-1 min-w-0">
+          <div className="flex justify-between items-start gap-2 min-w-0">
+            <h3
+              ref={nameRef}
+              className="text-lg font-semibold text-gray-900 min-w-0 break-words"
+            >
+              {nameOnOneLine ? (
+                <>
+                  <span>{item.first_name}</span> <span>{item.last_name}</span>
+                </>
+              ) : (
+                <>
+                  <span>{item.first_name}</span>
+                  <br />
+                  <span>{item.last_name}</span>
+                </>
+              )}
+            </h3>
             {item.disposition && (
-              <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded-md text-xs font-normal">
+              <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded-md text-xs font-normal whitespace-nowrap shrink-0">
                 {item.disposition.charAt(0).toUpperCase() +
                   item.disposition.slice(1).toLowerCase()}
               </span>
             )}
-          </h3>
+          </div>
           <div className="text-sm text-gray-600 mt-1">
             <p className="text-xs text-gray-500 mt-1">
               {`File: ${item.file_id || "N/A"} ID: ${item.id}`}
