@@ -75,7 +75,7 @@ export function RegistrationItems({
   const renderRegistrationItem = useCallback(
     (item, index) => (
       <RegistrationItem
-        key={index}
+        key={item.id}
         index={index}
         activeTab={activeTab}
         item={item}
@@ -133,11 +133,15 @@ export default function RegistrationItem({
 
   useEffect(() => {
     if (nameRef.current) {
-      const height = nameRef.current.offsetHeight;
-      const lineHeight = parseFloat(
-        getComputedStyle(nameRef.current).lineHeight,
-      );
-      setNameOnOneLine(height <= lineHeight * 1.5); // Allow small tolerance
+      // Small delay to ensure layout is complete
+      const timer = setTimeout(() => {
+        const height = nameRef.current.offsetHeight;
+        const lineHeight = parseFloat(
+          getComputedStyle(nameRef.current).lineHeight,
+        );
+        setNameOnOneLine(height <= lineHeight * 1.5);
+      }, 0);
+      return () => clearTimeout(timer);
     }
   }, [item.first_name, item.last_name]);
 
