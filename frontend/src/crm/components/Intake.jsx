@@ -1,20 +1,13 @@
-import { useNavigate } from "react-router-dom";
 import { useState } from "react";
 import { HealthServices } from "../../services/healthService";
 import { compressImageToBlob } from "../../utils/compressImage";
 import toast from "react-hot-toast";
 
 export default function Intake({ submitStatus, setPhotoData }) {
-  const navigate = useNavigate();
   const [error, setError] = useState(null);
   const [selectedFileName, setSelectedFileName] = useState("");
   const [systemTestStatus, setSystemTestStatus] = useState(null);
   const [photoPreview, setPhotoPreview] = useState(null);
-  const [photoUploadStatus, setPhotoUploadStatus] = useState(null);
-
-  const goBack = () => {
-    navigate("/");
-  };
 
   // Not really neccessary, backend should always be functioning
   const testPhotoUploadSystem = async () => {
@@ -82,16 +75,12 @@ export default function Intake({ submitStatus, setPhotoData }) {
 
   const removePhoto = () => {
     setPhotoPreview(null);
-    setPhotoUploadStatus(null);
     setPhotoData({});
     setSelectedFileName("");
 
     // Clear both file inputs
-    const cameraInput = document.getElementById("photo-camera");
     const uploadInput = document.getElementById("photo-upload");
-    if (cameraInput) {
-      cameraInput.value = "";
-    }
+
     if (uploadInput) {
       uploadInput.value = "";
     }
@@ -99,70 +88,6 @@ export default function Intake({ submitStatus, setPhotoData }) {
 
   return (
     <div className="mb-0">
-      <h1 className="text-2xl font-bold text-gray-900 mb-4">Intake</h1>
-      <div className="flex gap-2 mb-4">
-        <button
-          onClick={() => navigate("/admin-menu")}
-          className="inline-flex items-center gap-1 px-3 py-1 bg-black text-white rounded-md hover:bg-gray-800 transition-colors text-xs font-medium"
-          type="button"
-        >
-          <svg
-            className="w-3 h-3"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M15 19l-7-7 7-7"
-            />
-          </svg>
-          Admin Menu
-        </button>
-        <button
-          onClick={() => navigate("/admin-dashboard")}
-          className="inline-flex items-center gap-1 px-3 py-1 bg-black text-white rounded-md hover:bg-gray-800 transition-colors text-xs font-medium"
-          type="button"
-        >
-          <svg
-            className="w-3 h-3"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
-            />
-          </svg>
-          Back to Dashboard
-        </button>
-        <button
-          onClick={goBack}
-          className="inline-flex items-center gap-1 px-3 py-1 bg-white text-black border border-black rounded-md hover:bg-gray-100 transition-colors text-xs font-medium"
-          type="button"
-        >
-          <svg
-            className="w-3 h-3"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M15 19l-7-7 7-7"
-            />
-          </svg>
-          Home
-        </button>
-      </div>
-
       {submitStatus?.type === "error" && (
         <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-md">
           <p className="text-red-800">{submitStatus.message}</p>
@@ -336,80 +261,3 @@ export default function Intake({ submitStatus, setPhotoData }) {
     </div>
   );
 }
-// {/* Photo Upload Status */}
-// {photoUploadStatus && (
-//   <div
-//     className={`mt-4 p-4 rounded-md ${
-//       photoUploadStatus.type === "success"
-//         ? "bg-green-50 border border-green-200"
-//         : photoUploadStatus.type === "error"
-//           ? "bg-red-50 border border-red-200"
-//           : "bg-blue-50 border border-blue-200"
-//     }`}
-//   >
-//     <div className="flex items-center">
-//       {photoUploadStatus.type === "success" && (
-//         <svg
-//           className="w-5 h-5 text-green-600 mr-2"
-//           fill="none"
-//           stroke="currentColor"
-//           viewBox="0 0 24 24"
-//         >
-//           <path
-//             strokeLinecap="round"
-//             strokeLinejoin="round"
-//             strokeWidth={2}
-//             d="M5 13l4 4L19 7"
-//           />
-//         </svg>
-//       )}
-//       {photoUploadStatus.type === "error" && (
-//         <svg
-//           className="w-5 h-5 text-red-600 mr-2"
-//           fill="none"
-//           stroke="currentColor"
-//           viewBox="0 0 24 24"
-//         >
-//           <path
-//             strokeLinecap="round"
-//             strokeLinejoin="round"
-//             strokeWidth={2}
-//             d="M6 18L18 6M6 6l12 12"
-//           />
-//         </svg>
-//       )}
-//       {photoUploadStatus.type === "testing" && (
-//         <svg
-//           className="w-5 h-5 text-blue-600 mr-2 animate-spin"
-//           fill="none"
-//           viewBox="0 0 24 24"
-//         >
-//           <circle
-//             className="opacity-25"
-//             cx="12"
-//             cy="12"
-//             r="10"
-//             stroke="currentColor"
-//             strokeWidth="4"
-//           ></circle>
-//           <path
-//             className="opacity-75"
-//             fill="currentColor"
-//             d="m4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-//           ></path>
-//         </svg>
-//       )}
-//       <p
-//         className={`text-sm ${
-//           photoUploadStatus.type === "success"
-//             ? "text-green-800"
-//             : photoUploadStatus.type === "error"
-//               ? "text-red-800"
-//               : "text-blue-800"
-//         }`}
-//       >
-//         {photoUploadStatus.message}
-//       </p>
-//     </div>
-//   </div>
-// )}

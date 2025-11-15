@@ -28,7 +28,7 @@ import { useNavigate } from "react-router-dom";
 
 const AdminRegister = () => {
   const navigate = useNavigate();
-
+  const { userRole, userPermissions } = useAuth();
   const {
     showDispositionManager,
     showReferralSiteManager,
@@ -40,7 +40,6 @@ const AdminRegister = () => {
   const [voiceInputText, setVoiceInputText] = useState("");
   const [submitStatus, setSubmitStatus] = useState(null);
   const [activeTab, setActiveTab] = useState("client");
-  const { userRole, userPermissions } = useAuth();
   const [showVoiceDateModal, setShowVoiceDateModal] = useState(false);
   const [showVoiceFillModal, setShowVoiceFillModal] = useState(false);
   const [templates, setTemplates] = useState({});
@@ -48,8 +47,6 @@ const AdminRegister = () => {
   const [voiceDateInput, setVoiceDateInput] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [currentRegistrationId, setCurrentRegistrationId] = useState(null);
-  const [photoPreview, setPhotoPreview] = useState(null);
-  const [photoUploadStatus, setPhotoUploadStatus] = useState(null);
   const [currentVoiceDateField, setCurrentVoiceDateField] = useState("");
   const [photoData, setPhotoData] = useState({});
   const [showNavigateModal, setShowNavigateModal] = useState(false);
@@ -222,8 +219,6 @@ const AdminRegister = () => {
   const resetForm = async () => {
     setFormData(getDefaultForm());
     setPhotoData({});
-    setPhotoPreview(null);
-    setPhotoUploadStatus(null);
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
@@ -511,88 +506,172 @@ const AdminRegister = () => {
         />
       )}
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-        <div className="bg-white rounded-lg shadow-md p-4">
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <Intake submitStatus={submitStatus} setPhotoData={setPhotoData} />
-
-            {/* Tabs Navigation */}
-            <div
-              id="tabs"
-              className="border-b border-gray-200 mb-6 relative py-2 scroll-mt-[20px]"
+        <div className="bg-white rounded-lg shadow-md p-4 mb-4">
+          <h1 className="text-2xl font-bold text-gray-900 mb-4">Intake</h1>
+          <div className="flex gap-2">
+            <button
+              onClick={() => navigate("/admin-menu")}
+              className="inline-flex items-center gap-1 px-3 py-1 bg-black text-white rounded-md hover:bg-gray-800 transition-colors text-xs font-medium"
+              type="button"
             >
-              {getAllowedTabs().length > 0 ? (
-                <div className="flex space-x-1 overflow-x-auto overflow-y-hidden scrollbar-hide">
-                  {getAllowedTabs().map((tab) => (
-                    <button
-                      key={tab.id}
-                      type="button"
-                      onClick={() => setActiveTab(tab.id)}
-                      className={`px-4 py-2 text-sm font-medium whitespace-nowrap relative ${
-                        activeTab === tab.id
-                          ? "border-b-2 border-white text-black bg-white -mb-0.5 z-10"
-                          : "border-b-2 border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-50"
-                      }`}
-                    >
-                      {tab.name}
-                    </button>
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center py-8">
-                  <div className="text-gray-500 text-lg mb-2">
-                    🔒 Access Restricted
+              <svg
+                className="w-3 h-3"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M15 19l-7-7 7-7"
+                />
+              </svg>
+              Admin Menu
+            </button>
+            <button
+              onClick={() => navigate("/admin-dashboard")}
+              className="inline-flex items-center gap-1 px-3 py-1 bg-black text-white rounded-md hover:bg-gray-800 transition-colors text-xs font-medium"
+              type="button"
+            >
+              <svg
+                className="w-3 h-3"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
+                />
+              </svg>
+              Back to Dashboard
+            </button>
+            <button
+              type="button"
+              onClick={() => navigate("/")}
+              className="inline-flex items-center gap-1 px-3 py-1 bg-white text-black border border-black rounded-md hover:bg-gray-100 transition-colors text-xs font-medium"
+            >
+              <svg
+                className="w-3 h-3"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M15 19l-7-7 7-7"
+                />
+              </svg>
+              Home
+            </button>
+          </div>
+        </div>
+        <div className="bg-white rounded-lg shadow-md p-4">
+          {getAllowedTabs().length == 0 ? (
+            <div className="text-center py-8">
+              <h1 className="text-gray-500 text-bold text-lg mb-2">
+                🔒 Access Restricted
+              </h1>
+              <p className="text-gray-600 mb-4">
+                You don't have permission to access any registration tabs.
+              </p>
+              <button
+                type="button"
+                onClick={() => navigate("/admin-menu")}
+                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+              >
+                Back to Menu
+              </button>
+            </div>
+          ) : (
+            <form onSubmit={handleSubmit} className="space-y-6">
+              <Intake submitStatus={submitStatus} setPhotoData={setPhotoData} />
+
+              {/* Tabs Navigation */}
+              <div
+                id="tabs"
+                className="border-b border-gray-200 mb-6 relative py-2 scroll-mt-[20px]"
+              >
+                {getAllowedTabs().length > 0 ? (
+                  <div className="flex space-x-1 overflow-x-auto overflow-y-hidden scrollbar-hide">
+                    {getAllowedTabs().map((tab) => (
+                      <button
+                        key={tab.id}
+                        type="button"
+                        onClick={() => setActiveTab(tab.id)}
+                        className={`px-4 py-2 text-sm font-medium whitespace-nowrap relative ${
+                          activeTab === tab.id
+                            ? "border-b-2 border-white text-black bg-white -mb-0.5 z-10"
+                            : "border-b-2 border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-50"
+                        }`}
+                      >
+                        {tab.name}
+                      </button>
+                    ))}
                   </div>
-                  <p className="text-gray-600 mb-4">
-                    You don't have permission to access any registration tabs.
-                  </p>
+                ) : (
+                  <div className="text-center py-8">
+                    <div className="text-gray-500 text-lg mb-2">
+                      🔒 Access Restricted
+                    </div>
+                    <p className="text-gray-600 mb-4">
+                      You don't have permission to access any registration tabs.
+                    </p>
+                    <button
+                      onClick={() => navigate("/admin-menu")}
+                      className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                    >
+                      Back to Menu
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              {/* Tab Content  */}
+              <div className="tab-content">
+                {tabComponents[activeTab] || null}
+              </div>
+
+              {/* Save Button - Only show in Patient tab */}
+              {activeTab === "client" && (
+                <div className="border-t pt-6 space-y-4">
+                  {/* Labels Button */}
                   <button
-                    onClick={() => navigate("/admin-menu")}
-                    className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                    type="button"
+                    onClick={() => copyLabelsData(formData)}
+                    className="w-full bg-black text-white py-3 px-6 rounded-md hover:bg-gray-800 transition-colors text-lg font-semibold"
                   >
-                    Back to Menu
+                    Labels
+                  </button>
+                  {/* Copy Button */}
+                  <button
+                    type="button"
+                    onClick={() =>
+                      copyFormData(currentRegistrationId, formData)
+                    }
+                    className="w-full bg-black text-white py-3 px-6 rounded-md hover:bg-gray-800 transition-colors text-lg font-semibold"
+                  >
+                    Copy
+                  </button>
+                  {/* Submit Button */}
+                  <button
+                    type="submit"
+                    disabled={isSubmitting}
+                    className="w-full bg-black text-white py-3 px-6 rounded-md hover:bg-gray-800 disabled:bg-gray-400 transition-colors text-lg font-semibold"
+                  >
+                    {isSubmitting ? "Saving..." : "Save"}
                   </button>
                 </div>
               )}
-            </div>
-
-            {/* Tab Content  */}
-            <div className="tab-content">
-              {tabComponents[activeTab] || null}
-            </div>
-
-            {/* Save Button - Only show in Patient tab */}
-            {activeTab === "client" && (
-              <div className="border-t pt-6 space-y-4">
-                {/* Labels Button */}
-                <button
-                  type="button"
-                  onClick={() => copyLabelsData(formData)}
-                  className="w-full bg-black text-white py-3 px-6 rounded-md hover:bg-gray-800 transition-colors text-lg font-semibold"
-                >
-                  Labels
-                </button>
-                {/* Copy Button */}
-                <button
-                  type="button"
-                  onClick={() => copyFormData(currentRegistrationId, formData)}
-                  className="w-full bg-black text-white py-3 px-6 rounded-md hover:bg-gray-800 transition-colors text-lg font-semibold"
-                >
-                  Copy
-                </button>
-                {/* Submit Button */}
-                <button
-                  type="submit"
-                  disabled={isSubmitting}
-                  className="w-full bg-black text-white py-3 px-6 rounded-md hover:bg-gray-800 disabled:bg-gray-400 transition-colors text-lg font-semibold"
-                >
-                  {isSubmitting ? "Saving..." : "Save"}
-                </button>
-              </div>
-            )}
-          </form>
+            </form>
+          )}
         </div>
       </div>
-
       {showVoiceFillModal && (
         <VoiceFillModal
           setShowVoiceFillModal={setShowVoiceFillModal}

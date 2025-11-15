@@ -37,18 +37,17 @@ const AdminEdit = () => {
     getRegistrationData,
   } = useRegistration();
   const { registrationId } = useParams();
+  const { userRole, userPermissions } = useAuth();
   const [voiceInputText, setVoiceInputText] = useState("");
   const [loading, setLoading] = useState(false);
   const [saveStatus, setSaveStatus] = useState(null);
   const [selectedTemplate, setSelectedTemplate] = useState("Select");
-  const { userRole, userPermissions } = useAuth();
   const [showVoiceDateModal, setShowVoiceDateModal] = useState(false);
   const [showVoiceFillModal, setShowVoiceFillModal] = useState(false);
   const [currentVoiceDateField, setCurrentVoiceDateField] = useState("");
   const [voiceDateInput, setVoiceDateInput] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [photoPreview, setPhotoPreview] = useState(null);
-  const [photoUploadStatus, setPhotoUploadStatus] = useState(null);
   const [photoData, setPhotoData] = useState({});
   const [photoChanged, setPhotoChanged] = useState(false);
   const [templates, setTemplates] = useState({});
@@ -280,13 +279,6 @@ const AdminEdit = () => {
     ];
 
     return allTabs.filter((tab) => hasTabPermission(tab.id));
-  };
-
-  const resetForm = async () => {
-    setFormData(getDefaultForm());
-    setPhotoPreview(null);
-    setPhotoUploadStatus(null);
-    window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   async function validateForm() {
@@ -561,6 +553,73 @@ const AdminEdit = () => {
         />
       )}
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+        <div className="bg-white rounded-lg shadow-md p-4 mb-4">
+          <h1 className="text-2xl font-bold text-gray-900 mb-4">
+            Edit Registration
+          </h1>
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={() => navigate("/admin-menu")}
+              className="inline-flex items-center gap-1 px-3 py-1 bg-black text-white rounded-md hover:bg-gray-800 transition-colors text-xs font-medium"
+            >
+              <svg
+                className="w-3 h-3"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M15 19l-7-7 7-7"
+                />
+              </svg>
+              Admin Menu
+            </button>
+            <button
+              type="button"
+              onClick={() => navigate("/admin-dashboard")}
+              className="inline-flex items-center gap-1 px-3 py-1 bg-black text-white rounded-md hover:bg-gray-800 transition-colors text-xs font-medium"
+            >
+              <svg
+                className="w-3 h-3"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
+                />
+              </svg>
+              Back to Dashboard
+            </button>
+            <button
+              type="button"
+              onClick={() => navigate("/")}
+              className="inline-flex items-center gap-1 px-3 py-1 bg-white text-black border border-black rounded-md hover:bg-gray-100 transition-colors text-xs font-medium"
+            >
+              <svg
+                className="w-3 h-3"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M15 19l-7-7 7-7"
+                />
+              </svg>
+              Home
+            </button>
+          </div>
+        </div>
         <div className="bg-white rounded-lg shadow-md p-4">
           {getAllowedTabs().length == 0 ? (
             <div className="text-center py-8">
@@ -581,7 +640,6 @@ const AdminEdit = () => {
           ) : (
             <form onSubmit={handleSubmit} className="space-y-6">
               <EditPhoto
-                saveStatus={saveStatus}
                 photoData={photoData}
                 setPhotoData={setPhotoData}
                 photoPreview={photoPreview}
