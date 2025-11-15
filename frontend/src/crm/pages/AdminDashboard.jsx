@@ -529,7 +529,11 @@ const AdminDashboard = () => {
                       : "border-transparent text-gray-500 hover:text-gray-700"
                   }`}
                 >
-                  Activities ({dashboardStats.total_activities})
+                  Activities (
+                  {activeTab === "activities"
+                    ? getFilteredData().length
+                    : dashboardStats.total_activities}
+                  )
                 </button>
                 <button
                   onClick={() => setActiveTab("pending")}
@@ -539,7 +543,11 @@ const AdminDashboard = () => {
                       : "border-transparent text-gray-500 hover:text-gray-700"
                   }`}
                 >
-                  Pending ({dashboardStats.pending_registrations})
+                  Pending (
+                  {activeTab === "pending"
+                    ? getFilteredData().length
+                    : dashboardStats.pending_registrations}
+                  )
                 </button>
               </>
             )}
@@ -551,7 +559,11 @@ const AdminDashboard = () => {
                   : "border-transparent text-gray-500 hover:text-gray-700"
               }`}
             >
-              Submitted ({dashboardStats.submitted_registrations})
+              Submitted (
+              {activeTab === "submitted"
+                ? getFilteredData().length
+                : dashboardStats.submitted_registrations}
+              )
             </button>
           </div>
 
