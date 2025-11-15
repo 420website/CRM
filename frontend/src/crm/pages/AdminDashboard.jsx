@@ -277,11 +277,7 @@ const AdminDashboard = () => {
       }
 
       if (searchDate) {
-        data = data.filter(
-          (item) =>
-            new Date(item.created_at).toLocaleDateString("en-CA") ===
-            searchDate,
-        );
+        data = data.filter((item) => item.date === searchDate);
       }
 
       if (searchDisposition) {
