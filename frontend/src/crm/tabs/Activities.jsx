@@ -14,7 +14,7 @@ export default function Activities({ setActiveTab, currentRegistrationId }) {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleteActivityId, setDeleteActivityId] = useState(null);
   const [activityForm, setActivityForm] = useState({
-    date: new Date().toISOString().split("T")[0], // Default to today
+    date: new Date().toLocaleDateString("en-CA"), // Default to today
     time: "",
     description: "",
   });
@@ -139,7 +139,7 @@ export default function Activities({ setActiveTab, currentRegistrationId }) {
 
   const editActivity = (activity) => {
     setActivityForm({
-      date: activity.date || new Date().toISOString().split("T")[0],
+      date: activity.date || new Date().toLocaleDateString("en-CA"),
       time: activity.time || "",
       description: activity.description || "",
     });
@@ -151,7 +151,7 @@ export default function Activities({ setActiveTab, currentRegistrationId }) {
 
   const clearActivityForm = () => {
     setActivityForm({
-      date: new Date().toISOString().split("T")[0],
+      date: new Date().toLocaleDateString("en-CA"),
       time: "",
       description: "",
     });

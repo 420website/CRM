@@ -14,7 +14,7 @@ export default function Tests({ setActiveTab, currentRegistrationId }) {
   const [editingTestId, setEditingTestId] = useState(null);
   const [testFormData, setTestFormData] = useState({
     test_type: "",
-    test_date: new Date().toISOString().split("T")[0],
+    test_date: new Date().toLocaleDateString("en-CA"),
     hiv_result: "negative",
     hiv_type: "",
     hiv_tester: "CM",
@@ -23,14 +23,14 @@ export default function Tests({ setActiveTab, currentRegistrationId }) {
     bloodwork_type: "",
     bloodwork_circles: "",
     bloodwork_result: "Pending",
-    bloodwork_date_submitted: new Date().toISOString().split("T")[0],
+    bloodwork_date_submitted: new Date().toLocaleDateString("en-CA"),
     bloodwork_tester: "CM",
   });
 
   function resetForm() {
     setTestFormData({
       test_type: "",
-      test_date: new Date().toISOString().split("T")[0],
+      test_date: new Date().toLocaleDateString("en-CA"),
       hiv_result: "negative",
       hiv_type: "",
       hiv_tester: "CM",
@@ -39,7 +39,7 @@ export default function Tests({ setActiveTab, currentRegistrationId }) {
       bloodwork_type: "",
       bloodwork_circles: "",
       bloodwork_result: "Pending",
-      bloodwork_date_submitted: new Date().toISOString().split("T")[0],
+      bloodwork_date_submitted: new Date().toLocaleDateString("en-CA"),
       bloodwork_tester: "CM",
     });
   }
@@ -286,7 +286,7 @@ export default function Tests({ setActiveTab, currentRegistrationId }) {
 
     // Set defaults when switching to HIV
     if (name === "test_type" && value === "HIV") {
-      newTestData.test_date = new Date().toISOString().split("T")[0];
+      newTestData.test_date = new Date().toLocaleDateString("en-CA");
       newTestData.hiv_result = "negative";
       newTestData.hiv_type = "";
       newTestData.hiv_tester = "CM";
@@ -294,7 +294,7 @@ export default function Tests({ setActiveTab, currentRegistrationId }) {
 
     // Set defaults when switching to HCV
     if (name === "test_type" && value === "HCV") {
-      newTestData.test_date = new Date().toISOString().split("T")[0];
+      newTestData.test_date = new Date().toLocaleDateString("en-CA");
       newTestData.hcv_result = "negative";
       newTestData.hcv_tester = "CM";
     }
