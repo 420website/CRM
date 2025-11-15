@@ -12,7 +12,7 @@ import DatePicker from "../ui/DatePicker";
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
-  const { logout } = useAuth();
+  const { logout, userRole } = useAuth();
   const {
     referralSites,
     dispositions,
@@ -24,7 +24,9 @@ const AdminDashboard = () => {
   } = useRegistration();
 
   // Core state
-  const [activeTab, setActiveTab] = useState("activities");
+  const [activeTab, setActiveTab] = useState(
+    userRole !== "limited" ? "activities" : "submitted",
+  );
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
@@ -323,7 +325,11 @@ const AdminDashboard = () => {
         );
       }
       if (searchDate) {
-        data = data.filter((item) => item.reg_date === searchDate);
+        data = data.filter(
+          (item) =>
+            new Date(item.created_at).toLocaleDateString("en-CA") ===
+            searchDate,
+        );
       }
 
       if (searchDisposition) {
@@ -351,7 +357,9 @@ const AdminDashboard = () => {
       }
       if (searchDate) {
         data = data.filter(
-          (item) => item.finalized_at.split("T")[0] === searchDate,
+          (item) =>
+            new Date(item.created_at).toLocaleDateString("en-CA") ===
+            searchDate,
         );
       }
       if (searchDisposition) {
@@ -384,7 +392,7 @@ const AdminDashboard = () => {
 
   return (
     <div className="flex-grow flex flex-col bg-gray-50">
-      <div className="flex-grow flex flex-col max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+      <div className="flex-grow flex flex-col max-w-6xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-4 overflow-x-hidden">
         {showConfirm === "delete" && (
           <ConfirmModal
             message={"Confirm to delete registration"}
@@ -511,26 +519,38 @@ const AdminDashboard = () => {
         <div className="flex-grow flex flex-col bg-white rounded-lg shadow-md p-6">
           {/* Tabs */}
           <div className="flex border-b mb-6">
-            <button
-              onClick={() => setActiveTab("activities")}
-              className={`py-2 px-4 font-medium border-b-2 transition-colors ${
-                activeTab === "activities"
-                  ? "border-blue-600 text-blue-600"
-                  : "border-transparent text-gray-500 hover:text-gray-700"
-              }`}
-            >
-              Activities ({dashboardStats.total_activities})
-            </button>
-            <button
-              onClick={() => setActiveTab("pending")}
-              className={`py-2 px-4 font-medium border-b-2 transition-colors ${
-                activeTab === "pending"
-                  ? "border-blue-600 text-blue-600"
-                  : "border-transparent text-gray-500 hover:text-gray-700"
-              }`}
-            >
-              Pending ({dashboardStats.pending_registrations})
-            </button>
+            {userRole !== "limited" && (
+              <>
+                <button
+                  onClick={() => setActiveTab("activities")}
+                  className={`py-2 px-4 font-medium border-b-2 transition-colors ${
+                    activeTab === "activities"
+                      ? "border-blue-600 text-blue-600"
+                      : "border-transparent text-gray-500 hover:text-gray-700"
+                  }`}
+                >
+                  Activities (
+                  {activeTab === "activities"
+                    ? getFilteredData().length
+                    : dashboardStats.total_activities}
+                  )
+                </button>
+                <button
+                  onClick={() => setActiveTab("pending")}
+                  className={`py-2 px-4 font-medium border-b-2 transition-colors ${
+                    activeTab === "pending"
+                      ? "border-blue-600 text-blue-600"
+                      : "border-transparent text-gray-500 hover:text-gray-700"
+                  }`}
+                >
+                  Pending (
+                  {activeTab === "pending"
+                    ? getFilteredData().length
+                    : dashboardStats.pending_registrations}
+                  )
+                </button>
+              </>
+            )}
             <button
               onClick={() => setActiveTab("submitted")}
               className={`py-2 px-4 font-medium border-b-2 transition-colors ${
@@ -539,7 +559,11 @@ const AdminDashboard = () => {
                   : "border-transparent text-gray-500 hover:text-gray-700"
               }`}
             >
-              Submitted ({dashboardStats.submitted_registrations})
+              Submitted (
+              {activeTab === "submitted"
+                ? getFilteredData().length
+                : dashboardStats.submitted_registrations}
+              )
             </button>
           </div>
 

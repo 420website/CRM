@@ -1,6 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { ObjectServices } from "../../services/objectService";
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import toast from "react-hot-toast";
 
 export function RegistrationItems({
@@ -75,7 +75,7 @@ export function RegistrationItems({
   const renderRegistrationItem = useCallback(
     (item, index) => (
       <RegistrationItem
-        key={index}
+        key={item.id}
         index={index}
         activeTab={activeTab}
         item={item}
@@ -124,131 +124,174 @@ export default function RegistrationItem({
   showingPhotos,
 }) {
   const navigate = useNavigate();
+  const nameRef = useRef(null);
+  const [nameOnOneLine, setNameOnOneLine] = useState(true);
 
   const isShowing = showingPhotos.some(
     ([id, idx]) => id === item.id && idx === index,
   );
 
+  useEffect(() => {
+    if (nameRef.current) {
+      // Small delay to ensure layout is complete
+      const timer = setTimeout(() => {
+        const height = nameRef.current.offsetHeight;
+        const lineHeight = parseFloat(
+          getComputedStyle(nameRef.current).lineHeight,
+        );
+        setNameOnOneLine(height <= lineHeight * 1.5);
+      }, 0);
+      return () => clearTimeout(timer);
+    }
+  }, [item.first_name, item.last_name]);
+
   return (
     <div key={item.id} className="border rounded-lg p-4 bg-gray-50 mb-2">
       <div className="flex justify-between items-start">
-        <div className="flex-1">
-          <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
-            {item.first_name} {item.last_name}
+        <div className="flex-1 min-w-0">
+          <div className="flex justify-between items-start gap-2 min-w-0">
+            <h3
+              ref={nameRef}
+              className="text-lg font-semibold text-gray-900 min-w-0 break-words"
+            >
+              {nameOnOneLine ? (
+                <>
+                  <span>{item.first_name}</span> <span>{item.last_name}</span>
+                </>
+              ) : (
+                <>
+                  <span>{item.first_name}</span>
+                  <br />
+                  <span>{item.last_name}</span>
+                </>
+              )}
+            </h3>
             {item.disposition && (
-              <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded-md text-xs font-normal">
+              <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded-md text-xs font-normal whitespace-nowrap shrink-0">
                 {item.disposition.charAt(0).toUpperCase() +
                   item.disposition.slice(1).toLowerCase()}
               </span>
             )}
-          </h3>
+          </div>
           <div className="text-sm text-gray-600 mt-1">
+            <p className="text-xs text-gray-500 mt-1">
+              {`File: ${item.file_id || "N/A"} ID: ${item.id}`}
+            </p>
             <p style={{ whiteSpace: "nowrap", fontSize: "14px" }}>
-              Registration Date: {item.reg_date || "Not provided"}
+              {`
+              Registration Date: ${
+                new Date(item.created_at).toLocaleDateString("en-CA") ||
+                "Not provided"
+              }`}
             </p>
             <p style={{ whiteSpace: "nowrap", fontSize: "14px" }}>
               Submitted: {new Date(item.created_at).toLocaleString()}
             </p>
-            {item.finalized_at && (
-              <p style={{ whiteSpace: "nowrap", fontSize: "14px" }}>
-                Finalized: {new Date(item.finalized_at).toLocaleString()}
-              </p>
-            )}
-            <p className="text-xs text-gray-500 mt-1">ID: {item.id}</p>
-          </div>
-
-          {/* Lazy loaded photo */}
-          {isShowing && (
-            <div className="mt-4 mb-4">
-              <div className="flex flex-row justify-between sm:flex-row">
-                <p className="text-lg font-medium text-gray-700 mb-2">
-                  Uploaded Photo:
+            {(item.status === "finalized" || item.status === "saved") &&
+              item.finalized_at && (
+                <p style={{ whiteSpace: "nowrap", fontSize: "14px" }}>
+                  Finalized: {new Date(item.finalized_at).toLocaleString()}
                 </p>
-                <button
-                  className="text-sm font-medium text-gray-700 mb-2"
-                  onClick={() => hidePhoto(item.id, index)}
-                >
-                  x
-                </button>
-              </div>
-              <img
-                src={loadedPhotos[item.id]}
-                alt="Registration photo"
-                className="lg:max-w-xs md:w-3/4 max-h-48 object-contain border rounded"
-                onError={(e) => {
-                  e.target.style.display = "none";
-                }}
-              />
-            </div>
-          )}
+              )}
+          </div>
 
           {!isShowing && (
             <button
               onClick={() => showPhoto(item.id, index)}
-              className="mt-2 text-sm text-blue-600 hover:text-blue-800"
+              className="flex justify-start mt-2 mb-2 text-sm text-blue-600 hover:text-blue-800"
             >
               Show Photo
             </button>
           )}
 
-          {loadingPhotos.has(item.id) && (
-            <div className="mt-2 text-sm text-gray-500">Loading photo...</div>
+          {isShowing && (
+            <button
+              onClick={() => hidePhoto(item.id, index)}
+              className="flex justify-start mt-2 mb-2 text-sm text-blue-600 hover:text-blue-800"
+            >
+              Hide Photo
+            </button>
           )}
-        </div>
-      </div>
 
-      {/* Action Buttons - Horizontal layout with intuitive colors */}
-      <div className="flex gap-2 mt-4 flex-wrap">
-        <button
-          onClick={() => handleDelete(item.id)}
-          disabled={deletingId === item.id}
-          className="bg-red-600 hover:bg-red-700 text-white py-2 px-3 rounded-md transition-colors text-xs font-medium disabled:opacity-50 flex-1 min-w-[60px]"
-        >
-          {deletingId === item.id ? "Deleting..." : "Delete"}
-        </button>
-        <button
-          onClick={() => {
-            navigate(`/admin-edit/${item.id}`);
-          }}
-          className="bg-black hover:bg-gray-800 text-white py-2 px-3 rounded-md transition-colors text-xs font-medium flex-1 min-w-[60px]"
-        >
-          Edit
-        </button>
-
-        {activeTab === "pending" && (
-          <>
-            <button
-              onClick={() => {
-                hidePhoto(item.id, index);
-                handleSave(item.id);
-              }}
-              disabled={finalizingId === item.id}
-              className="bg-black hover:bg-gray-800 text-white py-2 px-3 rounded-md transition-colors text-xs font-medium disabled:opacity-50 flex-1 min-w-[60px]"
-            >
-              {finalizingId === item.id ? "Saving..." : "Save"}
-            </button>
-            <button
-              onClick={() => {
-                hidePhoto(item.id, index);
-                handleFinalize(item.id);
-              }}
-              disabled={finalizingId === item.id}
-              className="bg-green-600 hover:bg-green-700 text-white py-2 px-3 rounded-md transition-colors text-xs font-medium disabled:opacity-50 flex-1 min-w-[60px]"
-            >
-              {finalizingId === item.id ? "Submitting..." : "Submit"}
-            </button>
-          </>
-        )}
-
-        {activeTab === "submitted" && (
-          <button
-            onClick={() => handleRevertToPending(item.id)}
-            disabled={revertingId === item.id}
-            className="bg-green-600 hover:bg-green-700 text-white py-2 px-3 rounded-md transition-colors text-xs font-medium disabled:opacity-50 flex-1 min-w-[60px]"
+          {/* Photo and buttons*/}
+          <div
+            className={`flex gap-2 justify-between ${isShowing ? "flex-row" : "flex-col"}`}
           >
-            {revertingId === item.id ? "Reverting..." : "Back to Pending"}
-          </button>
-        )}
+            {/* Lazy loaded photo */}
+            {isShowing && (
+              <div className="flex-grow">
+                <img
+                  src={loadedPhotos[item.id]}
+                  alt="Registration photo"
+                  className="w-64 h-48 object-cover border rounded"
+                  onError={(e) => {
+                    e.target.style.display = "none";
+                  }}
+                />
+              </div>
+            )}
+
+            {loadingPhotos.has(item.id) && (
+              <div className="mt-2 text-sm text-gray-500">Loading photo...</div>
+            )}
+
+            {/* Action Buttons - Horizontal layout with intuitive colors */}
+            <div
+              className={`flex gap-2  ${isShowing ? "flex-col" : "flex-row"}`}
+            >
+              <button
+                onClick={() => handleDelete(item.id)}
+                disabled={deletingId === item.id}
+                className={`bg-red-600 hover:bg-red-700 text-white ${isShowing ? "py-1 px-2" : "py-2 px-3"} rounded-md transition-colors text-xs font-medium disabled:opacity-50 flex-1 min-w-[60px]`}
+              >
+                {deletingId === item.id ? "Deleting..." : "Delete"}
+              </button>
+              <button
+                onClick={() => {
+                  navigate(`/admin-edit/${item.id}`);
+                }}
+                className={`bg-black hover:bg-gray-800 text-white ${isShowing ? "py-1 px-2" : "py-2 px-3"} rounded-md transition-colors text-xs font-medium flex-1 min-w-[60px]`}
+              >
+                Edit
+              </button>
+
+              {activeTab === "pending" && (
+                <>
+                  <button
+                    onClick={() => {
+                      hidePhoto(item.id, index);
+                      handleSave(item.id);
+                    }}
+                    disabled={finalizingId === item.id}
+                    className={`bg-black hover:bg-gray-800 text-white ${isShowing ? "py-1 px-2" : "py-2 px-3"} rounded-md transition-colors text-xs font-medium disabled:opacity-50 flex-1 min-w-[60px]`}
+                  >
+                    {finalizingId === item.id ? "Saving..." : "Save"}
+                  </button>
+                  <button
+                    onClick={() => {
+                      hidePhoto(item.id, index);
+                      handleFinalize(item.id);
+                    }}
+                    disabled={finalizingId === item.id}
+                    className={`bg-green-600 hover:bg-green-700 text-white ${isShowing ? "py-1 px-2" : "py-2 px-3"} rounded-md transition-colors text-xs font-medium disabled:opacity-50 flex-1 min-w-[60px]`}
+                  >
+                    {finalizingId === item.id ? "Submitting..." : "Submit"}
+                  </button>
+                </>
+              )}
+
+              {activeTab === "submitted" && (
+                <button
+                  onClick={() => handleRevertToPending(item.id)}
+                  disabled={revertingId === item.id}
+                  className="bg-green-600 hover:bg-green-700 text-white py-2 px-3 rounded-md transition-colors text-xs font-medium disabled:opacity-50 flex-1 min-w-[60px]"
+                >
+                  {revertingId === item.id ? "Reverting..." : "Back to Pending"}
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );

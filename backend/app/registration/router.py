@@ -19,6 +19,8 @@ from app.registration.schemas import (
     DispensingCreate,
     DispensingRead,
     DispensingUpdate,
+    HealthcardCheck,
+    IdentityCheck,
     InteractionCreate,
     InteractionRead,
     InteractionUpdate,
@@ -99,6 +101,46 @@ async def create_patient(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Unexpected error: {str(e)}",
         )
+
+
+@router.post("/identity/verify")
+async def check_name_dob(
+    data: IdentityCheck,
+    user: UserRead = Depends(get_current_user),
+):
+    existing_user = await PatientService.check_identity(data)
+
+    if existing_user:
+        return {
+            "exists": True,
+            "user": {
+                "id": existing_user.id,
+                "first_name": existing_user.first_name,
+                "last_name": existing_user.last_name,
+            },
+        }
+
+    return {"exists": False}
+
+
+@router.post("/healthcard/verify")
+async def check_healthcard(
+    data: HealthcardCheck,
+    user: UserRead = Depends(get_current_user),
+):
+    existing_user = await PatientService.check_healthcard(data)
+
+    if existing_user:
+        return {
+            "exists": True,
+            "user": {
+                "id": existing_user.id,
+                "first_name": existing_user.first_name,
+                "last_name": existing_user.last_name,
+            },
+        }
+
+    return {"exists": False}
 
 
 @router.get("", response_model=List[PatientRead])
@@ -229,7 +271,9 @@ async def update_patient_status(
             detail=f"Patient status already {data.status}.",
         )
 
-    if not await PatientService.update_patient_status(id, data.status):
+    if not await PatientService.update_patient_status(
+        id, data.status, patient.finalized_at is None
+    ):
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Patient could not be updated.",

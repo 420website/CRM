@@ -9,6 +9,8 @@ from app.registration.schemas import (
     ActivityUpdate,
     DispensingCreate,
     DispensingUpdate,
+    HealthcardCheck,
+    IdentityCheck,
     InteractionCreate,
     InteractionUpdate,
     MedicationCreate,
@@ -43,6 +45,8 @@ class TestPatientService(IsolatedAsyncioTestCase):
             ("Bobby", "Doe"),
             ("Tim", "Tom"),
             ("Jane", "Smith"),
+            ("Jane", "Doe"),
+            ("Bob", "Doe"),
         ]
         for first, last in test_names:
             try:
@@ -105,8 +109,8 @@ class TestPatientService(IsolatedAsyncioTestCase):
             first_name="John",
             last_name="Doe",
             dob=date(1990, 3, 22),
-            health_card="1234567890",
-            health_card_version="AB",
+            # health_card="1234567890",
+            # health_card_version="AB",
         )
 
         self.minimal_patient2 = PatientCreate(
@@ -163,10 +167,49 @@ class TestPatientService(IsolatedAsyncioTestCase):
         self.assertEqual(
             patients[0].first_name, self.minimal_patient.first_name
         )
+        self.assertTrue(patients[0].limited)
         self.assertIsNotNone(patients[0].id)
+
+    async def test_create_patient_limited(self):
+        """Test creation of a default patient"""
+        self.minimal_patient.limited = True
+
+        # Test
+        id = await PatientService.create_patient(self.minimal_patient)
+
+        # Validate
+        patients = await PatientService.get_patient_by_id(id)
+        self.assertTrue(patients.limited)
+        self.assertEqual(patients.first_name, self.minimal_patient.first_name)
+
+    async def test_create_patient_unlimited(self):
+        """Test creation of a default patient"""
+        self.minimal_patient.limited = False
+
+        # Test
+        id = await PatientService.create_patient(self.minimal_patient)
+
+        # Validate
+        patients = await PatientService.get_patient_by_id(id)
+        self.assertFalse(patients.limited)
+        self.assertEqual(patients.first_name, self.minimal_patient.first_name)
+
+    async def test_update_patient_unlimited(self):
+        """Test creation of a default patient"""
+        id = await PatientService.create_patient(self.minimal_patient)
+
+        # Test
+        update_data = PatientUpdate(limited=False)
+        await PatientService.update_patient(id, update_data)
+
+        # Validate
+        patients = await PatientService.get_patient_by_id(id)
+        self.assertFalse(patients.limited)
 
     async def test_create_patient_duplicate_healthcard(self):
         """Test creation of a default patient"""
+        self.minimal_patient.health_card = "1234567890"
+        self.minimal_patient.health_card_version = "AB"
 
         result = await PatientService.create_patient(self.minimal_patient)
         self.assertTrue(result)
@@ -390,6 +433,201 @@ class TestPatientService(IsolatedAsyncioTestCase):
 
         self.assertIsNone(patients)
 
+    # Checks
+    async def test_check_identity_exists_create(self):
+        patient = PatientCreate(
+            first_name="Jane",
+            last_name="Doe",
+            dob=date(1990, 3, 22),
+            health_card="1234567890",
+            health_card_version="AB",
+        )
+        id = await PatientService.create_patient(patient)
+
+        # Test
+        identity = IdentityCheck(
+            first_name="Jane",
+            last_name="Doe",
+            dob=date(1990, 3, 22),
+        )
+        result = await PatientService.check_identity(identity)
+        self.assertEqual(result.id, id)
+        self.assertEqual(result.first_name, patient.first_name)
+        self.assertEqual(result.last_name, patient.last_name)
+
+    async def test_check_identity_exists_edit(self):
+        patient = PatientCreate(
+            first_name="Jane",
+            last_name="Doe",
+            dob=date(1990, 3, 22),
+            health_card="1234567890",
+            health_card_version="AB",
+        )
+        id = await PatientService.create_patient(patient)
+
+        # Test
+        identity = IdentityCheck(
+            first_name="Jane",
+            last_name="Doe",
+            dob=date(1990, 3, 22),
+            id=id,
+        )
+        result = await PatientService.check_identity(identity)
+        self.assertFalse(result)
+
+    async def test_check_identity_nonexistant_create(self):
+        # Test
+        identity = IdentityCheck(
+            first_name="Jane",
+            last_name="Doe",
+            dob=date(1990, 3, 22),
+        )
+        result = await PatientService.check_identity(identity)
+        self.assertFalse(result)
+
+    async def test_check_healthcard_exists_create(self):
+        patient = PatientCreate(
+            first_name="Jane",
+            last_name="Doe",
+            dob=date(1990, 3, 22),
+            health_card="1234567890",
+            health_card_version="AB",
+        )
+        id = await PatientService.create_patient(patient)
+
+        # Test
+        check_data = HealthcardCheck(health_card="1234567890")
+        result = await PatientService.check_healthcard(check_data)
+
+        self.assertEqual(result.id, id)
+        self.assertEqual(result.first_name, patient.first_name)
+        self.assertEqual(result.last_name, patient.last_name)
+
+    async def test_check_healthcard_nonexists_create(self):
+        # Test
+        check_data = HealthcardCheck(health_card="9999999999")
+        result = await PatientService.check_healthcard(check_data)
+        self.assertFalse(result)
+
+    async def test_check_healthcard_exists_edit(self):
+        patient = PatientCreate(
+            first_name="Jane",
+            last_name="Doe",
+            dob=date(1990, 3, 22),
+            health_card="1234567890",
+            health_card_version="AB",
+        )
+        id = await PatientService.create_patient(patient)
+
+        # Test
+        check_data = HealthcardCheck(health_card="1234567890", id=id)
+        result = await PatientService.check_healthcard(check_data)
+        self.assertFalse(result)
+
+    async def test_update_patient_status_first_finalization(self):
+        patient = PatientCreate(
+            first_name="Jane",
+            last_name="Doe",
+            dob=date(1990, 3, 22),
+            health_card="1234567890",
+            health_card_version="AB",
+        )
+        id = await PatientService.create_patient(patient)
+
+        # Test
+        await PatientService.update_patient_status(id, "finalized", True)
+        patient = await PatientService.get_patient_by_id(id)
+
+        self.assertIsNotNone(patient.finalized_at)
+
+    async def test_update_patient_status_notfirst_finalization(self):
+        patient = PatientCreate(
+            first_name="Jane",
+            last_name="Doe",
+            dob=date(1990, 3, 22),
+            health_card="1234567890",
+            health_card_version="AB",
+        )
+        id = await PatientService.create_patient(patient)
+
+        # Test
+        await PatientService.update_patient_status(id, "finalized", True)
+        result = await PatientService.get_patient_by_id(id)
+
+        await PatientService.update_patient_status(id, "pending", False)
+        await PatientService.update_patient_status(id, "finalized", False)
+        result2 = await PatientService.get_patient_by_id(id)
+
+        self.assertEqual(result.finalized_at, result2.finalized_at)
+
+    async def test_create_patient_file_id_creation(self):
+        patient = PatientCreate(
+            first_name="Jane",
+            last_name="Doe",
+            dob=date(1990, 3, 22),
+            health_card="1234567890",
+            health_card_version="AB",
+        )
+        id = await PatientService.create_patient(patient)
+
+        # Test
+        result = await PatientService.get_patient_by_id(id)
+        self.assertEqual(result.file_id, "JD0390")
+
+    async def test_create_patient_file_id_non_creation(self):
+        patient = PatientCreate(
+            first_name="Jane",
+            last_name="Doe",
+            dob=date(1990, 3, 22),
+        )
+        id = await PatientService.create_patient(patient)
+
+        # Test
+        result = await PatientService.get_patient_by_id(id)
+        self.assertIsNone(result.file_id)
+
+    async def test_create_patient_file_id_update(self):
+        patient = PatientCreate(
+            first_name="Jane",
+            last_name="Doe",
+            dob=date(1990, 3, 22),
+            health_card="1234567890",
+            health_card_version="AB",
+        )
+        id = await PatientService.create_patient(patient)
+        result = await PatientService.get_patient_by_id(id)
+        self.assertEqual(result.file_id, "JD0390")
+
+        # Test
+        update_data = PatientUpdate(
+            first_name="Bob",
+            dob=date(1985, 6, 15),
+            health_card="1234567887",
+        )
+        await PatientService.update_patient(id, update_data)
+        result = await PatientService.get_patient_by_id(id)
+
+        self.assertEqual(result.file_id, "BD0687")
+
+    async def test_create_patient_file_id_update_none(self):
+        patient = PatientCreate(
+            first_name="Jane",
+            last_name="Doe",
+            dob=date(1990, 3, 22),
+            health_card="1234567890",
+            health_card_version="AB",
+        )
+        id = await PatientService.create_patient(patient)
+        result = await PatientService.get_patient_by_id(id)
+        self.assertEqual(result.file_id, "JD0390")
+
+        # Test
+        update_data = PatientUpdate(health_card=None)
+        await PatientService.update_patient(id, update_data)
+        result = await PatientService.get_patient_by_id(id)
+
+        self.assertIsNone(result.file_id)
+
 
 class TestTestsService(IsolatedAsyncioTestCase):
     async def asyncSetUp(self) -> None:
@@ -573,6 +811,39 @@ class TestNotesService(IsolatedAsyncioTestCase):
         notes = await NoteService.get_notes_by_patient(self.patient_id)
         self.assertGreaterEqual(len(notes), 2)
         self.assertEqual(notes[0].note_text, "Follow-up note")  # newest first
+
+    async def test_get_notes_by_patient_chronological_order(self):
+        """Expecting th  notes to be returned in order of note_date and updated_at."""
+        await NoteService.create_note(self.patient_id, self.note_data)
+        note = NoteCreate(
+            note_text="Follow-up note",
+            note_date=date(2025, 11, 1),
+            template_type="testing",
+        )
+        await NoteService.create_note(self.patient_id, note)
+
+        note = NoteCreate(
+            note_text="Follow-up note",
+            note_date=date(2025, 11, 1),
+            template_type="new-testing",
+        )
+        await NoteService.create_note(self.patient_id, note)
+
+        note = NoteCreate(
+            note_text="Follow-up note",
+            note_date=date(2025, 10, 1),
+            template_type="old-testing",
+        )
+        await NoteService.create_note(self.patient_id, note)
+
+        # Test
+        notes = await NoteService.get_notes_by_patient(self.patient_id)
+
+        # Validation
+        self.assertGreaterEqual(len(notes), 3)
+        self.assertEqual(notes[0].template_type, "new-testing")
+        self.assertEqual(notes[1].template_type, "testing")
+        self.assertEqual(notes[2].template_type, "old-testing")
 
     #### UPDATE
     async def test_update_note_success(self):

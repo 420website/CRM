@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Client from "../components/Client";
 import Tests from "../tabs/Tests";
 import Dispensing from "../tabs/Dispensing";
@@ -20,14 +20,15 @@ import EditPhoto from "../components/EditPhoto";
 import { useNavigate, useParams } from "react-router-dom";
 import { DEFAULT_FORM } from "../forms/Registration";
 import VoiceFillModal from "../components/VoiceInput";
-import ForceRegisterModal from "../components/ForcePopupModal";
 import { ObjectServices } from "../../services/objectService";
 import DocumentTypeManager from "../managers/DocumentTypeManager";
 import { useRegistration } from "../../context/RegistrationContext";
 import toast from "react-hot-toast";
+import DuplicateModal from "../components/DuplicateModal";
 
 const AdminEdit = () => {
   const navigate = useNavigate();
+  const hasRun = useRef(false);
   const {
     showDispositionManager,
     showReferralSiteManager,
@@ -36,25 +37,27 @@ const AdminEdit = () => {
     getRegistrationData,
   } = useRegistration();
   const { registrationId } = useParams();
+  const { userRole, userPermissions } = useAuth();
   const [voiceInputText, setVoiceInputText] = useState("");
   const [loading, setLoading] = useState(false);
-  const [submitStatus, setSubmitStatus] = useState(null);
   const [saveStatus, setSaveStatus] = useState(null);
   const [selectedTemplate, setSelectedTemplate] = useState("Select");
-  const { userRole, userPermissions } = useAuth();
   const [showVoiceDateModal, setShowVoiceDateModal] = useState(false);
   const [showVoiceFillModal, setShowVoiceFillModal] = useState(false);
   const [currentVoiceDateField, setCurrentVoiceDateField] = useState("");
   const [voiceDateInput, setVoiceDateInput] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [currentRegistrationId, setCurrentRegistrationId] =
-    useState(registrationId);
   const [photoPreview, setPhotoPreview] = useState(null);
-  const [photoUploadStatus, setPhotoUploadStatus] = useState(null);
-  const [showForceButton, setShowForceButton] = useState(false);
   const [photoData, setPhotoData] = useState({});
   const [photoChanged, setPhotoChanged] = useState(false);
   const [templates, setTemplates] = useState({});
+  const [showNavigateModal, setShowNavigateModal] = useState(false);
+  const [duplicateHealthcardPatient, setDuplicateHealthcardPatient] =
+    useState(null);
+  const [duplicateIdentity, setDuplicateIdentity] = useState(null);
+  const [showNavigateIdentityModal, setShowNavigateIdentityModal] =
+    useState(false);
+  const [forceSave, setForceSave] = useState(true);
 
   const getDefaultForm = () => ({
     ...DEFAULT_FORM,
@@ -220,43 +223,44 @@ const AdminEdit = () => {
     tests: (
       <Tests
         setActiveTab={setActiveTab}
-        currentRegistrationId={currentRegistrationId}
+        currentRegistrationId={registrationId}
       />
     ),
     medication: (
       <Medications
         setActiveTab={setActiveTab}
-        currentRegistrationId={currentRegistrationId}
+        currentRegistrationId={registrationId}
       />
     ),
     dispensing: (
       <Dispensing
         setActiveTab={setActiveTab}
-        currentRegistrationId={currentRegistrationId}
+        currentRegistrationId={registrationId}
       />
     ),
     notes: (
       <Notes
         setActiveTab={setActiveTab}
-        currentRegistrationId={currentRegistrationId}
+        currentRegistrationId={registrationId}
       />
     ),
     activities: (
       <Activities
         setActiveTab={setActiveTab}
-        currentRegistrationId={currentRegistrationId}
+        currentRegistrationId={registrationId}
       />
     ),
     interactions: (
       <Interactions
         setActiveTab={setActiveTab}
-        currentRegistrationId={currentRegistrationId}
+        currentRegistrationId={registrationId}
       />
     ),
     attachments: (
       <Attachments
         setActiveTab={setActiveTab}
-        currentRegistrationId={currentRegistrationId}
+        currentRegistrationId={registrationId}
+        fileId={formData.file_id}
       />
     ),
   };
@@ -277,14 +281,7 @@ const AdminEdit = () => {
     return allTabs.filter((tab) => hasTabPermission(tab.id));
   };
 
-  const resetForm = async () => {
-    setFormData(getDefaultForm());
-    setPhotoPreview(null);
-    setPhotoUploadStatus(null);
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  };
-
-  function validateForm() {
+  async function validateForm() {
     if (formData.photo && formData.photo.length > 1200 * 1024) {
       toast.error(
         "Photo is too large for submission. Please try uploading a different photo.",
@@ -331,15 +328,7 @@ const AdminEdit = () => {
       return false;
     }
 
-    if (!formData.health_card) {
-      setIsSubmitting(false);
-      toast.error("Health Card Number required.");
-      document
-        .querySelector("#healthcard")
-        ?.scrollIntoView({ behavior: "smooth" });
-      return false;
-    }
-    if (formData.health_card.length != 10) {
+    if (formData.health_card && formData.health_card.length != 10) {
       setIsSubmitting(false);
       toast.error("Health Card Number must be 10 digits.");
       document
@@ -348,26 +337,32 @@ const AdminEdit = () => {
       return false;
     }
 
+    if (formData.health_card && formData.health_card !== "0000000000") {
+      if (await checkIfHealthcardExists(formData.health_card)) {
+        document
+          .querySelector("#healthcard")
+          ?.scrollIntoView({ behavior: "smooth" });
+        return false;
+      }
+    }
+
     return true;
   }
 
-  const handleForceSubmit = async (e) => {
-    const forcedData = { ...formData, force_update: true };
-    await handleSubmit(e, forcedData);
-  };
-
-  const cancelForceSubmit = async () => {
-    setShowForceButton(false);
+  const handleNavigateToRegistration = (id) => {
+    setShowNavigateModal(false);
+    setShowNavigateIdentityModal(false);
+    navigate(`/admin-edit/${id}`);
   };
 
   const handleSubmit = async (e, dataOverride = formData) => {
     e.preventDefault();
     setIsSubmitting(true);
-    setShowForceButton(false);
 
     const payload = dataOverride || formData;
 
-    if (!validateForm()) {
+    if (!(await validateForm())) {
+      setIsSubmitting(false);
       return;
     }
 
@@ -394,6 +389,7 @@ const AdminEdit = () => {
       cleanedFormData.selected_template = null;
     }
 
+    cleanedFormData.force_update = forceSave;
     const data = normalizeFormData(cleanedFormData);
 
     const result = await PatientServices.update_patient(registrationId, data);
@@ -422,11 +418,6 @@ const AdminEdit = () => {
       }
     } else {
       if (result.status === 400 || result.status === 409) {
-        if (
-          result.message === "Patient with that name and dob already exists."
-        ) {
-          setShowForceButton(true);
-        }
         toast.error(result.message || "Failed editing registration.");
       } else {
         toast.error("Failed editing registration. Please try again.");
@@ -439,6 +430,102 @@ const AdminEdit = () => {
     setPhotoChanged(false);
   };
 
+  const checkIfUserExists = async (firstName, lastName, dob) => {
+    const data = {
+      first_name: firstName,
+      last_name: lastName,
+      dob: dob,
+      id: registrationId,
+    };
+
+    const result = await PatientServices.check_identity_exists(data);
+
+    if (result.success) {
+      const exists = result.data?.exists;
+
+      if (!exists) {
+        return false;
+      } else {
+        setDuplicateIdentity({
+          id: result.data?.user?.id,
+          firstName: result.data?.user?.first_name,
+          lastName: result.data?.user?.last_name,
+        });
+        setShowNavigateIdentityModal(true);
+        return true;
+      }
+    }
+  };
+
+  const handleContinueDuplicateIdentity = () => {
+    setForceSave(true);
+    setShowNavigateIdentityModal(null);
+  };
+
+  useEffect(() => {
+    if (!formData.first_name || !formData.last_name || !formData.dob) return;
+
+    if (!hasRun.current) {
+      hasRun.current = true;
+      return;
+    }
+
+    const timer = setTimeout(() => {
+      setForceSave(false);
+      checkIfUserExists(formData.first_name, formData.last_name, formData.dob);
+    }, 800);
+
+    return () => {
+      clearTimeout(timer);
+    };
+  }, [formData.first_name, formData.last_name, formData.dob]);
+
+  const checkIfHealthcardExists = async (healthCard) => {
+    const data = {
+      health_card: healthCard,
+      id: registrationId,
+    };
+
+    const result = await PatientServices.check_healthcard_exists(data);
+
+    if (result.success) {
+      const exists = result.data?.exists;
+
+      if (!exists) {
+        return false;
+      } else {
+        setDuplicateHealthcardPatient({
+          id: result.data?.user?.id,
+          firstName: result.data?.user?.first_name,
+          lastName: result.data?.user?.last_name,
+        });
+        setShowNavigateModal(true);
+        return true;
+      }
+    }
+  };
+
+  const handleContinueDuplicateHealthcard = () => {
+    setShowNavigateModal(null);
+  };
+
+  useEffect(() => {
+    if (
+      formData.health_card.length != 10 ||
+      !formData.health_card ||
+      formData.health_card === "0000000000"
+    )
+      return;
+
+    const timer = setTimeout(() => {
+      checkIfHealthcardExists(formData.health_card);
+    }, 800);
+
+    return () => {
+      clearTimeout(timer);
+    };
+  }, [formData.health_card]);
+
   useEffect(() => {
     if (saveStatus?.type === "success") {
       window.scrollTo(0, 0);
@@ -449,7 +536,90 @@ const AdminEdit = () => {
 
   return (
     <div className="bg-gray-50">
+      {showNavigateModal && (
+        <DuplicateModal
+          title={"Health Card Already Registered"}
+          handleGoTo={handleNavigateToRegistration}
+          userData={duplicateHealthcardPatient}
+          handleContinue={handleContinueDuplicateHealthcard}
+        />
+      )}
+      {showNavigateIdentityModal && (
+        <DuplicateModal
+          title={"Name and DOB Match Another Registration"}
+          handleGoTo={handleNavigateToRegistration}
+          userData={duplicateIdentity}
+          handleContinue={handleContinueDuplicateIdentity}
+        />
+      )}
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+        <div className="bg-white rounded-lg shadow-md p-4 mb-4">
+          <h1 className="text-2xl font-bold text-gray-900 mb-4">
+            Edit Registration
+          </h1>
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={() => navigate("/admin-menu")}
+              className="inline-flex items-center gap-1 px-3 py-1 bg-black text-white rounded-md hover:bg-gray-800 transition-colors text-xs font-medium"
+            >
+              <svg
+                className="w-3 h-3"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M15 19l-7-7 7-7"
+                />
+              </svg>
+              Admin Menu
+            </button>
+            <button
+              type="button"
+              onClick={() => navigate("/admin-dashboard")}
+              className="inline-flex items-center gap-1 px-3 py-1 bg-black text-white rounded-md hover:bg-gray-800 transition-colors text-xs font-medium"
+            >
+              <svg
+                className="w-3 h-3"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
+                />
+              </svg>
+              Back to Dashboard
+            </button>
+            <button
+              type="button"
+              onClick={() => navigate("/")}
+              className="inline-flex items-center gap-1 px-3 py-1 bg-white text-black border border-black rounded-md hover:bg-gray-100 transition-colors text-xs font-medium"
+            >
+              <svg
+                className="w-3 h-3"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M15 19l-7-7 7-7"
+                />
+              </svg>
+              Home
+            </button>
+          </div>
+        </div>
         <div className="bg-white rounded-lg shadow-md p-4">
           {getAllowedTabs().length == 0 ? (
             <div className="text-center py-8">
@@ -470,7 +640,6 @@ const AdminEdit = () => {
           ) : (
             <form onSubmit={handleSubmit} className="space-y-6">
               <EditPhoto
-                saveStatus={saveStatus}
                 photoData={photoData}
                 setPhotoData={setPhotoData}
                 photoPreview={photoPreview}
@@ -520,9 +689,7 @@ const AdminEdit = () => {
                   {/* Copy Button */}
                   <button
                     type="button"
-                    onClick={() =>
-                      copyFormData(currentRegistrationId, formData)
-                    }
+                    onClick={() => copyFormData(registrationId, formData)}
                     className="w-full bg-black text-white py-3 px-6 rounded-md hover:bg-gray-800 transition-colors text-lg font-semibold"
                   >
                     Copy
@@ -557,12 +724,6 @@ const AdminEdit = () => {
           voiceDateInput={voiceDateInput}
           setVoiceDateInput={setVoiceDateInput}
           handleVoiceDateSubmit={handleVoiceDateSubmit}
-        />
-      )}
-      {showForceButton && (
-        <ForceRegisterModal
-          handleForceSubmit={handleForceSubmit}
-          cancelForceSubmit={cancelForceSubmit}
         />
       )}
       {showDispositionManager && <DispositionManager />}

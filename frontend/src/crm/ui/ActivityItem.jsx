@@ -199,35 +199,32 @@ export default function ActivityItem({
               </h3>
             </div>
             <div className="text-sm text-gray-600 mt-1">
+              <p className="text-xs text-gray-500 mt-1">
+                Activity ID: {item.id}
+              </p>
               <p className="font-medium">
                 Client: {item.first_name} {item.last_name}
               </p>
               <p>Date: {item.date}</p>
               {item.time && <p>Time: {item.time}</p>}
               {item.phone1 && <p>Phone: {item.phone1}</p>}
-              <p className="text-xs text-gray-500 mt-1">
-                Activity ID: {item.id}
-              </p>
             </div>
 
             {/* Lazy loaded photo */}
             {isShowing && (
-              <div className="mt-4 mb-4">
-                <div className="flex flex-row justify-between sm:flex-row">
-                  <p className="text-sm font-medium text-gray-700 mb-2">
-                    Uploaded Photo:
-                  </p>
+              <div className="flex-grow">
+                <div className="flex flex-row items-center justify-between sm:flex-row">
                   <button
-                    className="text-sm font-medium text-gray-700 mb-2"
                     onClick={() => hidePhoto(item.patient_id, index)}
+                    className="flex justify-start mt-2 mb-2 text-sm text-blue-600 hover:text-blue-800"
                   >
-                    x
+                    Hide Photo
                   </button>
                 </div>
                 <img
                   src={loadedPhotos[item.patient_id]}
                   alt="Registration photo"
-                  className="lg:max-w-xs md:w-3/4 max-h-48 object-contain border rounded"
+                  className="w-64 h-48 object-cover border rounded"
                   onError={(e) => {
                     e.target.style.display = "none";
                   }}
@@ -250,7 +247,7 @@ export default function ActivityItem({
           </div>
         </div>
 
-        <div className="flex gap-2 mt-4 p-4 pt-0 justify-between">
+        <div className="flex gap-2 mt-2 p-4 pt-0 justify-between">
           <button
             onClick={() => {
               navigate(`/admin-edit/${item.patient_id}`);

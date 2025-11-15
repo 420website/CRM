@@ -28,7 +28,7 @@ export default function Interactions({ setActiveTab, currentRegistrationId }) {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleteInteractionId, setDeleteInteractionId] = useState(null);
   const [interactionData, setInteractionData] = useState({
-    date: new Date().toISOString().split("T")[0],
+    date: new Date().toLocaleDateString("en-CA"),
     description: "",
     referral_id: "",
     amount: "",
@@ -194,7 +194,7 @@ export default function Interactions({ setActiveTab, currentRegistrationId }) {
     const amount = parseFloat(interaction.amount) > 0 ? interaction.amount : "";
 
     setInteractionData({
-      date: interaction.date || new Date().toISOString().split("T")[0],
+      date: interaction.date || new Date().toLocaleDateString("en-CA"),
       description: interaction.description || "",
       referral_id: interaction.referral_id || "",
       amount: amount,
@@ -209,7 +209,7 @@ export default function Interactions({ setActiveTab, currentRegistrationId }) {
 
   const clearInteractionForm = () => {
     setInteractionData({
-      date: new Date().toISOString().split("T")[0], // Default to current date
+      date: new Date().toLocaleDateString("en-CA"),
       description: "",
       referral_id: "",
       amount: "",
@@ -225,13 +225,13 @@ export default function Interactions({ setActiveTab, currentRegistrationId }) {
 
     // Apply date filter
     const today = new Date();
-    const todayStr = today.toISOString().split("T")[0];
-    const weekAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000)
-      .toISOString()
-      .split("T")[0];
-    const monthAgo = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000)
-      .toISOString()
-      .split("T")[0];
+    const todayStr = today.toLocaleDateString("en-CA");
+    const weekAgo = new Date(
+      today.getTime() - 7 * 24 * 60 * 60 * 1000,
+    ).toLocaleDateString("en-CA");
+    const monthAgo = new Date(
+      today.getTime() - 30 * 24 * 60 * 60 * 1000,
+    ).toLocaleDateString("en-CA");
 
     switch (interactionsFilter) {
       case "today":

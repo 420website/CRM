@@ -8,6 +8,10 @@ from app.registration.schemas import (
     DispensingCreate,
     DispensingRead,
     DispensingUpdate,
+    HealthcardCheck,
+    HealthcardUser,
+    IdentityCheck,
+    IdentityUser,
     InteractionCreate,
     InteractionRead,
     InteractionUpdate,
@@ -41,12 +45,12 @@ class PatientService:
             patient_consent, leave_message, voicemail, text, preferred_time,
             rna_available, rna_result, rna_sample_date, referral_site, referral_person, 
             reg_date, special_attention, instructions, selected_template, 
-            summary_template
+            summary_template, limited
         )
         VALUES (
             $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15,
             $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28,
-            $29, $30, $31, $32, $33, $34, $35
+            $29, $30, $31, $32, $33, $34, $35, $36
         )
         RETURNING id;
         """
@@ -90,6 +94,7 @@ class PatientService:
                     patient.instructions,
                     patient.selected_template,
                     patient.summary_template,
+                    patient.limited,
                 )
                 if row and "id" in row:
                     return row["id"]
@@ -123,6 +128,60 @@ class PatientService:
 
         if row:
             return PatientRead(**dict(row)) if row else None
+
+    @staticmethod
+    async def check_identity(data: IdentityCheck) -> Union[IdentityUser, None]:
+        if data.id is None:
+            query = """
+                SELECT id, first_name, last_name 
+                FROM patients 
+                WHERE first_name=$1 
+                    AND last_name=$2 
+                    AND dob=$3
+            """
+            params = [data.first_name, data.last_name, data.dob]
+        else:
+            query = """
+                SELECT id, first_name, last_name 
+                FROM patients 
+                WHERE first_name=$1 
+                    AND last_name=$2 
+                    AND dob=$3 
+                    AND id!=$4
+            """
+            params = [data.first_name, data.last_name, data.dob, data.id]
+
+        async with database.get_connection() as conn:
+            row = await conn.fetchrow(query, *params)
+
+        if row:
+            return IdentityUser(**dict(row)) if row else None
+
+    @staticmethod
+    async def check_healthcard(
+        data: HealthcardCheck,
+    ) -> Union[HealthcardUser, None]:
+        if data.id is None:
+            query = """
+                SELECT id, first_name, last_name 
+                FROM patients 
+                WHERE health_card=$1
+            """
+            params = [data.health_card]
+        else:
+            query = """
+                SELECT id, first_name, last_name 
+                FROM patients 
+                WHERE health_card=$1
+                    AND id!=$2
+            """
+            params = [data.health_card, data.id]
+
+        async with database.get_connection() as conn:
+            row = await conn.fetchrow(query, *params)
+
+        if row:
+            return HealthcardUser(**dict(row)) if row else None
 
     @staticmethod
     async def get_patient_by_name_dob(
@@ -227,22 +286,29 @@ class PatientService:
 
     @staticmethod
     async def update_patient_status(
-        patient_id: int,
-        status: str,
+        patient_id: int, status: str, is_first_finalize: bool
     ) -> bool:
-        if status == "finalized":
+        if status != "pending" and is_first_finalize:
             finalized_at = datetime.now(timezone.utc)
-        else:
-            finalized_at = None
 
-        query = """
-            UPDATE patients
-            SET status = $1, finalized_at=$2, updated_at = NOW()
-            WHERE id = $3
-            RETURNING id;
-        """
+            query = """
+                UPDATE patients
+                SET status = $1, finalized_at=$2, updated_at = NOW()
+                WHERE id = $3
+                RETURNING id;
+            """
+            params = [status, finalized_at, patient_id]
+        else:
+            query = """
+                UPDATE patients
+                SET status = $1, updated_at = NOW()
+                WHERE id = $2
+                RETURNING id;
+            """
+            params = [status, patient_id]
+
         async with database.get_transaction() as conn:
-            row = await conn.fetchrow(query, status, finalized_at, patient_id)
+            row = await conn.fetchrow(query, *params)
             return bool(row)
 
 
@@ -378,10 +444,11 @@ class NoteService:
         query = """
         SELECT * 
         FROM notes 
-        ORDER BY note_date DESC; 
+        ORDER BY note_date DESC, updated_at DESC; 
         """
         async with database.get_connection() as conn:
             rows = await conn.fetch(query)
+
         result = []
         if rows:
             for row in rows:
@@ -394,10 +461,11 @@ class NoteService:
         SELECT * 
         FROM notes 
         WHERE patient_id = $1 
-        ORDER BY note_date DESC;
+        ORDER BY note_date DESC, updated_at DESC;
         """
         async with database.get_connection() as conn:
             rows = await conn.fetch(query, patient_id)
+
         result = []
         if rows:
             for row in rows:

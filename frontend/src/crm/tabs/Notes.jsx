@@ -27,7 +27,7 @@ export default function Notes({ setActiveTab, currentRegistrationId }) {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleteNoteId, setDeleteNoteId] = useState(null);
   const [notesData, setNotesData] = useState({
-    note_date: new Date().toISOString().split("T")[0],
+    note_date: new Date().toLocaleDateString("en-CA"),
     note_text: "",
   });
 
@@ -175,7 +175,7 @@ export default function Notes({ setActiveTab, currentRegistrationId }) {
 
   const editNote = (note) => {
     setNotesData({
-      note_date: note.note_date || new Date().toISOString().split("T")[0],
+      note_date: note.note_date || new Date().toLocaleDateString("en-CA"),
       note_text: note.note_text || "",
       template_type: note.template_type || "General Note",
     });
@@ -190,7 +190,7 @@ export default function Notes({ setActiveTab, currentRegistrationId }) {
 
   const clearNotesForm = () => {
     setNotesData({
-      note_date: new Date().toISOString().split("T")[0],
+      note_date: new Date().toLocaleDateString("en-CA"),
       note_text: "",
     });
     setEditingNoteId(null);
@@ -408,10 +408,10 @@ export default function Notes({ setActiveTab, currentRegistrationId }) {
                           <strong>Date:</strong>{" "}
                           {note.note_date ? note.note_date : "No date"}
                         </p>
-                        {note.created_at && (
+                        {note.updated_at && (
                           <p className="text-xs text-gray-400">
                             Saved:{" "}
-                            {new Date(note.created_at).toLocaleTimeString(
+                            {new Date(note.updated_at).toLocaleTimeString(
                               "en-US",
                               {
                                 timeZone: "America/New_York",

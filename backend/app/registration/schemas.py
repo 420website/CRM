@@ -1,14 +1,49 @@
 from decimal import Decimal
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, field_validator
 from typing import Optional
 from datetime import datetime
 import datetime as dt
+
+
+class IdentityCheck(BaseModel):
+    first_name: str
+    last_name: str
+    dob: dt.date
+    id: Optional[int] = None
+
+    @field_validator("first_name", "last_name")
+    def normalize_name(cls, v):
+        return v.strip().title() if v else v
+
+
+class IdentityUser(BaseModel):
+    id: int
+    first_name: str
+    last_name: str
+
+    class Config:
+        from_attributes = True
+
+
+class HealthcardCheck(BaseModel):
+    health_card: str
+    id: Optional[int] = None
+
+
+class HealthcardUser(BaseModel):
+    id: int
+    first_name: str
+    last_name: str
+
+    class Config:
+        from_attributes = True
 
 
 # Shared attributes - all optional for maximum flexibility
 class PatientBase(BaseModel):
     age: Optional[int] = None
     gender: Optional[str] = None
+    health_card: Optional[str] = None
     health_card_version: Optional[str] = None
     aka: Optional[str] = None
     address: Optional[str] = None
@@ -56,9 +91,13 @@ class PatientCreate(PatientBase):
     first_name: str
     last_name: str
     dob: dt.date
-    health_card: str
     force_create: bool = False
+    limited: bool = True
     status: Optional[str] = None
+
+    @field_validator("first_name", "last_name", "aka")
+    def normalize_name(cls, v):
+        return v.strip().title() if v else v
 
 
 # Schema for updating patient data - inherits all optional fields
@@ -66,9 +105,13 @@ class PatientUpdate(PatientBase):
     first_name: Optional[str] = None
     last_name: Optional[str] = None
     dob: Optional[dt.date] = None
-    health_card: Optional[str] = None
-    status: Optional[str] = None
     force_update: bool = False
+    limited: bool = True
+    status: Optional[str] = None
+
+    @field_validator("first_name", "last_name", "aka")
+    def normalize_name(cls, v):
+        return v.strip().title() if v else v
 
 
 class PatientStatus(BaseModel):
@@ -82,8 +125,10 @@ class PatientRead(PatientBase):
     first_name: str
     last_name: str
     dob: dt.date
-    health_card: str
+    limited: bool
+    health_card: Optional[str] = None
     health_card_version: Optional[str] = None
+    file_id: Optional[str] = None
     created_at: datetime
     updated_at: datetime
 

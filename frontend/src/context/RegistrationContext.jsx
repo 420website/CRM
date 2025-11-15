@@ -3,12 +3,14 @@ import { useNavigate } from "react-router-dom";
 import { GeneralServices } from "../services/generalService";
 import { PatientServices } from "../services/patientServices";
 import { ObjectServices } from "../services/objectService";
+import { useAuth } from "./AuthContext";
 
 const RegistrationContext = createContext();
 
 export const useRegistration = () => useContext(RegistrationContext);
 
 export function RegistrationProvider({ children }) {
+  const { userRole } = useAuth();
   const navigate = useNavigate();
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -28,6 +30,7 @@ export function RegistrationProvider({ children }) {
   const [outcomes, setOutcomes] = useState([]);
   const [genericInteractions, setGenericInteractions] = useState([]);
   const [genericCoverage, setGenericCoverage] = useState([]);
+  const [genericPhysicians, setGenericPhysicians] = useState([]);
 
   // Patient
   const [registrationId, setRegistrationId] = useState(null);
@@ -39,6 +42,7 @@ export function RegistrationProvider({ children }) {
   const [notes, setNotes] = useState([]);
 
   // Modals
+  const [showPhysicianManager, setShowPhysicianManager] = useState(false);
   const [showInteractionManager, setShowInteractionManager] = useState(false);
   const [showCoverageManager, setShowCoverageManager] = useState(false);
   const [showNoteManager, setShowNoteManager] = useState(false);
@@ -55,15 +59,17 @@ export function RegistrationProvider({ children }) {
     setLoading(true);
     setError("");
 
-    const result = await PatientServices.get_activities();
+    if (userRole !== "limited") {
+      const result = await PatientServices.get_activities();
 
-    if (result.success) {
-      setActivityData(result.data);
-    } else {
-      if (result.status === 400 || result.status === 409) {
-        setError(result.message || "Invalid credentials.");
+      if (result.success) {
+        setActivityData(result.data);
       } else {
-        setError("Login failed. Please try again.");
+        if (result.status === 400 || result.status === 409) {
+          setError(result.message || "Invalid credentials.");
+        } else {
+          setError("Login failed. Please try again.");
+        }
       }
     }
     setLoading(false);
@@ -77,12 +83,18 @@ export function RegistrationProvider({ children }) {
     const result = await PatientServices.get_patients();
 
     if (result.success) {
-      const pending = result.data.filter((reg) => reg.status === "pending");
-      setPendingData(pending);
+      if (userRole !== "limited") {
+        const pending = result.data.filter((reg) => reg.status === "pending");
+        setPendingData(pending);
+      }
 
-      const finalized = result.data.filter(
+      let finalized = result.data.filter(
         (reg) => reg.status === "finalized" || reg.status === "saved",
       );
+
+      if (userRole === "limited") {
+        finalized = finalized.filter((reg) => !reg.limited);
+      }
       setFinalizedData(finalized);
     } else {
       if (result.status === 400 || result.status === 409) {
@@ -388,6 +400,24 @@ export function RegistrationProvider({ children }) {
     setLoading(false);
   };
 
+  const getPhysicians = async () => {
+    setLoading(true);
+    setError("");
+
+    const result = await GeneralServices.get_general_type("physician");
+
+    if (result.success) {
+      setGenericPhysicians(result.data);
+    } else {
+      if (result.status === 400 || result.status === 409) {
+        setError(result.message || "Error getting physicians.");
+      } else {
+        setError("Error getting physicians. Please try again.");
+      }
+    }
+    setLoading(false);
+  };
+
   // clinical templates
   const getClinicalTemplates = async () => {
     setLoading(true);
@@ -448,6 +478,7 @@ export function RegistrationProvider({ children }) {
       getRegistrations();
       getGenericInteractions();
       getCoverageTypes();
+      getPhysicians();
     };
 
     getInitialData();
@@ -456,11 +487,15 @@ export function RegistrationProvider({ children }) {
   return (
     <RegistrationContext.Provider
       value={{
+        setShowPhysicianManager,
+        showPhysicianManager,
+        getPhysicians,
         genericCoverage,
         genericInteractions,
         getGenericInteractions,
         getCoverageTypes,
         medicationTemplates,
+        genericPhysicians,
         outcomes,
         referralSites,
         dispositions,

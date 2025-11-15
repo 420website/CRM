@@ -29,7 +29,8 @@ export const DEFAULT_FORM = {
   photo: "", // Add photo field
   selected_template: "",
   summary_template: "", // Will be populated from template selection
-  physician: "Dr. David Fletcher", // Add physician field with default
+  physician: "None", // Add physician field with default
+  limited: true,
   rna_available: "No", // Add RNA available field
   rna_sample_date: new Date().toISOString().split("T")[0], // Add RNA sample date field
   rna_result: "Positive", // Add RNA result field

@@ -9,6 +9,8 @@ import { useRegistration } from "../../context/RegistrationContext";
 import DatePicker from "../ui/DatePicker";
 import { useAuth } from "../../context/AuthContext";
 import CoverageManager from "../managers/CoverageManager";
+import PhysicianManager from "../managers/PhysicianManager";
+import { PhoneCall } from "lucide-react";
 
 // Map Google Places province codes to full province names
 const getProvince = (code) => {
@@ -46,6 +48,7 @@ export default function Client({
   const {
     dispositions,
     genericCoverage,
+    genericPhysicians,
     referralSites,
     clinicalTemplates,
     setShowCoverageManager,
@@ -53,6 +56,8 @@ export default function Client({
     setShowDispositionManager,
     setShowClinicalManager,
     setShowReferralSiteManager,
+    setShowPhysicianManager,
+    showPhysicianManager,
   } = useRegistration();
 
   const defaultPositiveClinicalSummary = async (formData) => {
@@ -305,6 +310,7 @@ export default function Client({
       <div className="tab-content">
         <div className="space-y-6">
           {showCoverageManager && <CoverageManager />}
+          {showPhysicianManager && <PhysicianManager />}
 
           {/* Basic Information */}
           <div>
@@ -543,7 +549,7 @@ export default function Client({
                     htmlFor="health_card"
                     className="block text-sm font-medium text-gray-700 mb-2"
                   >
-                    Health Card Number<span className="text-red-500">*</span>
+                    Health Card Number
                   </label>
                   <input
                     type="text"
@@ -765,12 +771,29 @@ export default function Client({
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
-                <label
-                  htmlFor="phone1"
-                  className="block text-sm font-medium text-gray-700 mb-2"
-                >
-                  Primary
-                </label>
+                <div className="flex justify-between items-center">
+                  <label
+                    htmlFor="phone1"
+                    className="block text-sm font-medium text-gray-700 mb-2"
+                  >
+                    Primary
+                  </label>
+
+                  {/* Use an anchor tag instead of JS handler */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const cleaned = formData.phone1.replace(/[^+\d]/g, "");
+                      if (cleaned.length >= 10) {
+                        window.location.href = `tel:${cleaned}`;
+                      }
+                    }}
+                    className="pr-1"
+                  >
+                    <PhoneCall className="w-4 h-4 text-gray-700 mb-2" />
+                  </button>
+                </div>
+
                 <input
                   type="tel"
                   id="phone1"
@@ -784,12 +807,28 @@ export default function Client({
               </div>
 
               <div>
-                <label
-                  htmlFor="phone2"
-                  className="block text-sm font-medium text-gray-700 mb-2"
-                >
-                  Secondary
-                </label>
+                <div className="flex justify-between items-center">
+                  <label
+                    htmlFor="phone1"
+                    className="block text-sm font-medium text-gray-700 mb-2"
+                  >
+                    Secondary
+                  </label>
+
+                  {/* Use an anchor tag instead of JS handler */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const cleaned = formData.phone2.replace(/[^+\d]/g, "");
+                      if (cleaned.length >= 10) {
+                        window.location.href = `tel:${cleaned}`;
+                      }
+                    }}
+                    className="pr-1"
+                  >
+                    <PhoneCall className="w-4 h-4 text-gray-700 mb-2" />
+                  </button>
+                </div>
                 <input
                   type="tel"
                   id="phone2"
@@ -1147,14 +1186,37 @@ export default function Client({
                   individual patients.
                 </p>
               </div>
+              <div className="space-y-2">
+                <label className="flex items-center">
+                  <input
+                    type="checkbox"
+                    name="limited"
+                    checked={formData.limited}
+                    onChange={handleChange}
+                    className="mr-2"
+                  />
+                  Limited
+                </label>
+              </div>
 
               <div>
-                <label
-                  htmlFor="physician"
-                  className="block text-sm font-medium text-gray-700 mb-2"
-                >
-                  Physician
-                </label>
+                <div className="flex items-center justify-between mb-2">
+                  <label
+                    htmlFor="physician"
+                    className="block text-sm font-medium text-gray-700 mb-2"
+                  >
+                    Physician
+                  </label>
+                  {userRole == "admin" && (
+                    <button
+                      type="button"
+                      onClick={() => setShowPhysicianManager(true)}
+                      className="text-blue-600 hover:text-blue-800 text-sm"
+                    >
+                      Manage Physicians
+                    </button>
+                  )}
+                </div>
                 <select
                   id="physician"
                   name="physician"
@@ -1162,8 +1224,27 @@ export default function Client({
                   onChange={handleChange}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black"
                 >
-                  <option value="Dr. David Fletcher">Dr. David Fletcher</option>
                   <option value="None">None</option>
+                  {/* Most Frequently Used */}
+                  {genericPhysicians
+                    .filter((c) => c.is_frequent)
+                    .map((c) => (
+                      <option key={c.id} value={c.name}>
+                        {c.name}
+                      </option>
+                    ))}
+                  {/* Separator */}
+                  {genericPhysicians.filter((c) => !c.is_frequent).length >
+                    0 && <option disabled>-------</option>}
+                  {/* All Others in Alphabetical Order */}
+                  {genericPhysicians
+                    .filter((c) => !c.is_frequent)
+                    .sort((a, b) => a.name.localeCompare(b.name))
+                    .map((c) => (
+                      <option key={c.id} value={c.name}>
+                        {c.name}
+                      </option>
+                    ))}
                 </select>
                 <p className="mt-1 text-sm text-gray-500">
                   Automatically set to "None" when disposition is "POCT NEG"
