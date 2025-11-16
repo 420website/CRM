@@ -9,17 +9,17 @@ export default function EditPhoto({
   setPhotoPreview,
   setPhotoChanged,
 }) {
-  useEffect(() => {
-    const compressAndSetPreview = async () => {
-      if (photoData.file) {
-        setPhotoPreview(URL.createObjectURL(photoData.file));
-      } else {
-        setPhotoPreview(null);
-      }
-    };
-
-    compressAndSetPreview();
-  }, [photoData.file]);
+  // useEffect(() => {
+  //   const compressAndSetPreview = async () => {
+  //     if (photoData.file) {
+  //       setPhotoPreview(URL.createObjectURL(photoData.file));
+  //     } else {
+  //       setPhotoPreview(null);
+  //     }
+  //   };
+  //
+  //   compressAndSetPreview();
+  // }, [photoData.file]);
 
   const handlePhotoChange = async (e) => {
     const file = e.target.files[0];
@@ -50,18 +50,21 @@ export default function EditPhoto({
         file: compressedImage,
       });
       setPhotoChanged(true);
+      setPhotoPreview(URL.createObjectURL(compressedImage));
     }
   };
 
   const removePhoto = () => {
-    setPhotoPreview(null);
-    setPhotoData({});
-    setPhotoChanged(true);
+    // Only mark as changed if there was actually a photo
+    if (photoPreview || photoData.name) {
+      setPhotoPreview(null);
+      setPhotoData({});
+      setPhotoChanged(true);
 
-    // Clear both file inputs
-    const uploadInput = document.getElementById("photo-upload");
-    if (uploadInput) {
-      uploadInput.value = "";
+      const uploadInput = document.getElementById("photo-upload");
+      if (uploadInput) {
+        uploadInput.value = "";
+      }
     }
   };
 

@@ -211,6 +211,64 @@ class TestPatientPhotosRouter(IsolatedAsyncioTestCase):
         key = f"{self.patient_id}/{file_name}"
         await ObjectService.delete_object("photos", key)
 
+    async def test_update_photo_same_name(self):
+        file_name = "test-img.jpeg"
+        data = read_file(self.object_path)
+        file = UploadFile(filename=file_name, file=BytesIO(data))
+        result = await upload_photo(
+            self.patient_id, file_name, file, self.user
+        )
+        self.assertEqual(result["message"], "Successfully uploaded file.")
+        old_photo = await PhotoService.get_photo(self.patient_id)
+
+        # test
+        file_name = "test-img.jpeg"
+        data = read_file(self.object_path)
+        file = UploadFile(filename=file_name, file=BytesIO(data))
+        result = await upload_photo(
+            self.patient_id, file_name, file, self.user
+        )
+        self.assertEqual(result["message"], "Successfully uploaded file.")
+        new_photo = await PhotoService.get_photo(self.patient_id)
+
+        self.assertEqual(old_photo.id, new_photo.id)
+        self.assertEqual(old_photo.patient_id, new_photo.patient_id)
+        self.assertEqual(old_photo.photo_key, new_photo.photo_key)
+        self.assertGreaterEqual(new_photo.uploaded_at, old_photo.uploaded_at)
+
+        # cleanup
+        key = f"{self.patient_id}/{file_name}"
+        await ObjectService.delete_object("photos", key)
+
+    async def test_update_photo_different_name(self):
+        file_name = "test-img.jpeg"
+        data = read_file(self.object_path)
+        file = UploadFile(filename=file_name, file=BytesIO(data))
+        result = await upload_photo(
+            self.patient_id, file_name, file, self.user
+        )
+        self.assertEqual(result["message"], "Successfully uploaded file.")
+        old_photo = await PhotoService.get_photo(self.patient_id)
+
+        # test
+        file_name = "test-img2.jpeg"
+        data = read_file(self.object_path)
+        file = UploadFile(filename=file_name, file=BytesIO(data))
+        result = await upload_photo(
+            self.patient_id, file_name, file, self.user
+        )
+        self.assertEqual(result["message"], "Successfully uploaded file.")
+        new_photo = await PhotoService.get_photo(self.patient_id)
+
+        self.assertEqual(old_photo.id, new_photo.id)
+        self.assertEqual(old_photo.patient_id, new_photo.patient_id)
+        self.assertNotEqual(old_photo.photo_key, new_photo.photo_key)
+        self.assertGreaterEqual(new_photo.uploaded_at, old_photo.uploaded_at)
+
+        # cleanup
+        key = f"{self.patient_id}/{file_name}"
+        await ObjectService.delete_object("photos", key)
+
     async def test_get_photo_base64_success(self):
         await self.mock_create_photo(self.patient_id)
 

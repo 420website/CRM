@@ -226,9 +226,11 @@ class PhotoService:
                 data.photo_key,
             )
 
-        if row["old_key"]:
+        if row["old_key"] and row["old_key"] != data.photo_key:
             logger.info(f"Deleting old photo - Key: {row['old_key']}")
             await ObjectService.delete_object("photos", key=row["old_key"])
+        else:
+            logger.info("Skipping deletion - same key or no old key")
 
         if row:
             logger.info(
@@ -266,7 +268,7 @@ class PhotoService:
 
     @staticmethod
     async def delete_photo(patient_id: int) -> str | None:
-        logger.info(f"🗑️  PhotoService.delete_photo - Patient: {patient_id}")
+        logger.info(f"PhotoService.delete_photo - Patient: {patient_id}")
 
         query = """
             DELETE FROM patient_photos 
