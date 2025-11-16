@@ -120,6 +120,37 @@ class TestPhotoServices(IsolatedAsyncioTestCase):
         photo = await PhotoService.get_photo(self.patient_id)
         self.assertEqual(photo.photo_name, "new_name")
 
+    async def test_update_photo_same_name(self):
+        self.photo.photo_name = "name_123"
+        await PhotoService.upload_photo(self.patient_id, self.photo)
+        old_photo = await PhotoService.get_photo(self.patient_id)
+
+        # test
+        await PhotoService.upload_photo(self.patient_id, self.photo)
+        new_photo = await PhotoService.get_photo(self.patient_id)
+
+        self.assertEqual(old_photo.id, new_photo.id)
+        self.assertEqual(old_photo.patient_id, new_photo.patient_id)
+        self.assertEqual(old_photo.photo_key, new_photo.photo_key)
+        self.assertGreaterEqual(new_photo.uploaded_at, old_photo.uploaded_at)
+
+    async def test_update_photo_different_name(self):
+        self.photo.photo_name = "name_123"
+        self.photo.photo_key = "13784/name_123"
+        await PhotoService.upload_photo(self.patient_id, self.photo)
+        old_photo = await PhotoService.get_photo(self.patient_id)
+
+        # test
+        self.photo.photo_name = "name_1234"
+        self.photo.photo_key = "13784/name_1234"
+        await PhotoService.upload_photo(self.patient_id, self.photo)
+        new_photo = await PhotoService.get_photo(self.patient_id)
+
+        self.assertEqual(old_photo.id, new_photo.id)
+        self.assertEqual(old_photo.patient_id, new_photo.patient_id)
+        self.assertNotEqual(old_photo.photo_key, new_photo.photo_key)
+        self.assertGreaterEqual(new_photo.uploaded_at, old_photo.uploaded_at)
+
     async def test_get_photo_key(self):
         await PhotoService.upload_photo(
             self.patient_id,
