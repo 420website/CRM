@@ -1,5 +1,6 @@
 from typing import List, Union
 from app.database import database, minio_client
+from app.logger import logger
 from botocore.exceptions import ClientError
 from app.objects.schemas import (
     AttachmentCreate,
@@ -68,15 +69,26 @@ class ObjectService:
                 raise e
 
             try:
+                logger.debug(
+                    f"Starting upload object - Bucket: {bucket}, Key: {key}"
+                )
                 result = await client.put_object(
                     Bucket=bucket,
                     Key=key,
                     Body=data,
                 )
                 metadata = result.get("ResponseMetadata")
+                status_code = metadata.get("HTTPStatusCode")
 
                 if metadata.get("HTTPStatusCode") != 200:
+                    logger.error(
+                        f"Upload failed - Bucket: {bucket}, Key: {key}, Status: {status_code}"
+                    )
                     raise Exception("Error uploading object")
+
+                logger.info(
+                    f"Upload successful - Bucket: {bucket}, Key: {key}"
+                )
             except Exception as e:
                 raise e
 
@@ -97,6 +109,9 @@ class ObjectService:
                 raise e
 
             try:
+                logger.debug(
+                    f"Starting streaming put_object - Bucket: {bucket}, Key: {key}"
+                )
                 result = await client.put_object(
                     Bucket=bucket,
                     Key=key,
@@ -104,9 +119,17 @@ class ObjectService:
                     ContentType=content_type,
                 )
                 metadata = result.get("ResponseMetadata")
+                status_code = metadata.get("HTTPStatusCode")
 
                 if metadata.get("HTTPStatusCode") != 200:
+                    logger.error(
+                        f"Streaming upload failed - Bucket: {bucket}, Key: {key}, Status: {status_code}"
+                    )
                     raise Exception("Error uploading object")
+
+                logger.info(
+                    f"Streaming upload successful - Bucket: {bucket}, Key: {key}"
+                )
             except Exception as e:
                 raise e
 
@@ -176,6 +199,10 @@ class PhotoService:
     # Attachments
     @staticmethod
     async def upload_photo(patient_id: int, data: PhotoCreate) -> int | None:
+        logger.info(
+            f"PhotoService.upload_photo - Patient: {patient_id}, Name: {data.photo_name}, Key: {data.photo_key}"
+        )
+
         query = """
             WITH old AS (
                 SELECT patient_id, photo_key
@@ -200,7 +227,15 @@ class PhotoService:
             )
 
         if row["old_key"]:
+            logger.info(f"Deleting old photo - Key: {row['old_key']}")
             await ObjectService.delete_object("photos", key=row["old_key"])
+
+        if row:
+            logger.info(
+                f"Photo record saved - Patient: {patient_id}, ID: {row['id']}"
+            )
+        else:
+            logger.error(f"Photo record not saved - Patient: {patient_id}")
 
         return row["id"] if row else None
 
@@ -231,6 +266,8 @@ class PhotoService:
 
     @staticmethod
     async def delete_photo(patient_id: int) -> str | None:
+        logger.info(f"🗑️  PhotoService.delete_photo - Patient: {patient_id}")
+
         query = """
             DELETE FROM patient_photos 
             WHERE patient_id=$1 
@@ -239,6 +276,13 @@ class PhotoService:
 
         async with database.get_transaction() as conn:
             row = await conn.fetchrow(query, patient_id)
+
+        if row:
+            logger.info(
+                f"Photo record deleted - Patient: {patient_id}, Key: {row['photo_key']}"
+            )
+        else:
+            logger.warning(f"No photo found to delete - Patient: {patient_id}")
 
         return row["photo_key"] if row else None
 
@@ -254,6 +298,9 @@ class AttachmentService:
         Could also jsut have not duplciate so users have to remove old one
         before creating with same name.
         """
+        logger.info(
+            f"AttachmentService.upload_attachment - Patient: {patient_id}, File: {attachment.file_name}, Size: {attachment.file_size}, Type: {attachment.document_type}"
+        )
 
         query = """
         INSERT INTO attachments (
@@ -271,18 +318,33 @@ class AttachmentService:
         RETURNING id;
         """
         async with database.get_transaction() as conn:
-            row = await conn.fetchrow(
-                query,
-                patient_id,
-                attachment.file_name,
-                attachment.file_key,
-                attachment.file_size,
-                attachment.mime_type,
-                attachment.document_type,
-            )
+            try:
+                row = await conn.fetchrow(
+                    query,
+                    patient_id,
+                    attachment.file_name,
+                    attachment.file_key,
+                    attachment.file_size,
+                    attachment.mime_type,
+                    attachment.document_type,
+                )
+            except Exception as e:
+                logger.error(
+                    f"Database error in upload_attachment - Patient: {patient_id}, File: {attachment.file_name}, Error: {str(e)}",
+                    exc_info=True,
+                )
+                raise
+
         if row and "id" in row:
+            logger.info(
+                f"Attachment record saved - Patient: {patient_id}, ID: {row['id']}, File: {attachment.file_name}"
+            )
             return row["id"]
-        return None
+        else:
+            logger.error(
+                f"Attachment record not saved - Patient: {patient_id}, File: {attachment.file_name}"
+            )
+            return None
 
     @staticmethod
     async def get_patient_attachments(patient_id: int) -> List[AttachmentRead]:
@@ -332,6 +394,10 @@ class AttachmentService:
 
     @staticmethod
     async def delete_attachment(patient_id: int, name: str) -> bool:
+        logger.info(
+            f"AttachmentService.delete_attachment - Patient: {patient_id}, File: {name}"
+        )
+
         query = """
             DELETE FROM attachments 
             WHERE patient_id=$1 
@@ -345,6 +411,8 @@ class AttachmentService:
 
     @staticmethod
     async def delete_attachment_by_id(id: int) -> bool:
+        logger.info(f"AttachmentService.delete_attachment - ID {id}")
+
         query = """DELETE FROM attachments WHERE id=$1 RETURNING id;"""
 
         async with database.get_transaction() as conn:

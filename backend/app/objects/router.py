@@ -7,6 +7,8 @@ from app.dependencies import get_current_user
 from app.objects.schemas import AttachmentCreate, AttachmentRead, PhotoCreate
 from app.objects.services import AttachmentService, ObjectService, PhotoService
 from app.utils import compress_image, encode_base64
+from app.logger import logger
+
 
 router = APIRouter(prefix="/objects", tags=["Objects"])
 
@@ -28,9 +30,14 @@ async def upload_photo(
     bucket = "photos"
     key = f"{patient_id}/{name}"
 
+    logger.info(
+        f"Photo upload started - Patient: {patient_id}, Name: {name}, Key: {key}"
+    )
+    logger.info(
+        f"File details - Filename: {file.filename}, ContentType: {file.content_type}, Size: {file.size if hasattr(file, 'size') else 'unknown'}"
+    )
+
     try:
-        # data = await file.read()
-        # await ObjectService.upload_object(bucket=bucket, key=key, data=data)
         await ObjectService.upload_object_streaming(
             bucket=bucket,
             key=key,
@@ -38,11 +45,20 @@ async def upload_photo(
             content_type=file.content_type or "image/jpeg",
         )
 
+        logger.info(f"MinIO upload SUCCESS - Key: {key}")
+
         await PhotoService.upload_photo(
             patient_id, PhotoCreate(photo_name=name, photo_key=key)
         )
+        logger.info(f"Database insert SUCCESS -  Key: {key}")
+        logger.info(f"Photo Upload SUCCESS -  Key: {key}")
+
         return {"message": "Successfully uploaded file."}
     except Exception as e:
+        logger.error(
+            f"Photo upload FAILED - Patient: {patient_id}, Key: {key}, Error: {str(e)}",
+            exc_info=True,
+        )
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Unexpected error: {str(e)}",
@@ -102,22 +118,34 @@ async def delete_photo(
     patient_id: int,
     user: UserRead = Depends(get_current_user),
 ):
-    bucket = "photos"
+    logger.info(f"Photo Delete started - Patient: {patient_id}")
 
+    bucket = "photos"
     try:
         key = await PhotoService.delete_photo(patient_id)
 
         if not key:
+            logger.info(
+                f"Database Photo Delete Failed - Patient: {patient_id} - Key not found"
+            )
+
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail="Error deleting photo metadata.",
             )
+        logger.info(f"Database Delete Success - Patient: {patient_id}")
 
         await ObjectService.delete_object(bucket, key)
+        logger.info(f"Minio Delete Success - Patient: {patient_id}")
+
         return {"message": "Successfully deleted photo."}
     except HTTPException:
         raise
     except Exception as e:
+        logger.error(
+            f"Photo Delete FAILED - Patient: {patient_id} Error: {str(e)}",
+            exc_info=True,
+        )
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Unexpected error: {str(e)}",
@@ -141,6 +169,13 @@ async def upload_attachment(
     bucket = "attachments"
     key = f"{patient_id}/{file_name}"
 
+    logger.info(
+        f"Attachment upload started - Patient: {patient_id}, Name: {file_name}, Key: {key}"
+    )
+    logger.info(
+        f"File details - Size: {file_size}, MimeType: {mime_type}, DocType: {document_type}"
+    )
+
     # Create AttachmentCreate from form fields
     metadata = AttachmentCreate(
         file_name=file_name,
@@ -153,17 +188,30 @@ async def upload_attachment(
     try:
         data = await file.read()
         await ObjectService.upload_object(bucket=bucket, key=key, data=data)
+        logger.info(f"MinIO upload SUCCESS - Key: {key}")
+
         result = await AttachmentService.upload_attachment(
             patient_id, metadata
         )
         if not result:
+            logger.error(
+                f"Database insert FAILED - Patient: {patient_id}, Key: {key}"
+            )
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail="Error uploading attachment metadata.",
             )
 
+        logger.info(f"Database insert SUCCESS - Key: {key}")
+        logger.info(f"Attachment insert SUCCESS - Key: {key}")
+
         return {"message": "Attachment uploaded successfully."}
     except Exception as e:
+        logger.error(
+            f"Attachment upload FAILED - Patient: {patient_id}, Key: {key}, Error: {str(e)}",
+            exc_info=True,
+        )
+
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Unexpected error: {str(e)}",
@@ -238,18 +286,31 @@ async def delete_attachment(
     bucket = "attachments"
     key = f"{patient_id}/{name}"
 
+    logger.info(f"Attachment Delete started - Patient: {patient_id}")
+
     try:
         result = await AttachmentService.delete_attachment(patient_id, name)
 
         if not result:
+            logger.info(
+                f"Database Attachment Delete Failed - Key not found - Patient: {patient_id}"
+            )
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail="Error deleting attachment metadata.",
             )
+        logger.info(f"Database Delete Success - Patient: {patient_id}")
 
         await ObjectService.delete_object(bucket, key)
+        logger.info(f"Minio Delete Success - Patient: {patient_id}")
+
         return {"message": "Successfully deleted attachment."}
     except Exception as e:
+        logger.error(
+            f"Attachment delete FAILED - Patient: {patient_id}, Key: {key}, Error: {str(e)}",
+            exc_info=True,
+        )
+
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Unexpected error: {str(e)}",
