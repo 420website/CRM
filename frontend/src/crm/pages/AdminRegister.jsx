@@ -361,7 +361,7 @@ const AdminRegister = () => {
           });
           resetForm();
         } else {
-          toast.error(result.message || "Invalid credentials.");
+          toast.error(photoRes.message || "Invalid credentials.");
         }
       } else {
         setSubmitStatus({
