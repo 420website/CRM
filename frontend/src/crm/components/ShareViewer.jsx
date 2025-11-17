@@ -162,11 +162,17 @@ export default function ShareViewer() {
         const metadata = await ShareLinkServices.get_metadata(token);
         const result = await ShareLinkServices.access_link(token);
 
-        const file = new File([result.data], metadata.data?.file_name, {
-          type: metadata.data?.mime_type,
-        });
+        if (result.ok) {
+          const file = new File([result.data], metadata.data?.file_name, {
+            type: metadata.data?.mime_type,
+          });
 
-        transformFile(file);
+          transformFile(file);
+        } else if (result.status === 401) {
+          setError("Invalid or expired link.");
+        } else {
+          setError(result.message || "Invalid or expired link.");
+        }
       } catch (err) {
         setError("Invalid or expired link.");
       } finally {

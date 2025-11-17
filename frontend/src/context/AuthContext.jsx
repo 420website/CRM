@@ -18,29 +18,6 @@ export function AuthProvider({ children }) {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [currentRegistrationId, setCurrentRegistrationId] = useState(null);
 
-  const startTokenRefreshCycle = (accessToken, expiresAt) => {
-    setIsAuthenticated(true);
-    setIsLoggedIn(true);
-    tokenManager.setAccessToken(accessToken);
-
-    if (refreshTimer) {
-      clearTimeout(refreshTimer);
-    }
-
-    const expiry = new Date(expiresAt);
-    const now = new Date();
-    const timeUntilExpiry = Math.floor((expiry - now) / 1000) - 120;
-
-    if (timeUntilExpiry > 0) {
-      const timerId = setTimeout(() => {
-        setRefreshTimer(null);
-        tryRefresh();
-      }, timeUntilExpiry * 1000);
-
-      setRefreshTimer(timerId);
-    }
-  };
-
   const logout = async () => {
     await AuthServices.logout();
     tokenManager.setAccessToken(null);
@@ -52,47 +29,72 @@ export function AuthProvider({ children }) {
     navigate("/");
   };
 
+  const startTokenRefreshCycle = (accessToken, expiresAt) => {
+    setIsAuthenticated(true);
+    setIsLoggedIn(true);
+    tokenManager.setAccessToken(accessToken);
+    tokenManager.setExpiresAt(expiresAt); // Store expiry time
+  };
+
   const tryRefresh = async () => {
     if (isRefreshing) {
       return;
     }
-
     setIsRefreshing(true);
-
     try {
       const response = await AuthServices.refresh_token();
 
       if (response.success) {
         setUserRole(response.data?.user_role);
         setUserPermissions(response.data?.user_permissions);
-
         const { access_token, expires_at } = response.data;
-        startTokenRefreshCycle(access_token, expires_at);
+        tokenManager.setAccessToken(access_token);
+        tokenManager.setExpiresAt(expires_at);
+        setIsAuthenticated(true);
+        setIsLoggedIn(true);
       } else {
         if (isAuthenticated) {
           logout();
         }
       }
     } catch (error) {
-      logout();
+      if (isAuthenticated) {
+        logout();
+      }
     } finally {
       setIsRefreshing(false);
     }
   };
 
   useEffect(() => {
-    // Only run on mount or when refreshTimer is cleared
-    if (!refreshTimer) {
-      tryRefresh();
-    }
+    // Initial refresh on mount
+    tryRefresh();
 
-    // Cleanup timer on unmount
-    return () => {
-      if (refreshTimer) {
-        clearTimeout(refreshTimer);
+    // Handle logout events from interceptor
+    const handleLogout = () => {
+      logout();
+    };
+
+    // Refresh when user returns to screen
+    const handleVisibilityChange = () => {
+      if (
+        document.visibilityState === "visible" &&
+        tokenManager.expiresSoon(5)
+      ) {
+        tryRefresh();
       }
     };
-  }, [refreshTimer]);
+
+    window.addEventListener("auth:logout", handleLogout);
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    window.addEventListener("focus", handleVisibilityChange);
+
+    return () => {
+      window.removeEventListener("auth:logout", handleLogout);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+      window.removeEventListener("focus", handleVisibilityChange);
+    };
+  }, []);
 
   return (
     <AuthContext.Provider
