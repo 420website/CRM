@@ -1,5 +1,6 @@
 # app/auth/router.py
 import datetime as dt
+from app.logger import logger
 from typing import List
 from fastapi import (
     APIRouter,
@@ -398,6 +399,7 @@ async def disable_authenticator_mfa(
 
 @router.post("/refresh", response_model=RefreshResponse)
 async def refresh_token(request: Request):
+    logger.info("User requesting a new access token")
     token = request.cookies.get("refresh_token")
 
     if not token:
@@ -424,6 +426,7 @@ async def refresh_token(request: Request):
         )
 
     refresh_token = await TokenService.refresh_token(token)
+    logger.info(f"Successfully issued access token to {token_info.user_id}")
 
     return RefreshResponse(
         access_token=refresh_token.access_token,
@@ -437,17 +440,16 @@ async def refresh_token(request: Request):
 async def logout(
     response: Response,
     request: Request,
-    user: UserRead = Depends(get_current_user),
 ):
     token = request.cookies.get("refresh_token")
 
-    if not token:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Refresh token already invalid",
-        )
-
-    await TokenService.delete_refresh_token(token, user.id)
+    if token:
+        try:
+            await TokenService.delete_refresh_token_by_value(token)
+        except Exception as e:
+            logger.warning(
+                f"Failed to delete refresh token from database: {e}"
+            )
 
     # Clear cookie in browser
     response.delete_cookie(
