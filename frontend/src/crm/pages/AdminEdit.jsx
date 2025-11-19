@@ -37,7 +37,7 @@ const AdminEdit = () => {
     showDocumentTypeManager,
     getRegistrationData,
   } = useRegistration();
-  const { getDashboardRegistrations } = useDashboard();
+  const { getDashboardRegistrations, getDashboardActivities } = useDashboard();
   const { registrationId } = useParams();
   const { userRole, userPermissions } = useAuth();
   const [voiceInputText, setVoiceInputText] = useState("");
@@ -407,6 +407,7 @@ const AdminEdit = () => {
           setPhotoData({ name: photoData.name });
           setPhotoChanged(false);
           getDashboardRegistrations();
+          getDashboardActivities();
           toast.success("Changes saved successfully");
         } else {
           toast.error(result.message || "Error updating photo.");
@@ -415,12 +416,14 @@ const AdminEdit = () => {
         const deleteRes = await ObjectServices.delete_photo(registrationId);
         if (deleteRes.success) {
           getDashboardRegistrations();
+          getDashboardActivities();
           toast.success("Changes saved successfully");
         } else {
           toast.error(result.message || "Error removing photo.");
         }
       } else {
         getDashboardRegistrations();
+        getDashboardActivities();
         toast.success("Changes saved successfully");
       }
     } else {

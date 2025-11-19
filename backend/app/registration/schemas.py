@@ -325,6 +325,11 @@ class PatientActivity(ActivityBase):
     patient_id: int
     first_name: str
     last_name: str
+    status: str
+    submitted_date: datetime
+    finalized_at: Optional[datetime] = None
+    reg_date: Optional[dt.date] = None
+    file_id: Optional[str] = None
     phone1: Optional[str] = None
     disposition: Optional[str] = None
     referral_site: Optional[str] = None

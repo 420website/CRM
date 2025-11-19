@@ -861,7 +861,12 @@ class ActivityService:
             p.last_name, 
             p.phone1,
             p.disposition,
-            p.referral_site
+            p.referral_site,
+            p.finalized_at, 
+            p.status,
+            p.reg_date, 
+            p.file_id,
+            p.created_at AS submitted_date
         FROM activities a
         JOIN patients p ON a.patient_id = p.id
         ORDER BY a.date DESC, a.time DESC;

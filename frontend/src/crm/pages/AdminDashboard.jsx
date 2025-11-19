@@ -17,7 +17,8 @@ const AdminDashboard = () => {
     setActiveTab,
     activeTab,
     dashboardStats,
-    clearAllFilters,
+    clearRegistrationFilters,
+    clearActivityFilters,
     searchDate,
     searchName,
     searchDisposition,
@@ -39,6 +40,7 @@ const AdminDashboard = () => {
     filteredActivity,
     filteredSubmitted,
     filteredPending,
+    deleteActivity,
   } = useDashboard();
 
   // Core state
@@ -53,6 +55,7 @@ const AdminDashboard = () => {
 
   // Actions
   const [deleteRegistrationId, setDeleteRegistrationId] = useState(null);
+  const [deleteActivityId, setDeleteActivityId] = useState(null);
   const [finalizeRegistrationId, setFinalizeRegistrationId] = useState(null);
   const [revertRegistrationId, setRevertRegistrationId] = useState(null);
   const [saveRegistrationId, setSaveRegistrationId] = useState(null);
@@ -80,6 +83,11 @@ const AdminDashboard = () => {
   const handleDelete = async (id) => {
     setDeleteRegistrationId(id);
     setShowConfirm("delete");
+  };
+
+  const handleDeleteActivity = async (patient_id, activity_id) => {
+    setDeleteActivityId([patient_id, activity_id]);
+    setShowConfirm("deleteActivity");
   };
 
   const handleFinalize = async (id) => {
@@ -141,6 +149,16 @@ const AdminDashboard = () => {
             message={"Confirm to delete registration"}
             subMessage={"This action cannot be undone"}
             confirm={() => deleteRegistration(deleteRegistrationId)}
+            setShowConfirm={setShowConfirm}
+          />
+        )}
+        {showConfirm === "deleteActivity" && (
+          <ConfirmModal
+            message={"Confirm to delete activity"}
+            subMessage={"This action cannot be undone"}
+            confirm={() =>
+              deleteActivity(deleteActivityId[0], deleteActivityId[1])
+            }
             setShowConfirm={setShowConfirm}
           />
         )}
@@ -532,21 +550,37 @@ const AdminDashboard = () => {
             </div>
 
             {/* Clear All Filters Button */}
-            {(searchName ||
-              searchDate ||
-              searchDisposition ||
-              searchReferralSite ||
-              activitySearchTerm ||
-              activityStatusFilter !== "all") && (
-              <div className="mt-4 flex justify-center">
-                <button
-                  onClick={clearAllFilters}
-                  className="bg-gray-500 text-white py-2 px-4 rounded-md hover:bg-gray-600 transition-colors text-sm"
-                >
-                  Clear All Filters
-                </button>
-              </div>
-            )}
+            {activeTab !== "activities" &&
+              (searchName ||
+                searchDate ||
+                searchDisposition ||
+                searchReferralSite) && (
+                <div className="mt-4 flex justify-center">
+                  <button
+                    onClick={clearRegistrationFilters}
+                    className="bg-gray-500 text-white py-2 px-4 rounded-md hover:bg-gray-600 transition-colors text-sm"
+                  >
+                    Clear All Filters
+                  </button>
+                </div>
+              )}
+
+            {/* Clear All Filters Button */}
+            {activeTab === "activities" &&
+              (searchDate ||
+                searchDisposition ||
+                searchReferralSite ||
+                activitySearchTerm ||
+                activityStatusFilter !== "all") && (
+                <div className="mt-4 flex justify-center">
+                  <button
+                    onClick={clearActivityFilters}
+                    className="bg-gray-500 text-white py-2 px-4 rounded-md hover:bg-gray-600 transition-colors text-sm"
+                  >
+                    Clear All Filters
+                  </button>
+                </div>
+              )}
           </div>
 
           {error && (
@@ -579,7 +613,12 @@ const AdminDashboard = () => {
                   {/* Performance optimized rendering */}
                   <div className="space-y-4">
                     {activeTab === "activities" ? (
-                      <ActivityItems />
+                      <ActivityItems
+                        handleDelete={handleDeleteActivity}
+                        handleSave={handleSave}
+                        handleFinalize={handleFinalize}
+                        handleRevertToPending={handleRevertToPending}
+                      />
                     ) : (
                       <RegistrationItems
                         handleSave={handleSave}

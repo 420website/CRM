@@ -1303,6 +1303,7 @@ class TestActivitiesService(IsolatedAsyncioTestCase):
             dob=date(1990, 3, 22),
             health_card="1234567890",
             health_card_version="AB",
+            reg_date=date(2024, 1, 1),
         )
         await PatientService.create_patient(self.minimal_patient)
         patients = await PatientService.get_patients()
@@ -1353,6 +1354,39 @@ class TestActivitiesService(IsolatedAsyncioTestCase):
         self.assertEqual(
             records[0].description, "Follow-up activity"
         )  # newest first
+
+    async def test_get_activities(self):
+        """
+        Expect activities to include patient specific date such
+        as file_id, reg_date and created_at
+        """
+        await ActivityService.create_activity(
+            self.patient_id, self.activity_data
+        )
+        await ActivityService.create_activity(
+            self.patient_id,
+            ActivityCreate(
+                description="Follow-up activity",
+                date=date(2024, 1, 1),
+            ),
+        )
+
+        # TEst
+        activities = await ActivityService.get_patient_activities()
+
+        # Validate
+        patient = await PatientService.get_patient_by_id(self.patient_id)
+        for a in activities:
+            self.assertEqual(a.first_name, patient.first_name)
+            self.assertEqual(a.last_name, patient.last_name)
+            self.assertEqual(a.disposition, patient.disposition)
+            self.assertEqual(a.referral_site, patient.referral_site)
+            self.assertEqual(a.phone1, patient.phone1)
+            self.assertEqual(a.reg_date, patient.reg_date)
+            self.assertEqual(a.file_id, patient.file_id)
+            self.assertEqual(a.submitted_date, patient.created_at)
+            self.assertEqual(a.status, patient.status)
+            self.assertEqual(a.finalized_at, patient.finalized_at)
 
     #### UPDATE
     async def test_update_activity_success(self):

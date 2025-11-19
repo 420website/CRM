@@ -38,14 +38,20 @@ export function DashboardProvider({ children }) {
   });
 
   // -- Filters
-  const clearAllFilters = () => {
-    setSearchName("");
+  const clearActivityFilters = () => {
     setSearchDate("");
     setSearchDisposition("");
     setSearchReferralSite("");
     setActivitySearchTerm("");
     setActivityStatusFilter("all");
     setFilteredActivity(activityData);
+  };
+
+  const clearRegistrationFilters = () => {
+    setSearchName("");
+    setSearchDate("");
+    setSearchDisposition("");
+    setSearchReferralSite("");
     setFilteredPending(pendingData);
     setFilteredSubmitted(finalizedData);
   };
@@ -406,6 +412,44 @@ export function DashboardProvider({ children }) {
     }
   };
 
+  // Activity Actions
+  const updateActivity = async (patient_id, activity_id, data) => {
+    const result = await PatientServices.update_activity(
+      patient_id,
+      activity_id,
+      data,
+    );
+
+    if (result.success) {
+      await getDashboardActivities();
+      toast.success("Activity updated successfully");
+    } else {
+      if (result.status === 400 || result.status === 409) {
+        toast.error(result.message || "Error updating activity.");
+      } else {
+        toast.error("Error updating activity. Please try again.");
+      }
+    }
+  };
+
+  const deleteActivity = async (patient_id, activity_id) => {
+    const result = await PatientServices.delete_activity_by_id(
+      patient_id,
+      activity_id,
+    );
+
+    if (result.success) {
+      await getDashboardActivities();
+      toast.success("Activity deleted successfully");
+    } else {
+      if (result.status === 400 || result.status === 409) {
+        toast.error(result.message || "Error deleting activity.");
+      } else {
+        toast.error("Error deleting activity. Please try again.");
+      }
+    }
+  };
+
   return (
     <DashboardContext.Provider
       value={{
@@ -417,7 +461,8 @@ export function DashboardProvider({ children }) {
         pendingData,
         finalizedData,
         activityData,
-        clearAllFilters,
+        clearActivityFilters,
+        clearRegistrationFilters,
         searchName,
         searchReferralSite,
         searchDate,
@@ -439,6 +484,8 @@ export function DashboardProvider({ children }) {
         filteredPending,
         lastItem,
         setLastItem,
+        updateActivity,
+        deleteActivity,
       }}
     >
       {children}
