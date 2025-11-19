@@ -161,6 +161,16 @@ const AdminEdit = () => {
   const getRegistration = async () => {
     setLoading(true);
 
+    try {
+      await getClientPhoto();
+      await getClientData();
+    } catch (error) {
+      toast.error(error);
+    }
+    setLoading(false);
+  };
+
+  const getClientData = async () => {
     const result = await PatientServices.get_patient_by_id(registrationId);
 
     if (result.success) {
@@ -176,28 +186,36 @@ const AdminEdit = () => {
       } else {
         setSelectedTemplate("Select");
       }
-
-      const photoRes = await ObjectServices.get_photo_raw(registrationId);
-
-      if (photoRes.success) {
-        const blob = new Blob([photoRes.data], { type: "image/jpeg" });
-        const url = URL.createObjectURL(blob);
-        setPhotoPreview(url);
-        setPhotoData({
-          name: photoRes.headers["file-name"],
-        });
-      }
     } else {
       if (result.status === 400 || result.status === 409) {
-        toast.error(result.message || "Invalid credentials.");
+        toast.error(result.message || "Failed to get client data.");
       } else {
-        toast.error(result.message || "Failed to Fetch Registration.");
+        toast.error(result.message || "Failed to get client data.");
       }
     }
 
     getRegistrationData(registrationId);
+  };
+
+  const getClientPhoto = async () => {
+    const photoRes = await ObjectServices.get_photo_raw(registrationId);
+
+    if (photoRes.success) {
+      const blob = new Blob([photoRes.data], { type: "image/jpeg" });
+      const url = URL.createObjectURL(blob);
+      setPhotoPreview(url);
+      setPhotoData({
+        name: photoRes.headers["file-name"],
+      });
+    } else {
+      if (result.status === 400 || result.status === 409) {
+        toast.error(result.message || "Failed to fetch client photo.");
+      } else {
+        toast.error(result.message || "Failed to fetch client photo.");
+      }
+    }
+
     setPhotoChanged(false);
-    setLoading(false);
   };
 
   useEffect(() => {
@@ -409,6 +427,7 @@ const AdminEdit = () => {
           getDashboardRegistrations();
           getDashboardActivities();
           toast.success("Changes saved successfully");
+          await getClientData();
         } else {
           toast.error(result.message || "Error updating photo.");
         }
@@ -418,6 +437,7 @@ const AdminEdit = () => {
           getDashboardRegistrations();
           getDashboardActivities();
           toast.success("Changes saved successfully");
+          await getClientData();
         } else {
           toast.error(result.message || "Error removing photo.");
         }
@@ -425,6 +445,7 @@ const AdminEdit = () => {
         getDashboardRegistrations();
         getDashboardActivities();
         toast.success("Changes saved successfully");
+        await getClientData();
       }
     } else {
       if (result.status === 400 || result.status === 409) {
@@ -650,6 +671,7 @@ const AdminEdit = () => {
           ) : (
             <form onSubmit={handleSubmit} className="space-y-6">
               <EditPhoto
+                formData={formData}
                 photoData={photoData}
                 setPhotoData={setPhotoData}
                 photoPreview={photoPreview}
