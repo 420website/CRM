@@ -25,6 +25,7 @@ import DocumentTypeManager from "../managers/DocumentTypeManager";
 import { useRegistration } from "../../context/RegistrationContext";
 import toast from "react-hot-toast";
 import DuplicateModal from "../components/DuplicateModal";
+import { useDashboard } from "../../context/DashboardContext";
 
 const AdminEdit = () => {
   const navigate = useNavigate();
@@ -36,6 +37,7 @@ const AdminEdit = () => {
     showDocumentTypeManager,
     getRegistrationData,
   } = useRegistration();
+  const { getDashboardRegistrations } = useDashboard();
   const { registrationId } = useParams();
   const { userRole, userPermissions } = useAuth();
   const [voiceInputText, setVoiceInputText] = useState("");
@@ -404,6 +406,7 @@ const AdminEdit = () => {
         if (photoRes.success) {
           setPhotoData({ name: photoData.name });
           setPhotoChanged(false);
+          getDashboardRegistrations();
           toast.success("Changes saved successfully");
         } else {
           toast.error(result.message || "Error updating photo.");
@@ -411,11 +414,13 @@ const AdminEdit = () => {
       } else if (!photoPreview && photoChanged) {
         const deleteRes = await ObjectServices.delete_photo(registrationId);
         if (deleteRes.success) {
+          getDashboardRegistrations();
           toast.success("Changes saved successfully");
         } else {
           toast.error(result.message || "Error removing photo.");
         }
       } else {
+        getDashboardRegistrations();
         toast.success("Changes saved successfully");
       }
     } else {

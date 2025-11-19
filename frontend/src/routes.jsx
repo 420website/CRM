@@ -24,6 +24,7 @@ import ScrollToTop from "./scroll.jsx";
 import { RegistrationProvider } from "./context/RegistrationContext.jsx";
 import { UsersProvider } from "./context/UserContext.jsx";
 import MobileOnlyWrapper from "./mobileOnlyWrapper.jsx";
+import { DashboardProvider } from "./context/DashboardContext.jsx";
 
 function AuthenticatedRoute() {
   const { isAuthenticated } = useAuth();
@@ -56,7 +57,11 @@ function LimitedRoute() {
   if (!["limited", "standard", "admin"].includes(userRole)) {
     return <Navigate to="/admin-menu" state={{ from: location }} replace />;
   }
-  return <Outlet />;
+  return (
+    <DashboardProvider>
+      <Outlet />
+    </DashboardProvider>
+  );
 }
 
 function StandardRoute() {

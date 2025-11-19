@@ -1,14 +1,15 @@
 import { useNavigate } from "react-router-dom";
-import { useCallback } from "react";
+import { useCallback, useEffect } from "react";
 import { ObjectServices } from "../../services/objectService";
 import { useState } from "react";
 import toast from "react-hot-toast";
-import { useRegistration } from "../../context/RegistrationContext";
 import { PatientServices } from "../../services/patientServices";
 import { CheckCircleIcon, CircleIcon, SquarePenIcon } from "lucide-react";
 import DatePicker from "./DatePicker";
+import { useDashboard } from "../../context/DashboardContext";
 
-export function ActivityItems({ filteredData }) {
+export function ActivityItems() {
+  const { filteredActivity, lastItem, setLastItem } = useDashboard();
   const [showingPhotos, setShowingPhotos] = useState([]);
   const [loadedPhotos, setLoadedPhotos] = useState({});
   const [loadingPhotos, setLoadingPhotos] = useState(new Set());
@@ -55,6 +56,17 @@ export function ActivityItems({ filteredData }) {
     );
   };
 
+  useEffect(() => {
+    if (lastItem && filteredActivity.length > 0) {
+      setTimeout(() => {
+        document
+          .getElementById(`item-${lastItem}`)
+          ?.scrollIntoView({ behavior: "smooth" });
+        setLastItem(null); // Clear after scrolling
+      }, 300);
+    }
+  }, []);
+
   const renderActivityItem = useCallback(
     (item, index) => (
       <ActivityItem
@@ -69,10 +81,17 @@ export function ActivityItems({ filteredData }) {
         showingPhotos={showingPhotos}
       />
     ),
-    [loadedPhotos, loadingPhotos, showPhoto, hidePhoto, showingPhotos],
+    [
+      loadedPhotos,
+      loadingPhotos,
+      showPhoto,
+      hidePhoto,
+      showingPhotos,
+      filteredActivity,
+    ],
   );
 
-  return <div>{filteredData.map(renderActivityItem)}</div>;
+  return <div>{filteredActivity.map(renderActivityItem)}</div>;
 }
 
 export default function ActivityItem({
@@ -86,9 +105,13 @@ export default function ActivityItem({
   showingPhotos,
 }) {
   const navigate = useNavigate();
-  const { getDashboardActivities, activityData } = useRegistration();
-  const activity = activityData.find((activity) => activity.id === activityId);
   const [isEditing, setIsEditing] = useState(false);
+  const { getDashboardActivities, activityData, setLastItem } = useDashboard();
+  const activity = activityData.find((activity) => activity.id === activityId);
+
+  if (!activity) {
+    return null;
+  }
 
   const updateActivityStatus = async (isComplete) => {
     const result = await PatientServices.update_activity(
@@ -99,7 +122,7 @@ export default function ActivityItem({
 
     if (result.success) {
       item = { ...item, completed: isComplete };
-      getDashboardActivities();
+      await getDashboardActivities();
     } else {
       if (result.status === 400 || result.status === 409) {
         setError(result.message || "Error updating activity.");
@@ -158,7 +181,8 @@ export default function ActivityItem({
       )}
       <div
         key={item.id}
-        className="relative border rounded-lg  bg-gray-50 hover:bg-gray-100 transition-colors cursor-pointer mb-2"
+        id={`item-${item.id}`}
+        className="relative border rounded-lg  bg-gray-50 hover:bg-gray-100 transition-colors cursor-pointer mb-2 scroll-mt-[20px]"
       >
         <div className="flex justify-between items-center  m-4 ml-2 mb-0 ">
           {item.disposition && (
@@ -250,6 +274,7 @@ export default function ActivityItem({
         <div className="flex gap-2 mt-2 p-4 pt-0 justify-between">
           <button
             onClick={() => {
+              setLastItem(item.id);
               navigate(`/admin-edit/${item.patient_id}`);
             }}
             className="bg-black hover:bg-gray-800 text-white py-2 px-4 rounded-md transition-colors text-xs font-medium"
@@ -266,7 +291,7 @@ export default function ActivityItem({
 }
 
 function EditActivityItem({ index, item, activityData, setIsEditing }) {
-  const { getDashboardActivities } = useRegistration();
+  const { getDashboardActivities } = useDashboard();
 
   const [activityForm, setActivityForm] = useState({
     date: activityData.date,
@@ -317,7 +342,7 @@ function EditActivityItem({ index, item, activityData, setIsEditing }) {
     );
 
     if (result.success) {
-      getDashboardActivities();
+      await getDashboardActivities();
       setIsEditing(false);
       toast.success("Activity updated successfully");
     } else {
@@ -336,7 +361,8 @@ function EditActivityItem({ index, item, activityData, setIsEditing }) {
     );
 
     if (result.success) {
-      getDashboardActivities();
+      await getDashboardActivities();
+      setIsEditing(false);
       toast.success("Activity deleted successfully");
     } else {
       if (result.status === 400 || result.status === 409) {

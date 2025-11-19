@@ -1,0 +1,447 @@
+import { createContext, useContext, useEffect, useState } from "react";
+import { useAuth } from "./AuthContext";
+import { PatientServices } from "../services/patientServices";
+import toast from "react-hot-toast";
+
+const DashboardContext = createContext();
+
+export const useDashboard = () => useContext(DashboardContext);
+
+export function DashboardProvider({ children }) {
+  const { userRole } = useAuth();
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [lastItem, setLastItem] = useState(null);
+  const [activeTab, setActiveTab] = useState(
+    userRole !== "limited" ? "activities" : "submitted",
+  );
+
+  // Search and filter state
+  const [searchName, setSearchName] = useState("");
+  const [searchDate, setSearchDate] = useState("");
+  const [searchDisposition, setSearchDisposition] = useState("");
+  const [searchReferralSite, setSearchReferralSite] = useState("");
+  const [activitySearchTerm, setActivitySearchTerm] = useState("");
+  const [activityStatusFilter, setActivityStatusFilter] = useState("all");
+
+  // Data state - now paginated
+  const [pendingData, setPendingData] = useState([]);
+  const [finalizedData, setFinalizedData] = useState([]);
+  const [activityData, setActivityData] = useState([]);
+  const [filteredActivity, setFilteredActivity] = useState([]);
+  const [filteredPending, setFilteredPending] = useState([]);
+  const [filteredSubmitted, setFilteredSubmitted] = useState([]);
+  const [dashboardStats, setDashboardStats] = useState({
+    pending_registrations: 0,
+    submitted_registrations: 0,
+    total_activities: 0,
+  });
+
+  // -- Filters
+  const clearAllFilters = () => {
+    setSearchName("");
+    setSearchDate("");
+    setSearchDisposition("");
+    setSearchReferralSite("");
+    setActivitySearchTerm("");
+    setActivityStatusFilter("all");
+    setFilteredActivity(activityData);
+    setFilteredPending(pendingData);
+    setFilteredSubmitted(finalizedData);
+  };
+
+  // Optimized search handlers
+  const handleNameSearch = (value) => {
+    setSearchName(value);
+  };
+
+  const handleDateSearch = (value) => {
+    setSearchDate(value);
+  };
+
+  const handleDispositionSearch = (value) => {
+    setSearchDisposition(value);
+  };
+
+  const handleReferralSiteSearch = (value) => {
+    setSearchReferralSite(value);
+  };
+
+  const handleActivityTermSearch = (value) => {
+    setActivitySearchTerm(value);
+  };
+
+  const handleActivityStatusSearch = (value) => {
+    setActivityStatusFilter(value);
+  };
+
+  const filterActivity = () => {
+    let data = activityData;
+
+    const hasActiveFilters =
+      searchName ||
+      searchDate ||
+      searchDisposition ||
+      searchReferralSite ||
+      activitySearchTerm ||
+      (activityStatusFilter && activityStatusFilter !== "all");
+
+    if (hasActiveFilters) {
+      if (activitySearchTerm) {
+        const terms = activitySearchTerm.toLowerCase().trim().split(/\s+/);
+
+        data = data.filter((item) => {
+          const haystack =
+            `${item.first_name ?? ""} ${item.last_name ?? ""} ${item.description ?? ""}`.toLowerCase();
+          return terms.every((term) => haystack.includes(term));
+        });
+      }
+
+      if (searchDate) {
+        data = data.filter((item) => item.date === searchDate);
+      }
+
+      if (searchDisposition) {
+        data = data.filter(
+          (item) =>
+            (item.disposition || "").toLowerCase() ===
+            searchDisposition.toLowerCase(),
+        );
+      }
+
+      if (searchReferralSite) {
+        data = data.filter(
+          (item) =>
+            (item.referral_site || "").toLowerCase() ===
+            searchReferralSite.toLowerCase(),
+        );
+      }
+
+      if (activityStatusFilter === "completed") {
+        data = data.filter((item) => item.completed === true);
+      } else if (
+        activityStatusFilter === "late" ||
+        activityStatusFilter === "upcoming"
+      ) {
+        data = data.filter((item) => {
+          if (item.completed) return false;
+
+          const itemDateTime = new Date(`${item.date}T${item.time}`);
+          const now = new Date();
+
+          const computedStatus = itemDateTime > now ? "upcoming" : "late";
+          return (
+            computedStatus.toLowerCase() === activityStatusFilter.toLowerCase()
+          );
+        });
+      }
+    }
+
+    setFilteredActivity(data);
+  };
+
+  const filterPending = () => {
+    let data = pendingData;
+
+    const hasActiveFilters =
+      searchName || searchDate || searchDisposition || searchReferralSite;
+
+    if (hasActiveFilters) {
+      if (searchName) {
+        data = data.filter((item) =>
+          `${item.first_name} ${item.last_name}`
+            .toLowerCase()
+            .includes(searchName.toLowerCase()),
+        );
+      }
+      if (searchDate) {
+        data = data.filter(
+          (item) =>
+            new Date(item.created_at).toLocaleDateString("en-CA") ===
+            searchDate,
+        );
+      }
+
+      if (searchDisposition) {
+        data = data.filter(
+          (item) =>
+            (item.disposition || "").toLowerCase() ===
+            searchDisposition.toLowerCase(),
+        );
+      }
+      if (searchReferralSite) {
+        data = data.filter(
+          (item) =>
+            (item.referral_site || "").toLowerCase() ===
+            searchReferralSite.toLowerCase(),
+        );
+      }
+    }
+    setFilteredPending(data);
+  };
+
+  const filterSubmitted = () => {
+    let data = finalizedData;
+
+    const hasActiveFilters =
+      searchName || searchDate || searchDisposition || searchReferralSite;
+
+    if (hasActiveFilters) {
+      if (searchName) {
+        data = data.filter((item) =>
+          `${item.first_name} ${item.last_name}`
+            .toLowerCase()
+            .includes(searchName.toLowerCase()),
+        );
+      }
+      if (searchDate) {
+        data = data.filter(
+          (item) =>
+            new Date(item.created_at).toLocaleDateString("en-CA") ===
+            searchDate,
+        );
+      }
+      if (searchDisposition) {
+        data = data.filter(
+          (item) =>
+            (item.disposition || "").toLowerCase() ===
+            searchDisposition.toLowerCase(),
+        );
+      }
+      if (searchReferralSite) {
+        data = data.filter(
+          (item) =>
+            (item.referral_site || "").toLowerCase() ===
+            searchReferralSite.toLowerCase(),
+        );
+      }
+    }
+    setFilteredSubmitted(data);
+  };
+
+  useEffect(() => {
+    if (activeTab === "activities") {
+      filterActivity();
+      filterPending();
+      filterSubmitted();
+    } else if (activeTab === "pending") {
+      filterPending();
+      filterActivity();
+      filterSubmitted();
+    } else {
+      filterSubmitted();
+      filterPending();
+      filterActivity();
+    }
+  }, [
+    searchName,
+    searchDate,
+    searchDisposition,
+    searchReferralSite,
+    activitySearchTerm,
+    activityStatusFilter,
+    activityData,
+    pendingData,
+    finalizedData,
+  ]);
+
+  useEffect(() => {
+    setDashboardStats({
+      pending_registrations:
+        activeTab === "pending" ? filteredPending.length : pendingData.length,
+      submitted_registrations:
+        activeTab === "submitted"
+          ? filteredSubmitted.length
+          : finalizedData.length,
+      total_activities:
+        activeTab === "activities"
+          ? filteredActivity.length
+          : activityData.length,
+    });
+  }, [
+    activeTab,
+    activityData,
+    pendingData,
+    finalizedData,
+    filteredActivity,
+    filteredSubmitted,
+    filteredPending,
+  ]);
+
+  // -- Dashboard Data
+  const getDashboardActivities = async () => {
+    setLoading(true);
+    setError("");
+
+    if (userRole !== "limited") {
+      const result = await PatientServices.get_activities();
+
+      if (result.success) {
+        setActivityData(result.data);
+      } else {
+        if (result.status === 400 || result.status === 409) {
+          setError(result.message || "Invalid credentials.");
+        } else {
+          setError("Login failed. Please try again.");
+        }
+      }
+    }
+    setLoading(false);
+  };
+
+  // Pending and Submitted
+  const getDashboardRegistrations = async () => {
+    setLoading(true);
+    setError("");
+
+    const result = await PatientServices.get_patients();
+
+    if (result.success) {
+      if (userRole !== "limited") {
+        const pending = result.data.filter((reg) => reg.status === "pending");
+        setPendingData(pending);
+      }
+
+      let finalized = result.data.filter(
+        (reg) => reg.status === "finalized" || reg.status === "saved",
+      );
+
+      if (userRole === "limited") {
+        finalized = finalized.filter((reg) => !reg.limited);
+      }
+      setFinalizedData(finalized);
+    } else {
+      if (result.status === 400 || result.status === 409) {
+        setError(result.message || "Invalid credentials.");
+      } else {
+        setError("Login failed. Please try again.");
+      }
+    }
+    setLoading(false);
+  };
+
+  useEffect(() => {
+    const getInitialData = async () => {
+      getDashboardActivities();
+      getDashboardRegistrations();
+    };
+
+    getInitialData();
+  }, []);
+
+  // -- Actions
+  const deleteRegistration = async (id) => {
+    const result = await PatientServices.delete_patient_by_id(id);
+
+    if (result.success) {
+      getDashboardActivities();
+      getDashboardRegistrations();
+      toast.success("Registration deleted successfully");
+    } else {
+      if (result.status === 400 || result.status === 409) {
+        toast.error(result.message || "Error deleting patient.");
+      } else {
+        toast.error("Error deleting patient. Please try again.");
+      }
+    }
+  };
+
+  const finalizeRegistration = async (id) => {
+    setError(null);
+
+    const result = await PatientServices.update_patient_status(id, {
+      status: "finalized",
+    });
+
+    if (result.success) {
+      getDashboardActivities();
+      getDashboardRegistrations();
+      toast.success("Registration finalized successfully");
+    } else {
+      if (result.status === 400 || result.status === 409) {
+        toast.error(result.message || "Error updating patient status.");
+      } else {
+        toast.error("Error updating patient status. Please try again.");
+      }
+    }
+  };
+
+  const saveRegistration = async (id) => {
+    setError(null);
+
+    const result = await PatientServices.update_patient_status(id, {
+      status: "saved",
+    });
+
+    if (result.success) {
+      getDashboardActivities();
+      getDashboardRegistrations();
+      toast.success("Registration saved successfully");
+    } else {
+      if (result.status === 400 || result.status === 409) {
+        toast.error(result.message || "Error updating patient status.");
+      } else {
+        toast.error("Error updating patient status. Please try again.");
+      }
+    }
+  };
+
+  const revertToPending = async (id) => {
+    setError(null);
+
+    const result = await PatientServices.update_patient_status(id, {
+      status: "pending",
+    });
+
+    if (result.success) {
+      getDashboardActivities();
+      getDashboardRegistrations();
+      toast.success("Registration reverted to pending");
+    } else {
+      if (result.status === 400 || result.status === 409) {
+        toast.error(result.message || "Error updating patient status.");
+      } else {
+        toast.error("Error updating patient status. Please try again.");
+      }
+    }
+  };
+
+  return (
+    <DashboardContext.Provider
+      value={{
+        activeTab,
+        setActiveTab,
+        dashboardStats,
+        getDashboardRegistrations,
+        getDashboardActivities,
+        pendingData,
+        finalizedData,
+        activityData,
+        clearAllFilters,
+        searchName,
+        searchReferralSite,
+        searchDate,
+        searchDisposition,
+        activitySearchTerm,
+        activityStatusFilter,
+        handleDateSearch,
+        handleNameSearch,
+        handleDispositionSearch,
+        handleReferralSiteSearch,
+        handleActivityTermSearch,
+        handleActivityStatusSearch,
+        saveRegistration,
+        deleteRegistration,
+        finalizeRegistration,
+        revertToPending,
+        filteredActivity,
+        filteredSubmitted,
+        filteredPending,
+        lastItem,
+        setLastItem,
+      }}
+    >
+      {children}
+    </DashboardContext.Provider>
+  );
+}

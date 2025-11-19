@@ -4,10 +4,11 @@ import ConfirmModal from "../components/ConfirmModal";
 import { useRegistration } from "../../context/RegistrationContext";
 import DatePicker from "../ui/DatePicker";
 import toast from "react-hot-toast";
+import { useDashboard } from "../../context/DashboardContext";
 
 export default function Activities({ setActiveTab, currentRegistrationId }) {
-  const { activities, getActivities, getDashboardActivities } =
-    useRegistration();
+  const { activities, getActivities } = useRegistration();
+  const { getDashboardActivities } = useDashboard();
   const [loading, setLoading] = useState(false);
   const [editingActivityId, setEditingActivityId] = useState(null);
   const [isSavingActivity, setIsSavingActivity] = useState(false);

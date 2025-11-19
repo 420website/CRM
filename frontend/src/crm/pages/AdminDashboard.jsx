@@ -1,70 +1,73 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { PatientServices } from "../../services/patientServices";
 import PaginationControls from "../ui/PaginationControls";
 import { RegistrationItems } from "../ui/RegistrationItem";
 import { ActivityItems } from "../ui/ActivityItem";
 import { useAuth } from "../../context/AuthContext";
 import ConfirmModal from "../components/ConfirmModal";
 import { useRegistration } from "../../context/RegistrationContext";
-import toast from "react-hot-toast";
 import DatePicker from "../ui/DatePicker";
+import { useDashboard } from "../../context/DashboardContext";
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
   const { logout, userRole } = useAuth();
+  const { referralSites, dispositions } = useRegistration();
   const {
-    referralSites,
-    dispositions,
-    pendingData,
-    finalizedData,
-    activityData,
-    getRegistrations,
+    setActiveTab,
+    activeTab,
+    dashboardStats,
+    clearAllFilters,
+    searchDate,
+    searchName,
+    searchDisposition,
+    searchReferralSite,
+    activityStatusFilter,
+    activitySearchTerm,
+    handleDateSearch,
+    handleNameSearch,
+    handleDispositionSearch,
+    handleReferralSiteSearch,
+    handleActivityTermSearch,
+    handleActivityStatusSearch,
     getDashboardActivities,
-  } = useRegistration();
+    getDashboardRegistrations,
+    deleteRegistration,
+    saveRegistration,
+    revertToPending,
+    finalizeRegistration,
+    filteredActivity,
+    filteredSubmitted,
+    filteredPending,
+  } = useDashboard();
 
   // Core state
-  const [activeTab, setActiveTab] = useState(
-    userRole !== "limited" ? "activities" : "submitted",
-  );
   const [loading, setLoading] = useState(false);
-  const [isRefreshing, setIsRefreshing] = useState(false);
-
   const [error, setError] = useState(null);
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalRecords, setTotalRecords] = useState(0);
 
-  // Search and filter state
-  const [searchName, setSearchName] = useState("");
-  const [searchDate, setSearchDate] = useState("");
-  const [searchDisposition, setSearchDisposition] = useState("");
-  const [searchReferralSite, setSearchReferralSite] = useState("");
-  const [activitySearchTerm, setActivitySearchTerm] = useState("");
-  const [activityStatusFilter, setActivityStatusFilter] = useState("all");
-
-  // Action states
-  const [finalizingId, setFinalizingId] = useState(null);
-  const [deletingId, setDeletingId] = useState(null);
-  const [revertingId, setRevertingId] = useState(null);
-
-  // Confirmation
+  // Actions
   const [deleteRegistrationId, setDeleteRegistrationId] = useState(null);
   const [finalizeRegistrationId, setFinalizeRegistrationId] = useState(null);
   const [revertRegistrationId, setRevertRegistrationId] = useState(null);
   const [saveRegistrationId, setSaveRegistrationId] = useState(null);
-
   const [showConfirm, setShowConfirm] = useState("");
 
-  // Data state - now paginated
-  const [currentData, setCurrentData] = useState([]);
-  const [dashboardStats, setDashboardStats] = useState({
-    pending_registrations: 0,
-    submitted_registrations: 0,
-    total_activities: 0,
-  });
+  let currentData =
+    activeTab === "activities"
+      ? filteredActivity
+      : activeTab === "pending"
+        ? filteredPending
+        : filteredSubmitted;
+
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
 
   const handleLogout = async () => {
     try {
@@ -74,33 +77,25 @@ const AdminDashboard = () => {
     }
   };
 
-  const setDisplayed = () => {
-    if (activeTab === "activities") {
-      setCurrentData(activityData);
-    } else if (activeTab === "pending") {
-      setCurrentData(pendingData);
-    } else {
-      setCurrentData(finalizedData);
-    }
+  const handleDelete = async (id) => {
+    setDeleteRegistrationId(id);
+    setShowConfirm("delete");
   };
 
-  useEffect(() => {
-    window.scrollTo(0, 0);
-  }, []);
+  const handleFinalize = async (id) => {
+    setFinalizeRegistrationId(id);
+    setShowConfirm("finalize");
+  };
 
-  useEffect(() => {
-    setDashboardStats({
-      pending_registrations: pendingData.length,
-      submitted_registrations: finalizedData.length,
-      total_activities: activityData.length,
-    });
-    setDisplayed();
-  }, [activityData, pendingData, finalizedData]);
+  const handleSave = async (id) => {
+    setSaveRegistrationId(id);
+    setShowConfirm("save");
+  };
 
-  useEffect(() => {
-    setCurrentPage(1);
-    setDisplayed();
-  }, [activeTab]);
+  const handleRevertToPending = async (id) => {
+    setRevertRegistrationId(id);
+    setShowConfirm("revert");
+  };
 
   // Handle search changes with debouncing
   useEffect(() => {
@@ -131,273 +126,11 @@ const AdminDashboard = () => {
     // Run data fetches and minimum delay in parallel
     await Promise.all([
       getDashboardActivities(),
-      getRegistrations(),
+      getDashboardRegistrations(),
       new Promise((resolve) => setTimeout(resolve, 500)), // 500ms minimum
     ]);
 
     setIsRefreshing(false);
-  };
-
-  // Optimized search handlers
-  const handleNameSearch = (value) => {
-    setSearchName(value);
-  };
-
-  const handleDateSearch = (value) => {
-    setSearchDate(value);
-  };
-
-  const handleDispositionSearch = (value) => {
-    setSearchDisposition(value);
-  };
-
-  const handleReferralSiteSearch = (value) => {
-    setSearchReferralSite(value);
-  };
-
-  const clearAllFilters = () => {
-    setSearchName("");
-    setSearchDate("");
-    setSearchDisposition("");
-    setSearchReferralSite("");
-    setActivitySearchTerm("");
-    setActivityStatusFilter("all");
-  };
-
-  const deleteRegistration = async () => {
-    const result =
-      await PatientServices.delete_patient_by_id(deleteRegistrationId);
-
-    if (result.success) {
-      getDashboardActivities();
-      getRegistrations();
-      toast.success("Registration deleted successfully");
-    } else {
-      if (result.status === 400 || result.status === 409) {
-        toast.error(result.message || "Error deleting patient.");
-      } else {
-        toast.error("Error deleting patient. Please try again.");
-      }
-    }
-  };
-
-  const handleDelete = async (id) => {
-    setDeleteRegistrationId(id);
-    setShowConfirm("delete");
-  };
-
-  const finalizeRegistration = async () => {
-    setError(null);
-
-    const result = await PatientServices.update_patient_status(
-      finalizeRegistrationId,
-      {
-        status: "finalized",
-      },
-    );
-
-    if (result.success) {
-      getDashboardActivities();
-      getRegistrations();
-      toast.success("Registration finalized successfully");
-    } else {
-      if (result.status === 400 || result.status === 409) {
-        toast.error(result.message || "Error updating patient status.");
-      } else {
-        toast.error("Error updating patient status. Please try again.");
-      }
-    }
-  };
-
-  const handleFinalize = async (id) => {
-    setFinalizeRegistrationId(id);
-    setShowConfirm("finalize");
-  };
-
-  const saveRegistration = async () => {
-    setError(null);
-
-    const result = await PatientServices.update_patient_status(
-      saveRegistrationId,
-      {
-        status: "saved",
-      },
-    );
-
-    if (result.success) {
-      getDashboardActivities();
-      getRegistrations();
-      toast.success("Registration saved successfully");
-    } else {
-      if (result.status === 400 || result.status === 409) {
-        toast.error(result.message || "Error updating patient status.");
-      } else {
-        toast.error("Error updating patient status. Please try again.");
-      }
-    }
-  };
-
-  const handleSave = async (id) => {
-    setSaveRegistrationId(id);
-    setShowConfirm("save");
-  };
-
-  const revertToPending = async () => {
-    setError(null);
-
-    const result = await PatientServices.update_patient_status(
-      revertRegistrationId,
-      {
-        status: "pending",
-      },
-    );
-
-    if (result.success) {
-      getDashboardActivities();
-      getRegistrations();
-      toast.success("Registration reverted to pending");
-    } else {
-      if (result.status === 400 || result.status === 409) {
-        toast.error(result.message || "Error updating patient status.");
-      } else {
-        toast.error("Error updating patient status. Please try again.");
-      }
-    }
-  };
-
-  const handleRevertToPending = async (id) => {
-    setRevertRegistrationId(id);
-    setShowConfirm("revert");
-  };
-
-  // Compute filtered data based on active tab + filters
-  const getFilteredData = () => {
-    let data = [];
-
-    if (activeTab === "activities") {
-      data = activityData;
-      if (activitySearchTerm) {
-        const terms = activitySearchTerm.toLowerCase().trim().split(/\s+/);
-
-        data = data.filter((item) => {
-          const haystack =
-            `${item.first_name ?? ""} ${item.last_name ?? ""} ${item.description ?? ""}`.toLowerCase();
-          return terms.every((term) => haystack.includes(term));
-        });
-      }
-
-      if (searchDate) {
-        data = data.filter((item) => item.date === searchDate);
-      }
-
-      if (searchDisposition) {
-        data = data.filter(
-          (item) =>
-            (item.disposition || "").toLowerCase() ===
-            searchDisposition.toLowerCase(),
-        );
-      }
-
-      if (searchReferralSite) {
-        data = data.filter(
-          (item) =>
-            (item.referral_site || "").toLowerCase() ===
-            searchReferralSite.toLowerCase(),
-        );
-      }
-
-      if (activityStatusFilter === "completed") {
-        data = data.filter((item) => item.completed === true);
-      } else if (
-        activityStatusFilter === "late" ||
-        activityStatusFilter === "upcoming"
-      ) {
-        data = data.filter((item) => {
-          if (item.completed) return false;
-
-          const itemDateTime = new Date(`${item.date}T${item.time}`);
-          const now = new Date();
-
-          const computedStatus = itemDateTime > now ? "upcoming" : "late";
-          return (
-            computedStatus.toLowerCase() === activityStatusFilter.toLowerCase()
-          );
-        });
-      }
-    } else if (activeTab === "pending") {
-      data = pendingData;
-
-      if (searchName) {
-        data = data.filter((item) =>
-          `${item.first_name} ${item.last_name}`
-            .toLowerCase()
-            .includes(searchName.toLowerCase()),
-        );
-      }
-      if (searchDate) {
-        data = data.filter(
-          (item) =>
-            new Date(item.created_at).toLocaleDateString("en-CA") ===
-            searchDate,
-        );
-      }
-
-      if (searchDisposition) {
-        data = data.filter(
-          (item) =>
-            (item.disposition || "").toLowerCase() ===
-            searchDisposition.toLowerCase(),
-        );
-      }
-      if (searchReferralSite) {
-        data = data.filter(
-          (item) =>
-            (item.referral_site || "").toLowerCase() ===
-            searchReferralSite.toLowerCase(),
-        );
-      }
-    } else if (activeTab === "submitted") {
-      data = finalizedData;
-      if (searchName) {
-        data = data.filter((item) =>
-          `${item.first_name} ${item.last_name}`
-            .toLowerCase()
-            .includes(searchName.toLowerCase()),
-        );
-      }
-      if (searchDate) {
-        data = data.filter(
-          (item) =>
-            new Date(item.created_at).toLocaleDateString("en-CA") ===
-            searchDate,
-        );
-      }
-      if (searchDisposition) {
-        data = data.filter(
-          (item) =>
-            (item.disposition || "").toLowerCase() ===
-            searchDisposition.toLowerCase(),
-        );
-      }
-      if (searchReferralSite) {
-        data = data.filter(
-          (item) =>
-            (item.referral_site || "").toLowerCase() ===
-            searchReferralSite.toLowerCase(),
-        );
-      }
-    }
-
-    return data;
-  };
-
-  useEffect(() => {
-    getDashboardActivities();
-    getRegistrations();
-  }, []);
-
-  const goBack = () => {
-    navigate("/");
   };
 
   return (
@@ -407,7 +140,7 @@ const AdminDashboard = () => {
           <ConfirmModal
             message={"Confirm to delete registration"}
             subMessage={"This action cannot be undone"}
-            confirm={deleteRegistration}
+            confirm={() => deleteRegistration(deleteRegistrationId)}
             setShowConfirm={setShowConfirm}
           />
         )}
@@ -415,7 +148,7 @@ const AdminDashboard = () => {
           <ConfirmModal
             message={"Confirm save registration"}
             subMessage={"This will save registration without sending an email"}
-            confirm={saveRegistration}
+            confirm={() => saveRegistration(saveRegistrationId)}
             setShowConfirm={setShowConfirm}
           />
         )}
@@ -423,7 +156,7 @@ const AdminDashboard = () => {
           <ConfirmModal
             message={"Confirm finalize registration"}
             subMessage={"This will send the email notification"}
-            confirm={finalizeRegistration}
+            confirm={() => finalizeRegistration(finalizeRegistrationId)}
             setShowConfirm={setShowConfirm}
           />
         )}
@@ -433,7 +166,7 @@ const AdminDashboard = () => {
             subMessage={
               "This will allow you to make edits and resubmit with a new email notification"
             }
-            confirm={revertToPending}
+            confirm={() => revertToPending(revertRegistrationId)}
             setShowConfirm={setShowConfirm}
           />
         )}
@@ -463,10 +196,7 @@ const AdminDashboard = () => {
               Admin Menu
             </button>
             <button
-              onClick={() => {
-                sessionStorage.setItem("admin_authenticated", "true");
-                navigate("/admin-register");
-              }}
+              onClick={() => navigate("/admin-register")}
               className="inline-flex items-center gap-1 px-2 py-1 bg-black text-white rounded-md hover:bg-gray-800 transition-colors text-xs font-medium"
             >
               <svg
@@ -485,7 +215,7 @@ const AdminDashboard = () => {
               Register
             </button>
             <button
-              onClick={goBack}
+              onClick={() => navigate("/")}
               className="inline-flex items-center gap-1 px-2 py-1 bg-white text-black border border-black rounded-md hover:bg-gray-100 transition-colors text-xs font-medium"
             >
               <svg
@@ -541,7 +271,7 @@ const AdminDashboard = () => {
                 >
                   Activities (
                   {activeTab === "activities"
-                    ? getFilteredData().length
+                    ? filteredActivity.length
                     : dashboardStats.total_activities}
                   )
                 </button>
@@ -555,7 +285,7 @@ const AdminDashboard = () => {
                 >
                   Pending (
                   {activeTab === "pending"
-                    ? getFilteredData().length
+                    ? filteredPending.length
                     : dashboardStats.pending_registrations}
                   )
                 </button>
@@ -571,7 +301,7 @@ const AdminDashboard = () => {
             >
               Submitted (
               {activeTab === "submitted"
-                ? getFilteredData().length
+                ? filteredSubmitted.length
                 : dashboardStats.submitted_registrations}
               )
             </button>
@@ -671,7 +401,7 @@ const AdminDashboard = () => {
                   }
                   onChange={(e) =>
                     activeTab === "activities"
-                      ? setActivitySearchTerm(e.target.value)
+                      ? handleActivityTermSearch(e.target.value)
                       : handleNameSearch(e.target.value)
                   }
                   className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -784,7 +514,7 @@ const AdminDashboard = () => {
                   </label>
                   <select
                     value={activityStatusFilter}
-                    onChange={(e) => setActivityStatusFilter(e.target.value)}
+                    onChange={(e) => handleActivityStatusSearch(e.target.value)}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                     style={{
                       height: "40px",
@@ -849,20 +579,13 @@ const AdminDashboard = () => {
                   {/* Performance optimized rendering */}
                   <div className="space-y-4">
                     {activeTab === "activities" ? (
-                      <ActivityItems filteredData={getFilteredData()} />
+                      <ActivityItems />
                     ) : (
                       <RegistrationItems
-                        activeTab={activeTab}
-                        deletingId={deletingId}
-                        finalizingId={finalizingId}
-                        revertingId={revertingId}
-                        finalizedData={finalizedData}
-                        pendingData={pendingData}
-                        handleDelete={handleDelete}
                         handleSave={handleSave}
+                        handleDelete={handleDelete}
                         handleFinalize={handleFinalize}
                         handleRevertToPending={handleRevertToPending}
-                        filteredData={getFilteredData()}
                       />
                     )}
                   </div>
