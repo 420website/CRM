@@ -574,6 +574,7 @@ describe("PatientServices.patient activities", () => {
   const activityFormData = {
     date: new Date().toISOString().split("T")[0],
     time: "10:00",
+    name: "Delivery",
     description: "Initial intake appointment",
   };
 

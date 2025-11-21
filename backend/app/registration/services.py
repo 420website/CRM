@@ -834,12 +834,8 @@ class ActivityService:
         patient_id: int, activity: ActivityCreate
     ) -> bool:
         query = """
-        INSERT INTO activities (
-            patient_id, date, time, description
-        )
-        VALUES (
-            $1, $2, $3, $4
-        )
+        INSERT INTO activities (patient_id, date, time, description, name)
+        VALUES ($1, $2, $3, $4, $5)
         RETURNING id;
         """
         async with database.get_transaction() as conn:
@@ -849,6 +845,7 @@ class ActivityService:
                 activity.date,
                 activity.time,
                 activity.description,
+                activity.name,
             )
             return bool(row)
 

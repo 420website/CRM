@@ -298,12 +298,13 @@ class ActivityBase(BaseModel):
 
 
 class ActivityCreate(ActivityBase):
-    # patient_id: int  # Required for creation
-    description: str  # Required for creation
+    name: str
+    description: str
 
 
 class ActivityUpdate(ActivityBase):
     patient_id: Optional[int] = None
+    name: Optional[str] = None
     description: Optional[str] = None
     completed: Optional[bool] = None
 
@@ -312,6 +313,7 @@ class ActivityRead(ActivityBase):
     id: int
     patient_id: int
     description: str
+    name: str
     completed: bool
     created_at: datetime
     updated_at: datetime
@@ -333,6 +335,7 @@ class PatientActivity(ActivityBase):
     phone1: Optional[str] = None
     disposition: Optional[str] = None
     referral_site: Optional[str] = None
+    name: str
     description: str
     completed: bool
     created_at: datetime

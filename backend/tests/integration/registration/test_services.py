@@ -1310,9 +1310,10 @@ class TestActivitiesService(IsolatedAsyncioTestCase):
         self.patient_id = patients[0].id
 
         self.activity_data = ActivityCreate(
-            description="Initial activity",
             date=date(2024, 1, 1),
             time=dt.time(9, 0),
+            name="Delivery",
+            description="Drop off at door",
         )
 
     async def asyncTearDown(self) -> None:
@@ -1325,9 +1326,12 @@ class TestActivitiesService(IsolatedAsyncioTestCase):
             self.patient_id, self.activity_data
         )
         self.assertTrue(result)
+
         records = await ActivityService.get_activities()
+
         self.assertGreaterEqual(len(records), 1)
-        self.assertEqual(records[0].description, "Initial activity")
+        self.assertEqual(records[0].name, "Delivery")
+        self.assertEqual(records[0].description, "Drop off at door")
 
     #### GET
     async def test_get_activities_empty(self):
@@ -1342,8 +1346,9 @@ class TestActivitiesService(IsolatedAsyncioTestCase):
         await ActivityService.create_activity(
             self.patient_id,
             ActivityCreate(
-                description="Follow-up activity",
                 date=date(2024, 1, 1),
+                name="Follow-up",
+                description="Follow-up on lead",
             ),
         )
 
@@ -1351,9 +1356,8 @@ class TestActivitiesService(IsolatedAsyncioTestCase):
             self.patient_id
         )
         self.assertGreaterEqual(len(records), 2)
-        self.assertEqual(
-            records[0].description, "Follow-up activity"
-        )  # newest first
+        self.assertEqual(records[0].name, "Follow-up")
+        self.assertEqual(records[0].description, "Follow-up on lead")
 
     async def test_get_activities(self):
         """
@@ -1366,8 +1370,9 @@ class TestActivitiesService(IsolatedAsyncioTestCase):
         await ActivityService.create_activity(
             self.patient_id,
             ActivityCreate(
-                description="Follow-up activity",
                 date=date(2024, 1, 1),
+                name="Follow-up",
+                description="Review test results",
             ),
         )
 

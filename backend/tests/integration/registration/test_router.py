@@ -2105,9 +2105,10 @@ class TestPatientActivityRouter(IsolatedAsyncioTestCase):
     async def mock_create_activity(self, patient_id):
         """Helper to create an activity for a patient"""
         activity_data = ActivityCreate(
-            description="Blood pressure check",
-            time=datetime.now().time(),
             date=date.today(),
+            time=datetime.now().time(),
+            name="Check Blood pressure",
+            description="History of low BP.",
         )
 
         await create_activity(patient_id, activity_data, self.user)
@@ -2135,13 +2136,14 @@ class TestPatientActivityRouter(IsolatedAsyncioTestCase):
 
         # Activity test data
         self.activity_data = ActivityCreate(
-            description="Blood pressure check",
-            time=datetime.now().time(),
             date=date.today(),
+            time=datetime.now().time(),
+            name="Get Results",
+            description="Pick up at 5:00pm",
         )
 
         self.activity_update_data = ActivityUpdate(
-            description="Updated blood pressure check"
+            name="New", description="Updated blood pressure check"
         )
 
     async def asyncTearDown(self):
@@ -2166,7 +2168,8 @@ class TestPatientActivityRouter(IsolatedAsyncioTestCase):
 
         self.assertIsInstance(result, list)
         self.assertGreaterEqual(len(result), 1)
-        self.assertEqual(result[0].description, "Blood pressure check")
+        self.assertEqual(result[0].name, "Check Blood pressure")
+        self.assertEqual(result[0].description, "History of low BP.")
 
         # Cleanup
         await PatientService.delete_patient_by_id(patient_id)
@@ -2179,7 +2182,8 @@ class TestPatientActivityRouter(IsolatedAsyncioTestCase):
 
         self.assertEqual(result.id, activity_id)
         self.assertEqual(result.patient_id, patient_id)
-        self.assertEqual(result.description, "Blood pressure check")
+        self.assertEqual(result.name, "Check Blood pressure")
+        self.assertEqual(result.description, "History of low BP.")
 
         # Cleanup
         await PatientService.delete_patient_by_id(patient_id)
@@ -2198,9 +2202,11 @@ class TestPatientActivityRouter(IsolatedAsyncioTestCase):
         updated_activity = await get_activity_by_id(
             patient_id, activity_id, self.user
         )
+
         self.assertEqual(
             updated_activity.description, "Updated blood pressure check"
         )
+        self.assertEqual(updated_activity.name, "New")
 
         # Cleanup
         await PatientService.delete_patient_by_id(patient_id)
