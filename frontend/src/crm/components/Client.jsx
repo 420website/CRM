@@ -5,12 +5,12 @@ import {
   formatPhoneNumber,
   formatPostalCode,
 } from "../../utils/formatData";
-import { useRegistration } from "../../context/RegistrationContext";
 import DatePicker from "../ui/DatePicker";
 import { useAuth } from "../../context/AuthContext";
-import CoverageManager from "../managers/CoverageManager";
-import PhysicianManager from "../managers/PhysicianManager";
 import { PhoneCall } from "lucide-react";
+import { useReferences } from "../../context/ReferenceContext";
+import OptionManager from "../managers/OptionManager";
+import TemplateManager from "../managers/TemplateManager";
 
 // Map Google Places province codes to full province names
 const getProvince = (code) => {
@@ -38,27 +38,12 @@ export default function Client({
   setFormData,
   selectedTemplate,
   setSelectedTemplate,
-  templates,
   openVoiceDateInput,
   openVoiceFillInput,
 }) {
   const { userRole } = useAuth();
-
   const [error, setError] = useState("");
-  const {
-    dispositions,
-    genericCoverage,
-    genericPhysicians,
-    referralSites,
-    clinicalTemplates,
-    setShowCoverageManager,
-    showCoverageManager,
-    setShowDispositionManager,
-    setShowClinicalManager,
-    setShowReferralSiteManager,
-    setShowPhysicianManager,
-    showPhysicianManager,
-  } = useRegistration();
+  const { setShowManager, showManager, options, templates } = useReferences();
 
   const defaultPositiveClinicalSummary = async (formData) => {
     const baseTemplate = "Dx 10+ years ago and treated. ";
@@ -216,8 +201,8 @@ export default function Client({
       }));
     } else {
       const content =
-        clinicalTemplates.find((item) => item.name === templateName)?.content ||
-        "";
+        templates["clinical"].find((item) => item.name === templateName)
+          ?.content || "";
 
       setFormData((prev) => ({
         ...prev,
@@ -309,9 +294,13 @@ export default function Client({
     <div>
       <div className="tab-content">
         <div className="space-y-6">
-          {showCoverageManager && <CoverageManager />}
-          {showPhysicianManager && <PhysicianManager />}
-
+          {(showManager === "coverage" ||
+            showManager === "physician" ||
+            showManager === "disposition" ||
+            showManager === "referral_site") && (
+            <OptionManager type={showManager} />
+          )}
+          {showManager === "clinical" && <TemplateManager type={showManager} />}
           {/* Basic Information */}
           <div>
             <h2 className="text-lg font-medium text-gray-900 mb-4">
@@ -487,7 +476,7 @@ export default function Client({
                   {userRole == "admin" && (
                     <button
                       type="button"
-                      onClick={() => setShowDispositionManager(true)}
+                      onClick={() => setShowManager("disposition")}
                       className="text-blue-600 hover:text-blue-800 text-sm"
                     >
                       Manage Dispositions
@@ -503,7 +492,7 @@ export default function Client({
                 >
                   <option value="">Select Disposition</option>
                   {/* Most Frequently Used */}
-                  {dispositions
+                  {options["disposition"]
                     .filter((d) => d.is_frequent)
                     .map((disposition) => (
                       <option key={disposition.id} value={disposition.name}>
@@ -511,11 +500,10 @@ export default function Client({
                       </option>
                     ))}
                   {/* Separator */}
-                  {dispositions.filter((d) => !d.is_frequent).length > 0 && (
-                    <option disabled>-------</option>
-                  )}
+                  {options["disposition"].filter((d) => !d.is_frequent).length >
+                    0 && <option disabled>-------</option>}
                   {/* All Others in Alphabetical Order */}
-                  {dispositions
+                  {options["disposition"]
                     .filter((d) => !d.is_frequent)
                     .sort((a, b) => a.name.localeCompare(b.name))
                     .map((disposition) => (
@@ -594,7 +582,7 @@ export default function Client({
                   {userRole == "admin" && (
                     <button
                       type="button"
-                      onClick={() => setShowReferralSiteManager(true)}
+                      onClick={() => setShowManager("referral_site")}
                       className="text-blue-600 hover:text-blue-800 text-sm"
                     >
                       Manage Referral Sites
@@ -610,7 +598,7 @@ export default function Client({
                 >
                   <option value="">Select Referral Site</option>
                   {/* Most Frequently Used */}
-                  {referralSites
+                  {options["referral_site"]
                     .filter((s) => s.is_frequent)
                     .map((site) => (
                       <option key={site.id} value={site.name}>
@@ -618,11 +606,10 @@ export default function Client({
                       </option>
                     ))}
                   {/* Separator */}
-                  {referralSites.filter((s) => !s.is_frequent).length > 0 && (
-                    <option disabled>-------</option>
-                  )}
+                  {options["referral_site"].filter((s) => !s.is_frequent)
+                    .length > 0 && <option disabled>-------</option>}
                   {/* All Others in Alphabetical Order */}
-                  {referralSites
+                  {options["referral_site"]
                     .filter((s) => !s.is_frequent)
                     .sort((a, b) => a.name.localeCompare(b.name))
                     .map((site) => (
@@ -634,7 +621,6 @@ export default function Client({
               </div>
             </div>
           </div>
-
           {/* Address Information */}
           <div>
             <h2 className="text-lg font-medium text-gray-900 mb-4">
@@ -763,7 +749,6 @@ export default function Client({
               </div>
             </div>
           </div>
-
           {/* Contact Information */}
           <div>
             <h2 className="text-lg font-medium text-gray-900 mb-4">
@@ -934,7 +919,6 @@ export default function Client({
               </div>
             </div>
           </div>
-
           {/* Additional Information */}
           <div>
             <h2 className="text-lg font-medium text-gray-900 mb-4">
@@ -988,7 +972,7 @@ export default function Client({
                   {userRole == "admin" && (
                     <button
                       type="button"
-                      onClick={() => setShowClinicalManager(true)}
+                      onClick={() => setShowManager("clinical")}
                       className="text-blue-600 hover:text-blue-800 text-sm"
                     >
                       Manage Templates
@@ -1002,7 +986,7 @@ export default function Client({
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black"
                 >
                   <option value="Select">Select</option>
-                  {clinicalTemplates.map((template) => (
+                  {templates["clinical"].map((template) => (
                     <option key={template.id} value={template.name}>
                       {template.name}
                     </option>
@@ -1097,7 +1081,7 @@ export default function Client({
                       {userRole == "admin" && (
                         <button
                           type="button"
-                          onClick={() => setShowCoverageManager(true)}
+                          onClick={() => setShowManager("coverage")}
                           className="text-blue-600 hover:text-blue-800 text-sm"
                         >
                           Manage Coverage
@@ -1113,7 +1097,7 @@ export default function Client({
                     >
                       <option value="">Select</option>
                       {/* Most Frequently Used */}
-                      {genericCoverage
+                      {options["coverage"]
                         .filter((c) => c.is_frequent)
                         .map((c) => (
                           <option key={c.id} value={c.name}>
@@ -1121,10 +1105,10 @@ export default function Client({
                           </option>
                         ))}
                       {/* Separator */}
-                      {genericCoverage.filter((c) => !c.is_frequent).length >
-                        0 && <option disabled>-------</option>}
+                      {options["coverage"].filter((c) => !c.is_frequent)
+                        .length > 0 && <option disabled>-------</option>}
                       {/* All Others in Alphabetical Order */}
-                      {genericCoverage
+                      {options["coverage"]
                         .filter((c) => !c.is_frequent)
                         .sort((a, b) => a.name.localeCompare(b.name))
                         .map((c) => (
@@ -1210,7 +1194,7 @@ export default function Client({
                   {userRole == "admin" && (
                     <button
                       type="button"
-                      onClick={() => setShowPhysicianManager(true)}
+                      onClick={() => setShowManager("physician")}
                       className="text-blue-600 hover:text-blue-800 text-sm"
                     >
                       Manage Physicians
@@ -1226,7 +1210,7 @@ export default function Client({
                 >
                   <option value="None">None</option>
                   {/* Most Frequently Used */}
-                  {genericPhysicians
+                  {options["physician"]
                     .filter((c) => c.is_frequent)
                     .map((c) => (
                       <option key={c.id} value={c.name}>
@@ -1234,10 +1218,10 @@ export default function Client({
                       </option>
                     ))}
                   {/* Separator */}
-                  {genericPhysicians.filter((c) => !c.is_frequent).length >
+                  {options["physician"].filter((c) => !c.is_frequent).length >
                     0 && <option disabled>-------</option>}
                   {/* All Others in Alphabetical Order */}
-                  {genericPhysicians
+                  {options["physician"]
                     .filter((c) => !c.is_frequent)
                     .sort((a, b) => a.name.localeCompare(b.name))
                     .map((c) => (
@@ -1252,7 +1236,6 @@ export default function Client({
               </div>
             </div>
           </div>
-
           {/* Patient Consent */}
           <div className="border-t pt-6">
             <label className="block text-sm font-medium text-gray-700 mb-2">

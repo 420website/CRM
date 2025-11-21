@@ -5,14 +5,13 @@ import { RegistrationItems } from "../ui/RegistrationItem";
 import { ActivityItems } from "../ui/ActivityItem";
 import { useAuth } from "../../context/AuthContext";
 import ConfirmModal from "../components/ConfirmModal";
-import { useRegistration } from "../../context/RegistrationContext";
 import DatePicker from "../ui/DatePicker";
 import { useDashboard } from "../../context/DashboardContext";
+import { useReferences } from "../../context/ReferenceContext";
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
   const { logout, userRole } = useAuth();
-  const { referralSites, dispositions } = useRegistration();
   const {
     setActiveTab,
     activeTab,
@@ -42,6 +41,7 @@ const AdminDashboard = () => {
     filteredPending,
     deleteActivity,
   } = useDashboard();
+  const { options } = useReferences();
 
   // Core state
   const [loading, setLoading] = useState(false);
@@ -463,7 +463,7 @@ const AdminDashboard = () => {
                 >
                   <option value="">All</option>
                   {/* Most Frequently Used */}
-                  {dispositions
+                  {options["disposition"]
                     .filter((d) => d.is_frequent)
                     .map((disposition) => (
                       <option key={disposition.id} value={disposition.name}>
@@ -471,11 +471,10 @@ const AdminDashboard = () => {
                       </option>
                     ))}
                   {/* Separator */}
-                  {dispositions.filter((d) => !d.is_frequent).length > 0 && (
-                    <option disabled>-------</option>
-                  )}
+                  {options["disposition"].filter((d) => !d.is_frequent).length >
+                    0 && <option disabled>-------</option>}
                   {/* All Others in Alphabetical Order */}
-                  {dispositions
+                  {options["disposition"]
                     .filter((d) => !d.is_frequent)
                     .sort((a, b) => a.name.localeCompare(b.name))
                     .map((disposition) => (
@@ -502,7 +501,7 @@ const AdminDashboard = () => {
                 >
                   <option value="">Select Referral Site</option>
                   {/* Most Frequently Used */}
-                  {referralSites
+                  {options["referral_site"]
                     .filter((s) => s.is_frequent)
                     .map((site) => (
                       <option key={site.id} value={site.name}>
@@ -510,11 +509,10 @@ const AdminDashboard = () => {
                       </option>
                     ))}
                   {/* Separator */}
-                  {referralSites.filter((s) => !s.is_frequent).length > 0 && (
-                    <option disabled>-------</option>
-                  )}
+                  {options["referral_site"].filter((s) => !s.is_frequent)
+                    .length > 0 && <option disabled>-------</option>}
                   {/* All Others in Alphabetical Order */}
-                  {referralSites
+                  {options["referral_site"]
                     .filter((s) => !s.is_frequent)
                     .sort((a, b) => a.name.localeCompare(b.name))
                     .map((site) => (

@@ -1,35 +1,33 @@
 import { useState, useEffect } from "react";
 import { PatientServices } from "../../services/patientServices";
-import NoteTemplateManager from "../managers/NotesTemplateManager";
 import ConfirmModal from "../components/ConfirmModal";
 import { useRegistration } from "../../context/RegistrationContext";
 import DatePicker from "../ui/DatePicker";
 import toast from "react-hot-toast";
 import { useAuth } from "../../context/AuthContext";
+import { useReferences } from "../../context/ReferenceContext";
+import TemplateManager from "../managers/TemplateManager";
 
 export default function Notes({ setActiveTab, currentRegistrationId }) {
   const { userRole } = useAuth();
-  const {
-    getNotes,
-    notes,
-    showNoteManager,
-    setShowNoteManager,
-    notesTemplates,
-  } = useRegistration();
+  const { getClientNotes, notes } = useRegistration();
+  const { showManager, setShowManager, templates } = useReferences();
 
   const [loading, setLoading] = useState(false);
+  const [editingNoteId, setEditingNoteId] = useState(null);
+  const [isSavingNotes, setIsSavingNotes] = useState(false);
+  const [deleteNoteId, setDeleteNoteId] = useState(null);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [notesData, setNotesData] = useState({
+    note_date: new Date().toLocaleDateString("en-CA"),
+    template_type: "General Note",
+    note_text: "",
+  });
+
+  const [selectedNotesTemplate, setSelectedNotesTemplate] = useState("Select");
   const [notesFilter, setNotesFilter] = useState("all");
   const [notesSearch, setNotesSearch] = useState("");
   const [notesPage, setNotesPage] = useState(1);
-  const [editingNoteId, setEditingNoteId] = useState(null);
-  const [selectedNotesTemplate, setSelectedNotesTemplate] = useState("Select");
-  const [isSavingNotes, setIsSavingNotes] = useState(false);
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const [deleteNoteId, setDeleteNoteId] = useState(null);
-  const [notesData, setNotesData] = useState({
-    note_date: new Date().toLocaleDateString("en-CA"),
-    note_text: "",
-  });
 
   function validateForm() {
     if (!currentRegistrationId) {
@@ -63,21 +61,21 @@ export default function Notes({ setActiveTab, currentRegistrationId }) {
     setIsSavingNotes(true);
 
     // Include the template type with the note data
-    const noteDataWithTemplate = {
-      ...notesData,
-      template_type:
-        selectedNotesTemplate !== "Select"
-          ? selectedNotesTemplate
-          : "General Note",
-    };
+    // const noteDataWithTemplate = {
+    //   ...notesData,
+    //   template_type:
+    //     selectedNotesTemplate !== "Select"
+    //       ? selectedNotesTemplate
+    //       : "General Note",
+    // };
 
     const result = await PatientServices.create_note(
       currentRegistrationId,
-      noteDataWithTemplate,
+      notesData,
     );
 
     if (result.success) {
-      getNotes(currentRegistrationId);
+      getClientNotes(currentRegistrationId);
       clearNotesForm();
       toast.success("Created note successfully");
     } else {
@@ -96,22 +94,22 @@ export default function Notes({ setActiveTab, currentRegistrationId }) {
     setIsSavingNotes(true);
 
     // Include the template type with the note data
-    const noteDataWithTemplate = {
-      ...notesData,
-      template_type:
-        selectedNotesTemplate !== "Select"
-          ? selectedNotesTemplate
-          : "General Note",
-    };
+    // const noteDataWithTemplate = {
+    //   ...notesData,
+    //   template_type:
+    //     selectedNotesTemplate !== "Select"
+    //       ? selectedNotesTemplate
+    //       : "General Note",
+    // };
 
     const result = await PatientServices.update_note(
       currentRegistrationId,
       editingNoteId,
-      noteDataWithTemplate,
+      notesData,
     );
 
     if (result.success) {
-      getNotes(currentRegistrationId);
+      getClientNotes(currentRegistrationId);
       clearNotesForm();
       toast.success("Updated note successfully");
     } else {
@@ -134,7 +132,7 @@ export default function Notes({ setActiveTab, currentRegistrationId }) {
     );
 
     if (result.success) {
-      getNotes(currentRegistrationId);
+      getClientNotes(currentRegistrationId);
       toast.success("Deleted note successfully");
     } else {
       if (result.status === 400 || result.status === 409) {
@@ -152,8 +150,8 @@ export default function Notes({ setActiveTab, currentRegistrationId }) {
   };
 
   const handleNotesTemplateChange = async (templateName) => {
-    setSelectedNotesTemplate(templateName);
-    const template = notesTemplates.find(
+    // setSelectedNotesTemplate(templateName);
+    const template = templates["note"].find(
       (template) => template.name === templateName,
     );
 
@@ -161,6 +159,7 @@ export default function Notes({ setActiveTab, currentRegistrationId }) {
 
     setNotesData((prev) => ({
       ...prev,
+      template_type: templateName === "Select" ? "General Note" : templateName,
       note_text: content,
     }));
   };
@@ -176,13 +175,13 @@ export default function Notes({ setActiveTab, currentRegistrationId }) {
   const editNote = (note) => {
     setNotesData({
       note_date: note.note_date || new Date().toLocaleDateString("en-CA"),
-      note_text: note.note_text || "",
       template_type: note.template_type || "General Note",
+      note_text: note.note_text || "",
     });
     setEditingNoteId(note.id);
 
     // Set template to 'Select' when editing individual notes to allow free editing
-    setSelectedNotesTemplate(note.template_type || "Select");
+    // setSelectedNotesTemplate(note.template_type || "Select");
 
     // Scroll to top of notes form
     document.querySelector("#tabs")?.scrollIntoView({ behavior: "smooth" });
@@ -192,9 +191,10 @@ export default function Notes({ setActiveTab, currentRegistrationId }) {
     setNotesData({
       note_date: new Date().toLocaleDateString("en-CA"),
       note_text: "",
+      template_type: "General Note",
     });
     setEditingNoteId(null);
-    setSelectedNotesTemplate("Select");
+    // setSelectedNotesTemplate("Select");
   };
 
   // Reset pagination when filter/search changes
@@ -214,6 +214,8 @@ export default function Notes({ setActiveTab, currentRegistrationId }) {
   return (
     <div>
       <div className="space-y-6">
+        {showManager === "note" && <TemplateManager type={showManager} />}
+
         {/* Notes Tab Warning */}
         {!currentRegistrationId && (
           <div className="border-2 border-orange-200 bg-orange-50 p-4 rounded-lg">
@@ -299,7 +301,7 @@ export default function Notes({ setActiveTab, currentRegistrationId }) {
                 {userRole == "admin" && (
                   <button
                     type="button"
-                    onClick={() => setShowNoteManager(true)}
+                    onClick={() => setShowManager("note")}
                     className="text-blue-600 hover:text-blue-800 text-sm"
                   >
                     Manage Templates
@@ -308,12 +310,12 @@ export default function Notes({ setActiveTab, currentRegistrationId }) {
               </div>
               <select
                 id="selectedNotesTemplate"
-                value={selectedNotesTemplate}
+                value={notesData.template_type}
                 onChange={(e) => handleNotesTemplateChange(e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black"
               >
                 <option value="Select">Select</option>
-                {notesTemplates.map((template) => (
+                {templates["note"].map((template) => (
                   <option key={template.id} value={template.name}>
                     {template.name}
                   </option>
@@ -338,14 +340,13 @@ export default function Notes({ setActiveTab, currentRegistrationId }) {
                 placeholder={
                   editingNoteId
                     ? "Edit your note content..."
-                    : selectedNotesTemplate === "Select"
+                    : (notesData.template_type === "General Note") === "Select"
                       ? "Please select a template above..."
-                      : `Enter ${selectedNotesTemplate} note content...`
+                      : `Enter note content...`
                 }
                 style={{ whiteSpace: "pre-wrap" }}
                 autoComplete="off"
                 spellCheck="true"
-                // readOnly={selectedNotesTemplate === "Select"}
               />
             </div>
           </div>
@@ -455,7 +456,6 @@ export default function Notes({ setActiveTab, currentRegistrationId }) {
           )}
         </div>
       </div>
-      {showNoteManager && <NoteTemplateManager />}
     </div>
   );
 }

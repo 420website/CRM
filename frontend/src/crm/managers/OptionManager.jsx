@@ -1,56 +1,58 @@
 import { useState } from "react";
-import { GeneralServices } from "../../services/generalService";
-import { useRegistration } from "../../context/RegistrationContext";
 import EditModal from "./EditModal";
+import { useReferences } from "../../context/ReferenceContext";
+import { ReferenceServices } from "../../services/referenceService";
 
-export default function InteractionsManager() {
-  const {
-    setShowInteractionManager,
-    genericInteractions,
-    getGenericInteractions,
-  } = useRegistration();
-
+export default function OptionManager({ type }) {
+  const { options, setShowManager, getOption } = useReferences();
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
-  const [newTemplateName, setNewTemplateName] = useState("");
-  const [editingTemplate, setEditingTemplate] = useState(null);
-  const [templatesSearch, setTemplateSearch] = useState("");
-  const [newTemplateIsFrequent, setNewTemplateIsFrequent] = useState(false);
-  const [showTemplateEditPopup, setShowTemplateEditPopup] = useState(false);
+  const [newOptionName, setNewOptionName] = useState("");
+  const [editingOption, setEditingOption] = useState(null);
+  const [optionsSearch, setOptionSearch] = useState("");
+  const [newOptionIsFrequent, setNewOptionIsFrequent] = useState(false);
+  const [showOptionEditPopup, setShowOptionEditPopup] = useState(false);
+  console.log(type);
+  console.log(options);
 
-  const createTemplate = async () => {
+  const createOption = async () => {
     setLoading(true);
     setError("");
     setMessage("");
 
-    if (!newTemplateName.trim()) {
-      alert("Please enter a interaction name");
+    if (!newOptionName.trim()) {
+      alert("Please enter a option name");
       return;
     }
 
     const data = {
-      name: newTemplateName.trim(),
-      is_frequent: newTemplateIsFrequent,
+      name: newOptionName.trim(),
+      is_frequent: newOptionIsFrequent,
       is_default: false,
     };
 
-    const result = await GeneralServices.create_general("interaction", data);
+    console.log();
+
+    console.log(type);
+    const result = await ReferenceServices.create_option(type, data);
 
     if (result.success) {
-      getGenericInteractions();
-      setMessage("Created interaction successfully.");
+      getOption(type);
+      setMessage(`Created ${type} option successfully.`);
     } else {
       if (result.status === 400 || result.status === 409) {
-        setError(result.message || "Error creating interaction.");
+        setError(result.message || `Error creating ${type} option.`);
       } else {
-        setError("Error creating interaction. Please try again.");
+        setError(
+          result.message || `Error creating ${type} option. Please try again.`,
+        );
       }
     }
     setLoading(false);
   };
 
-  const updateTemplate = async (id, name, isFrequent) => {
+  const updateOption = async (id, name, isFrequent) => {
     setLoading(true);
     setError("");
     setMessage("");
@@ -60,31 +62,27 @@ export default function InteractionsManager() {
       is_frequent: isFrequent,
     };
 
-    const result = await GeneralServices.update_general(
-      "interaction",
-      id,
-      data,
-    );
+    const result = await ReferenceServices.update_option(type, id, data);
 
     if (result.success) {
-      setEditingTemplate(null);
-      setShowTemplateEditPopup(false);
-      getGenericInteractions();
+      setEditingOption(null);
+      setShowOptionEditPopup(false);
+      getOption(type);
     } else {
       if (result.status === 400 || result.status === 409) {
-        setError(result.message || "Error updating interaction.");
+        setError(result.message || `Error creating ${type} option.`);
       } else {
-        setError("Error updating interaction. Please try again.");
+        setError(
+          result.message || `Error creating ${type} option. Please try again.`,
+        );
       }
     }
     setLoading(false);
   };
 
-  const deleteTemplate = async (id, name) => {
+  const deleteOption = async (id, name) => {
     if (
-      !window.confirm(
-        `Are you sure you want to delete the "${name}" interaction?`,
-      )
+      !window.confirm(`Are you sure you want to delete the "${name}" option?`)
     ) {
       return;
     }
@@ -92,47 +90,47 @@ export default function InteractionsManager() {
     setError("");
     setMessage("");
 
-    const result = await GeneralServices.delete_general_by_id(
-      "interaction",
-      id,
-    );
+    const result = await ReferenceServices.delete_option_by_id(type, id);
 
     if (result.success) {
-      setEditingTemplate(null);
-      setShowTemplateEditPopup(false);
-      getGenericInteractions();
+      setEditingOption(null);
+      setShowOptionEditPopup(false);
+      getOption(type);
     } else {
       if (result.status === 400 || result.status === 409) {
-        setError(result.message || "Error deleting interaction.");
+        setError(result.message || `Error creating ${type} option.`);
       } else {
-        setError("Error deleting interaction. Please try again.");
+        setError(
+          result.message || `Error creating ${type} option. Please try again.`,
+        );
       }
     }
     setLoading(false);
   };
 
-  const openEditTemplate = (name) => {
-    setEditingTemplate(name);
-    setShowTemplateEditPopup(true);
+  const openEditOption = (name) => {
+    setEditingOption(name);
+    setShowOptionEditPopup(true);
   };
 
-  const closeTemplateManager = () => {
-    setShowInteractionManager(false);
-    setNewTemplateName("");
-    setNewTemplateIsFrequent(false);
-    setEditingTemplate(null);
-    setShowTemplateEditPopup(false);
-    setTemplateSearch("");
+  const closeOptionManager = () => {
+    // setShowCoverageManager(false);
+    setShowManager("");
+    setNewOptionName("");
+    setNewOptionIsFrequent(false);
+    setEditingOption(null);
+    setShowOptionEditPopup(false);
+    setOptionSearch("");
   };
 
   // Filter based on search
-  const getFilteredTemplates = () => {
-    if (!templatesSearch.trim()) {
-      return genericInteractions;
+  const getFilteredOptions = () => {
+    if (!optionsSearch.trim()) {
+      return options[type];
     }
 
-    const searchTerm = templatesSearch.toLowerCase();
-    return genericInteractions.filter((site) =>
+    const searchTerm = optionsSearch.toLowerCase();
+    return options[type].filter((site) =>
       site.name.toLowerCase().includes(searchTerm),
     );
   };
@@ -141,12 +139,10 @@ export default function InteractionsManager() {
     <div className="fixed inset-0 bg-black/50 bg-opacity-50 flex items-center justify-center z-50">
       <div className="bg-white rounded-lg p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto mx-4">
         <div className="flex justify-between items-center mb-4">
-          <h2 className="text-xl font-bold text-gray-900">
-            Manage Interactions
-          </h2>
+          <h2 className="text-xl font-bold text-gray-900">Manage Options</h2>
           <button
             type="button"
-            onClick={closeTemplateManager}
+            onClick={closeOptionManager}
             className="text-gray-500 hover:text-gray-700"
           >
             <svg
@@ -168,21 +164,21 @@ export default function InteractionsManager() {
         {/* Search Section */}
         <div className="mb-4">
           <label className="block text-sm font-medium text-gray-700 mb-2">
-            Search Interaction
+            Search Option
           </label>
           <input
             type="text"
-            value={templatesSearch}
-            onChange={(e) => setTemplateSearch(e.target.value)}
+            value={optionsSearch}
+            onChange={(e) => setOptionSearch(e.target.value)}
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black"
-            placeholder="Search by interaction name..."
+            placeholder="Search by name..."
           />
         </div>
 
         {/* Add New  Section */}
         <div className="mb-6 p-4 bg-gray-50 rounded-lg">
           <h3 className="text-lg font-semibold text-gray-700 mb-3">
-            Add New Interaction
+            Add New Option
           </h3>
           {error && (
             <div className="mb-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
@@ -198,26 +194,26 @@ export default function InteractionsManager() {
           <div className="space-y-3">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Interaction Name
+                Option Name
               </label>
               <input
                 type="text"
-                value={newTemplateName}
-                onChange={(e) => setNewTemplateName(e.target.value)}
+                value={newOptionName}
+                onChange={(e) => setNewOptionName(e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black"
-                placeholder="Enter interaction name"
+                placeholder="Enter name (e.g. OW)"
               />
             </div>
             <div className="flex items-center gap-2">
               <input
                 type="checkbox"
-                id="newTemplateFrequent"
-                checked={newTemplateIsFrequent}
-                onChange={(e) => setNewTemplateIsFrequent(e.target.checked)}
+                id="newOptionFrequent"
+                checked={newOptionIsFrequent}
+                onChange={(e) => setNewOptionIsFrequent(e.target.checked)}
                 className="w-4 h-4 text-black bg-gray-100 border-gray-300 rounded focus:ring-black"
               />
               <label
-                htmlFor="newTemplateFrequent"
+                htmlFor="newOptionFrequent"
                 className="text-sm text-gray-700"
               >
                 Add to "Most Frequently Used" list
@@ -225,10 +221,10 @@ export default function InteractionsManager() {
             </div>
             <button
               type="button"
-              onClick={createTemplate}
+              onClick={createOption}
               className="bg-black text-white px-4 py-2 rounded-md hover:bg-gray-800 transition-colors"
             >
-              Add Interaction
+              Add Option
             </button>
           </div>
         </div>
@@ -236,7 +232,7 @@ export default function InteractionsManager() {
         {/* Existing  List */}
         <div>
           <h3 className="text-lg font-semibold text-gray-700 mb-3">
-            Existing Interaction
+            Existing Options
             <span className="text-sm font-normal text-gray-500 ml-2">
               (Click to edit)
             </span>
@@ -248,14 +244,14 @@ export default function InteractionsManager() {
               Most Frequently Used
             </h4>
             <div className="grid grid-cols-3 gap-2">
-              {getFilteredTemplates()
+              {getFilteredOptions()
                 .filter((s) => s.is_frequent)
                 .sort((a, b) => a.name.localeCompare(b.name))
                 .map((site) => (
                   <div
                     key={site.id}
                     className="p-2 bg-green-50 border border-green-200 rounded-md cursor-pointer hover:bg-green-100 transition-colors"
-                    onClick={() => openEditTemplate(site)}
+                    onClick={() => openEditOption(site)}
                   >
                     <div className="flex items-center justify-between">
                       <span className="text-xs font-medium text-gray-900 truncate">
@@ -270,12 +266,11 @@ export default function InteractionsManager() {
                   </div>
                 ))}
             </div>
-            {getFilteredTemplates().filter((s) => s.is_frequent).length ===
-              0 && (
+            {getFilteredOptions().filter((s) => s.is_frequent).length === 0 && (
               <p className="text-sm text-gray-500 italic">
-                {templatesSearch
-                  ? "No frequently used interaction match your search."
-                  : "No frequently used interaction."}
+                {optionsSearch
+                  ? "No frequently used coverage match your search."
+                  : "No frequently used coverage."}
               </p>
             )}
           </div>
@@ -286,14 +281,14 @@ export default function InteractionsManager() {
               All Others
             </h4>
             <div className="grid grid-cols-3 gap-2 max-h-60 overflow-y-auto">
-              {getFilteredTemplates()
+              {getFilteredOptions()
                 .filter((s) => !s.is_frequent)
                 .sort((a, b) => a.name.localeCompare(b.name))
                 .map((site) => (
                   <div
                     key={site.id}
                     className="p-2 bg-gray-50 border border-gray-200 rounded-md cursor-pointer hover:bg-gray-100 transition-colors"
-                    onClick={() => openEditTemplate(site)}
+                    onClick={() => openEditOption(site)}
                   >
                     <div className="flex items-center justify-between">
                       <span className="text-xs font-medium text-gray-900 truncate">
@@ -308,12 +303,12 @@ export default function InteractionsManager() {
                   </div>
                 ))}
             </div>
-            {getFilteredTemplates().filter((s) => !s.is_frequent).length ===
+            {getFilteredOptions().filter((s) => !s.is_frequent).length ===
               0 && (
               <p className="text-sm text-gray-500 italic">
-                {templatesSearch
-                  ? "No other interaction match your search."
-                  : "No other interaction."}
+                {optionsSearch
+                  ? "No other coverage match your search."
+                  : "No other coverage."}
               </p>
             )}
           </div>
@@ -323,20 +318,20 @@ export default function InteractionsManager() {
         <div className="mt-6 flex justify-end">
           <button
             type="button"
-            onClick={closeTemplateManager}
+            onClick={closeOptionManager}
             className="bg-gray-300 text-gray-700 px-4 py-2 rounded-md hover:bg-gray-400"
           >
             Close
           </button>
         </div>
       </div>
-      {showTemplateEditPopup && editingTemplate && (
+      {showOptionEditPopup && editingOption && (
         <EditModal
-          name={"Interaction"}
-          editingTemplate={editingTemplate}
-          setShowTemplateEditPopup={setShowTemplateEditPopup}
-          updateTemplate={updateTemplate}
-          deleteTemplate={deleteTemplate}
+          name={type}
+          editingTemplate={editingOption}
+          setShowTemplateEditPopup={setShowOptionEditPopup}
+          updateTemplate={updateOption}
+          deleteTemplate={deleteOption}
         />
       )}
     </div>

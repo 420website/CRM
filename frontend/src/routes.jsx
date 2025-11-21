@@ -25,6 +25,7 @@ import { RegistrationProvider } from "./context/RegistrationContext.jsx";
 import { UsersProvider } from "./context/UserContext.jsx";
 import MobileOnlyWrapper from "./mobileOnlyWrapper.jsx";
 import { DashboardProvider } from "./context/DashboardContext.jsx";
+import { ReferenceProvider } from "./context/ReferenceContext.jsx";
 
 function AuthenticatedRoute() {
   const { isAuthenticated } = useAuth();
@@ -35,9 +36,13 @@ function AuthenticatedRoute() {
   }
 
   return (
-    <RegistrationProvider>
-      <Outlet />
-    </RegistrationProvider>
+    <ReferenceProvider>
+      <DashboardProvider>
+        <RegistrationProvider>
+          <Outlet />
+        </RegistrationProvider>
+      </DashboardProvider>
+    </ReferenceProvider>
   );
 }
 
@@ -57,11 +62,7 @@ function LimitedRoute() {
   if (!["limited", "standard", "admin"].includes(userRole)) {
     return <Navigate to="/admin-menu" state={{ from: location }} replace />;
   }
-  return (
-    <DashboardProvider>
-      <Outlet />
-    </DashboardProvider>
-  );
+  return <Outlet />;
 }
 
 function StandardRoute() {

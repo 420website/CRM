@@ -1,6 +1,4 @@
-import { createContext, useContext, useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { GeneralServices } from "../services/generalService";
+import { createContext, useContext, useState } from "react";
 import { PatientServices } from "../services/patientServices";
 import { ObjectServices } from "../services/objectService";
 import { useAuth } from "./AuthContext";
@@ -11,103 +9,21 @@ export const useRegistration = () => useContext(RegistrationContext);
 
 export function RegistrationProvider({ children }) {
   const { userRole } = useAuth();
-  const navigate = useNavigate();
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  // Dashboard
-  const [pendingData, setPendingData] = useState([]);
-  const [finalizedData, setFinalizedData] = useState([]);
-  const [activityData, setActivityData] = useState([]);
-
-  // Generic
-  const [referralSites, setReferralSites] = useState([]);
-  const [dispositions, setDispositions] = useState([]);
-  const [notesTemplates, setNotesTemplates] = useState([]);
-  const [clinicalTemplates, setClinicalTemplates] = useState([]);
-  const [documentTypes, setDocumentTypes] = useState([]);
-  const [medicationTemplates, setMedicationTemplates] = useState([]);
-  const [outcomes, setOutcomes] = useState([]);
-  const [genericInteractions, setGenericInteractions] = useState([]);
-  const [genericCoverage, setGenericCoverage] = useState([]);
-  const [genericPhysicians, setGenericPhysicians] = useState([]);
-
   // Patient
   const [registrationId, setRegistrationId] = useState(null);
+  const [tests, setTests] = useState([]);
+  const [notes, setNotes] = useState([]);
   const [interactions, setInteractions] = useState([]);
   const [dispensing, setDispensing] = useState([]);
   const [medications, setMedications] = useState([]);
   const [activities, setActivities] = useState([]);
-  const [tests, setTests] = useState([]);
-  const [notes, setNotes] = useState([]);
-
-  // Modals
-  const [showPhysicianManager, setShowPhysicianManager] = useState(false);
-  const [showInteractionManager, setShowInteractionManager] = useState(false);
-  const [showCoverageManager, setShowCoverageManager] = useState(false);
-  const [showNoteManager, setShowNoteManager] = useState(false);
-  const [showDocumentTypeManager, setShowDocumentTypeManager] = useState(false);
-  const [showDispositionManager, setShowDispositionManager] = useState(false);
-  const [showReferralSiteManager, setShowReferralSiteManager] = useState(false);
-  const [showClinicalManager, setShowClinicalManager] = useState(false);
-  const [showMedicationManager, setShowMedicationManager] = useState(false);
-  const [showOutcomeManager, setShowOutcomeManager] = useState(false);
-
-  // -- Dashboard
-  // Activities
-  const getDashboardActivities = async () => {
-    setLoading(true);
-    setError("");
-
-    if (userRole !== "limited") {
-      const result = await PatientServices.get_activities();
-
-      if (result.success) {
-        setActivityData(result.data);
-      } else {
-        if (result.status === 400 || result.status === 409) {
-          setError(result.message || "Invalid credentials.");
-        } else {
-          setError("Login failed. Please try again.");
-        }
-      }
-    }
-    setLoading(false);
-  };
-
-  // Pending and Finalized
-  const getRegistrations = async () => {
-    setLoading(true);
-    setError("");
-
-    const result = await PatientServices.get_patients();
-
-    if (result.success) {
-      if (userRole !== "limited") {
-        const pending = result.data.filter((reg) => reg.status === "pending");
-        setPendingData(pending);
-      }
-
-      let finalized = result.data.filter(
-        (reg) => reg.status === "finalized" || reg.status === "saved",
-      );
-
-      if (userRole === "limited") {
-        finalized = finalized.filter((reg) => !reg.limited);
-      }
-      setFinalizedData(finalized);
-    } else {
-      if (result.status === 400 || result.status === 409) {
-        setError(result.message || "Invalid credentials.");
-      } else {
-        setError("Login failed. Please try again.");
-      }
-    }
-    setLoading(false);
-  };
+  const [attachments, setAttachments] = useState([]);
 
   // --  Registration
-  const getPatient = async () => {
+  const getClient = async () => {
     setLoading(true);
     setError("");
 
@@ -151,7 +67,7 @@ export function RegistrationProvider({ children }) {
     setLoading(false);
   };
 
-  const getInteractions = async (registrationId) => {
+  const getClientInteractions = async (registrationId) => {
     setLoading(true);
     setError("");
 
@@ -169,7 +85,7 @@ export function RegistrationProvider({ children }) {
     setLoading(false);
   };
 
-  const getDispensing = async (registrationId) => {
+  const getClientDispensing = async (registrationId) => {
     setLoading(true);
     setError("");
 
@@ -187,7 +103,7 @@ export function RegistrationProvider({ children }) {
     setLoading(false);
   };
 
-  const getMedications = async (registrationId) => {
+  const getClientMedications = async (registrationId) => {
     setLoading(true);
     setError("");
 
@@ -206,7 +122,7 @@ export function RegistrationProvider({ children }) {
     setLoading(false);
   };
 
-  const getTests = async (registrationId) => {
+  const getClientTests = async (registrationId) => {
     setLoading(true);
     setError("");
 
@@ -224,7 +140,7 @@ export function RegistrationProvider({ children }) {
     setLoading(false);
   };
 
-  const getNotes = async (registrationId) => {
+  const getClientNotes = async (registrationId) => {
     setLoading(true);
     setError("");
 
@@ -242,7 +158,7 @@ export function RegistrationProvider({ children }) {
     setLoading(false);
   };
 
-  const getActivities = async (registrationId) => {
+  const getClientActivities = async (registrationId) => {
     setLoading(true);
     setError("");
 
@@ -260,251 +176,36 @@ export function RegistrationProvider({ children }) {
     setLoading(false);
   };
 
-  const getRegistrationData = async (registrationId) => {
-    getTests(registrationId);
-    getMedications(registrationId);
-    getDispensing(registrationId);
-    getNotes(registrationId);
-    getActivities(registrationId);
-    getInteractions(registrationId);
-  };
-
-  // -- General Data
-  const getDispositions = async () => {
+  const getAttachments = async (registrationId) => {
     setLoading(true);
-    setError("");
 
-    const result = await GeneralServices.get_dispositions();
+    const result =
+      await ObjectServices.get_attachments_by_patient(registrationId);
 
     if (result.success) {
-      setDispositions(result.data);
+      setAttachments(result.data || []);
     } else {
       if (result.status === 400 || result.status === 409) {
-        setError(result.message || "Error getting dispositions.");
+        toast.error(result.message || "Error getting attachments.");
       } else {
-        setError("Error getting dispositions. Please try again.");
+        toast.error("Error getting attachments. Please try again.");
       }
     }
     setLoading(false);
   };
 
-  // -- Notes
-  const getNoteTemplates = async () => {
-    setLoading(true);
-    setError("");
-
-    const result = await GeneralServices.get_note_templates();
-
-    if (result.success) {
-      setNotesTemplates(result.data);
-    } else {
-      if (result.status === 400 || result.status === 409) {
-        setError(result.message || "Error getting note templates.");
-      } else {
-        setError("Error getting note templates. Please try again.");
-      }
-    }
-    setLoading(false);
+  const getClientAssociatedData = async (registrationId) => {
+    getClientTests(registrationId);
+    getClientMedications(registrationId);
+    getClientDispensing(registrationId);
+    getClientNotes(registrationId);
+    getClientActivities(registrationId);
+    getClientInteractions(registrationId);
   };
-  // Referral Sites
-  const getReferralSites = async () => {
-    setLoading(true);
-    setError("");
-
-    const result = await GeneralServices.get_referral_sites();
-
-    if (result.success) {
-      setReferralSites(result.data);
-    } else {
-      if (result.status === 400 || result.status === 409) {
-        setError(result.message || "Error getting referral sites.");
-      } else {
-        setError("Error getting referral sites. Please try again.");
-      }
-    }
-    setLoading(false);
-  };
-
-  // Referral Sites
-  const getMedicationTemplates = async () => {
-    setLoading(true);
-    setError("");
-
-    const result = await GeneralServices.get_medication_template();
-
-    if (result.success) {
-      setMedicationTemplates(result.data);
-    } else {
-      if (result.status === 400 || result.status === 409) {
-        setError(result.message || "Error getting medication templates.");
-      } else {
-        setError("Error getting medication templates. Please try again.");
-      }
-    }
-    setLoading(false);
-  };
-
-  // Referral Sites
-  const getOutcomes = async () => {
-    setLoading(true);
-    setError("");
-
-    const result = await GeneralServices.get_medication_outcomes();
-
-    if (result.success) {
-      setOutcomes(result.data);
-    } else {
-      if (result.status === 400 || result.status === 409) {
-        setError(result.message || "Error getting outcomes.");
-      } else {
-        setError("Error getting outcomes. Please try again.");
-      }
-    }
-    setLoading(false);
-  };
-
-  // Generic interaction
-  const getGenericInteractions = async () => {
-    setLoading(true);
-    setError("");
-
-    const result = await GeneralServices.get_general_type("interaction");
-
-    if (result.success) {
-      setGenericInteractions(result.data);
-    } else {
-      if (result.status === 400 || result.status === 409) {
-        setError(result.message || "Error getting interactions.");
-      } else {
-        setError("Error getting interactions. Please try again.");
-      }
-    }
-    setLoading(false);
-  };
-
-  const getCoverageTypes = async () => {
-    setLoading(true);
-    setError("");
-
-    const result = await GeneralServices.get_general_type("coverage");
-
-    if (result.success) {
-      setGenericCoverage(result.data);
-    } else {
-      if (result.status === 400 || result.status === 409) {
-        setError(result.message || "Error getting outcomes.");
-      } else {
-        setError("Error getting outcomes. Please try again.");
-      }
-    }
-    setLoading(false);
-  };
-
-  const getPhysicians = async () => {
-    setLoading(true);
-    setError("");
-
-    const result = await GeneralServices.get_general_type("physician");
-
-    if (result.success) {
-      setGenericPhysicians(result.data);
-    } else {
-      if (result.status === 400 || result.status === 409) {
-        setError(result.message || "Error getting physicians.");
-      } else {
-        setError("Error getting physicians. Please try again.");
-      }
-    }
-    setLoading(false);
-  };
-
-  // clinical templates
-  const getClinicalTemplates = async () => {
-    setLoading(true);
-    setError("");
-
-    const result = await GeneralServices.get_clinical_templates();
-
-    if (result.success) {
-      setClinicalTemplates(result.data);
-
-      const templatesObject = {};
-      // Convert array to object for easier access
-      result.data.forEach((template) => {
-        templatesObject[template.name] = template.content;
-      });
-
-      // setTemplates(templatesObject);
-    } else {
-      if (result.status === 400 || result.status === 409) {
-        setError(result.message || "Error getting clinical templates.");
-      } else {
-        setError("Error getting clinical templates. Please try again.");
-      }
-    }
-    setLoading(false);
-  };
-
-  // document types
-  const getDocumentTypes = async () => {
-    setLoading(true);
-    setError("");
-
-    const result = await GeneralServices.get_document_types();
-
-    if (result.success) {
-      setDocumentTypes(result.data);
-    } else {
-      if (result.status === 400 || result.status === 409) {
-        setError(result.message || "Error getting document types.");
-      } else {
-        setError("Error getting document types. Please try again.");
-      }
-    }
-    setLoading(false);
-  };
-
-  useEffect(() => {
-    const getInitialData = async () => {
-      getDispositions();
-      getClinicalTemplates();
-      getDocumentTypes();
-      getNoteTemplates();
-      getReferralSites();
-      getOutcomes();
-      getMedicationTemplates();
-      getActivities();
-      getDashboardActivities();
-      getRegistrations();
-      getGenericInteractions();
-      getCoverageTypes();
-      getPhysicians();
-    };
-
-    getInitialData();
-  }, []);
 
   return (
     <RegistrationContext.Provider
       value={{
-        setShowPhysicianManager,
-        showPhysicianManager,
-        getPhysicians,
-        genericCoverage,
-        genericInteractions,
-        getGenericInteractions,
-        getCoverageTypes,
-        medicationTemplates,
-        genericPhysicians,
-        outcomes,
-        referralSites,
-        dispositions,
-        notesTemplates,
-        clinicalTemplates,
-        documentTypes,
-        pendingData,
-        finalizedData,
-        activityData,
         registrationId,
         interactions,
         dispensing,
@@ -512,41 +213,14 @@ export function RegistrationProvider({ children }) {
         tests,
         notes,
         activities,
-        getActivities,
-        setShowOutcomeManager,
-        showOutcomeManager,
-        setShowMedicationManager,
-        showMedicationManager,
-        setShowNoteManager,
-        showNoteManager,
-        setShowDocumentTypeManager,
-        showDocumentTypeManager,
-        setShowDispositionManager,
-        showDispositionManager,
-        setShowReferralSiteManager,
-        showReferralSiteManager,
-        setShowClinicalManager,
-        showClinicalManager,
-        getReferralSites,
-        getNoteTemplates,
-        getDispositions,
-        getDocumentTypes,
-        getClinicalTemplates,
-        getDashboardActivities,
-        getRegistrations,
-        getPatient,
-        getInteractions,
-        getDispensing,
-        getMedications,
-        getMedicationTemplates,
-        getTests,
-        getNotes,
-        getRegistrationData,
-        getOutcomes,
-        setShowInteractionManager,
-        showInteractionManager,
-        setShowCoverageManager,
-        showCoverageManager,
+        getClient,
+        getClientActivities,
+        getClientInteractions,
+        getClientDispensing,
+        getClientMedications,
+        getClientTests,
+        getClientNotes,
+        getClientAssociatedData,
       }}
     >
       {children}

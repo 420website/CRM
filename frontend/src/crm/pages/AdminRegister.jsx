@@ -1,4 +1,6 @@
+import { useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
+import toast from "react-hot-toast";
 import Client from "../components/Client";
 import Tests from "../tabs/Tests";
 import Intake from "../components/Intake";
@@ -8,33 +10,23 @@ import Notes from "../tabs/Notes";
 import Activities from "../tabs/Activities";
 import Interactions from "../tabs/Interactions";
 import Attachments from "../tabs/Attachments";
-import ClinicalTemplateManager from "../managers/ClinicalTemplateManager";
-import DispositionManager from "../managers/DispositionManager";
-import ReferralSiteManager from "../managers/ReferralSiteManager";
 import VoiceDataModal from "../components/VoiceDateModal";
-import { useAuth } from "../../context/AuthContext";
+import VoiceFillModal from "../components/VoiceInput";
+import DuplicateModal from "../components/DuplicateModal";
+import RegistrationSaved from "../components/RegistrationSaved";
+import { PatientServices } from "../../services/patientServices";
+import { ObjectServices } from "../../services/objectService";
 import { calculateAge, normalizeFormData } from "../../utils/formatData";
 import { copyFormData, copyLabelsData } from "../../utils/labelData";
 import { parseDateFromSpeech, parseFields } from "../../utils/parseFromSpeech";
-import { PatientServices } from "../../services/patientServices";
-import RegistrationSaved from "../components/RegistrationSaved";
 import { DEFAULT_FORM } from "../forms/Registration";
-import VoiceFillModal from "../components/VoiceInput";
-import { ObjectServices } from "../../services/objectService";
-import { useRegistration } from "../../context/RegistrationContext";
-import toast from "react-hot-toast";
-import DuplicateModal from "../components/DuplicateModal";
-import { useNavigate } from "react-router-dom";
+import { useAuth } from "../../context/AuthContext";
+import { useDashboard } from "../../context/DashboardContext";
 
 const AdminRegister = () => {
   const navigate = useNavigate();
   const { userRole, userPermissions } = useAuth();
-  const {
-    showDispositionManager,
-    showReferralSiteManager,
-    showClinicalManager,
-    getRegistrations,
-  } = useRegistration();
+  const { getDashboardRegistrations } = useDashboard();
 
   const [loading, setLoading] = useState(false);
   const [voiceInputText, setVoiceInputText] = useState("");
@@ -141,7 +133,7 @@ const AdminRegister = () => {
         setShowVoiceDateModal={setShowVoiceDateModal}
         setFormData={setFormData}
         setTemplates={setTemplates}
-        templates={templates}
+        // templates={templates}
         selectedTemplate={selectedTemplate}
         setSelectedTemplate={setSelectedTemplate}
         openVoiceDateInput={openVoiceDateInput}
@@ -382,7 +374,7 @@ const AdminRegister = () => {
     }
     window.scrollTo({ top: 0, behavior: "smooth" });
 
-    getRegistrations();
+    getDashboardRegistrations();
     setLoading(false);
     setIsSubmitting(false);
   };
@@ -689,9 +681,6 @@ const AdminRegister = () => {
           handleVoiceDateSubmit={handleVoiceDateSubmit}
         />
       )}
-      {showDispositionManager && <DispositionManager />}
-      {showReferralSiteManager && <ReferralSiteManager />}
-      {showClinicalManager && <ClinicalTemplateManager />}
     </div>
   );
 };

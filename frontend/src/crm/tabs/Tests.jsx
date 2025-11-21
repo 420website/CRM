@@ -7,7 +7,7 @@ import toast from "react-hot-toast";
 import { normalizeFormData } from "../../utils/formatData";
 
 export default function Tests({ setActiveTab, currentRegistrationId }) {
-  const { tests, getTests } = useRegistration();
+  const { tests, getClientTests } = useRegistration();
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleteTestId, setDeleteTestId] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -181,7 +181,7 @@ export default function Tests({ setActiveTab, currentRegistrationId }) {
     );
 
     if (result.success) {
-      getTests(currentRegistrationId);
+      getClientTests(currentRegistrationId);
       resetForm();
       setEditingTestId(null);
       toast.success("Test created successfully");
@@ -206,7 +206,7 @@ export default function Tests({ setActiveTab, currentRegistrationId }) {
     );
 
     if (result.success) {
-      getTests(currentRegistrationId);
+      getClientTests(currentRegistrationId);
       resetForm();
       setEditingTestId(null);
       toast.success("Test updated successfully");
@@ -229,7 +229,7 @@ export default function Tests({ setActiveTab, currentRegistrationId }) {
     );
 
     if (result.success) {
-      getTests(currentRegistrationId);
+      getClientTests(currentRegistrationId);
       toast.success("Deleted test successfully");
     } else {
       if (result.status === 400 || result.status === 409) {

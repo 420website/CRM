@@ -7,9 +7,6 @@ import Notes from "../tabs/Notes";
 import Activities from "../tabs/Activities";
 import Interactions from "../tabs/Interactions";
 import Attachments from "../tabs/Attachments";
-import ClinicalTemplateManager from "../managers/ClinicalTemplateManager";
-import DispositionManager from "../managers/DispositionManager";
-import ReferralSiteManager from "../managers/ReferralSiteManager";
 import VoiceDataModal from "../components/VoiceDateModal";
 import { useAuth } from "../../context/AuthContext";
 import { calculateAge, normalizeFormData } from "../../utils/formatData";
@@ -21,7 +18,6 @@ import { useNavigate, useParams } from "react-router-dom";
 import { DEFAULT_FORM } from "../forms/Registration";
 import VoiceFillModal from "../components/VoiceInput";
 import { ObjectServices } from "../../services/objectService";
-import DocumentTypeManager from "../managers/DocumentTypeManager";
 import { useRegistration } from "../../context/RegistrationContext";
 import toast from "react-hot-toast";
 import DuplicateModal from "../components/DuplicateModal";
@@ -29,17 +25,12 @@ import { useDashboard } from "../../context/DashboardContext";
 
 const AdminEdit = () => {
   const navigate = useNavigate();
-  const hasRun = useRef(false);
-  const {
-    showDispositionManager,
-    showReferralSiteManager,
-    showClinicalManager,
-    showDocumentTypeManager,
-    getRegistrationData,
-  } = useRegistration();
-  const { getDashboardRegistrations, getDashboardActivities } = useDashboard();
   const { registrationId } = useParams();
   const { userRole, userPermissions } = useAuth();
+  const { getClientAssociatedData } = useRegistration();
+  const { getDashboardRegistrations, getDashboardActivities } = useDashboard();
+  const hasRun = useRef(false);
+
   const [voiceInputText, setVoiceInputText] = useState("");
   const [loading, setLoading] = useState(false);
   const [saveStatus, setSaveStatus] = useState(null);
@@ -194,21 +185,23 @@ const AdminEdit = () => {
       }
     }
 
-    getRegistrationData(registrationId);
+    getClientAssociatedData(registrationId);
   };
 
   const getClientPhoto = async () => {
-    const photoRes = await ObjectServices.get_photo_raw(registrationId);
+    const result = await ObjectServices.get_photo_raw(registrationId);
 
-    if (photoRes.success) {
-      const blob = new Blob([photoRes.data], { type: "image/jpeg" });
+    if (result.success) {
+      const blob = new Blob([result.data], { type: "image/jpeg" });
       const url = URL.createObjectURL(blob);
       setPhotoPreview(url);
       setPhotoData({
-        name: photoRes.headers["file-name"],
+        name: result.headers["file-name"],
       });
     } else {
-      if (result.status === 400 || result.status === 409) {
+      if (result.status === 404) {
+        return;
+      } else if (result.status === 400 || result.status === 409) {
         toast.error(result.message || "Failed to fetch client photo.");
       } else {
         toast.error(result.message || "Failed to fetch client photo.");
@@ -758,10 +751,6 @@ const AdminEdit = () => {
           handleVoiceDateSubmit={handleVoiceDateSubmit}
         />
       )}
-      {showDispositionManager && <DispositionManager />}
-      {showReferralSiteManager && <ReferralSiteManager />}
-      {showClinicalManager && <ClinicalTemplateManager />}
-      {showDocumentTypeManager && <DocumentTypeManager />}
     </div>
   );
 };
