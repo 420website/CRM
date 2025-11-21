@@ -13,8 +13,6 @@ export default function OptionManager({ type }) {
   const [optionsSearch, setOptionSearch] = useState("");
   const [newOptionIsFrequent, setNewOptionIsFrequent] = useState(false);
   const [showOptionEditPopup, setShowOptionEditPopup] = useState(false);
-  console.log(type);
-  console.log(options);
 
   const createOption = async () => {
     setLoading(true);
@@ -32,21 +30,16 @@ export default function OptionManager({ type }) {
       is_default: false,
     };
 
-    console.log();
-
-    console.log(type);
     const result = await ReferenceServices.create_option(type, data);
 
     if (result.success) {
       getOption(type);
-      setMessage(`Created ${type} option successfully.`);
+      setMessage(`Created option successfully.`);
     } else {
       if (result.status === 400 || result.status === 409) {
-        setError(result.message || `Error creating ${type} option.`);
+        setError(result.message || `Error creating option.`);
       } else {
-        setError(
-          result.message || `Error creating ${type} option. Please try again.`,
-        );
+        setError(result.message || `Error creating option. Please try again.`);
       }
     }
     setLoading(false);

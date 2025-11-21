@@ -82,7 +82,7 @@ class TestReferecenceOptionAPI(IsolatedAsyncioTestCase):
         result = await create_option_type(option, self.user)
         self.assertEqual(
             result["message"],
-            "interaction created successfully.",
+            "Option created successfully.",
         )
 
         # Validate by getting generals
@@ -104,7 +104,7 @@ class TestReferecenceOptionAPI(IsolatedAsyncioTestCase):
         result = await create_option_type(data, self.user)
         self.assertEqual(
             result["message"],
-            "coverage created successfully.",
+            "Option created successfully.",
         )
 
         # Validate
@@ -131,7 +131,7 @@ class TestReferecenceOptionAPI(IsolatedAsyncioTestCase):
         result1 = await create_option_type(data, self.user)
         self.assertEqual(
             result1["message"],
-            "coverage created successfully.",
+            "Option created successfully.",
         )
 
         # Try to create duplicate - should raise HTTPException
@@ -139,7 +139,7 @@ class TestReferecenceOptionAPI(IsolatedAsyncioTestCase):
             await create_option_type(data, self.user)
 
         self.assertEqual(context.exception.status_code, 400)
-        self.assertIn("coverage already exists.", context.exception.detail)
+        self.assertIn("Option already exists.", context.exception.detail)
 
     # Get
     async def test_get_option_empty(self):
@@ -202,7 +202,7 @@ class TestReferecenceOptionAPI(IsolatedAsyncioTestCase):
         result = await delete_option_name(
             "coverage", "test_general", self.user
         )
-        self.assertEqual(result["message"], "coverage deleted successfully.")
+        self.assertEqual(result["message"], "Option deleted successfully.")
 
         # Verify general was deleted
         options = await get_option_type("coverage", self.user)
@@ -229,7 +229,7 @@ class TestReferecenceOptionAPI(IsolatedAsyncioTestCase):
 
         # Delete the general by ID
         result = await delete_option_id(option_id, self.user)
-        self.assertEqual(result["message"], "Deleted successfully.")
+        self.assertEqual(result["message"], "Option deleted successfully.")
 
         # Verify general was deleted
         options = await get_option_type("interaction", self.user)
@@ -244,7 +244,7 @@ class TestReferecenceOptionAPI(IsolatedAsyncioTestCase):
             )
 
         self.assertEqual(context.exception.status_code, 404)
-        self.assertIn("interaction not found", context.exception.detail)
+        self.assertIn("Option not found", context.exception.detail)
 
     async def test_delete_option_not_found_by_id(self):
         """Test deletion of non-existent general by ID via API"""
@@ -252,7 +252,7 @@ class TestReferecenceOptionAPI(IsolatedAsyncioTestCase):
             await delete_option_id(99999, self.user)  # Non-existent ID
 
         self.assertEqual(context.exception.status_code, 404)
-        self.assertIn(f"Id: {99999} not found", context.exception.detail)
+        self.assertIn(f"Option not found", context.exception.detail)
 
     # Update
     async def test_update_option_success(self):
@@ -284,7 +284,7 @@ class TestReferecenceOptionAPI(IsolatedAsyncioTestCase):
         )
         self.assertEqual(
             result["message"],
-            f"Id: {option_id} updated successfully.",
+            "Option updated successfully.",
         )
 
         # Verify general was updated
@@ -323,7 +323,7 @@ class TestReferecenceOptionAPI(IsolatedAsyncioTestCase):
         )
         self.assertEqual(
             result["message"],
-            f"Id: {option_id} updated successfully.",
+            "Option updated successfully.",
         )
 
         # Verify only is_frequent was updated
@@ -358,7 +358,7 @@ class TestReferecenceOptionAPI(IsolatedAsyncioTestCase):
 
         self.assertEqual(context.exception.status_code, 404)
         self.assertIn(
-            f"Id: {option_id} not found or could not be updated",
+            "Option not found or could not be updated",
             context.exception.detail,
         )
 
@@ -374,7 +374,7 @@ class TestReferecenceOptionAPI(IsolatedAsyncioTestCase):
 
         self.assertEqual(context.exception.status_code, 404)
         self.assertIn(
-            f"Id: {99999} not found or could not be updated",
+            "Option not found or could not be updated",
             context.exception.detail,
         )
 
@@ -429,7 +429,7 @@ class TestReferenceTemplateAPI(IsolatedAsyncioTestCase):
         result = await create_template(data, self.user)
         self.assertEqual(
             result["message"],
-            "interaction created successfully.",
+            "Template created successfully.",
         )
 
         # Validate by getting generals
@@ -451,7 +451,7 @@ class TestReferenceTemplateAPI(IsolatedAsyncioTestCase):
         result = await create_template(data, self.user)
         self.assertEqual(
             result["message"],
-            "coverage created successfully.",
+            "Template created successfully.",
         )
 
         # Validate
@@ -478,7 +478,7 @@ class TestReferenceTemplateAPI(IsolatedAsyncioTestCase):
         result1 = await create_template(data, self.user)
         self.assertEqual(
             result1["message"],
-            "coverage created successfully.",
+            "Template created successfully.",
         )
 
         # Try to create duplicate - should raise HTTPException
@@ -486,7 +486,7 @@ class TestReferenceTemplateAPI(IsolatedAsyncioTestCase):
             await create_template(data, self.user)
 
         self.assertEqual(context.exception.status_code, 400)
-        self.assertIn("coverage already exists.", context.exception.detail)
+        self.assertIn("Template already exists.", context.exception.detail)
 
     # Get
     async def test_get_template_empty(self):
@@ -549,7 +549,7 @@ class TestReferenceTemplateAPI(IsolatedAsyncioTestCase):
         result = await delete_template_name(
             "coverage", "test_general", self.user
         )
-        self.assertEqual(result["message"], "coverage deleted successfully.")
+        self.assertEqual(result["message"], "Template deleted successfully.")
 
         # Verify general was deleted
         values = await get_templates("coverage", self.user)
@@ -577,7 +577,7 @@ class TestReferenceTemplateAPI(IsolatedAsyncioTestCase):
 
         # Delete the general by ID
         result = await delete_template_id(value_id, self.user)
-        self.assertEqual(result["message"], "Deleted successfully.")
+        self.assertEqual(result["message"], "Template deleted successfully.")
 
         # Verify general was deleted
         values = await get_templates("interaction", self.user)
@@ -592,7 +592,7 @@ class TestReferenceTemplateAPI(IsolatedAsyncioTestCase):
             )
 
         self.assertEqual(context.exception.status_code, 404)
-        self.assertIn("interaction not found", context.exception.detail)
+        self.assertIn("Template not found", context.exception.detail)
 
     async def test_delete_template_not_found_by_id(self):
         """Test deletion of non-existent general by ID via API"""
@@ -600,7 +600,7 @@ class TestReferenceTemplateAPI(IsolatedAsyncioTestCase):
             await delete_template_id(99999, self.user)  # Non-existent ID
 
         self.assertEqual(context.exception.status_code, 404)
-        self.assertIn(f"Id: {99999} not found", context.exception.detail)
+        self.assertIn(f"Template not found", context.exception.detail)
 
     # Update
     async def test_update_template_success(self):
@@ -635,7 +635,7 @@ class TestReferenceTemplateAPI(IsolatedAsyncioTestCase):
 
         self.assertEqual(
             result["message"],
-            f"Id: {id} updated successfully.",
+            "Template updated successfully.",
         )
 
         # Verify general was updated
@@ -676,7 +676,7 @@ class TestReferenceTemplateAPI(IsolatedAsyncioTestCase):
 
         self.assertEqual(
             result["message"],
-            f"Id: {id} updated successfully.",
+            "Template updated successfully.",
         )
 
         # Verify only is_frequent was updated
@@ -711,7 +711,7 @@ class TestReferenceTemplateAPI(IsolatedAsyncioTestCase):
 
         self.assertEqual(context.exception.status_code, 404)
         self.assertIn(
-            f"Id: {id} not found or could not be updated",
+            "Template not found or could not be updated",
             context.exception.detail,
         )
 
@@ -726,7 +726,7 @@ class TestReferenceTemplateAPI(IsolatedAsyncioTestCase):
 
         self.assertEqual(context.exception.status_code, 404)
         self.assertIn(
-            f"Id: {99999} not found or could not be updated",
+            "Template not found or could not be updated",
             context.exception.detail,
         )
 

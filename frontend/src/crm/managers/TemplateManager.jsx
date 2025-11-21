@@ -11,9 +11,6 @@ export default function TemplateManager({ type }) {
   const [editingTemplateId, setEditingTemplateId] = useState(null);
   const { templates, setShowManager, getTemplate } = useReferences();
 
-  console.log(type);
-  console.log(templates);
-
   const createTemplate = async () => {
     setLoading(true);
     setError("");
@@ -36,14 +33,13 @@ export default function TemplateManager({ type }) {
       setNewTemplateName("");
       setNewTemplateContent("");
       getTemplate(type);
-      setMessage(`Created ${type} template successfully.`);
+      setMessage(`Created template successfully.`);
     } else {
       if (result.status === 400 || result.status === 409) {
-        setError(result.message || `Error creating ${type} template.`);
+        setError(result.message || `Error creating template.`);
       } else {
         setError(
-          result.message ||
-            `Error creating ${type} template. Please try again.`,
+          result.message || `Error creating template. Please try again.`,
         );
       }
     }
@@ -269,41 +265,46 @@ export default function TemplateManager({ type }) {
                         </div>
                       </div>
                     ) : (
-                      <div className="flex justify-between items-start">
+                      <div className="">
+                        <div className="flex justify-between">
+                          {template.is_default ? (
+                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                              Default
+                            </span>
+                          ) : (
+                            <span>{""}</span>
+                          )}
+                          <div className="flex justify-end gap-2">
+                            <button
+                              type="button"
+                              onClick={() => setEditingTemplateId(template.id)}
+                              className="text-blue-600 hover:text-blue-800 text-sm"
+                            >
+                              Edit
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() =>
+                                deleteTemplate(template.id, template.name)
+                              }
+                              className="text-red-600 hover:text-red-800 text-sm"
+                            >
+                              Delete
+                            </button>
+                          </div>
+                        </div>
+
                         <div className="flex-1">
                           <div className="flex items-center gap-2 mb-2">
-                            <span className="text-lg font-semibold text-gray-900">
+                            <span className="text-lg font-semibold text-gray-900 break-all whitespace-normal">
                               {template.name}
                             </span>
-                            {template.is_default && (
-                              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                                Default
-                              </span>
-                            )}
                           </div>
                           <div className="text-sm text-gray-700">
                             <p className="break-words">
                               {template.content || "No default content"}
                             </p>
                           </div>
-                        </div>
-                        <div className="flex gap-2 ml-4">
-                          <button
-                            type="button"
-                            onClick={() => setEditingTemplateId(template.id)}
-                            className="text-blue-600 hover:text-blue-800 text-sm"
-                          >
-                            Edit
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() =>
-                              deleteTemplate(template.id, template.name)
-                            }
-                            className="text-red-600 hover:text-red-800 text-sm"
-                          >
-                            Delete
-                          </button>
                         </div>
                       </div>
                     )}

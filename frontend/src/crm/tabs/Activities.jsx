@@ -26,7 +26,6 @@ export default function Activities({ setActiveTab, currentRegistrationId }) {
     name: "General Activity",
     description: "",
   });
-  // const [selectedTemplate, setSelectedTemplate] = useState("Select");
 
   function validateForm() {
     if (!currentRegistrationId) {
@@ -139,7 +138,6 @@ export default function Activities({ setActiveTab, currentRegistrationId }) {
   };
 
   const handleTemplateChange = async (templateName) => {
-    // setSelectedTemplate(templateName);
     const template = templates["activity"].find(
       (template) => template.name === templateName,
     );
@@ -459,13 +457,11 @@ export default function Activities({ setActiveTab, currentRegistrationId }) {
                       </button>
                     </div>
                   </div>
-                  <div className="flex p-4 pt-0 justify-between items-start">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2">
-                        <span className="text-lg font-semibold text-gray-900 break-all">
-                          {activity.name}
-                        </span>
-                      </div>
+                  <div className="flex p-4 pt-0 justify-between items-start min-w-0">
+                    <div className="flex-1 min-w-0">
+                      <span className="text-lg font-semibold text-gray-900 break-words">
+                        {activity.name}
+                      </span>
                       <div className="text-sm text-gray-700 space-y-1">
                         {activity.date && (
                           <p>

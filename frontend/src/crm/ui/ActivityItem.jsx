@@ -7,6 +7,7 @@ import { PatientServices } from "../../services/patientServices";
 import { CheckCircleIcon, CircleIcon, SquarePenIcon } from "lucide-react";
 import DatePicker from "./DatePicker";
 import { useDashboard } from "../../context/DashboardContext";
+import { useReferences } from "../../context/ReferenceContext";
 
 export function ActivityItems({
   handleSave,
@@ -15,6 +16,7 @@ export function ActivityItems({
   handleRevertToPending,
 }) {
   const { filteredActivity, lastItem, setLastItem } = useDashboard();
+
   const [showingPhotos, setShowingPhotos] = useState([]);
   const [loadedPhotos, setLoadedPhotos] = useState({});
   const [loadingPhotos, setLoadingPhotos] = useState(new Set());
@@ -214,10 +216,10 @@ export default function ActivityItem({
         <div className="flex justify-between items-start">
           <div className="flex-1 min-w-0">
             <div className="flex justify-between items-center">
-              <div className="flex items-center gap-3 mb-2 break-all">
+              <div className="flex items-center gap-3 break-all">
                 <div className="flex gap-2 items-center">
                   <h3 className="text-lg font-semibold text-gray-900">
-                    {item.description}
+                    {item.name}
                   </h3>
                   <button onClick={handleEdit}>
                     <SquarePenIcon className="w-3 h-4" />
@@ -226,7 +228,7 @@ export default function ActivityItem({
               </div>
               <div className="flex items-center  ml-auto">
                 <span
-                  className={`pl-2 pr-0  py-1 text-xs font-normal rounded-l-full rounded-r-none mb-2 ${
+                  className={`pl-2 pr-0  py-1 text-xs font-normal rounded-l-full rounded-r-none ${
                     statusStyles[status] || "bg-gray-100 text-gray-800"
                   }`}
                 >
@@ -235,7 +237,7 @@ export default function ActivityItem({
                 {/* Check icon */}
                 <button
                   onClick={() => handleToggleComplete()}
-                  className={`top-3 right-3 p-1 rounded-l-none rounded-r-full transition-colors mb-2 ${
+                  className={`top-3 right-3 p-1 rounded-l-none rounded-r-full transition-colors ${
                     statusStyles[status] || "bg-gray-100 text-gray-800"
                   }`}
                   title={item.completed ? "Mark incomplete" : "Mark complete"}
@@ -246,6 +248,11 @@ export default function ActivityItem({
                     <CircleIcon className="w-5 h-4" />
                   )}
                 </button>
+              </div>
+            </div>
+            <div>
+              <div className="text-sm text-gray-600 mb-1 text-wrap">
+                <p className="break-words">{item.description}</p>
               </div>
             </div>
             <div className="flex justify-between items-start ">
@@ -401,12 +408,33 @@ export default function ActivityItem({
 
 function EditActivityItem({ index, item, activityData, setIsEditing }) {
   const { updateActivity, deleteActivity } = useDashboard();
+  const { templates } = useReferences();
 
   const [activityForm, setActivityForm] = useState({
     date: activityData.date,
     time: activityData.time,
+    name: activityData.name,
     description: activityData.description,
   });
+
+  const handleTemplateChange = async (templateName) => {
+    const template = templates["activity"].find(
+      (template) => template.name === templateName,
+    );
+
+    const content =
+      activityForm.description !== ""
+        ? activityForm.description
+        : template
+          ? template.content
+          : "";
+
+    setActivityForm((prev) => ({
+      ...prev,
+      name: templateName === "Select" ? "General Activity" : templateName,
+      description: content,
+    }));
+  };
 
   const handleActivityChange = (e) => {
     const { name, value } = e.target;
@@ -501,6 +529,30 @@ function EditActivityItem({ index, item, activityData, setIsEditing }) {
                 className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black"
               />
             </div>
+          </div>
+
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <label
+                htmlFor="selectedTemplate"
+                className="block text-sm font-medium text-gray-700"
+              >
+                Activity Template
+              </label>
+            </div>
+            <select
+              id="selectedTemplate"
+              value={activityForm.name}
+              onChange={(e) => handleTemplateChange(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black"
+            >
+              <option value="Select">Select</option>
+              {templates["activity"].map((template) => (
+                <option key={template.id} value={template.name}>
+                  {template.name}
+                </option>
+              ))}
+            </select>
           </div>
 
           <div>

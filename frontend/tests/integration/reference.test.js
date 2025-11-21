@@ -48,7 +48,7 @@ describe("ReferenceServices.option", () => {
     );
 
     expect(result.success).toBe(true);
-    expect(result.data?.message).toBe("interaction created successfully.");
+    expect(result.data?.message).toBe("Option created successfully.");
   });
 
   it("should fetch option and include created one", async () => {
@@ -158,7 +158,7 @@ describe("ReferenceServices.templates", () => {
     const result = await ReferenceServices.create_template("note", general);
 
     expect(result.success).toBe(true);
-    expect(result.data?.message).toBe("note created successfully.");
+    expect(result.data?.message).toBe("Template created successfully.");
   });
 
   it("should fetch template and include created one", async () => {

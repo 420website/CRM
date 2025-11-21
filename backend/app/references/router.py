@@ -34,15 +34,15 @@ async def create_option_type(
     if await ReferenceOptionService.check_exists(data.name, data.type):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"{data.type} already exists.",
+            detail="Option already exists.",
         )
 
     if not await ReferenceOptionService.create_option(data):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"{data.type} not created.",
+            detail="Option not created.",
         )
-    return {"message": f"{data.type} created successfully."}
+    return {"message": "Option created successfully."}
 
 
 @router.get("/option/{option_type}", response_model=List[ReferenceOption])
@@ -62,10 +62,10 @@ async def delete_option_id(
     if not await ReferenceOptionService.delete_option_by_id(id):
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Id: {id} not found.",
+            detail="Option not found.",
         )
 
-    return {"message": "Deleted successfully."}
+    return {"message": "Option deleted successfully."}
 
 
 @router.delete("/option/{option_type}/{name}")
@@ -77,9 +77,9 @@ async def delete_option_name(
     if not await ReferenceOptionService.delete_option(name, option_type):
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"{option_type} not found.",
+            detail="Option not found.",
         )
-    return {"message": f"{option_type} deleted successfully."}
+    return {"message": "Option deleted successfully."}
 
 
 @router.patch("/option/{id}")
@@ -91,10 +91,10 @@ async def update_option(
     if not await ReferenceOptionService.update_option(id, data):
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Id: {id} not found or could not be updated.",
+            detail="Option not found or could not be updated.",
         )
 
-    return {"message": f"Id: {id} updated successfully."}
+    return {"message": "Option updated successfully."}
 
 
 ###############
@@ -109,16 +109,16 @@ async def create_template(
     if await ReferenceTemplateService.check_exists(data.name, data.type):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"{data.type} already exists.",
+            detail="Template already exists.",
         )
 
     if not await ReferenceTemplateService.create_template(data):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"{data.type} not created.",
+            detail="Template not created.",
         )
 
-    return {"message": f"{data.type} created successfully."}
+    return {"message": "Template created successfully."}
 
 
 @router.get(
@@ -141,10 +141,10 @@ async def delete_template_id(
     if not await ReferenceTemplateService.delete_template_by_id(id):
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Id: {id} not found.",
+            detail="Template not found.",
         )
 
-    return {"message": "Deleted successfully."}
+    return {"message": "Template deleted successfully."}
 
 
 @router.delete("/template/{template_type}/{name}")
@@ -156,10 +156,10 @@ async def delete_template_name(
     if not await ReferenceTemplateService.delete_template(name, template_type):
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"{template_type} not found.",
+            detail="Template not found.",
         )
 
-    return {"message": f"{template_type} deleted successfully."}
+    return {"message": "Template deleted successfully."}
 
 
 @router.patch("/template/{id}")
@@ -172,7 +172,7 @@ async def update_template(
     if not await ReferenceTemplateService.update_template(id, data):
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Id: {id} not found or could not be updated.",
+            detail="Template not found or could not be updated.",
         )
 
-    return {"message": f"Id: {id} updated successfully."}
+    return {"message": "Template updated successfully."}

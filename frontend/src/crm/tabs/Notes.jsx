@@ -24,7 +24,6 @@ export default function Notes({ setActiveTab, currentRegistrationId }) {
     note_text: "",
   });
 
-  const [selectedNotesTemplate, setSelectedNotesTemplate] = useState("Select");
   const [notesFilter, setNotesFilter] = useState("all");
   const [notesSearch, setNotesSearch] = useState("");
   const [notesPage, setNotesPage] = useState(1);
@@ -60,15 +59,6 @@ export default function Notes({ setActiveTab, currentRegistrationId }) {
     setLoading(true);
     setIsSavingNotes(true);
 
-    // Include the template type with the note data
-    // const noteDataWithTemplate = {
-    //   ...notesData,
-    //   template_type:
-    //     selectedNotesTemplate !== "Select"
-    //       ? selectedNotesTemplate
-    //       : "General Note",
-    // };
-
     const result = await PatientServices.create_note(
       currentRegistrationId,
       notesData,
@@ -92,15 +82,6 @@ export default function Notes({ setActiveTab, currentRegistrationId }) {
   const updateNote = async () => {
     setLoading(true);
     setIsSavingNotes(true);
-
-    // Include the template type with the note data
-    // const noteDataWithTemplate = {
-    //   ...notesData,
-    //   template_type:
-    //     selectedNotesTemplate !== "Select"
-    //       ? selectedNotesTemplate
-    //       : "General Note",
-    // };
 
     const result = await PatientServices.update_note(
       currentRegistrationId,
@@ -150,12 +131,16 @@ export default function Notes({ setActiveTab, currentRegistrationId }) {
   };
 
   const handleNotesTemplateChange = async (templateName) => {
-    // setSelectedNotesTemplate(templateName);
     const template = templates["note"].find(
       (template) => template.name === templateName,
     );
 
-    const content = template ? template.content : "";
+    const content =
+      notesData.note_text !== ""
+        ? notesData.note_text
+        : template
+          ? template.content
+          : "";
 
     setNotesData((prev) => ({
       ...prev,
@@ -195,6 +180,13 @@ export default function Notes({ setActiveTab, currentRegistrationId }) {
     });
     setEditingNoteId(null);
     // setSelectedNotesTemplate("Select");
+  };
+
+  const clearText = () => {
+    setNotesData((prev) => ({
+      ...prev,
+      note_text: "",
+    }));
   };
 
   // Reset pagination when filter/search changes
@@ -324,12 +316,21 @@ export default function Notes({ setActiveTab, currentRegistrationId }) {
             </div>
 
             <div className="md:col-span-2">
-              <label
-                htmlFor="note_text"
-                className="block text-sm font-medium text-gray-700 mb-2"
-              >
-                Note Text
-              </label>
+              <div className="flex items-center justify-between mb-2">
+                <label
+                  htmlFor="note_text"
+                  className="block text-sm font-medium text-gray-700"
+                >
+                  Note Text
+                </label>
+                <button
+                  type="button"
+                  onClick={clearText}
+                  className="text-blue-600 hover:text-blue-800 text-sm"
+                >
+                  Clear
+                </button>
+              </div>
               <textarea
                 id="note_text"
                 name="note_text"
@@ -398,9 +399,9 @@ export default function Notes({ setActiveTab, currentRegistrationId }) {
                   className="border border-gray-200 rounded-lg p-4 bg-white hover:shadow-md transition-shadow"
                 >
                   <div className="flex justify-between items-start">
-                    <div className="flex-1">
+                    <div className="flex-1 min-w-0">
                       <div className="mb-2">
-                        <span className="text-lg font-semibold text-gray-900">
+                        <span className="text-lg font-semibold text-gray-900 min-w-0 break-words">
                           {note.template_type || "General Note"}
                         </span>
                       </div>
