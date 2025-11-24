@@ -9,7 +9,7 @@ import { useReferences } from "../../context/ReferenceContext";
 import { useAuth } from "../../context/AuthContext";
 import OptionManager from "../managers/OptionManager";
 
-export default function Tests({ setActiveTab, currentRegistrationId }) {
+export default function Assessments({ setActiveTab, currentRegistrationId }) {
   const { userRole } = useAuth();
   const { assessments, getClientAssessments } = useRegistration();
   const { showManager, setShowManager, options } = useReferences();
@@ -38,7 +38,7 @@ export default function Tests({ setActiveTab, currentRegistrationId }) {
 
   function validateForm() {
     if (!currentRegistrationId) {
-      alert("Please complete the Patient tab first to save tests.");
+      alert("Please complete the Patient tab first to save assessments.");
       setActiveTab("patient");
       return false;
     }
@@ -392,7 +392,7 @@ export default function Tests({ setActiveTab, currentRegistrationId }) {
 
             <div className="mt-6">
               <h3 className="text-md font-medium text-gray-900 mb-4">
-                {`${formData.type} Details`}
+                {`Details`}
               </h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
@@ -758,12 +758,12 @@ export default function Tests({ setActiveTab, currentRegistrationId }) {
         {/* Saved Tests */}
         <div className="border-t pt-6">
           <h3 className="text-lg font-medium text-gray-900 mb-4">
-            Saved Tests
+            Saved Assessments
           </h3>
 
           {assessments.length === 0 ? (
             <div className="text-center py-8 text-gray-500">
-              <p>No tests have been saved yet.</p>
+              <p>No assessments have been saved yet.</p>
             </div>
           ) : (
             <div className="space-y-3">

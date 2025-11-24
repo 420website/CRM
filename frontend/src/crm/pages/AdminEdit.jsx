@@ -1,6 +1,5 @@
 import { useState, useEffect, useRef } from "react";
 import Client from "../components/Client";
-import Tests from "../tabs/Tests";
 import Dispensing from "../tabs/Dispensing";
 import Medications from "../tabs/Medication";
 import Notes from "../tabs/Notes";
@@ -22,6 +21,7 @@ import { useRegistration } from "../../context/RegistrationContext";
 import toast from "react-hot-toast";
 import DuplicateModal from "../components/DuplicateModal";
 import { useDashboard } from "../../context/DashboardContext";
+import Assessments from "../tabs/Assessments";
 
 const AdminEdit = () => {
   const navigate = useNavigate();
@@ -67,7 +67,7 @@ const AdminEdit = () => {
   const getFirstAllowedTab = () => {
     const allTabs = [
       { id: "client", name: "Client" },
-      { id: "tests", name: "Tests" },
+      { id: "assessments", name: "Assessments" },
       { id: "medication", name: "Medication" },
       { id: "dispensing", name: "Dispensing" },
       { id: "notes", name: "Notes" },
@@ -234,8 +234,8 @@ const AdminEdit = () => {
         setCurrentVoiceDateField={setCurrentVoiceDateField}
       />
     ),
-    tests: (
-      <Tests
+    assessments: (
+      <Assessments
         setActiveTab={setActiveTab}
         currentRegistrationId={registrationId}
       />
@@ -283,7 +283,7 @@ const AdminEdit = () => {
   const getAllowedTabs = () => {
     const allTabs = [
       { id: "client", name: "Client" },
-      { id: "tests", name: "Tests" },
+      { id: "assessments", name: "Assessments" },
       { id: "medication", name: "Medication" },
       { id: "dispensing", name: "Dispensing" },
       { id: "notes", name: "Notes" },

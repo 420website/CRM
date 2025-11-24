@@ -2,7 +2,6 @@ import { useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import toast from "react-hot-toast";
 import Client from "../components/Client";
-import Tests from "../tabs/Tests";
 import Intake from "../components/Intake";
 import Dispensing from "../tabs/Dispensing";
 import Medications from "../tabs/Medication";
@@ -22,6 +21,7 @@ import { parseDateFromSpeech, parseFields } from "../../utils/parseFromSpeech";
 import { DEFAULT_FORM } from "../forms/Registration";
 import { useAuth } from "../../context/AuthContext";
 import { useDashboard } from "../../context/DashboardContext";
+import Assessments from "../tabs/Assessments";
 
 const AdminRegister = () => {
   const navigate = useNavigate();
@@ -142,8 +142,8 @@ const AdminRegister = () => {
         setCurrentVoiceDateField={setCurrentVoiceDateField}
       />
     ),
-    tests: (
-      <Tests
+    assessments: (
+      <Assessments
         setActiveTab={setActiveTab}
         currentRegistrationId={currentRegistrationId}
       />
@@ -196,7 +196,7 @@ const AdminRegister = () => {
   const getAllowedTabs = () => {
     const allTabs = [
       { id: "client", name: "Client" },
-      { id: "tests", name: "Tests" },
+      { id: "assessments", name: "Assessments" },
       { id: "medication", name: "Medication" },
       { id: "dispensing", name: "Dispensing" },
       { id: "notes", name: "Notes" },

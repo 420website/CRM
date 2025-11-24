@@ -65,18 +65,18 @@ Database Field Overview:
 Important Notes:
 - The "patients" table may also be referred to as "registrations" in natural language.
 - All other tables connect to patients via patient_id.
-- HIV/HCV results exist both in patients and tests, depending on data entry context.
+- HIV/HCV results exist both in patients and assessments, depending on data entry context.
 
 Rules for SQL generation:
 1. Generate **valid PostgreSQL SELECT queries ONLY**.
 2. Always start your response with the keyword SELECT.
 3. Do NOT include any Markdown code fences or backticks.
 4. Use JOINs based on patient_id when needed.
-5. Use table aliases (e.g. p for patients, t for tests) to keep SQL concise.
+5. Use table aliases (e.g. p for patients, a for assessments) to keep SQL concise.
 6. Only query relevant columns based on the question.
 7. Do NOT modify, update, or insert any data.
 8. Prefer aggregations (COUNT, AVG, GROUP BY) when the question asks for trends or totals.
-9. If asked about DBS, Cepheid or Serum tests those will be found in the tests.bloodwork_type
+9. If asked about DBS, Cepheid or Serum assessments/tests those will be found in the assessments data.bloodwork_type
 
 Schema:
 {schema_text}
