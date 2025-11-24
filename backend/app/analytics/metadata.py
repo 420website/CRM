@@ -1,24 +1,40 @@
 RELATIONSHIPS = [
-    ("patients", "tests", "patient_id"),
+    ("patients", "assessments", "patient_id"),
     ("patients", "notes", "patient_id"),
     ("patients", "interactions", "patient_id"),
     ("patients", "medications", "patient_id"),
     ("patients", "dispensing", "patient_id"),
     ("patients", "activities", "patient_id"),
+    ("patients", "acttachments", "patient_id"),
+    ("patients", "patient_photos", "patient_id"),
 ]
 
 TABLE_DESCRIPTIONS = {
     "patients": (
         "Stores registration and demographic data for each patient"
-        "(a.k.a. registration). Includes identifying info, contact details, "
+        "(a.k.a. registration, client). Includes identifying info, contact details, "
         "test results (RNA), consent status, referral info, and timestamps. "
         "Primary key: id. Other tables link via patient_id."
     ),
-    "tests": (
-        "Logs individual medical test results for each patient "
-        "(HIV, HCV, bloodwork). Each test row includes test type, "
-        "bloowork test names are stored in bloodwork_type, these should be considered equivalent to test_type"
-        "result, tester, and date."
+    "patient_photos": (
+        "Stores patient profile photos. Each record links a photo to a patient "
+        "via patient_id. Contains the original filename (photo_name) and the "
+        "unique storage key (photo_key) used to retrieve the image from object storage. "
+        "Tracks when each photo was uploaded (uploaded_at)."
+    ),
+    "attachments": (
+        "Stores document attachments for patients such as medical records, insurance cards, "
+        "ID documents, and consent forms. Each record links to a patient via patient_id. "
+        "Contains the original filename (file_name), unique storage key (file_key), "
+        "file metadata (file_size, mime_type), document category (document_type), "
+        "and upload timestamp (uploaded_at)."
+    ),
+    "assessments": (
+        "Logs individual medical assessement results for each patient "
+        "(a.k.as tests, test)"
+        "(HIV, HCV, bloodwork). Each row includes type, result, tester, date and data"
+        "data is a json object contain information specfic to each assessment, it can potential be null or and empyty object"
+        "bloodwork test names are stored in data.bloodwork_type, these should be considered equivalent to type"
     ),
     "notes": (
         "Contains clinician notes linked to a patient, with timestamps and template type."
@@ -37,6 +53,21 @@ TABLE_DESCRIPTIONS = {
     "activities": (
         "Tracks planned or completed activities associated with patients "
         "(appointments, tasks, outreach)."
+    ),
+    "reference_options": (
+        "Stores user-configurable dropdown options used throughout the system. "
+        "Supports different option types (e.g., 'disposition', 'document_type') that populate "
+        "dropdowns and selection fields. Each option can be marked as frequently used (is_frequent) "
+        "or default (is_default). Not directly linked to other tables via foreign keys, but "
+        "values are referenced in fields like attachments.document_type, interactions disposition, etc."
+    ),
+    "reference_templates": (
+        "Stores reusable templates that users can apply when creating content. "
+        "Supports different template types (e.g., 'note', 'clinical', 'medication') with "
+        "pre-written content that can be used as starting points. For example, note templates "
+        "provide pre-filled text when clinicians add notes to patients, saving time and ensuring "
+        "consistency. Templates can be marked as default (is_default). Not directly linked via "
+        "foreign keys, but referenced when users select templates during data entry."
     ),
 }
 
@@ -79,25 +110,38 @@ FIELD_DESCRIPTIONS = {
         "instructions": "General instructions for patient",
         "selected_template": " Name of template selected for patient (if any)",
         "summary_template": "Text body of template used",
-        "finalized_at": "Timestamp when patient/registration entry was finalized",
-        "created_at": "Timestamp when patient/registration entry was created",
-        "updated_at": "Timestamp when patient/registration entry was last updated",
+        "finalized_at": "Timestamp when client/patient/registration entry was finalized",
+        "created_at": "Timestamp when client/patient/registration entry was created",
+        "updated_at": "Timestamp when client/patient/registration entry was last updated",
     },
-    "tests": {
+    "patient_photos": {
+        "id": "Primary key for the patient photo record",
+        "patient_id": "Foreign key referencing patients.id - links the photo to a specific patient",
+        "photo_name": "Original filename of the uploaded patient photo (e.g., 'john_doe_headshot.jpg')",
+        "photo_key": "Unique storage key/path used to retrieve the photo from object storage (e.g., S3 bucket key)",
+        "uploaded_at": "Timestamp indicating when the photo was uploaded to the system",
+    },
+    "attachments": {
+        "id": "Primary key for the patient attachment record",
+        "patient_id": "Foreign key referencing patients.id - links the attachment to a specific patient",
+        "file_name": "Original filename of the uploaded document (e.g., 'medical_report.pdf', 'insurance_card.jpg')",
+        "file_key": "Unique storage key/path used to retrieve the file from object storage (e.g., S3 bucket key)",
+        "file_size": "Size of the uploaded file in bytes",
+        "mime_type": "MIME type of the file indicating its format (e.g., 'application/pdf', 'image/jpeg', 'image/png')",
+        "document_type": "Category or type of document (e.g., 'Medical Record', 'Insurance Card', 'ID Document', 'Consent Form')",
+        "uploaded_at": "Timestamp indicating when the attachment was uploaded to the system",
+    },
+    "assessments": {
         "id": "Primary key for the test record",
         "patient_id": "Foreign key referencing patients.id",
-        "test_type": "General type/category of test (HIV, HCV, Bloodwork, etc.)",
-        "test_date": "Date the test was performed",
-        "hiv_result": "Result of HIV test (positive/negative)",
-        "hiv_type": "Type of HIV test",
-        "hiv_tester": "Identifier of HIV tester",
-        "hcv_result": "Result of HCV test",
-        "hcv_tester": "Identifier of HCV tester",
-        "bloodwork_type": "Type of bloodwork test (Serum, DBS, Cepheid). This field should be treated as equivalent to 'test_type' when determining the kind of test performed.",
-        "bloodwork_circles": "Bloodwork circles info (if applicable)",
-        "bloodwork_result": "Result of a bloodwork test",
-        "bloodwork_date_submitted": "Date bloodwork was submitted",
-        "bloodwork_tester": "Identifier of bloodwork tester",
+        "type": "General type/category of test (HIV, HCV, Bloodwork, etc.)",
+        "date": "Date the test was performed",
+        "result": "Result of assessment (Positive, Negative,etc.)",
+        "tester": "Identifier of assessment tester",
+        "data": "Json object containing specific information to each test type, this can vary by assessment, may be best to query all together an examine after",
+        # "bloodwork_type": "Type of bloodwork test (Serum, DBS, Cepheid). This field should be treated as equivalent to 'test_type' when determining the kind of test performed.",
+        # "bloodwork_circles": "Bloodwork circles info (if applicable)",
+        # "bloodwork_date_submitted": "Date bloodwork was submitted",
         "created_at": "Timestamp record was created",
         "updated_at": "Timestamp record was updated",
     },
@@ -155,5 +199,23 @@ FIELD_DESCRIPTIONS = {
         "completed": "Whether the activity has been completed or not",
         "created_at": "Timestamp activity entry was created",
         "updated_at": "Timestamp activity entry was updated",
+    },
+    "reference_options": {
+        "id": "Primary key for the reference option record",
+        "name": "The display name/value of the option that appears in dropdown menus or selection fields (e.g., 'Insurance Card', 'Follow-up Visit', 'Reactive')",
+        "type": "Category that groups related options together - determines where the option appears (e.g., 'document_type' for attachment categories, 'disposition' for patient status, 'test' for test types, 'medication' for drug names, 'dispensing_quantity' for dosage amounts)",
+        "is_frequent": "Boolean flag that marks this option as frequently used - tenant-configurable to highlight commonly selected options in the UI",
+        "is_default": "Boolean flag indicating this is a system-provided default option (created during initial setup) rather than a user-added custom option",
+        "created_at": "Timestamp when the option was created",
+        "updated_at": "Timestamp when the option was last modified",
+    },
+    "reference_templates": {
+        "id": "Primary key for the reference template record",
+        "name": "The display name of the template that appears in dropdown/selection menus when users choose a template to apply (e.g., 'Initial Assessment', 'Follow-up Note', 'Medication Plan')",
+        "type": "Category that groups related templates together - determines the context where templates are used (e.g., 'note' for clinical notes, 'clinical' for clinical assessments, 'medication' for prescription templates)",
+        "content": "The pre-written text body of the template that gets inserted when a user selects this template - serves as a starting point that can be edited",
+        "is_default": "Boolean flag indicating this is a system-provided default template (created during initial setup) rather than a user-created custom template",
+        "created_at": "Timestamp when the template was created",
+        "updated_at": "Timestamp when the template was last modified",
     },
 }

@@ -15,13 +15,16 @@ from app.analytics.schema import (
 
 RELEVANT_TABLES = {
     "patients",
-    "tests",
+    "patient_photos",
+    "assessments",
     "medications",
     "dispensing",
     "notes",
     "activities",
     "interactions",
     "attachments",
+    "reference_options",
+    "reference_templates",
 }
 
 
@@ -62,9 +65,13 @@ class RagService:
         return schema_text
 
     @staticmethod
-    async def generate_query(schema: str, question: str) -> str:
-        system_prompt = query_prompt(schema)
-        user_prompt = f"Question: {question}\nSQL:"
+    async def generate_query(schema: str, request: ClaudeChatRequest) -> str:
+        system_prompt = query_prompt(
+            schema, request.timezone, request.local_datetime
+        )
+        user_prompt = f"Question: {request.message}\nSQL:"
+        # print(system_prompt)
+        # print(user_prompt)
 
         message = await settings.anthropic_client.messages.create(
             model=settings.anthropic_model,
@@ -166,7 +173,7 @@ class RagService:
     ) -> ClaudeChatResponse:
         try:
             schema = await RagService.get_schema()
-            query = await RagService.generate_query(schema, request.message)
+            query = await RagService.generate_query(schema, request)
             context = await RagService.retrieve_context(query)
             system_msg = internal_system_message(str(context))
 

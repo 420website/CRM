@@ -47,6 +47,13 @@ class ClaudeChatRequest(BaseModel):
     generate_chart: Optional[bool] = Field(
         default=False, description="Request chart generation"
     )
+    timezone: str = Field(
+        default="UTC",
+        description="User's timezone (e.g., 'America/Toronto', 'Europe/London')",
+    )
+    local_datetime: str = Field(
+        description="User's current local date/time string (e.g., '11/21/2025, 03:07:42 PM')",
+    )
 
 
 class ClaudeChatResponse(BaseModel):

@@ -15,6 +15,9 @@ const AdminAnalytics = () => {
   const [sessionId] = useState(
     () => `session_${Date.now()}_${Math.random().toString(36)}`,
   );
+  const [userTimezone] = useState(
+    () => Intl.DateTimeFormat().resolvedOptions().timeZone,
+  );
 
   // Excel upload states
   const [isUploading, setIsUploading] = useState(false);
@@ -65,7 +68,7 @@ const AdminAnalytics = () => {
             {
               role: "assistant",
               content: welcomeMessage,
-              timestamp: new Date().toISOString(),
+              timestamp: currentTimestamp(),
             },
           ]);
           return prev;
@@ -84,6 +87,19 @@ const AdminAnalytics = () => {
         block: "nearest", // This prevents scrolling the entire page
       });
     }
+  };
+
+  const currentTimestamp = () => {
+    return new Date().toLocaleString("en-US", {
+      timeZone: userTimezone,
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+      hour12: true,
+    });
   };
 
   // Load Data
@@ -146,7 +162,7 @@ const AdminAnalytics = () => {
         const uploadMessage = {
           role: "assistant",
           content: `📊 Legacy data uploaded successfully! I now have access to ${result.records_count} historical records from ${file.name}. You can ask me questions about trends, dispositions, and patterns in your historical data.`,
-          timestamp: new Date().toISOString(),
+          timestamp: currentTimestamp(),
         };
         setMessages((prev) => [...prev, uploadMessage]);
       } else {
@@ -167,7 +183,7 @@ const AdminAnalytics = () => {
       const userMessage = {
         role: "user",
         content: query,
-        timestamp: new Date().toISOString(),
+        timestamp: currentTimestamp(),
       };
 
       setMessages((prev) => [...prev, userMessage]);
@@ -177,6 +193,8 @@ const AdminAnalytics = () => {
       const data = {
         legacy_data: isLegacyData,
         message: query,
+        timezone: userTimezone,
+        local_datetime: currentTimestamp(),
         session_id: sessionId,
       };
 
@@ -186,6 +204,7 @@ const AdminAnalytics = () => {
         const assistantMessage = {
           role: "assistant",
           content: result.data?.response,
+          timestamp: currentTimestamp(),
         };
 
         setMessages((prev) => [...prev, assistantMessage]);
@@ -194,7 +213,7 @@ const AdminAnalytics = () => {
           role: "assistant",
           content:
             "I apologize, but I'm having trouble accessing the registration data right now. Please try again in a moment.",
-          timestamp: new Date().toISOString(),
+          timestamp: currentTimestamp(),
         };
         setMessages((prev) => [...prev, errorMessage]);
       }
@@ -241,7 +260,7 @@ const AdminAnalytics = () => {
             {
               role: "assistant",
               content: welcomeMessage,
-              timestamp: new Date().toISOString(),
+              timestamp: currentTimestamp(),
             },
           ]);
           return prev;
@@ -467,7 +486,7 @@ const AdminAnalytics = () => {
                               : "text-gray-500"
                           }`}
                         >
-                          {new Date().toLocaleTimeString()}
+                          {message.timestamp.split(", ")[1]}
                         </div>
                       </div>
                     </div>

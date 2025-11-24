@@ -5,7 +5,11 @@ from app.analytics.metadata import (
 )
 
 
-def query_prompt(schema_text: str) -> str:
+def query_prompt(
+    schema_text: str,
+    user_timezone: str = "UTC",
+    user_local_datetime: str = None,
+) -> str:
     relationship_text = "\n".join(
         f"{a}.{col} = {b}.{col}" for a, b, col in RELATIONSHIPS
     )
@@ -16,8 +20,38 @@ def query_prompt(schema_text: str) -> str:
         f"{table}: {desc}" for table, desc in FIELD_DESCRIPTIONS.items()
     )
 
+    # Timezone handling section
+    timezone_note = f"""
+⚠️ CRITICAL TIMEZONE HANDLING:
+- User's timezone: {user_timezone}
+- User's current local date/time: {user_local_datetime}
+- Database timezone: ALL timestamps in the database are stored in UTC
+
+When the user references relative dates like "today", "yesterday", "this week", "this month", "this year":
+  • They mean in THEIR timezone ({user_timezone}), NOT UTC
+  • You MUST convert these to UTC datetime ranges for accurate queries
+  
+Examples:
+  • User says "today" → means {user_local_datetime.split(',')[0]} in {user_timezone}
+    Convert to UTC range: >= 'YYYY-MM-DD 00:00:00+00' AND < 'YYYY-MM-DD+1 00:00:00+00'
+  
+  • User says "this month" → means current month in {user_timezone}
+    Convert to UTC range for that month
+  
+  • User says "2024" or "this year" → means that year in {user_timezone}
+    Convert to UTC range: >= '2024-01-01 00:00:00+00' AND < '2025-01-01 00:00:00+00'
+
+IMPORTANT: 
+- Extract the date from user's local time: {user_local_datetime}
+- Calculate the UTC equivalent for start and end of that period
+- Use >= and < operators for date ranges (not BETWEEN)
+- All timestamp columns (created_at, updated_at, date, uploaded_at, etc.) are in UTC
+"""
+
     return f"""
 You are an expert SQL analyst generating queries over a Postgres CRM database.
+
+{timezone_note}
 
 Table Relationships (foreign keys):
 {relationship_text}
