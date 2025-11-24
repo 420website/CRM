@@ -31,6 +31,7 @@ export function ReferenceProvider({ children }) {
     dispensing_quantity: [],
     assessment_type: [],
     assessment_result: [],
+    assessment_tester: [],
   });
 
   // -- Options
@@ -92,6 +93,7 @@ export function ReferenceProvider({ children }) {
         getOption("dispensing_quantity"),
         getOption("assessment_type"),
         getOption("assessment_result"),
+        getOption("assessment_tester"),
         getTemplate("note"),
         getTemplate("clinical"),
         getTemplate("activity"),

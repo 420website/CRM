@@ -5,135 +5,35 @@ import { useRegistration } from "../../context/RegistrationContext";
 import DatePicker from "../ui/DatePicker";
 import toast from "react-hot-toast";
 import { normalizeFormData } from "../../utils/formatData";
+import { useReferences } from "../../context/ReferenceContext";
+import { useAuth } from "../../context/AuthContext";
+import OptionManager from "../managers/OptionManager";
 
 export default function Tests({ setActiveTab, currentRegistrationId }) {
-  const { tests, getClientTests } = useRegistration();
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const [deleteTestId, setDeleteTestId] = useState(null);
+  const { userRole } = useAuth();
+  const { assessments, getClientAssessments } = useRegistration();
+  const { showManager, setShowManager, options } = useReferences();
+
   const [loading, setLoading] = useState(false);
-  const [editingTestId, setEditingTestId] = useState(null);
-  const [testFormData, setTestFormData] = useState({
-    test_type: "",
-    test_date: new Date().toLocaleDateString("en-CA"),
-    hiv_result: "negative",
-    hiv_type: "",
-    hiv_tester: "CM",
-    hcv_result: "negative",
-    hcv_tester: "CM",
-    bloodwork_type: "",
-    bloodwork_circles: "",
-    bloodwork_result: "Pending",
-    bloodwork_date_submitted: new Date().toLocaleDateString("en-CA"),
-    bloodwork_tester: "CM",
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deleteId, setDeleteId] = useState(null);
+  const [editingId, setEditingId] = useState(null);
+  const [formData, setFormData] = useState({
+    type: "",
+    date: new Date().toLocaleDateString("en-CA"),
+    result: "Negative",
+    tester: "CM",
+    data: null,
   });
 
   function resetForm() {
-    setTestFormData({
-      test_type: "",
-      test_date: new Date().toLocaleDateString("en-CA"),
-      hiv_result: "negative",
-      hiv_type: "",
-      hiv_tester: "CM",
-      hcv_result: "negative",
-      hcv_tester: "CM",
-      bloodwork_type: "",
-      bloodwork_circles: "",
-      bloodwork_result: "Pending",
-      bloodwork_date_submitted: new Date().toLocaleDateString("en-CA"),
-      bloodwork_tester: "CM",
+    setFormData({
+      type: "",
+      date: new Date().toLocaleDateString("en-CA"),
+      result: "Negative",
+      tester: "CM",
+      data: {},
     });
-  }
-
-  function validateHIV() {
-    if (!testFormData.hiv_result || testFormData.hiv_result === "") {
-      toast.error("Please select test result");
-      return false;
-    }
-
-    if (
-      testFormData.hiv_result === "positive" &&
-      testFormData.hiv_type === ""
-    ) {
-      toast.error("Please select HIV Type");
-      return false;
-    }
-
-    if (!testFormData.hiv_tester || testFormData.hiv_tester === "") {
-      toast.error("Please select a tester");
-      return false;
-    }
-
-    testFormData.bloodwork_type = null;
-    testFormData.bloodwork_result = null;
-    testFormData.bloodwork_tester = null;
-    testFormData.bloodwork_circles = null;
-    testFormData.bloodwork_date_submitted = null;
-    testFormData.hcv_result = null;
-    testFormData.hcv_tester = null;
-    testFormData.hcv_result = null;
-
-    return true;
-  }
-
-  function validateHCV() {
-    if (!testFormData.hcv_result || testFormData.hcv_result === "") {
-      toast.error("Please select test result");
-      return false;
-    }
-
-    if (!testFormData.hcv_tester || testFormData.hcv_tester === "") {
-      toast.error("Please select a tester");
-      return false;
-    }
-
-    testFormData.bloodwork_type = null;
-    testFormData.bloodwork_result = null;
-    testFormData.bloodwork_tester = null;
-    testFormData.bloodwork_circles = null;
-    testFormData.bloodwork_date_submitted = null;
-    testFormData.hiv_result = null;
-    testFormData.hiv_tester = null;
-    testFormData.hiv_type = null;
-
-    return true;
-  }
-
-  function validateBloodwork() {
-    if (!testFormData.bloodwork_type || testFormData.bloodwork_type === "") {
-      toast.error("Please select bloodwork type");
-      return false;
-    }
-
-    if (
-      !testFormData.bloodwork_tester ||
-      testFormData.bloodwork_tester === ""
-    ) {
-      toast.error("Please select a tester");
-      return false;
-    }
-
-    if (
-      !testFormData.bloodwork_result ||
-      testFormData.bloodwork_result === ""
-    ) {
-      toast.error("Please select test result");
-      return false;
-    }
-
-    if (
-      testFormData.bloodwork_type === "DBS" &&
-      testFormData.bloodwork_circles === ""
-    ) {
-      toast.error("Please select bloodwork circles");
-      return false;
-    }
-    testFormData.hiv_result = null;
-    testFormData.hiv_tester = null;
-    testFormData.hiv_type = null;
-    testFormData.hcv_result = null;
-    testFormData.hcv_tester = null;
-
-    return true;
   }
 
   function validateForm() {
@@ -143,192 +43,220 @@ export default function Tests({ setActiveTab, currentRegistrationId }) {
       return false;
     }
 
-    if (!testFormData.test_type || testFormData.test_type === "") {
-      toast.error("Please select a test type");
+    if (
+      !formData.type ||
+      formData.type === "" ||
+      !options["assessment_type"].some((d) => d.name === formData.type)
+    ) {
+      toast.error("Please select a valid type");
       return false;
     }
 
-    if (!testFormData.test_date || testFormData.test_date === "") {
-      toast.error("Please select a test date");
+    if (!formData.date || formData.date === "") {
+      toast.error("Please select a date");
       return false;
     }
 
-    if (testFormData.test_type === "HIV") {
-      return validateHIV();
-    } else if (testFormData.test_type === "HCV") {
-      return validateHCV();
-    } else if (testFormData.test_type == "Bloodwork") {
-      return validateBloodwork();
+    if (formData.type === "HIV") {
+      if (formData.result === "Positive" && !formData.data.hiv_type) {
+        toast.error("Please select HIV Type");
+        return false;
+      }
+    } else if (formData.type == "Bloodwork") {
+      if (
+        !formData.data.bloodwork_type ||
+        formData.data.bloodwork_type === ""
+      ) {
+        toast.error("Please select type");
+        return false;
+      }
+      if (
+        formData.data.bloodwork_type === "DBS" &&
+        !formData.data.bloodwork_circles
+      ) {
+        toast.error("Please select bloodwork circles");
+        return false;
+      }
+    }
+
+    if (
+      !formData.result ||
+      formData.result === "" ||
+      !options["assessment_result"].some((d) => d.name === formData.result)
+    ) {
+      toast.error("Please select a valid result");
+      return false;
+    }
+
+    if (
+      !formData.tester ||
+      formData.tester === "" ||
+      !options["assessment_tester"].some((d) => d.name === formData.tester)
+    ) {
+      toast.error("Please select a valid tester");
+      return false;
     }
 
     return true;
   }
 
-  const saveTest = async () => {
+  const saveAssessment = async () => {
     if (!validateForm()) {
       return;
     }
-    editingTestId ? updateTests() : createTests();
+    editingId ? updateAssessment() : createAssessment();
   };
 
-  const createTests = async () => {
+  const createAssessment = async () => {
     setLoading(true);
 
-    const data = normalizeFormData(testFormData);
-    const result = await PatientServices.create_test(
+    const data = normalizeFormData(formData);
+    const result = await PatientServices.create_assessment(
       currentRegistrationId,
       data,
     );
 
     if (result.success) {
-      getClientTests(currentRegistrationId);
+      getClientAssessments(currentRegistrationId);
       resetForm();
-      setEditingTestId(null);
-      toast.success("Test created successfully");
+      setEditingId(null);
+      toast.success("Assessment created successfully");
     } else {
       if (result.status === 400 || result.status === 409) {
-        toast.error(result.message || "Error creating test.");
+        toast.error(result.message || "Error creating assessment.");
       } else {
-        toast.error("Error creating test. Please try again.");
+        toast.error("Error creating assessment. Please try again.");
       }
     }
     setLoading(false);
   };
 
-  const updateTests = async () => {
+  const updateAssessment = async () => {
     setLoading(true);
 
-    const data = normalizeFormData(testFormData);
-    const result = await PatientServices.update_test(
+    const data = normalizeFormData(formData);
+    const result = await PatientServices.update_assessment(
       currentRegistrationId,
-      editingTestId,
+      editingId,
       data,
     );
 
     if (result.success) {
-      getClientTests(currentRegistrationId);
+      getClientAssessments(currentRegistrationId);
       resetForm();
-      setEditingTestId(null);
-      toast.success("Test updated successfully");
+      setEditingId(null);
+      toast.success("Assessment updated successfully");
     } else {
       if (result.status === 400 || result.status === 409) {
-        toast.error(result.message || "Error updating test.");
+        toast.error(result.message || "Error updating assessment.");
       } else {
-        toast.error("Error updating test. Please try again.");
+        toast.error("Error updating assessment. Please try again.");
       }
     }
     setLoading(false);
   };
 
-  const deleteTest = async () => {
+  const deleteAssessment = async () => {
     setLoading(true);
 
-    const result = await PatientServices.delete_test_by_id(
+    const result = await PatientServices.delete_assessment_by_id(
       currentRegistrationId,
-      deleteTestId,
+      deleteId,
     );
 
     if (result.success) {
-      getClientTests(currentRegistrationId);
-      toast.success("Deleted test successfully");
+      getClientAssessments(currentRegistrationId);
+      setDeleteId(null);
+      toast.success("Deleted assessment successfully");
     } else {
       if (result.status === 400 || result.status === 409) {
-        toast.error(result.message || "Error deleting test.");
+        toast.error(result.message || "Error deleting assessment.");
       } else {
-        toast.error("Error deleting test. Please try again.");
+        toast.error("Error deleting assessment. Please try again.");
       }
     }
     setLoading(false);
   };
 
-  const handleDeleteTest = async (testId) => {
-    setDeleteTestId(testId);
+  const handleDelete = async (testId) => {
+    setDeleteId(testId);
     setShowDeleteConfirm(true);
   };
 
-  const editTest = (test) => {
-    const testForm = {
-      test_type: test.test_type,
-      test_date: test.test_date,
-      hiv_result: test.hiv_result || "negative",
-      hiv_type: test.hiv_type || "",
-      hiv_tester: test.hiv_tester || "CM",
-      hcv_result: test.hcv_result || "negative",
-      hcv_tester: test.hcv_tester || "CM",
-      bloodwork_type: test.bloodwork_type || "",
-      bloodwork_circles: test.bloodwork_circles || "",
-      bloodwork_result: test.bloodwork_result || "Pending",
-      bloodwork_date_submitted: test.bloodwork_date_submitted || "",
-      bloodwork_tester: test.bloodwork_tester || "CM",
+  const handleEdit = (item) => {
+    const form = {
+      type: item.type,
+      date: item.date,
+      result: item.result || "Negative",
+      tester: item.tester || "CM",
+      data: item.data || null,
     };
 
-    setTestFormData(testForm);
-    setEditingTestId(test.id);
+    setFormData(form);
+    setEditingId(item.id);
+    document.querySelector("#tests")?.scrollIntoView({ behavior: "smooth" });
   };
 
-  const cancelTestEdit = () => {
+  const cancelEdit = () => {
     resetForm();
-    setEditingTestId(null);
+    setEditingId(null);
   };
 
-  const handleTestChange = (e) => {
+  const handleChange = (e) => {
     const { name, value } = e.target;
 
-    let newTestData = {
-      ...testFormData,
-      [name]: value,
-    };
+    let newData;
+    if (name.startsWith("data.")) {
+      const key = name.split(".")[1];
 
-    // Clear HIV type when result is not positive
-    if (name === "hiv_result" && value !== "positive") {
-      newTestData.hiv_type = "";
+      if (!value || value === "") {
+        const { [key]: removed, ...restData } = formData.data;
+        newData = {
+          ...formData,
+          data: restData,
+        };
+      } else {
+        const updated = { ...formData.data, [key]: value };
+
+        newData = {
+          ...formData,
+          data: updated,
+        };
+      }
+    } else {
+      newData = {
+        ...formData,
+        [name]: value,
+      };
     }
 
-    // Set defaults when switching to HIV
-    if (name === "test_type" && value === "HIV") {
-      newTestData.test_date = new Date().toLocaleDateString("en-CA");
-      newTestData.hiv_result = "negative";
-      newTestData.hiv_type = "";
-      newTestData.hiv_tester = "CM";
+    if (name === "type" && value !== formData.type) {
+      newData.data = {};
     }
 
-    // Set defaults when switching to HCV
-    if (name === "test_type" && value === "HCV") {
-      newTestData.test_date = new Date().toLocaleDateString("en-CA");
-      newTestData.hcv_result = "negative";
-      newTestData.hcv_tester = "CM";
-    }
-
-    const cephied_results = ["Positive", "Negative", "Pending", "Error"];
-    if (
-      value === "Cepheid" &&
-      !cephied_results.includes(newTestData.bloodwork_result)
-    ) {
-      newTestData.bloodwork_result = "Pending";
-    }
-
-    const other_results = ["Positive", "Negative", "Pending", "Submitted"];
-    if (
-      (value === "DBS" || value === "Serum") &&
-      !other_results.includes(newTestData.bloodwork_result)
-    ) {
-      newTestData.bloodwork_result = "Pending";
+    if (newData.type === "HIV" && newData.result !== "Positive") {
+      newData.data = {};
     }
 
     if (
-      newTestData.bloodwork_type !== "DBS" &&
-      newTestData.bloodwork_circles !== ""
+      newData.data?.bloodwork_type !== "DBS" &&
+      newData.data?.bloodwork_circles
     ) {
-      newTestData.bloodwork_circles = "";
+      delete newData.data.bloodwork_circles;
     }
 
-    setTestFormData(newTestData);
+    setFormData(newData);
   };
 
   return (
-    <div>
+    <div id="tests" className="scroll-mt-[20px]">
       <div className="tab-content">
         <div className="space-y-6">
+          {(showManager === "assessment_type" ||
+            showManager === "assessment_result" ||
+            showManager === "assessment_tester") && (
+            <OptionManager type={showManager} />
+          )}
           {/* Registration ID Check */}
           {!currentRegistrationId && (
             <div className="border-2 border-orange-200 bg-orange-50 p-4 rounded-lg">
@@ -372,9 +300,9 @@ export default function Tests({ setActiveTab, currentRegistrationId }) {
           )}
           {showDeleteConfirm && (
             <ConfirmModal
-              message={"Confirm delete test"}
+              message={"Confirm delete assessment"}
               subMessage={"This action cannot be undone"}
-              confirm={deleteTest}
+              confirm={deleteAssessment}
               setShowConfirm={setShowDeleteConfirm}
             />
           )}
@@ -386,520 +314,551 @@ export default function Tests({ setActiveTab, currentRegistrationId }) {
             }
           >
             <h2 className="text-lg font-medium text-gray-900 mb-4">
-              {editingTestId ? "Edit Test" : "Add Test"}
+              {editingId ? "Edit Assessment" : "Add Assessment"}
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
-                <label
-                  htmlFor="testType"
-                  className="block text-sm font-medium text-gray-700 mb-2"
-                >
-                  Test Type
-                </label>
+                <div className="flex items-center justify-between mb-2">
+                  <label
+                    htmlFor="type"
+                    className="block text-sm font-medium text-gray-700 mb-2"
+                  >
+                    Type
+                  </label>
+                  {userRole == "admin" && (
+                    <button
+                      type="button"
+                      onClick={() => setShowManager("assessment_type")}
+                      className="text-blue-600 hover:text-blue-800 text-sm"
+                    >
+                      Manage
+                    </button>
+                  )}
+                </div>
                 <select
-                  id="testType"
-                  name="test_type"
-                  value={testFormData.test_type}
-                  onChange={handleTestChange}
+                  id="type"
+                  name="type"
+                  value={formData.type}
+                  onChange={handleChange}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black"
                 >
                   <option value="">Select Option</option>
-                  <option value="HIV">HIV</option>
-                  <option value="HCV">HCV</option>
-                  <option value="Bloodwork">Bloodwork</option>
+                  {/* Show legacy value if it doesn't exist in current options */}
+                  {formData.type &&
+                    !options["assessment_type"].some(
+                      (d) => d.name === formData.type,
+                    ) && (
+                      <option
+                        value={formData.type}
+                        disabled
+                        className="text-red-600"
+                      >
+                        {formData.type} (No longer available)
+                      </option>
+                    )}
+
+                  {/* Most Frequently Used */}
+                  {options["assessment_type"]
+                    .filter((d) => d.is_frequent)
+                    .map((disposition) => (
+                      <option key={disposition.id} value={disposition.name}>
+                        {disposition.name}
+                      </option>
+                    ))}
+                  {/* Separator */}
+                  {options["assessment_type"].filter((d) => !d.is_frequent)
+                    .length > 0 && <option disabled>-------</option>}
+                  {/* All Others in Alphabetical Order */}
+                  {options["assessment_type"]
+                    .filter((d) => !d.is_frequent)
+                    .sort((a, b) => a.name.localeCompare(b.name))
+                    .map((disposition) => (
+                      <option key={disposition.id} value={disposition.name}>
+                        {disposition.name}
+                      </option>
+                    ))}
                 </select>
+                {formData.type &&
+                  !options["assessment_type"].some(
+                    (d) => d.name === formData.type,
+                  ) && (
+                    <div className="mt-1 text-sm text-red-600">
+                      ⚠️ This option is no longer available. Please select a new
+                      option before saving.
+                    </div>
+                  )}
               </div>
             </div>
 
-            {/* HIV Test Fields */}
-            {testFormData.test_type === "HIV" && (
-              <div className="mt-6">
-                <h3 className="text-md font-medium text-gray-900 mb-4">
-                  HIV Test Details
-                </h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div>
-                    <label
-                      htmlFor="testDate"
-                      className="block text-sm font-medium text-gray-700 mb-2"
-                    >
-                      Test Date
-                    </label>
-                    <DatePicker
-                      name="test_date"
-                      value={testFormData.test_date}
-                      onChange={handleTestChange}
-                      className="w-full px-3 py-1.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black"
-                      style={{
-                        lineHeight: "1.5",
-                        height: "auto",
-                      }}
-                    />
-                  </div>
+            <div className="mt-6">
+              <h3 className="text-md font-medium text-gray-900 mb-4">
+                {`${formData.type} Details`}
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <label
+                    htmlFor="date"
+                    className="block text-sm font-medium text-gray-700 mb-2"
+                  >
+                    Date
+                  </label>
+                  <DatePicker
+                    name="date"
+                    value={formData.date}
+                    onChange={handleChange}
+                    className="w-full px-3 py-1.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black"
+                    style={{
+                      lineHeight: "1.5",
+                      height: "auto",
+                    }}
+                  />
+                </div>
 
+                {formData.type !== "Bloodwork" && (
                   <div>
-                    <label
-                      htmlFor="hivResult"
-                      className="block text-sm font-medium text-gray-700 mb-2"
-                    >
-                      Test Result
-                    </label>
-                    <select
-                      id="hivResult"
-                      name="hiv_result"
-                      value={testFormData.hiv_result}
-                      onChange={handleTestChange}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black"
-                    >
-                      <option value="">Select Result</option>
-                      <option value="negative">Negative</option>
-                      <option value="positive">Positive</option>
-                    </select>
-                  </div>
-
-                  {/* HIV Type - only show if result is positive */}
-                  {testFormData.hiv_result === "positive" && (
-                    <div>
+                    <div className="flex items-center justify-between mb-2">
                       <label
-                        htmlFor="hivType"
+                        htmlFor="result"
                         className="block text-sm font-medium text-gray-700 mb-2"
                       >
-                        HIV Type
+                        Result
                       </label>
-                      <select
-                        id="hivType"
-                        name="hiv_type"
-                        value={testFormData.hiv_type}
-                        onChange={handleTestChange}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black"
-                      >
-                        <option value="">Select Type</option>
-                        <option value="Type 1">Type 1</option>
-                        <option value="Type 2">Type 2</option>
-                      </select>
+                      {userRole == "admin" && (
+                        <button
+                          type="button"
+                          onClick={() => setShowManager("assessment_result")}
+                          className="text-blue-600 hover:text-blue-800 text-sm"
+                        >
+                          Manage
+                        </button>
+                      )}
                     </div>
-                  )}
-
-                  <div>
-                    <label
-                      htmlFor="hivTester"
-                      className="block text-sm font-medium text-gray-700 mb-2"
-                    >
-                      Tester
-                    </label>
                     <select
-                      id="hivTester"
-                      name="hiv_tester"
-                      value={testFormData.hiv_tester}
-                      onChange={handleTestChange}
+                      id="result"
+                      name="result"
+                      value={formData.result}
+                      onChange={handleChange}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black"
                     >
-                      <option value="CM">CM</option>
-                      <option value="JY">JY</option>
+                      <option value="">Select</option>
+                      {formData.result &&
+                        !options["assessment_result"].some(
+                          (d) => d.name === formData.result,
+                        ) && (
+                          <option
+                            value={formData.result}
+                            disabled
+                            className="text-red-600"
+                          >
+                            {formData.result} (No longer available)
+                          </option>
+                        )}
+                      {/* Most Frequently Used */}
+                      {options["assessment_result"]
+                        .filter((d) => d.is_frequent)
+                        .map((disposition) => (
+                          <option key={disposition.id} value={disposition.name}>
+                            {disposition.name}
+                          </option>
+                        ))}
+                      {/* Separator */}
+                      {options["assessment_result"].filter(
+                        (d) => !d.is_frequent,
+                      ).length > 0 && <option disabled>-------</option>}
+                      {/* All Others in Alphabetical Order */}
+                      {options["assessment_result"]
+                        .filter((d) => !d.is_frequent)
+                        .sort((a, b) => a.name.localeCompare(b.name))
+                        .map((disposition) => (
+                          <option key={disposition.id} value={disposition.name}>
+                            {disposition.name}
+                          </option>
+                        ))}
                     </select>
+                    {formData.result &&
+                      !options["assessment_result"].some(
+                        (d) => d.name === formData.result,
+                      ) && (
+                        <div className="mt-1 text-sm text-red-600">
+                          ⚠️ This option is no longer available. Please select a
+                          new option before saving.
+                        </div>
+                      )}
                   </div>
-                </div>
-
-                {/* Save Test Button */}
-                <div className="mt-6 flex gap-3">
-                  <button
-                    type="button"
-                    onClick={saveTest}
-                    className="bg-black text-white px-4 py-2 rounded-md hover:bg-gray-800 transition-colors"
-                  >
-                    {editingTestId ? "Update Test" : "Save Test"}
-                  </button>
-                  {editingTestId && (
-                    <button
-                      type="button"
-                      onClick={cancelTestEdit}
-                      className="bg-gray-300 text-gray-700 px-4 py-2 rounded-md hover:bg-gray-400 transition-colors"
-                    >
-                      Cancel Edit
-                    </button>
-                  )}
-                </div>
-              </div>
-            )}
-
-            {/* Bloodwork Test Fields */}
-            {testFormData.test_type === "Bloodwork" && (
-              <div className="mt-6">
-                <h3 className="text-md font-medium text-gray-900 mb-4">
-                  Bloodwork Test Details
-                </h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                )}
+                {/* HIV Type - only show if result is positive */}
+                {formData.type === "HIV" && formData.result === "Positive" && (
                   <div>
                     <label
-                      htmlFor="bloodwork_test_date"
+                      htmlFor="hivType"
                       className="block text-sm font-medium text-gray-700 mb-2"
                     >
-                      Test Date
-                    </label>
-                    <DatePicker
-                      name="test_date"
-                      value={testFormData.test_date}
-                      onChange={handleTestChange}
-                      className="w-full px-3 py-1.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black"
-                      style={{
-                        lineHeight: "1.5",
-                        height: "auto",
-                      }}
-                    />
-                  </div>
-
-                  <div>
-                    <label
-                      htmlFor="bloodwork_type"
-                      className="block text-sm font-medium text-gray-700 mb-2"
-                    >
-                      Type
+                      HIV Type
                     </label>
                     <select
-                      id="bloodwork_type"
-                      name="bloodwork_type"
-                      value={testFormData.bloodwork_type}
-                      onChange={handleTestChange}
+                      id="data.hivType"
+                      name="data.hiv_type"
+                      value={formData.data?.hiv_type}
+                      onChange={handleChange}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black"
                     >
                       <option value="">Select Type</option>
-                      <option value="DBS">DBS</option>
-                      <option value="Serum">Serum</option>
-                      <option value="Cepheid">Cepheid</option>
+                      <option value="Type 1">Type 1</option>
+                      <option value="Type 2">Type 2</option>
                     </select>
                   </div>
+                )}
 
-                  {testFormData.bloodwork_type === "DBS" && (
+                {/* Bloodwork Fields */}
+                {formData.type === "Bloodwork" && (
+                  <>
                     <div>
                       <label
-                        htmlFor="bloodwork_circles"
+                        htmlFor="bloodwork_type"
                         className="block text-sm font-medium text-gray-700 mb-2"
                       >
-                        Circles
+                        Type
                       </label>
                       <select
-                        id="bloodwork_circles"
-                        name="bloodwork_circles"
-                        value={testFormData.bloodwork_circles}
-                        onChange={handleTestChange}
+                        id="data.bloodwork_type"
+                        name="data.bloodwork_type"
+                        value={formData.data?.bloodwork_type}
+                        onChange={handleChange}
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black"
                       >
-                        <option value="">Select Circles</option>
-                        <option value="1">1</option>
-                        <option value="2">2</option>
-                        <option value="3">3</option>
-                        <option value="4">4</option>
-                        <option value="5">5</option>
+                        <option value="">Select Type</option>
+                        <option value="DBS">DBS</option>
+                        <option value="Serum">Serum</option>
+                        <option value="Cepheid">Cepheid</option>
                       </select>
                     </div>
-                  )}
 
-                  <div>
-                    <label
-                      htmlFor="bloodwork_result"
-                      className="block text-sm font-medium text-gray-700 mb-2"
-                    >
-                      Results
-                    </label>
-                    <select
-                      id="bloodwork_result"
-                      name="bloodwork_result"
-                      value={testFormData.bloodwork_result}
-                      onChange={handleTestChange}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black"
-                    >
-                      {testFormData.bloodwork_type !== "Cepheid" ? (
-                        <>
-                          <option value="Submitted">Submitted</option>
-                        </>
-                      ) : (
-                        <>
-                          <option value="Error">Error</option>
-                        </>
-                      )}
-                      <option value="Pending">Pending</option>
-                      <option value="Positive">Positive</option>
-                      <option value="Negative">Negative</option>
-                    </select>
-                  </div>
+                    {formData.data?.bloodwork_type === "DBS" && (
+                      <div>
+                        <label
+                          htmlFor="bloodwork_circles"
+                          className="block text-sm font-medium text-gray-700 mb-2"
+                        >
+                          Circles
+                        </label>
+                        <select
+                          id="data.bloodwork_circles"
+                          name="data.bloodwork_circles"
+                          value={formData.data?.bloodwork_circles}
+                          onChange={handleChange}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black"
+                        >
+                          <option value="">Select Circles</option>
+                          <option value="1">1</option>
+                          <option value="2">2</option>
+                          <option value="3">3</option>
+                          <option value="4">4</option>
+                          <option value="5">5</option>
+                        </select>
+                      </div>
+                    )}
 
-                  <div>
-                    <label
-                      htmlFor="bloodwork_date_submitted"
-                      className="block text-sm font-medium text-gray-700 mb-2"
-                    >
-                      Date Submitted
-                    </label>
-                    <DatePicker
-                      name="bloodwork_date_submitted"
-                      value={testFormData.bloodwork_date_submitted}
-                      onChange={handleTestChange}
-                      className="w-full px-3 py-1.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black"
-                      style={{
-                        lineHeight: "1.5",
-                        height: "auto",
-                      }}
-                    />
-                  </div>
-
-                  <div>
-                    <label
-                      htmlFor="bloodwork_tester"
-                      className="block text-sm font-medium text-gray-700 mb-2"
-                    >
-                      Tester
-                    </label>
-                    <select
-                      id="bloodwork_tester"
-                      name="bloodwork_tester"
-                      value={testFormData.bloodwork_tester}
-                      onChange={handleTestChange}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black"
-                    >
-                      <option value="CM">CM</option>
-                      <option value="JY">JY</option>
-                    </select>
-                  </div>
-                </div>
-
-                {/* Save Test Button */}
-                <div className="mt-6 flex gap-3">
-                  <button
-                    type="button"
-                    onClick={saveTest}
-                    className="bg-black text-white px-4 py-2 rounded-md hover:bg-gray-800 transition-colors"
-                  >
-                    {editingTestId ? "Update Test" : "Save Test"}
-                  </button>
-                  {editingTestId && (
-                    <button
-                      type="button"
-                      onClick={cancelTestEdit}
-                      className="bg-gray-300 text-gray-700 px-4 py-2 rounded-md hover:bg-gray-400 transition-colors"
-                    >
-                      Cancel Edit
-                    </button>
-                  )}
-                </div>
-              </div>
-            )}
-
-            {/* HCV Test Fields */}
-            {testFormData.test_type === "HCV" && (
-              <div className="mt-6">
-                <h3 className="text-md font-medium text-gray-900 mb-4">
-                  HCV Test Details
-                </h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div>
-                    <label
-                      htmlFor="hcvTestDate"
-                      className="block text-sm font-medium text-gray-700 mb-2"
-                    >
-                      Test Date
-                    </label>
-                    <DatePicker
-                      name="test_date"
-                      value={testFormData.test_date}
-                      onChange={handleTestChange}
-                      className="w-full px-3 py-1.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black"
-                      style={{
-                        lineHeight: "1.5",
-                        height: "auto",
-                      }}
-                    />
-                  </div>
-
-                  <div>
-                    <label
-                      htmlFor="hcvResult"
-                      className="block text-sm font-medium text-gray-700 mb-2"
-                    >
-                      Test Result
-                    </label>
-                    <select
-                      id="hcvResult"
-                      name="hcv_result"
-                      value={testFormData.hcv_result}
-                      onChange={handleTestChange}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black"
-                    >
-                      <option value="">Select Result</option>
-                      <option value="negative">Negative</option>
-                      <option value="positive">Positive</option>
-                    </select>
-                  </div>
-
-                  <div>
-                    <label
-                      htmlFor="hcvTester"
-                      className="block text-sm font-medium text-gray-700 mb-2"
-                    >
-                      Tester
-                    </label>
-                    <select
-                      id="hcvTester"
-                      name="hcv_tester"
-                      value={testFormData.hcv_tester}
-                      onChange={handleTestChange}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black"
-                    >
-                      <option value="CM">CM</option>
-                      <option value="JY">JY</option>
-                    </select>
-                  </div>
-                </div>
-
-                {/* Save Test Button */}
-                <div className="mt-6 flex gap-3">
-                  <button
-                    type="button"
-                    onClick={saveTest}
-                    className="bg-black text-white px-4 py-2 rounded-md hover:bg-gray-800 transition-colors"
-                  >
-                    {editingTestId ? "Update Test" : "Save Test"}
-                  </button>
-                  {editingTestId && (
-                    <button
-                      type="button"
-                      onClick={cancelTestEdit}
-                      className="bg-gray-300 text-gray-700 px-4 py-2 rounded-md hover:bg-gray-400 transition-colors"
-                    >
-                      Cancel Edit
-                    </button>
-                  )}
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* Saved Tests */}
-          <div className="border-t pt-6">
-            <h3 className="text-lg font-medium text-gray-900 mb-4">
-              Saved Tests
-            </h3>
-
-            {tests.length === 0 ? (
-              <div className="text-center py-8 text-gray-500">
-                <p>No tests have been saved yet.</p>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {tests.map((test) => (
-                  <div
-                    key={test.id}
-                    className="border rounded-lg p-4 bg-gray-50"
-                  >
-                    <div className="flex justify-between items-start">
-                      <div className="flex-1">
-                        <div className="flex items-center flex-wrap">
-                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 mr-3">
-                            {test.test_type}
-                          </span>
-                          <span className="text-sm text-gray-500 mr-3">
-                            {test.test_date}
-                          </span>
-                          {test.updated_at && (
-                            <span className="text-xs text-gray-400 whitespace-nowrap">
-                              Saved:{" "}
-                              {new Date(test.updated_at).toLocaleString(
-                                "en-US",
-                                {
-                                  timeZone: "America/New_York",
-                                  hour12: true,
-                                  month: "short",
-                                  day: "numeric",
-                                  year: "numeric",
-                                  hour: "2-digit",
-                                  minute: "2-digit",
-                                },
-                              )}
-                            </span>
+                    <div>
+                      <div>
+                        <div className="flex items-center justify-between mb-2">
+                          <label
+                            htmlFor="result"
+                            className="block text-sm font-medium text-gray-700 mb-2"
+                          >
+                            Result
+                          </label>
+                          {userRole == "admin" && (
+                            <button
+                              type="button"
+                              onClick={() =>
+                                setShowManager("assessment_result")
+                              }
+                              className="text-blue-600 hover:text-blue-800 text-sm"
+                            >
+                              Manage
+                            </button>
                           )}
                         </div>
-                        {test.test_type === "HIV" && (
-                          <div className="mt-2 text-sm text-gray-700">
-                            <p>
-                              <strong>Result:</strong>{" "}
-                              {test.hiv_result || "Not specified"}
-                            </p>
-                            {test.hiv_result === "positive" &&
-                              test.hiv_type && (
-                                <p>
-                                  <strong>Type:</strong> {test.hiv_type}
-                                </p>
-                              )}
-                            <p>
-                              <strong>Tester:</strong>{" "}
-                              {test.hiv_tester || "Not specified"}
-                            </p>
-                          </div>
-                        )}
-                        {test.test_type === "HCV" && (
-                          <div className="mt-2 text-sm text-gray-700">
-                            <p>
-                              <strong>Result:</strong>{" "}
-                              {test.hcv_result || "Not specified"}
-                            </p>
-                            <p>
-                              <strong>Tester:</strong>{" "}
-                              {test.hcv_tester || "Not specified"}
-                            </p>
-                          </div>
-                        )}
-                        {test.test_type === "Bloodwork" && (
-                          <div className="mt-2 text-sm text-gray-700">
-                            <p>
-                              <strong>Type:</strong>{" "}
-                              {test.bloodwork_type || "Not specified"}
-                            </p>
-                            {test.bloodwork_circles && (
-                              <p>
-                                <strong>Circles:</strong>{" "}
-                                {test.bloodwork_circles}
-                              </p>
-                            )}
-                            <p>
-                              <strong>Result:</strong>{" "}
-                              {test.bloodwork_result || "Not specified"}
-                            </p>
-                            {test.bloodwork_date_submitted && (
-                              <p>
-                                <strong>Submitted:</strong>{" "}
-                                {test.bloodwork_date_submitted}
-                              </p>
-                            )}
-                            <p>
-                              <strong>Tester:</strong>{" "}
-                              {test.bloodwork_tester || "Not specified"}
-                            </p>
-                          </div>
-                        )}
-                      </div>
-                      <div className="flex gap-2">
-                        <button
-                          type="button"
-                          onClick={() => editTest(test)}
-                          className="text-blue-600 hover:text-blue-800 text-sm"
-                          title="Edit test"
+                        <select
+                          id="result"
+                          name="result"
+                          value={formData.result}
+                          onChange={handleChange}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black"
                         >
-                          Edit
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => handleDeleteTest(test.id)}
-                          className="text-red-600 hover:text-red-800 text-sm"
-                          title="Delete test"
-                        >
-                          Delete
-                        </button>
+                          <option value="">Select</option>
+                          {formData.result &&
+                            !options["assessment_result"].some(
+                              (d) => d.name === formData.result,
+                            ) && (
+                              <option
+                                value={formData.result}
+                                disabled
+                                className="text-red-600"
+                              >
+                                {formData.result} (No longer available)
+                              </option>
+                            )}
+
+                          {/* Most Frequently Used */}
+                          {options["assessment_result"]
+                            .filter((d) => d.is_frequent)
+                            .map((disposition) => (
+                              <option
+                                key={disposition.id}
+                                value={disposition.name}
+                              >
+                                {disposition.name}
+                              </option>
+                            ))}
+                          {/* Separator */}
+                          {options["assessment_result"].filter(
+                            (d) => !d.is_frequent,
+                          ).length > 0 && <option disabled>-------</option>}
+                          {/* All Others in Alphabetical Order */}
+                          {options["assessment_result"]
+                            .filter((d) => !d.is_frequent)
+                            .sort((a, b) => a.name.localeCompare(b.name))
+                            .map((disposition) => (
+                              <option
+                                key={disposition.id}
+                                value={disposition.name}
+                              >
+                                {disposition.name}
+                              </option>
+                            ))}
+                        </select>
+                        {formData.result &&
+                          !options["assessment_result"].some(
+                            (d) => d.name === formData.result,
+                          ) && (
+                            <div className="mt-1 text-sm text-red-600">
+                              ⚠️ This option is no longer available. Please
+                              select a new option before saving.
+                            </div>
+                          )}
                       </div>
                     </div>
+
+                    <div>
+                      <label
+                        htmlFor="bloodwork_date_submitted"
+                        className="block text-sm font-medium text-gray-700 mb-2"
+                      >
+                        Date Submitted
+                      </label>
+                      <DatePicker
+                        name="data.bloodwork_date_submitted"
+                        value={formData.data?.bloodwork_date_submitted}
+                        onChange={handleChange}
+                        className="w-full px-3 py-1.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black"
+                        style={{
+                          lineHeight: "1.5",
+                          height: "auto",
+                        }}
+                      />
+                    </div>
+                  </>
+                )}
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <label
+                      htmlFor="tester"
+                      className="block text-sm font-medium text-gray-700 mb-2"
+                    >
+                      Tester
+                    </label>
+                    {userRole == "admin" && (
+                      <button
+                        type="button"
+                        onClick={() => setShowManager("assessment_tester")}
+                        className="text-blue-600 hover:text-blue-800 text-sm"
+                      >
+                        Manage
+                      </button>
+                    )}
                   </div>
-                ))}
+                  <select
+                    id="tester"
+                    name="tester"
+                    value={formData.tester}
+                    onChange={handleChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black"
+                  >
+                    <option value="">Select</option>
+                    {/* Show legacy value if it doesn't exist in current options */}
+                    {formData.tester &&
+                      !options["assessment_tester"].some(
+                        (d) => d.name === formData.tester,
+                      ) && (
+                        <option
+                          value={formData.tester}
+                          disabled
+                          className="text-red-600"
+                        >
+                          {formData.tester} (No longer available)
+                        </option>
+                      )}
+                    {/* Most Frequently Used */}
+                    {options["assessment_tester"]
+                      .filter((d) => d.is_frequent)
+                      .map((disposition) => (
+                        <option key={disposition.id} value={disposition.name}>
+                          {disposition.name}
+                        </option>
+                      ))}
+                    {/* Separator */}
+                    {options["assessment_tester"].filter((d) => !d.is_frequent)
+                      .length > 0 && <option disabled>-------</option>}
+                    {/* All Others in Alphabetical Order */}
+                    {options["assessment_tester"]
+                      .filter((d) => !d.is_frequent)
+                      .sort((a, b) => a.name.localeCompare(b.name))
+                      .map((disposition) => (
+                        <option key={disposition.id} value={disposition.name}>
+                          {disposition.name}
+                        </option>
+                      ))}
+                  </select>
+                  {formData.tester &&
+                    !options["assessment_tester"].some(
+                      (d) => d.name === formData.tester,
+                    ) && (
+                      <div className="mt-1 text-sm text-red-600">
+                        ⚠️ This option is no longer available. Please select a
+                        new option before saving.
+                      </div>
+                    )}
+                </div>
               </div>
+            </div>
+          </div>
+
+          {/* Save Test Button */}
+          <div className="mt-6 mb-6 flex gap-3">
+            <button
+              type="button"
+              onClick={saveAssessment}
+              className="bg-black text-white px-4 py-2 rounded-md hover:bg-gray-800 transition-colors"
+            >
+              {editingId ? "Update Assessment" : "Save Assessment"}
+            </button>
+            {editingId && (
+              <button
+                type="button"
+                onClick={cancelEdit}
+                className="bg-gray-300 text-gray-700 px-4 py-2 rounded-md hover:bg-gray-400 transition-colors"
+              >
+                Cancel Edit
+              </button>
             )}
           </div>
+        </div>
+
+        {/* Saved Tests */}
+        <div className="border-t pt-6">
+          <h3 className="text-lg font-medium text-gray-900 mb-4">
+            Saved Tests
+          </h3>
+
+          {assessments.length === 0 ? (
+            <div className="text-center py-8 text-gray-500">
+              <p>No tests have been saved yet.</p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {assessments.map((a) => (
+                <div key={a.id} className="border rounded-lg p-4 bg-gray-50">
+                  <div className="flex justify-between items-start">
+                    <div className="flex-1">
+                      <div className="flex items-center flex-wrap">
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 mr-3">
+                          {a.type}
+                        </span>
+                        <span className="text-sm text-gray-500 mr-3">
+                          {a.date}
+                        </span>
+                        {a.updated_at && (
+                          <span className="text-xs text-gray-400 whitespace-nowrap">
+                            Saved:{" "}
+                            {new Date(a.updated_at).toLocaleString("en-US", {
+                              timeZone: "America/New_York",
+                              hour12: true,
+                              month: "short",
+                              day: "numeric",
+                              year: "numeric",
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            })}
+                          </span>
+                        )}
+                      </div>
+                      <div className="mt-2 text-sm text-gray-700">
+                        {a.type !== "Bloodwork" && (
+                          <>
+                            <p>
+                              <strong>Result:</strong>{" "}
+                              {a.result || "Not specified"}
+                            </p>
+                            {a.data?.hiv_type && (
+                              <p>
+                                <strong>Type:</strong> {a.data?.hiv_type}
+                              </p>
+                            )}
+                          </>
+                        )}
+                        {a.type === "Bloodwork" && (
+                          <>
+                            <p>
+                              <strong>Type:</strong>{" "}
+                              {a.data?.bloodwork_type || "Not specified"}
+                            </p>
+                            {a.data?.bloodwork_circles && (
+                              <p>
+                                <strong>Circles:</strong>{" "}
+                                {a.data?.bloodwork_circles}
+                              </p>
+                            )}
+                            <p>
+                              <strong>Result:</strong>{" "}
+                              {a.result || "Not specified"}
+                            </p>
+                            {a.data?.bloodwork_date_submitted && (
+                              <p>
+                                <strong>Submitted:</strong>{" "}
+                                {a.data?.bloodwork_date_submitted}
+                              </p>
+                            )}
+                          </>
+                        )}
+                        <p>
+                          <strong>Tester:</strong> {a.tester || "Not specified"}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex gap-2">
+                      <button
+                        type="button"
+                        onClick={() => handleEdit(a)}
+                        className="text-blue-600 hover:text-blue-800 text-sm"
+                        title="Edit Assessment"
+                      >
+                        Edit
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleDelete(a.id)}
+                        className="text-red-600 hover:text-red-800 text-sm"
+                        title="Delete Assessment"
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
     </div>

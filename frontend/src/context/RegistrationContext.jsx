@@ -15,6 +15,7 @@ export function RegistrationProvider({ children }) {
   // Patient
   const [registrationId, setRegistrationId] = useState(null);
   const [tests, setTests] = useState([]);
+  const [assessments, setAssessments] = useState([]);
   const [notes, setNotes] = useState([]);
   const [interactions, setInteractions] = useState([]);
   const [dispensing, setDispensing] = useState([]);
@@ -122,19 +123,20 @@ export function RegistrationProvider({ children }) {
     setLoading(false);
   };
 
-  const getClientTests = async (registrationId) => {
+  const getClientAssessments = async (registrationId) => {
     setLoading(true);
     setError("");
 
-    const result = await PatientServices.get_tests_by_patient(registrationId);
+    const result =
+      await PatientServices.get_assessments_by_patient(registrationId);
 
     if (result.success) {
-      setTests(result.data || []);
+      setAssessments(result.data || []);
     } else {
       if (result.status === 400 || result.status === 409) {
-        setError(result.message || "Error getting tests.");
+        setError(result.message || "Error getting assessmentss.");
       } else {
-        setError("Error getting tests. Please try again.");
+        setError("Error getting assessments. Please try again.");
       }
     }
     setLoading(false);
@@ -195,7 +197,7 @@ export function RegistrationProvider({ children }) {
   };
 
   const getClientAssociatedData = async (registrationId) => {
-    getClientTests(registrationId);
+    getClientAssessments(registrationId);
     getClientMedications(registrationId);
     getClientDispensing(registrationId);
     getClientNotes(registrationId);
@@ -210,7 +212,7 @@ export function RegistrationProvider({ children }) {
         interactions,
         dispensing,
         medications,
-        tests,
+        assessments,
         notes,
         activities,
         getClient,
@@ -218,7 +220,7 @@ export function RegistrationProvider({ children }) {
         getClientInteractions,
         getClientDispensing,
         getClientMedications,
-        getClientTests,
+        getClientAssessments,
         getClientNotes,
         getClientAssociatedData,
       }}
