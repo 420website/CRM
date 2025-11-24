@@ -1,6 +1,4 @@
 -- migrate:up
-
--- Create new consolidated tables
 CREATE TABLE reference_options (
     id SERIAL PRIMARY KEY,
     name VARCHAR(200) NOT NULL,

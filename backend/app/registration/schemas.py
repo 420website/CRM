@@ -136,36 +136,32 @@ class PatientRead(PatientBase):
         from_attributes = True
 
 
-# Test Models
-class TestBase(BaseModel):
-    test_type: Optional[str] = None
-    test_date: Optional[dt.date] = None
-    # HIV Testing
-    hiv_result: Optional[str] = None
-    hiv_type: Optional[str] = None
-    hiv_tester: Optional[str] = None
-    # HCV Testing
-    hcv_result: Optional[str] = None
-    hcv_tester: Optional[str] = None
-    # Bloodwork Testing
-    bloodwork_type: Optional[str] = None
-    bloodwork_circles: Optional[str] = None
-    bloodwork_result: Optional[str] = None
-    bloodwork_date_submitted: Optional[dt.date] = None
-    bloodwork_tester: Optional[str] = None
+class AssessmentBase(BaseModel):
+    data: Optional[dict] = None
 
 
-class TestCreate(TestBase):
-    pass
+class AssessmentCreate(AssessmentBase):
+    type: str
+    date: dt.date
+    result: str
+    tester: str
 
 
-class TestUpdate(TestBase):
+class AssessementUpdate(AssessmentBase):
     patient_id: Optional[int] = None
+    type: Optional[str] = None
+    date: Optional[dt.date] = None
+    result: Optional[str] = None
+    tester: Optional[str] = None
 
 
-class TestRead(TestBase):
+class AssessmentRead(AssessmentBase):
     id: int
     patient_id: int
+    type: str
+    date: dt.date
+    result: str
+    tester: str
     created_at: datetime
     updated_at: datetime
 

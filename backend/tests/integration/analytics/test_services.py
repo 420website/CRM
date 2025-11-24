@@ -7,21 +7,21 @@ from app.analytics.rag import RagService
 from app.database import database
 from app.registration.schemas import (
     ActivityCreate,
+    AssessmentCreate,
     DispensingCreate,
     InteractionCreate,
     MedicationCreate,
     NoteCreate,
     PatientCreate,
-    TestCreate,
 )
 from app.registration.services import (
     ActivityService,
+    AssessmentService,
     DispensingService,
     InteractionService,
     MedicationService,
     NoteService,
     PatientService,
-    TestService,
 )
 from datetime import date
 import datetime as dt
@@ -98,21 +98,16 @@ class TestRagService(IsolatedAsyncioTestCase):
         patients = await PatientService.get_patients()
         self.patient_id = patients[0].id
 
-        self.test_data = TestCreate(
-            test_type="HIV Screening",
-            test_date=date(2025, 10, 10),
-            hiv_result="Negative",
-            hiv_type="Rapid",
-            hiv_tester="Tester A",
-            hcv_result=None,
-            hcv_tester=None,
-            bloodwork_type="CBC",
-            bloodwork_circles="2",
-            bloodwork_result="Normal",
-            bloodwork_date_submitted=date(2025, 10, 10),
-            bloodwork_tester="Lab Tech B",
+        self.assessment_data = AssessmentCreate(
+            type="HIV",
+            date=date(2025, 10, 10),
+            result="Negative",
+            tester="Tester A",
+            data={"hiv_type": "Rapid"},
         )
-        await TestService.create_test(self.patient_id, self.test_data)
+        await AssessmentService.create_assessment(
+            self.patient_id, self.assessment_data
+        )
 
         # A valid note to use
         self.note_data = NoteCreate(
@@ -158,9 +153,10 @@ class TestRagService(IsolatedAsyncioTestCase):
         )
 
         self.activity_data = ActivityCreate(
-            description="Initial activity",
             date=date(2024, 1, 1),
             time=dt.time(9, 0),
+            name="Delivery",
+            description="Initial activity",
         )
         await ActivityService.create_activity(
             self.patient_id, self.activity_data

@@ -16,6 +16,9 @@ from app.registration.schemas import (
     ActivityCreate,
     ActivityRead,
     ActivityUpdate,
+    AssessementUpdate,
+    AssessmentCreate,
+    AssessmentRead,
     DispensingCreate,
     DispensingRead,
     DispensingUpdate,
@@ -35,18 +38,15 @@ from app.registration.schemas import (
     PatientRead,
     PatientStatus,
     PatientUpdate,
-    TestCreate,
-    TestRead,
-    TestUpdate,
 )
 from app.registration.services import (
     ActivityService,
+    AssessmentService,
     DispensingService,
     InteractionService,
     MedicationService,
     NoteService,
     PatientService,
-    TestService,
 )
 from app.dependencies import get_current_user
 
@@ -338,115 +338,142 @@ async def update_patient_status(
 
 
 ###############
-# Test
+# Assessements
 ###############
-@router.post("/{patient_id}/tests/")
-async def create_test(
+@router.post("/{patient_id}/assessment/")
+async def create_assessment(
     patient_id: int,
-    data: TestCreate,
+    data: AssessmentCreate,
     user: UserRead = Depends(get_current_user),
 ):
-    logger.info(f"Creating test for patient {patient_id}")
+    logger.info(f"Creating assessment for patient {patient_id}")
+    try:
+        # Ensure the patient_id in the URL matches the data
+        if not await AssessmentService.create_assessment(patient_id, data):
+            logger.error(
+                f"Failed to create assessment for patient {patient_id}."
+            )
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Assessment not created.",
+            )
 
-    # Ensure the patient_id in the URL matches the data
-    if not await TestService.create_test(patient_id, data):
-        logger.error(f"Failed to create test for patient {patient_id}.")
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Test not created.",
+        logger.info(
+            f"Successfully created assessment for patient {patient_id}"
         )
 
-    logger.info(f"Successfully created test for patient {patient_id}")
+        return {"message": "Assessment created successfully."}
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(
+            f"Unexpected error creating assessment. Error: {str(e)}",
+            exc_info=True,
+        )
+        # Fallback for unexpected errors
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Assessment not created: {str(e)}",
+        )
 
-    return {"message": "Test created successfully."}
 
-
-@router.get("/{patient_id}/tests/", response_model=List[TestRead])
-async def get_tests_by_patient(
+@router.get("/{patient_id}/assessments/", response_model=List[AssessmentRead])
+async def get_assessments_by_patient(
     patient_id: int,
     user: UserRead = Depends(get_current_user),
 ):
-    result = await TestService.get_tests_by_patient(patient_id)
+    result = await AssessmentService.get_assessment_by_patient(patient_id)
     return result
 
 
-@router.get("/{patient_id}/tests/{test_id}", response_model=TestRead)
-async def get_test_by_id(
+@router.get(
+    "/{patient_id}/assessment/{assessment_id}",
+    response_model=AssessmentRead,
+)
+async def get_assessment_by_id(
     patient_id: int,
-    test_id: int,
+    assessment_id: int,
     user: UserRead = Depends(get_current_user),
 ):
-    result = await TestService.get_test_by_id(test_id)
+    result = await AssessmentService.get_assessment_by_id(assessment_id)
 
     if not result or result.patient_id != patient_id:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Test not found.",
+            detail="Assessment not found.",
         )
     return result
 
 
-@router.delete("/{patient_id}/tests/{test_id}")
-async def delete_test_by_id(
+@router.delete("/{patient_id}/assessment/{assessment_id}")
+async def delete_assessment_by_id(
     patient_id: int,
-    test_id: int,
+    assessment_id: int,
     user: UserRead = Depends(get_current_user),
 ):
-    logger.info(f"Deleting test {test_id} for patient {patient_id}")
+    logger.info(
+        f"Deleting assessment {assessment_id} for patient {patient_id}"
+    )
 
     # Verify the test belongs to the patient before deleting
-    test = await TestService.get_test_by_id(test_id)
+    test = await AssessmentService.get_assessment_by_id(assessment_id)
     if not test or test.patient_id != patient_id:
-        logger.warning(f"Test {test_id} not found for patient {patient_id}")
+        logger.warning(
+            f"Assessment {assessment_id} not found for patient {patient_id}"
+        )
 
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Test not found.",
+            detail="Assessment not found.",
         )
 
-    if not await TestService.delete_test_by_id(test_id):
-        logger.error(f"Failed to delete test {test_id}")
+    if not await AssessmentService.delete_assessment_by_id(assessment_id):
+        logger.error(f"Failed to delete assessment {assessment_id}")
 
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Test not found.",
+            detail="Assessment not found.",
         )
 
-    logger.info(f"Test {test_id} deleted for patient {patient_id}")
+    logger.info(f"Assessment {assessment_id} deleted for patient {patient_id}")
 
-    return {"message": "Test deleted successfully."}
+    return {"message": "Assessment deleted successfully."}
 
 
-@router.patch("/{patient_id}/tests/{test_id}")
-async def update_test(
+@router.patch("/{patient_id}/assessment/{assessment_id}")
+async def update_assessment(
     patient_id: int,
-    test_id: int,
-    data: TestUpdate,
+    assessment_id: int,
+    data: AssessementUpdate,
     user: UserRead = Depends(get_current_user),
 ):
-    logger.info(f"Updating test {test_id} for patient {patient_id}")
+    logger.info(
+        f"Updating assessment {assessment_id} for patient {patient_id}"
+    )
 
     # Verify the test belongs to the patient before updating
-    test = await TestService.get_test_by_id(test_id)
+    test = await AssessmentService.get_assessment_by_id(assessment_id)
     if not test or test.patient_id != patient_id:
-        logger.warning(f"Test {test_id} not found for patient {patient_id}")
+        logger.warning(
+            f"Assessment {assessment_id} not found for patient {patient_id}"
+        )
 
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Test not found.",
+            detail="Assessment not found.",
         )
 
-    if not await TestService.update_test(test_id, data):
-        logger.error(f"Failed to update test {test_id}")
+    if not await AssessmentService.update_assessment(assessment_id, data):
+        logger.error(f"Failed to update assessment {assessment_id}")
 
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Test not found or could not be updated.",
+            detail="Assessment not found or could not be updated.",
         )
 
-    logger.info(f"Test {test_id} update for patient {patient_id}")
+    logger.info(f"Assessment {assessment_id} update for patient {patient_id}")
 
-    return {"message": "Test updated successfully."}
+    return {"message": "Assessment updated successfully."}
 
 
 ###############
