@@ -755,6 +755,13 @@ describe("PatientServices.patient dispensings", () => {
     outcome: "Ongoing",
   };
 
+  const medicationFormData2 = {
+    medication: "Tylenol",
+    start_date: new Date().toISOString().split("T")[0],
+    end_date: "2025-12-31",
+    outcome: "Ongoing",
+  };
+
   const dispensingFormData = {
     medication: "Amoxicillin",
     rx: "RX12345",
@@ -786,6 +793,11 @@ describe("PatientServices.patient dispensings", () => {
     await PatientServices.create_medication(
       createdPatientId,
       medicationFormData,
+    );
+
+    await PatientServices.create_medication(
+      createdPatientId,
+      medicationFormData2,
     );
   });
 
@@ -858,6 +870,7 @@ describe("PatientServices.patient dispensings", () => {
       createdPatientId,
       createdDispensingId,
       {
+        medication: "Tylenol",
         quantity: "30",
       },
     );

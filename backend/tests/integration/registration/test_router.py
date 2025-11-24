@@ -1903,7 +1903,7 @@ class TestPatientDispensingRouter(IsolatedAsyncioTestCase):
         )
 
         self.dispensing_update_data = DispensingUpdate(
-            quantity=60, lot="LOT999"
+            medication="Lisinopril", quantity=60, lot="LOT999"
         )
 
     async def asyncTearDown(self):
@@ -1984,6 +1984,32 @@ class TestPatientDispensingRouter(IsolatedAsyncioTestCase):
         )
         self.assertEqual(updated_dispensing.quantity, 60)
         self.assertEqual(updated_dispensing.lot, "LOT999")
+
+        # Cleanup
+        await PatientService.delete_patient_by_id(patient_id)
+
+    async def test_update_dispensing_nonexistant(self):
+        patient_id = await self.mock_create_patient("Jim")
+        await self.create_medication(patient_id)
+
+        dispensing_id = await self.mock_create_dispensing(patient_id)
+
+        # Verify update
+        self.dispensing_update_data.medication = "Unknown"
+
+        with self.assertRaises(HTTPException) as cm:
+            await update_dispensing(
+                patient_id,
+                dispensing_id,
+                self.dispensing_update_data,
+                self.user,
+            )
+
+        self.assertEqual(cm.exception.status_code, 400)
+        self.assertEqual(
+            cm.exception.detail,
+            "Medication none existant for client please create medication and retry.",
+        )
 
         # Cleanup
         await PatientService.delete_patient_by_id(patient_id)
