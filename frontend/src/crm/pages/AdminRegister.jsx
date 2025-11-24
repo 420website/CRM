@@ -361,7 +361,7 @@ const AdminRegister = () => {
           });
           resetForm();
         } else {
-          toast.error(result.message || "Invalid credentials.");
+          toast.error(photoRes.message || "Invalid credentials.");
         }
       } else {
         setSubmitStatus({
@@ -377,7 +377,7 @@ const AdminRegister = () => {
       if (result.status === 400 || result.status === 409) {
         toast.error(result.message || "Registration failed.");
       } else {
-        toast.error("Registration failed. Please try again.");
+        toast.error(result.message || "Registration failed. Please try again.");
       }
     }
     window.scrollTo({ top: 0, behavior: "smooth" });

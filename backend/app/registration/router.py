@@ -62,6 +62,9 @@ async def create_patient(
     data: PatientCreate,
     user: UserRead = Depends(get_current_user),
 ):
+    logger.info(
+        f"Creating patient - Name: {data.first_name} {data.last_name}, DOB: {data.dob}, Force: {data.force_create}"
+    )
     try:
         if not data.force_create:
             if await PatientService.get_patient_by_name_dob(
@@ -160,8 +163,11 @@ async def delete_patient_by_id(
     id: int,
     user: UserRead = Depends(get_current_user),
 ):
+    logger.info(f"Deleting patient - ID: {id}")
 
     if not await PatientService.delete_patient_by_id(id):
+        logger.info(f"Deleting patient Failed  ID {id}")
+
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Patient not found.",
@@ -185,8 +191,13 @@ async def delete_patient_by_name(
     last_name: str,
     user: UserRead = Depends(get_current_user),
 ):
+    logger.info(f"Deleting patient - Name: {first_name} {last_name}")
 
     if not await PatientService.delete_patient(first_name, last_name):
+        logger.info(
+            f"Deleting patient Failed - Name: {first_name} {last_name}"
+        )
+
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Patient not found.",
@@ -201,12 +212,17 @@ async def update_patient(
     data: PatientUpdate,
     user: UserRead = Depends(get_current_user),
 ):
+    logger.info(f"Updating patient - ID {id}")
 
     try:
         if not data.force_update:
             patient = await PatientService.get_patient_by_id(id)
 
             if not patient:
+                logger.error(
+                    "Failed to update patient - service returned None."
+                )
+
                 raise HTTPException(
                     status_code=status.HTTP_404_NOT_FOUND,
                     detail="Patient not found or could not be updated.",
@@ -232,6 +248,9 @@ async def update_patient(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Patient not found or could not be updated.",
             )
+
+        logger.info(f"Patient updated successfully ID: {id}")
+
         return {"message": "Patient updated successfully."}
 
     except UniqueViolationError:
@@ -259,8 +278,11 @@ async def update_patient_status(
     data: PatientStatus,
     user: UserRead = Depends(get_current_user),
 ):
+    logger.info(f"Updating patient status: ID: {id} Status: {status}")
+
     patient = await PatientService.get_patient_by_id(id)
     if not patient:
+        logger.error(f"Updating patient status failed: {id} patient not found")
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Patient not found."
         )
@@ -274,6 +296,8 @@ async def update_patient_status(
     if not await PatientService.update_patient_status(
         id, data.status, patient.finalized_at is None
     ):
+        logger.error(f"Updating patient status failed: {id}")
+
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Patient could not be updated.",
@@ -297,6 +321,7 @@ async def update_patient_status(
                 await email.attach("photos", photo_key)
 
             email.send()
+            logger.info("Finalized patient email sent.")
         except Exception as e:
             logger.error(
                 f"Failed to send finalization email for patient {id}: {e}",
@@ -306,6 +331,9 @@ async def update_patient_status(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail="Error sending registration email.",
             )
+
+    logger.info("Patient status updated successfully")
+
     return {"message": "Patient updated successfully."}
 
 
@@ -318,6 +346,8 @@ async def create_test(
     data: TestCreate,
     user: UserRead = Depends(get_current_user),
 ):
+    logger.info(f"Creating test for patient {patient_id}")
+
     # Ensure the patient_id in the URL matches the data
     if not await TestService.create_test(patient_id, data):
         logger.error(f"Failed to create test for patient {patient_id}.")
@@ -325,6 +355,8 @@ async def create_test(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Test not created.",
         )
+
+    logger.info(f"Successfully created test for patient {patient_id}")
 
     return {"message": "Test created successfully."}
 
@@ -360,19 +392,28 @@ async def delete_test_by_id(
     test_id: int,
     user: UserRead = Depends(get_current_user),
 ):
+    logger.info(f"Deleting test {test_id} for patient {patient_id}")
+
     # Verify the test belongs to the patient before deleting
     test = await TestService.get_test_by_id(test_id)
     if not test or test.patient_id != patient_id:
+        logger.warning(f"Test {test_id} not found for patient {patient_id}")
+
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Test not found.",
         )
 
     if not await TestService.delete_test_by_id(test_id):
+        logger.error(f"Failed to delete test {test_id}")
+
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Test not found.",
         )
+
+    logger.info(f"Test {test_id} deleted for patient {patient_id}")
+
     return {"message": "Test deleted successfully."}
 
 
@@ -383,19 +424,28 @@ async def update_test(
     data: TestUpdate,
     user: UserRead = Depends(get_current_user),
 ):
+    logger.info(f"Updating test {test_id} for patient {patient_id}")
+
     # Verify the test belongs to the patient before updating
     test = await TestService.get_test_by_id(test_id)
     if not test or test.patient_id != patient_id:
+        logger.warning(f"Test {test_id} not found for patient {patient_id}")
+
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Test not found.",
         )
 
     if not await TestService.update_test(test_id, data):
+        logger.error(f"Failed to update test {test_id}")
+
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Test not found or could not be updated.",
         )
+
+    logger.info(f"Test {test_id} update for patient {patient_id}")
+
     return {"message": "Test updated successfully."}
 
 
@@ -408,6 +458,7 @@ async def create_note(
     data: NoteCreate,
     user: UserRead = Depends(get_current_user),
 ):
+    logger.info(f"Creating note for patient {patient_id}")
 
     if not await NoteService.create_note(patient_id, data):
         logger.error(f"Failed to create note for patient {patient_id}.")
@@ -415,6 +466,9 @@ async def create_note(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Note not created.",
         )
+
+    logger.info(f"Successfully created note for patient {patient_id}")
+
     return {"message": "Note created successfully."}
 
 
@@ -448,18 +502,28 @@ async def delete_note_by_id(
     note_id: int,
     user: UserRead = Depends(get_current_user),
 ):
+    logger.info(f"Deleting note {note_id} for patient {patient_id}")
+
     # Verify the note belongs to the patient before deleting
     note = await NoteService.get_note_by_id(note_id)
     if not note or note.patient_id != patient_id:
+        logger.warning(f"Note {note_id} not found for patient {patient_id}")
+
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Note not found.",
         )
+
     if not await NoteService.delete_note_by_id(note_id):
+        logger.error(f"Failed to delete note {note_id}")
+
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Note not found.",
         )
+
+    logger.info(f"Note {note_id} deleted for patient {patient_id}")
+
     return {"message": "Note deleted successfully."}
 
 
@@ -470,19 +534,29 @@ async def update_note(
     data: NoteUpdate,
     user: UserRead = Depends(get_current_user),
 ):
+    logger.info(f"Updating note {note_id} for patient {patient_id}")
+
     # Verify the note belongs to the patient before updating
     note = await NoteService.get_note_by_id(note_id)
 
     if not note or note.patient_id != patient_id:
+        logger.warning(f"Note {note_id} not found for patient {patient_id}")
+
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Note not found.",
         )
+
     if not await NoteService.update_note(note_id, data):
+        logger.error(f"Failed to update note {note_id}")
+
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Note not found or could not be updated.",
         )
+
+    logger.info(f"Note {note_id} update for patient {patient_id}")
+
     return {"message": "Note updated successfully."}
 
 
@@ -495,12 +569,18 @@ async def create_activity(
     data: ActivityCreate,
     user: UserRead = Depends(get_current_user),
 ):
+    logger.info(f"Creating activity for patient {patient_id}")
+
     if not await ActivityService.create_activity(patient_id, data):
         logger.error(f"Failed to create activity for patient {patient_id}.")
+
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Activity not created.",
         )
+
+    logger.info(f"Successfully created activity for patient {patient_id}")
+
     return {"message": "Activity created successfully."}
 
 
@@ -544,18 +624,30 @@ async def delete_activity_by_id(
     activity_id: int,
     user: UserRead = Depends(get_current_user),
 ):
+    logger.info(f"Deleting activity {activity_id} for patient {patient_id}")
+
     # Verify the activity belongs to the patient before deleting
     activity = await ActivityService.get_activities_by_id(activity_id)
     if not activity or activity.patient_id != patient_id:
+        logger.warning(
+            f"Activity {activity_id} not found for patient {patient_id}"
+        )
+
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Activity not found.",
         )
+
     if not await ActivityService.delete_activity_by_id(activity_id):
+        logger.error(f"Failed to delete activity {activity_id}")
+
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Activity not found.",
         )
+
+    logger.info(f"Activity {activity_id} deleted for patient {patient_id}")
+
     return {"message": "Activity deleted successfully."}
 
 
@@ -566,19 +658,31 @@ async def update_activity(
     data: ActivityUpdate,
     user: UserRead = Depends(get_current_user),
 ):
+    logger.info(f"Updating activity {activity_id} for patient {patient_id}")
+
     # Verify the activity belongs to the patient before updating
     activity = await ActivityService.get_activities_by_id(activity_id)
 
     if not activity or activity.patient_id != patient_id:
+        logger.warning(
+            f"Activity {activity_id} not found for patient {patient_id}"
+        )
+
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Activity not found.",
         )
+
     if not await ActivityService.update_activity(activity_id, data):
+        logger.error(f"Failed to update activity {activity_id}")
+
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Activity not found or could not be updated.",
         )
+
+    logger.info(f"Activity {activity_id} update for patient {patient_id}")
+
     return {"message": "Activity updated successfully."}
 
 
@@ -591,20 +695,25 @@ async def create_dispensing(
     data: DispensingCreate,
     user: UserRead = Depends(get_current_user),
 ):
+    logger.info(f"Creating dispensing for patient {patient_id}")
+
     if not await DispensingService.check_medication(
         patient_id, data.medication
     ):
-        logger.error(f"Failed to create dispensing for patient {patient_id}.")
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Medication none existant for client please create medication and retry.",
         )
 
     if not await DispensingService.create_dispensing(patient_id, data):
+        logger.error(f"Failed to create dispensing for patient {patient_id}.")
+
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Dispensing not created.",
         )
+
+    logger.info(f"Successfully created dispensing for patient {patient_id}")
 
     return {"message": "Dispensing created successfully."}
 
@@ -641,18 +750,31 @@ async def delete_dispensing_by_id(
     dispensing_id: int,
     user: UserRead = Depends(get_current_user),
 ):
+    logger.info(
+        f"Deleting dispensing {dispensing_id} for patient {patient_id}"
+    )
+
     # Verify the dispensing belongs to the patient before deleting
     dispensing = await DispensingService.get_dispensing_by_id(dispensing_id)
     if not dispensing or dispensing.patient_id != patient_id:
+        logger.warning(
+            f"Dispensing {dispensing_id} not found for patient {patient_id}"
+        )
+
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Dispensing not found.",
         )
     if not await DispensingService.delete_dispensing_by_id(dispensing_id):
+        logger.error(f"Failed to delete dispensing {dispensing_id}")
+
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Dispensing not found.",
         )
+
+    logger.info(f"Dispensing {dispensing_id} deleted for patient {patient_id}")
+
     return {"message": "Dispensing deleted successfully."}
 
 
@@ -663,18 +785,32 @@ async def update_dispensing(
     data: DispensingUpdate,
     user: UserRead = Depends(get_current_user),
 ):
+    logger.info(
+        f"Updating dispensing {dispensing_id} for patient {patient_id}"
+    )
+
     # Verify the dispensing belongs to the patient before updating
     dispensing = await DispensingService.get_dispensing_by_id(dispensing_id)
     if not dispensing or dispensing.patient_id != patient_id:
+        logger.warning(
+            f"Dispensingt {dispensing_id} not found for patient {patient_id}"
+        )
+
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Dispensing not found.",
         )
+
     if not await DispensingService.update_dispensing(dispensing_id, data):
+        logger.error(f"Failed to update dispensing {dispensing_id}")
+
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Dispensing not found or could not be updated.",
         )
+
+    logger.info(f"Dispensing {dispensing_id} update for patient {patient_id}")
+
     return {"message": "Dispensing updated successfully."}
 
 
@@ -687,12 +823,17 @@ async def create_medication(
     data: MedicationCreate,
     user: UserRead = Depends(get_current_user),
 ):
+    logger.info(f"Creating medication for patient {patient_id}")
+
     if not await MedicationService.create_medication(patient_id, data):
         logger.error(f"Failed to create medication for patient {patient_id}.")
+
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Medication not created.",
         )
+
+    logger.info(f"Successfully created medication for patient {patient_id}")
 
     return {"message": "Medication created successfully."}
 
@@ -729,19 +870,36 @@ async def delete_medication_by_id(
     medication_id: int,
     user: UserRead = Depends(get_current_user),
 ):
+
+    logger.info(
+        f"Deleting medication {medication_id} for patient {patient_id}"
+    )
+
     # Verify the medication belongs to the patient before deleting
     medication = await MedicationService.get_medications_by_id(medication_id)
 
     if not medication or medication.patient_id != patient_id:
+        logger.warning(
+            f"Medication {medication_id} not found for patient {patient_id}"
+        )
+
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Medication not found.",
         )
+
     if not await MedicationService.delete_medication_by_id(medication_id):
+        logger.error(f"Failed to delete medication {medication_id}")
+
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Medication not found.",
         )
+
+    logger.info(
+        f"Medicationt {medication_id} deleted for patient {patient_id}"
+    )
+
     return {"message": "Medication deleted successfully."}
 
 
@@ -752,18 +910,32 @@ async def update_medication(
     data: MedicationUpdate,
     user: UserRead = Depends(get_current_user),
 ):
+    logger.info(
+        f"Updating medication {medication_id} for patient {patient_id}"
+    )
+
     # Verify the medication belongs to the patient before updating
     medication = await MedicationService.get_medications_by_id(medication_id)
     if not medication or medication.patient_id != patient_id:
+        logger.warning(
+            f"Medication {medication_id} not found for patient {patient_id}"
+        )
+
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Medication not found.",
         )
+
     if not await MedicationService.update_medication(medication_id, data):
+        logger.error(f"Failed to update medication {medication_id}")
+
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Medication not found or could not be updated.",
         )
+
+    logger.info(f"Medication {medication_id} update for patient {patient_id}")
+
     return {"message": "Medication updated successfully."}
 
 
@@ -776,12 +948,17 @@ async def create_interaction(
     data: InteractionCreate,
     user: UserRead = Depends(get_current_user),
 ):
+    logger.info(f"Creating interaction for patient {patient_id}")
+
     if not await InteractionService.create_interaction(patient_id, data):
         logger.error(f"Failed to create interaction for patient {patient_id}.")
+
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Interaction not created.",
         )
+
+    logger.info(f"Successfully created interaction for patient {patient_id}")
 
     return {"message": "Interaction created successfully."}
 
@@ -821,20 +998,36 @@ async def delete_interaction_by_id(
     interaction_id: int,
     user: UserRead = Depends(get_current_user),
 ):
+    logger.info(
+        f"Deleting interaction {interaction_id} for patient {patient_id}"
+    )
+
     # Verify the interaction belongs to the patient before deleting
     interaction = await InteractionService.get_interactions_by_id(
         interaction_id
     )
     if not interaction or interaction.patient_id != patient_id:
+        logger.warning(
+            f"Interaction {interaction_id} not found for patient {patient_id}"
+        )
+
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Interaction not found.",
         )
+
     if not await InteractionService.delete_interaction_by_id(interaction_id):
+        logger.error(f"Failed to delete interaction {interaction_id}")
+
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Interaction not found.",
         )
+
+    logger.info(
+        f"Interaction {interaction_id} deleted for patient {patient_id}"
+    )
+
     return {"message": "Interaction deleted successfully."}
 
 
@@ -845,18 +1038,34 @@ async def update_interaction(
     data: InteractionUpdate,
     user: UserRead = Depends(get_current_user),
 ):
+    logger.info(
+        f"Updating interaction {interaction_id} for patient {patient_id}"
+    )
+
     # Verify the interaction belongs to the patient before updating
     interaction = await InteractionService.get_interactions_by_id(
         interaction_id
     )
     if not interaction or interaction.patient_id != patient_id:
+        logger.warning(
+            f"Interaction {interaction_id} not found for patient {patient_id}"
+        )
+
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Interaction not found.",
         )
+
     if not await InteractionService.update_interaction(interaction_id, data):
+        logger.error(f"Failed to update interaction {interaction_id}")
+
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Interaction not found or could not be updated.",
         )
+
+    logger.info(
+        f"Interaction {interaction_id} update for patient {patient_id}"
+    )
+
     return {"message": "Interaction updated successfully."}

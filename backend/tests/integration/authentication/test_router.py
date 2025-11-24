@@ -914,7 +914,7 @@ class TestAuthRouter(unittest.IsolatedAsyncioTestCase):
         self.assertIsNotNone(results)
 
         response = Response()
-        result = await logout(response, request, user)
+        result = await logout(response, request)
         self.assertEqual(result["message"], "Successfully logged out.")
 
         cookie_header = response.headers.get("set-cookie")

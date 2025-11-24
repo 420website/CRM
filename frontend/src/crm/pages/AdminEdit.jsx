@@ -189,7 +189,7 @@ const AdminEdit = () => {
       if (result.status === 400 || result.status === 409) {
         toast.error(result.message || "Invalid credentials.");
       } else {
-        toast.error("Login failed. Please try again.");
+        toast.error(result.message || "Failed to Fetch Registration.");
       }
     }
 
@@ -402,6 +402,8 @@ const AdminEdit = () => {
           photoData.file,
         );
         if (photoRes.success) {
+          setPhotoData({ name: photoData.name });
+          setPhotoChanged(false);
           toast.success("Changes saved successfully");
         } else {
           toast.error(result.message || "Error updating photo.");

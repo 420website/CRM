@@ -465,6 +465,15 @@ class TokenService:
             )
 
     @staticmethod
+    async def delete_refresh_token_by_value(token: str):
+        query = """
+        DELETE FROM refresh_tokens
+        WHERE token_hash = $1;
+        """
+        async with database.get_transaction() as conn:
+            await conn.execute(query, SecurityService.hash_token(token))
+
+    @staticmethod
     async def delete_expired_refresh_tokens(user_id: int):
         query = """
         DELETE FROM refresh_tokens

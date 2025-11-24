@@ -50,9 +50,9 @@ services:
       - secret-reload
     depends_on:
       - postgres
-    mem_reservation: 220m
-    mem_limit: 290m
-    memswap_limit: 290m
+    mem_reservation: 384m
+    mem_limit: 768m
+    memswap_limit: 768m
 
   postgres:
     image: postgres:16
@@ -75,9 +75,9 @@ services:
       - cert-reload
       - secret-reload
     entrypoint: ["/postgres-start.sh"]
-    mem_reservation: 120m
-    mem_limit: 150m
-    memswap_limit: 150m
+    mem_reservation: 512m
+    mem_limit: 1g
+    memswap_limit: 1g
 
   dbmate:
     image: amacneil/dbmate
@@ -114,9 +114,9 @@ services:
       - cert-reload
       - secret-reload
     command: sh -c 'redis-server --requirepass $$REDIS_PASSWORD'
-    mem_reservation: 50m
-    mem_limit: 75m
-    memswap_limit: 75m
+    mem_reservation: 128m
+    mem_limit: 256m
+    memswap_limit: 256m
 
   minio:
     image: minio/minio:latest
@@ -139,9 +139,9 @@ services:
       - cert-reload
       - secret-reload
     command: server /data --console-address ":9001" --address ":9000"
-    mem_reservation: 165m
-    mem_limit: 220m
-    memswap_limit: 220m
+    mem_reservation: 512m
+    mem_limit: 1g
+    memswap_limit: 1g
 
   minio_init:
     image: minio/mc:latest
@@ -182,9 +182,9 @@ services:
       - prod
       - cert-reload
       - secret-reload
-    mem_reservation: 210m
-    mem_limit: 280m
-    memswap_limit: 280m
+    mem_reservation: 768m
+    mem_limit: 1.5g
+    memswap_limit: 1.5g
 
   backend:
     build: ./backend
@@ -211,9 +211,9 @@ services:
       - secret-reload
     entrypoint: ["/scripts/create_admin.sh"]
     command: 'python -m app.main'
-    mem_reservation: 400m
-    mem_limit: 500m
-    memswap_limit: 500m
+    mem_reservation: 1g
+    mem_limit: 2g
+    memswap_limit: 2g
 
   frontend-builder:
     build: ./frontend
@@ -301,9 +301,9 @@ services:
       - frontend-net
     depends_on:
       - backend
-    mem_reservation: 50m
-    mem_limit: 80m
-    memswap_limit: 80m
+    mem_reservation: 128m
+    mem_limit: 256m
+    memswap_limit: 256m
 
 volumes:
   frontend_dist:
