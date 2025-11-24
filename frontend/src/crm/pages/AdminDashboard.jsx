@@ -8,17 +8,23 @@ import ConfirmModal from "../components/ConfirmModal";
 import DatePicker from "../ui/DatePicker";
 import { useDashboard } from "../../context/DashboardContext";
 import { useReferences } from "../../context/ReferenceContext";
+import MonthPicker from "../ui/MonthPicker";
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
   const { logout, userRole } = useAuth();
   const {
+    clearAllFilters,
     setActiveTab,
     activeTab,
     dashboardStats,
     clearRegistrationFilters,
     clearActivityFilters,
     searchDate,
+    searchEndDate,
+    handleMonthSearch,
+    handleEndDateSearch,
+    searchMonth,
     searchName,
     searchDisposition,
     searchReferralSite,
@@ -447,6 +453,42 @@ const AdminDashboard = () => {
                 />
               </div>
 
+              {searchEndDate && (
+                <div className="min-w-0">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    End Date
+                  </label>
+                  <DatePicker
+                    name="reg_date"
+                    value={searchEndDate}
+                    onChange={(e) => handleEndDateSearch(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    style={{
+                      height: "40px",
+                      minHeight: "40px",
+                      maxHeight: "40px",
+                    }}
+                  />
+                </div>
+              )}
+
+              <div className="min-w-0">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Search by Month
+                </label>
+                <MonthPicker
+                  name="reg_date"
+                  value={searchMonth}
+                  onChange={(e) => handleMonthSearch(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  style={{
+                    height: "40px",
+                    minHeight: "40px",
+                    maxHeight: "40px",
+                  }}
+                />
+              </div>
+
               <div className="min-w-0">
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Disposition
@@ -550,12 +592,14 @@ const AdminDashboard = () => {
             {/* Clear All Filters Button */}
             {activeTab !== "activities" &&
               (searchName ||
+                searchEndDate ||
+                searchMonth ||
                 searchDate ||
                 searchDisposition ||
                 searchReferralSite) && (
                 <div className="mt-4 flex justify-center">
                   <button
-                    onClick={clearRegistrationFilters}
+                    onClick={clearAllFilters}
                     className="bg-gray-500 text-white py-2 px-4 rounded-md hover:bg-gray-600 transition-colors text-sm"
                   >
                     Clear All Filters
@@ -566,13 +610,15 @@ const AdminDashboard = () => {
             {/* Clear All Filters Button */}
             {activeTab === "activities" &&
               (searchDate ||
+                searchEndDate ||
+                searchMonth ||
                 searchDisposition ||
                 searchReferralSite ||
                 activitySearchTerm ||
                 activityStatusFilter !== "all") && (
                 <div className="mt-4 flex justify-center">
                   <button
-                    onClick={clearActivityFilters}
+                    onClick={clearAllFilters}
                     className="bg-gray-500 text-white py-2 px-4 rounded-md hover:bg-gray-600 transition-colors text-sm"
                   >
                     Clear All Filters

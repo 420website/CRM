@@ -23,6 +23,8 @@ export function DashboardProvider({ children }) {
   const [searchReferralSite, setSearchReferralSite] = useState("");
   const [activitySearchTerm, setActivitySearchTerm] = useState("");
   const [activityStatusFilter, setActivityStatusFilter] = useState("all");
+  const [searchMonth, setSearchMonth] = useState("");
+  const [searchEndDate, setSearchEndDate] = useState(null);
 
   // Data state - now paginated
   const [pendingData, setPendingData] = useState([]);
@@ -37,7 +39,25 @@ export function DashboardProvider({ children }) {
     total_activities: 0,
   });
 
+  const resetActiveTab = () => {
+    setActiveTab(userRole !== "limited" ? "activities" : "submitted");
+  };
+
   // -- Filters
+  const clearAllFilters = () => {
+    setSearchName("");
+    setSearchDate("");
+    setSearchEndDate(null);
+    setSearchMonth("");
+    setSearchDisposition("");
+    setSearchReferralSite("");
+    setActivitySearchTerm("");
+    setActivityStatusFilter("all");
+    setFilteredActivity(activityData);
+    setFilteredPending(pendingData);
+    setFilteredSubmitted(finalizedData);
+  };
+
   const clearActivityFilters = () => {
     setSearchDate("");
     setSearchDisposition("");
@@ -63,6 +83,17 @@ export function DashboardProvider({ children }) {
 
   const handleDateSearch = (value) => {
     setSearchDate(value);
+    if (!searchEndDate) {
+      setSearchEndDate(value);
+    }
+  };
+
+  const handleEndDateSearch = (value) => {
+    setSearchEndDate(value);
+  };
+
+  const handleMonthSearch = (value) => {
+    setSearchMonth(value);
   };
 
   const handleDispositionSearch = (value) => {
@@ -86,6 +117,8 @@ export function DashboardProvider({ children }) {
 
     const hasActiveFilters =
       searchName ||
+      searchEndDate ||
+      searchMonth ||
       searchDate ||
       searchDisposition ||
       searchReferralSite ||
@@ -103,8 +136,18 @@ export function DashboardProvider({ children }) {
         });
       }
 
-      if (searchDate) {
+      if (searchDate && (!searchEndDate || searchDate === searchEndDate)) {
         data = data.filter((item) => item.date === searchDate);
+      }
+
+      if (searchDate && searchEndDate) {
+        data = data.filter(
+          (item) => searchDate <= item.date && item.date <= searchEndDate,
+        );
+      }
+
+      if (searchMonth) {
+        data = data.filter((item) => item.date.startsWith(searchMonth));
       }
 
       if (searchDisposition) {
@@ -150,7 +193,12 @@ export function DashboardProvider({ children }) {
     let data = pendingData;
 
     const hasActiveFilters =
-      searchName || searchDate || searchDisposition || searchReferralSite;
+      searchName ||
+      searchDate ||
+      searchEndDate ||
+      searchMonth ||
+      searchDisposition ||
+      searchReferralSite;
 
     if (hasActiveFilters) {
       if (searchName) {
@@ -160,12 +208,27 @@ export function DashboardProvider({ children }) {
             .includes(searchName.toLowerCase()),
         );
       }
-      if (searchDate) {
+
+      if (searchDate && (!searchEndDate || searchDate === searchEndDate)) {
         data = data.filter(
           (item) =>
             new Date(item.created_at).toLocaleDateString("en-CA") ===
             searchDate,
         );
+      }
+
+      if (searchDate && searchEndDate) {
+        data = data.filter((item) => {
+          const date = new Date(item.created_at).toLocaleDateString("en-CA");
+          return searchDate <= date && date <= searchEndDate;
+        });
+      }
+
+      if (searchMonth) {
+        data = data.filter((item) => {
+          const date = new Date(item.created_at).toLocaleDateString("en-CA");
+          return date.startsWith(searchMonth);
+        });
       }
 
       if (searchDisposition) {
@@ -190,7 +253,12 @@ export function DashboardProvider({ children }) {
     let data = finalizedData;
 
     const hasActiveFilters =
-      searchName || searchDate || searchDisposition || searchReferralSite;
+      searchName ||
+      searchDate ||
+      searchEndDate ||
+      searchMonth ||
+      searchDisposition ||
+      searchReferralSite;
 
     if (hasActiveFilters) {
       if (searchName) {
@@ -200,13 +268,29 @@ export function DashboardProvider({ children }) {
             .includes(searchName.toLowerCase()),
         );
       }
-      if (searchDate) {
+
+      if (searchDate && (!searchEndDate || searchDate === searchEndDate)) {
         data = data.filter(
           (item) =>
             new Date(item.created_at).toLocaleDateString("en-CA") ===
             searchDate,
         );
       }
+
+      if (searchDate && searchEndDate) {
+        data = data.filter((item) => {
+          const date = new Date(item.created_at).toLocaleDateString("en-CA");
+          return searchDate <= date && date <= searchEndDate;
+        });
+      }
+
+      if (searchMonth) {
+        data = data.filter((item) => {
+          const date = new Date(item.created_at).toLocaleDateString("en-CA");
+          return date.startsWith(searchMonth);
+        });
+      }
+
       if (searchDisposition) {
         data = data.filter(
           (item) =>
@@ -242,6 +326,8 @@ export function DashboardProvider({ children }) {
   }, [
     searchName,
     searchDate,
+    searchEndDate,
+    searchMonth,
     searchDisposition,
     searchReferralSite,
     activitySearchTerm,
@@ -466,6 +552,8 @@ export function DashboardProvider({ children }) {
         searchName,
         searchReferralSite,
         searchDate,
+        searchEndDate,
+        searchMonth,
         searchDisposition,
         activitySearchTerm,
         activityStatusFilter,
@@ -486,6 +574,10 @@ export function DashboardProvider({ children }) {
         setLastItem,
         updateActivity,
         deleteActivity,
+        resetActiveTab,
+        clearAllFilters,
+        handleEndDateSearch,
+        handleMonthSearch,
       }}
     >
       {children}
