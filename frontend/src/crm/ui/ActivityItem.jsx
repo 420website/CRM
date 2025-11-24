@@ -436,6 +436,13 @@ function EditActivityItem({ index, item, activityData, setIsEditing }) {
     }));
   };
 
+  const clearDescription = () => {
+    setActivityForm((prev) => ({
+      ...prev,
+      description: "",
+    }));
+  };
+
   const handleActivityChange = (e) => {
     const { name, value } = e.target;
     setActivityForm((prev) => ({
@@ -499,7 +506,7 @@ function EditActivityItem({ index, item, activityData, setIsEditing }) {
           <div>
             <label
               htmlFor="activityDescription"
-              className="block text-sm font-medium text-gray-700 mb-2"
+              className="block text-sm font-medium text-gray-700 mb-1"
             >
               Date *
             </label>
@@ -515,7 +522,7 @@ function EditActivityItem({ index, item, activityData, setIsEditing }) {
           <div>
             <label
               htmlFor="activityTime"
-              className="block text-sm font-medium text-gray-700 mb-2"
+              className="block text-sm font-medium text-gray-700 mt-1 mb-1 "
             >
               Time
             </label>
@@ -532,7 +539,7 @@ function EditActivityItem({ index, item, activityData, setIsEditing }) {
           </div>
 
           <div>
-            <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center justify-between mt-1 mb-1">
               <label
                 htmlFor="selectedTemplate"
                 className="block text-sm font-medium text-gray-700"
@@ -546,7 +553,7 @@ function EditActivityItem({ index, item, activityData, setIsEditing }) {
               onChange={(e) => handleTemplateChange(e.target.value)}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black"
             >
-              <option value="Select">Select</option>
+              <option value="General Activity">General Activity</option>
               {templates["activity"].map((template) => (
                 <option key={template.id} value={template.name}>
                   {template.name}
@@ -556,12 +563,21 @@ function EditActivityItem({ index, item, activityData, setIsEditing }) {
           </div>
 
           <div>
-            <label
-              htmlFor="activityDescription"
-              className="block text-sm font-medium text-gray-700 mb-2"
-            >
-              Description
-            </label>
+            <div className="flex items-center justify-between mt-1 mb-1">
+              <label
+                htmlFor="activityDescription"
+                className="block text-sm font-medium text-gray-700"
+              >
+                Description
+              </label>
+              <button
+                type="button"
+                onClick={clearDescription}
+                className="text-blue-600 hover:text-blue-800 text-sm"
+              >
+                Clear
+              </button>
+            </div>
             <textarea
               id="activityDescription"
               name="description"
