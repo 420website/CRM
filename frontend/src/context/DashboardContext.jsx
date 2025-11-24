@@ -82,8 +82,10 @@ export function DashboardProvider({ children }) {
   };
 
   const handleDateSearch = (value) => {
-    setSearchDate(value);
-    if (!searchEndDate) {
+    if (value) {
+      setSearchDate(value);
+    } else {
+      setSearchDate(value);
       setSearchEndDate(value);
     }
   };
@@ -131,7 +133,7 @@ export function DashboardProvider({ children }) {
 
         data = data.filter((item) => {
           const haystack =
-            `${item.first_name ?? ""} ${item.last_name ?? ""} ${item.description ?? ""}`.toLowerCase();
+            `${item.first_name ?? ""} ${item.last_name ?? ""} ${item.description ?? ""}i ${item.name}`.toLowerCase();
           return terms.every((term) => haystack.includes(term));
         });
       }

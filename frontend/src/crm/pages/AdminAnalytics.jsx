@@ -227,7 +227,7 @@ const AdminAnalytics = () => {
     if (!inputMessage.trim() || isLoading || isTyping) return;
 
     // Ensure we stay at the top of the page
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    // window.scrollTo({ top: 0, behavior: "smooth" });
 
     promptClaude(inputMessage.trim());
     setInputMessage("");
