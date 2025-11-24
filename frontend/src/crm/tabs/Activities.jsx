@@ -44,6 +44,14 @@ export default function Activities({ setActiveTab, currentRegistrationId }) {
       return false;
     }
 
+    if (
+      activityForm.name !== "General Activity" &&
+      !templates["activity"].some((d) => d.name === activityForm.name)
+    ) {
+      toast.error("Please select a valid template");
+      return false;
+    }
+
     if (!activityForm.description.trim() || activityForm.description === "") {
       toast.error("Please add description");
       return false;
@@ -174,7 +182,9 @@ export default function Activities({ setActiveTab, currentRegistrationId }) {
     setEditingActivityId(activity.id);
 
     // Scroll to top of activity form
-    document.querySelector("#tabs")?.scrollIntoView({ behavior: "smooth" });
+    document
+      .querySelector("#activities")
+      ?.scrollIntoView({ behavior: "smooth" });
   };
 
   const clearActivityForm = () => {
@@ -196,7 +206,7 @@ export default function Activities({ setActiveTab, currentRegistrationId }) {
   };
 
   return (
-    <div>
+    <div id="activities" className="scroll-mt-[20px]">
       <div className="tab-content">
         <div className="space-y-6">
           {showManager === "activity" && <TemplateManager type={showManager} />}
@@ -318,13 +328,36 @@ export default function Activities({ setActiveTab, currentRegistrationId }) {
                   onChange={(e) => handleTemplateChange(e.target.value)}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black"
                 >
-                  <option value="Select">Select</option>
+                  <option value="General Activity">General Activity</option>
+                  {activityForm.name &&
+                    !templates["activity"].some(
+                      (d) => d.name === activityForm.name,
+                    ) &&
+                    activityForm.name !== "General Activity" && (
+                      <option
+                        value={activityForm.name}
+                        disabled
+                        className="text-red-600"
+                      >
+                        {activityForm.name} (No longer available)
+                      </option>
+                    )}
                   {templates["activity"].map((template) => (
                     <option key={template.id} value={template.name}>
                       {template.name}
                     </option>
                   ))}
                 </select>
+                {activityForm.name &&
+                  !templates["activity"].some(
+                    (d) => d.name === activityForm.name,
+                  ) &&
+                  activityForm.name !== "General Activity" && (
+                    <div className="mt-1 text-sm text-red-600">
+                      ⚠️ This option is no longer available. Please select a new
+                      option before saving.
+                    </div>
+                  )}
               </div>
 
               <div className="md:col-span-2">

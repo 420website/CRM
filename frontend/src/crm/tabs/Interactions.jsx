@@ -200,7 +200,9 @@ export default function Interactions({ setActiveTab, currentRegistrationId }) {
     setEditingInteractionId(interaction.id);
 
     // Scroll to top of interaction form
-    document.querySelector("#tabs")?.scrollIntoView({ behavior: "smooth" });
+    document
+      .querySelector("#interactions")
+      ?.scrollIntoView({ behavior: "smooth" });
   };
 
   const clearInteractionForm = () => {
@@ -290,7 +292,7 @@ export default function Interactions({ setActiveTab, currentRegistrationId }) {
   }, [interactionsFilter, interactionsSearch]);
 
   return (
-    <div>
+    <div id="interactions" className="scroll-mt-[20px]">
       <div className="space-y-6">
         {showManager === "interaction" && <OptionManager type={showManager} />}
 

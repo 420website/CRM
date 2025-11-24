@@ -40,6 +40,14 @@ export default function Notes({ setActiveTab, currentRegistrationId }) {
       return false;
     }
 
+    if (
+      notesData.template_type !== "General Note" &&
+      !templates["note"].some((d) => d.name === notesData.template_type)
+    ) {
+      toast.error("Please select a valid template");
+      return false;
+    }
+
     if (!notesData.note_text.trim() || notesData.note_text === "") {
       toast.error("Please add note text");
       return false;
@@ -169,7 +177,7 @@ export default function Notes({ setActiveTab, currentRegistrationId }) {
     // setSelectedNotesTemplate(note.template_type || "Select");
 
     // Scroll to top of notes form
-    document.querySelector("#tabs")?.scrollIntoView({ behavior: "smooth" });
+    document.querySelector("#notes")?.scrollIntoView({ behavior: "smooth" });
   };
 
   const clearNotesForm = () => {
@@ -197,14 +205,12 @@ export default function Notes({ setActiveTab, currentRegistrationId }) {
   // Auto-scroll to top when notes page changes
   useEffect(() => {
     if (notesPage > 1) {
-      document
-        .querySelector("#notes-section")
-        ?.scrollIntoView({ behavior: "smooth" });
+      document.querySelector("#notes")?.scrollIntoView({ behavior: "smooth" });
     }
   }, [notesPage]);
 
   return (
-    <div>
+    <div id="notes" className="scroll-mt-[20px]">
       <div className="space-y-6">
         {showManager === "note" && <TemplateManager type={showManager} />}
 
@@ -306,13 +312,37 @@ export default function Notes({ setActiveTab, currentRegistrationId }) {
                 onChange={(e) => handleNotesTemplateChange(e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black"
               >
-                <option value="Select">Select</option>
+                <option value="General Note">General Note</option>
+                {/* Show legacy value if it doesn't exist in current options */}
+                {notesData.template_type &&
+                  !templates["note"].some(
+                    (d) => d.name === notesData.template_type,
+                  ) &&
+                  notesData.template_type !== "General Note" && (
+                    <option
+                      value={notesData.template_type}
+                      disabled
+                      className="text-red-600"
+                    >
+                      {notesData.template_type} (No longer available)
+                    </option>
+                  )}
                 {templates["note"].map((template) => (
                   <option key={template.id} value={template.name}>
                     {template.name}
                   </option>
                 ))}
               </select>
+              {notesData.template_type &&
+                !templates["note"].some(
+                  (d) => d.name === notesData.template_type,
+                ) &&
+                notesData.template_type !== "General Note" && (
+                  <div className="mt-1 text-sm text-red-600">
+                    ⚠️ This option is no longer available. Please select a new
+                    option before saving.
+                  </div>
+                )}
             </div>
 
             <div className="md:col-span-2">

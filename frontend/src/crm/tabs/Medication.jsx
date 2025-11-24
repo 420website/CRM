@@ -171,7 +171,9 @@ export default function Medications({ setActiveTab, currentRegistrationId }) {
     });
     setEditingMedicationId(medication.id);
     // Scroll to top of medication form
-    document.querySelector("#tabs")?.scrollIntoView({ behavior: "smooth" });
+    document
+      .querySelector("#medications")
+      ?.scrollIntoView({ behavior: "smooth" });
   };
   const clearMedicationForm = () => {
     setMedicationData({
@@ -184,7 +186,7 @@ export default function Medications({ setActiveTab, currentRegistrationId }) {
   };
 
   return (
-    <div>
+    <div id="medications" className="scroll-mt-[20px]">
       <div className="space-y-6">
         {(showManager === "medication" ||
           showManager === "medication_outcome") && (
