@@ -27,6 +27,7 @@ const AdminEdit = () => {
   const navigate = useNavigate();
   const { registrationId } = useParams();
   const { userRole, userPermissions } = useAuth();
+  const { setLastItem } = useDashboard();
   const { getClientAssociatedData } = useRegistration();
   const { getDashboardRegistrations, getDashboardActivities } = useDashboard();
   const hasRun = useRef(false);
@@ -584,7 +585,10 @@ const AdminEdit = () => {
           <div className="flex gap-2">
             <button
               type="button"
-              onClick={() => navigate("/admin-menu")}
+              onClick={() => {
+                setLastItem(null);
+                navigate("/admin-menu");
+              }}
               className="inline-flex items-center gap-1 px-3 py-1 bg-black text-white rounded-md hover:bg-gray-800 transition-colors text-xs font-medium"
             >
               <svg
