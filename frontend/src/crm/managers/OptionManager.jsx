@@ -194,7 +194,7 @@ export default function OptionManager({ type }) {
                 value={newOptionName}
                 onChange={(e) => setNewOptionName(e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black"
-                placeholder="Enter name (e.g. OW)"
+                placeholder="Enter name"
               />
             </div>
             <div className="flex items-center gap-2">
