@@ -272,7 +272,7 @@ class DispensingCreate(DispensingBase):
 
 class DispensingUpdate(DispensingBase):
     patient_id: Optional[int] = None
-    medication: Optional[str] = None
+    medication: str
 
 
 class DispensingRead(DispensingBase):

@@ -816,6 +816,14 @@ async def update_dispensing(
         f"Updating dispensing {dispensing_id} for patient {patient_id}"
     )
 
+    if not await DispensingService.check_medication(
+        patient_id, data.medication
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Medication none existant for client please create medication and retry.",
+        )
+
     # Verify the dispensing belongs to the patient before updating
     dispensing = await DispensingService.get_dispensing_by_id(dispensing_id)
     if not dispensing or dispensing.patient_id != patient_id:
