@@ -1,7 +1,11 @@
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { useDashboard } from "../../context/DashboardContext";
 
 export default function RegistrationSaved({ submitStatus, setSubmitStatus }) {
+  const { setLastItem } = useDashboard();
+  setLastItem(null);
+
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "smooth" });
   }, [submitStatus]);

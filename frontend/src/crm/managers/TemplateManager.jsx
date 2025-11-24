@@ -1,54 +1,52 @@
 import { useState } from "react";
-import { GeneralServices } from "../../services/generalService";
-import { useRegistration } from "../../context/RegistrationContext";
+import { ReferenceServices } from "../../services/referenceService";
+import { useReferences } from "../../context/ReferenceContext";
 
-export default function ClinicalTemplateManager({}) {
-  const { setShowClinicalManager, getClinicalTemplates, clinicalTemplates } =
-    useRegistration();
-
+export default function TemplateManager({ type }) {
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
-  const [newClinicalTemplateName, setNewClinicalTemplateName] = useState("");
-  const [newClinicalTemplateContent, setNewClinicalTemplateContent] =
-    useState("");
-  const [editingClinicalTemplateId, setEditingClinicalTemplateId] =
-    useState(null);
+  const [newTemplateName, setNewTemplateName] = useState("");
+  const [newTemplateContent, setNewTemplateContent] = useState("");
+  const [editingTemplateId, setEditingTemplateId] = useState(null);
+  const { templates, setShowManager, getTemplate } = useReferences();
 
-  const createClinicalTemplate = async () => {
+  const createTemplate = async () => {
     setLoading(true);
     setError("");
     setMessage("");
 
-    if (!newClinicalTemplateName.trim()) {
+    if (!newTemplateName.trim()) {
       alert("Please enter a template name");
       return;
     }
 
     const data = {
-      name: newClinicalTemplateName.trim(),
-      content: newClinicalTemplateContent.trim(),
+      name: newTemplateName.trim(),
+      content: newTemplateContent.trim(),
       is_default: false,
     };
 
-    const result = await GeneralServices.create_clinical_template(data);
+    const result = await ReferenceServices.create_template(type, data);
 
     if (result.success) {
-      setNewClinicalTemplateName("");
-      setNewClinicalTemplateContent("");
-      getClinicalTemplates();
-      setMessage("Created clinical-template successfully.");
+      setNewTemplateName("");
+      setNewTemplateContent("");
+      getTemplate(type);
+      setMessage(`Created template successfully.`);
     } else {
       if (result.status === 400 || result.status === 409) {
-        setError(result.message || "Error creating clinical template.");
+        setError(result.message || `Error creating template.`);
       } else {
-        setError("Error creating clinical template. Please try again.");
+        setError(
+          result.message || `Error creating template. Please try again.`,
+        );
       }
     }
     setLoading(false);
   };
 
-  const updateClinicalTemplate = async (templateId, name, content) => {
+  const updateTemplate = async (templateId, name, content) => {
     setLoading(true);
     setError("");
     setMessage("");
@@ -58,26 +56,29 @@ export default function ClinicalTemplateManager({}) {
       content: content.trim(),
     };
 
-    const result = await GeneralServices.update_clinical_template(
+    const result = await ReferenceServices.update_template(
+      type,
       templateId,
       data,
     );
 
     if (result.success) {
-      setEditingClinicalTemplateId(null);
-      getClinicalTemplates();
-      // setMessage("Created clinical-template successfully.");
+      setEditingTemplateId(null);
+      getTemplate(type);
     } else {
       if (result.status === 400 || result.status === 409) {
-        setError(result.message || "Error updating clinical template.");
+        setError(result.message || `Error updating ${type} template.`);
       } else {
-        setError("Error updating clinical template. Please try again.");
+        setError(
+          result.message ||
+            `Error updating ${type} template. Please try again.`,
+        );
       }
     }
     setLoading(false);
   };
 
-  const deleteClinicalTemplate = async (templateId, templateName) => {
+  const deleteTemplate = async (templateId, templateName) => {
     if (
       !window.confirm(
         `Are you sure you want to delete the "${templateName}" template?`,
@@ -87,34 +88,33 @@ export default function ClinicalTemplateManager({}) {
     }
     setLoading(true);
     setError("");
-    setMessage("");
 
-    const result =
-      await GeneralServices.delete_clinical_template_by_id(templateId);
+    const result = await ReferenceServices.delete_template_by_id(
+      type,
+      templateId,
+    );
 
     if (result.success) {
-      setEditingClinicalTemplateId(null);
-      getClinicalTemplates();
-
-      // Reset selection if deleted template was selected
-      if (selectedTemplate === templateName) {
-        setSelectedTemplate("Select");
-      }
+      setEditingTemplateId(null);
+      getTemplate(type);
     } else {
       if (result.status === 400 || result.status === 409) {
-        setError(result.message || "Error delete clinical template.");
+        setError(result.message || `Error deleting ${type} template.`);
       } else {
-        setError("Error delete clinical template. Please try again.");
+        setError(
+          result.message ||
+            `Error deleting ${type} template. Please try again.`,
+        );
       }
     }
     setLoading(false);
   };
 
-  const closeClinicalTemplateManager = () => {
-    setShowClinicalManager(false);
-    setNewClinicalTemplateName("");
-    setNewClinicalTemplateContent("");
-    setEditingClinicalTemplateId(null);
+  const closeTemplateManager = () => {
+    setShowManager("");
+    setNewTemplateName("");
+    setNewTemplateContent("");
+    setEditingTemplateId(null);
   };
 
   return (
@@ -123,11 +123,11 @@ export default function ClinicalTemplateManager({}) {
         <div className="mt-3">
           <div className="flex justify-between items-center mb-4">
             <h3 className="text-lg font-medium text-gray-900">
-              Manage Clinical Summary Templates
+              Manage Templates
             </h3>
             <button
               type="button"
-              onClick={closeClinicalTemplateManager}
+              onClick={closeTemplateManager}
               className="text-gray-400 hover:text-gray-600"
             >
               <svg
@@ -168,9 +168,9 @@ export default function ClinicalTemplateManager({}) {
                 </label>
                 <input
                   type="text"
-                  value={newClinicalTemplateName}
-                  onChange={(e) => setNewClinicalTemplateName(e.target.value)}
-                  placeholder="Enter template name (e.g., Inconclusive, Follow-up)"
+                  value={newTemplateName}
+                  onChange={(e) => setNewTemplateName(e.target.value)}
+                  placeholder="Enter template name (e.g., Follow-up, Referral)"
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black"
                 />
               </div>
@@ -179,20 +179,18 @@ export default function ClinicalTemplateManager({}) {
                   Template Content
                 </label>
                 <textarea
-                  value={newClinicalTemplateContent}
-                  onChange={(e) =>
-                    setNewClinicalTemplateContent(e.target.value)
-                  }
-                  placeholder="Enter default content for this template"
-                  rows="4"
+                  value={newTemplateContent}
+                  onChange={(e) => setNewTemplateContent(e.target.value)}
+                  placeholder="Enter default content for this template (optional)"
+                  rows="3"
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black"
                 />
               </div>
               <div>
                 <button
                   type="button"
-                  onClick={createClinicalTemplate}
-                  disabled={!newClinicalTemplateName.trim()}
+                  onClick={createTemplate}
+                  disabled={!newTemplateName.trim()}
                   className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 disabled:bg-gray-400 transition-colors"
                 >
                   Add Template
@@ -207,17 +205,17 @@ export default function ClinicalTemplateManager({}) {
               Existing Templates
             </h4>
             <div className="space-y-3">
-              {clinicalTemplates.length === 0 ? (
+              {templates[type].length === 0 ? (
                 <div className="text-center py-8 text-gray-500">
                   <p>Loading templates...</p>
                 </div>
               ) : (
-                clinicalTemplates.map((template) => (
+                templates[type].map((template) => (
                   <div
                     key={template.id}
                     className="border border-gray-200 rounded-lg p-4 bg-white"
                   >
-                    {editingClinicalTemplateId === template.id ? (
+                    {editingTemplateId === template.id ? (
                       <div className="space-y-3">
                         <div>
                           <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -226,7 +224,7 @@ export default function ClinicalTemplateManager({}) {
                           <input
                             type="text"
                             defaultValue={template.name}
-                            id={`edit-clinical-name-${template.id}`}
+                            id={`edit-name-${template.id}`}
                             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black"
                           />
                         </div>
@@ -236,8 +234,8 @@ export default function ClinicalTemplateManager({}) {
                           </label>
                           <textarea
                             defaultValue={template.content}
-                            id={`edit-clinical-content-${template.id}`}
-                            rows="4"
+                            id={`edit-content-${template.id}`}
+                            rows="3"
                             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black"
                           />
                         </div>
@@ -246,16 +244,12 @@ export default function ClinicalTemplateManager({}) {
                             type="button"
                             onClick={() => {
                               const name = document.getElementById(
-                                `edit-clinical-name-${template.id}`,
+                                `edit-name-${template.id}`,
                               ).value;
                               const content = document.getElementById(
-                                `edit-clinical-content-${template.id}`,
+                                `edit-content-${template.id}`,
                               ).value;
-                              updateClinicalTemplate(
-                                template.id,
-                                name,
-                                content,
-                              );
+                              updateTemplate(template.id, name, content);
                             }}
                             className="bg-blue-600 text-white px-3 py-1 rounded-md hover:bg-blue-700 text-sm"
                           >
@@ -263,7 +257,7 @@ export default function ClinicalTemplateManager({}) {
                           </button>
                           <button
                             type="button"
-                            onClick={() => setEditingClinicalTemplateId(null)}
+                            onClick={() => setEditingTemplateId(null)}
                             className="bg-gray-300 text-gray-700 px-3 py-1 rounded-md hover:bg-gray-400 text-sm"
                           >
                             Cancel
@@ -283,9 +277,7 @@ export default function ClinicalTemplateManager({}) {
                           <div className="flex justify-end gap-2">
                             <button
                               type="button"
-                              onClick={() =>
-                                setEditingClinicalTemplateId(template.id)
-                              }
+                              onClick={() => setEditingTemplateId(template.id)}
                               className="text-blue-600 hover:text-blue-800 text-sm"
                             >
                               Edit
@@ -293,10 +285,7 @@ export default function ClinicalTemplateManager({}) {
                             <button
                               type="button"
                               onClick={() =>
-                                deleteClinicalTemplate(
-                                  template.id,
-                                  template.name,
-                                )
+                                deleteTemplate(template.id, template.name)
                               }
                               className="text-red-600 hover:text-red-800 text-sm"
                             >
@@ -329,7 +318,7 @@ export default function ClinicalTemplateManager({}) {
           <div className="mt-6 flex justify-end">
             <button
               type="button"
-              onClick={closeClinicalTemplateManager}
+              onClick={closeTemplateManager}
               className="bg-gray-300 text-gray-700 px-4 py-2 rounded-md hover:bg-gray-400 transition-colors"
             >
               Close

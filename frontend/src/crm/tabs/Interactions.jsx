@@ -5,19 +5,15 @@ import { useRegistration } from "../../context/RegistrationContext";
 import DatePicker from "../ui/DatePicker";
 import toast from "react-hot-toast";
 import { useAuth } from "../../context/AuthContext";
-import InteractionsManager from "../managers/InteractionsManager";
 import { normalizeFormData } from "../../utils/formatData";
+import { useReferences } from "../../context/ReferenceContext";
+import OptionManager from "../managers/OptionManager";
 
 export default function Interactions({ setActiveTab, currentRegistrationId }) {
   const { userRole } = useAuth();
-  const {
-    interactions,
-    getInteractions,
-    setShowInteractionManager,
-    genericInteractions,
-    getGenericInteractions,
-    showInteractionManager,
-  } = useRegistration();
+  const { interactions, getClientInteractions } = useRegistration();
+  const { setShowManager, showManager, options } = useReferences();
+
   const [loading, setLoading] = useState(false);
   const [interactionsFilter, setInteractionsFilter] = useState("all");
   const [interactionsSearch, setInteractionsSearch] = useState("");
@@ -99,7 +95,7 @@ export default function Interactions({ setActiveTab, currentRegistrationId }) {
     );
 
     if (result.success) {
-      getInteractions(currentRegistrationId);
+      getClientInteractions(currentRegistrationId);
       clearInteractionForm();
       toast.success("Interaction saved successfully");
     } else {
@@ -141,7 +137,7 @@ export default function Interactions({ setActiveTab, currentRegistrationId }) {
     );
 
     if (result.success) {
-      getInteractions(currentRegistrationId);
+      getClientInteractions(currentRegistrationId);
       clearInteractionForm();
       toast.success("Interaction updated successfully");
     } else {
@@ -164,7 +160,7 @@ export default function Interactions({ setActiveTab, currentRegistrationId }) {
     );
 
     if (result.success) {
-      getInteractions(currentRegistrationId);
+      getClientInteractions(currentRegistrationId);
       toast.success("Interaction deleted successfully");
     } else {
       if (result.status === 400 || result.status === 409) {
@@ -204,7 +200,9 @@ export default function Interactions({ setActiveTab, currentRegistrationId }) {
     setEditingInteractionId(interaction.id);
 
     // Scroll to top of interaction form
-    document.querySelector("#tabs")?.scrollIntoView({ behavior: "smooth" });
+    document
+      .querySelector("#interactions")
+      ?.scrollIntoView({ behavior: "smooth" });
   };
 
   const clearInteractionForm = () => {
@@ -294,9 +292,9 @@ export default function Interactions({ setActiveTab, currentRegistrationId }) {
   }, [interactionsFilter, interactionsSearch]);
 
   return (
-    <div>
+    <div id="interactions" className="scroll-mt-[20px]">
       <div className="space-y-6">
-        {showInteractionManager && <InteractionsManager />}
+        {showManager === "interaction" && <OptionManager type={showManager} />}
 
         {/* Registration ID Check */}
         {!currentRegistrationId && (
@@ -385,7 +383,7 @@ export default function Interactions({ setActiveTab, currentRegistrationId }) {
                 {userRole == "admin" && (
                   <button
                     type="button"
-                    onClick={() => setShowInteractionManager(true)}
+                    onClick={() => setShowManager("interaction")}
                     className="text-blue-600 hover:text-blue-800 text-sm"
                   >
                     Manage Descriptions
@@ -401,7 +399,7 @@ export default function Interactions({ setActiveTab, currentRegistrationId }) {
               >
                 <option value="">Select</option>
                 {/* Most Frequently Used */}
-                {genericInteractions
+                {options["interaction"]
                   .filter((i) => i.is_frequent)
                   .map((i) => (
                     <option key={i.id} value={i.name}>
@@ -409,10 +407,10 @@ export default function Interactions({ setActiveTab, currentRegistrationId }) {
                     </option>
                   ))}
                 {/* Separator */}
-                {genericInteractions.filter((i) => !i.is_frequent).length >
+                {options["interaction"].filter((i) => !i.is_frequent).length >
                   0 && <option disabled>-------</option>}
                 {/* All Others in Alphabetical Order */}
-                {genericInteractions
+                {options["interaction"]
                   .filter((i) => !i.is_frequent)
                   .sort((a, b) => a.name.localeCompare(b.name))
                   .map((i) => (

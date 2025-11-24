@@ -37,7 +37,7 @@ async def register_admin_user(
             "admin",
             [
                 "client",
-                "tests",
+                "assessments",
                 "medication",
                 "dispensing",
                 "notes",

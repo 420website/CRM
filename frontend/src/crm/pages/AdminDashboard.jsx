@@ -1,68 +1,82 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { PatientServices } from "../../services/patientServices";
 import PaginationControls from "../ui/PaginationControls";
 import { RegistrationItems } from "../ui/RegistrationItem";
 import { ActivityItems } from "../ui/ActivityItem";
 import { useAuth } from "../../context/AuthContext";
 import ConfirmModal from "../components/ConfirmModal";
-import { useRegistration } from "../../context/RegistrationContext";
-import toast from "react-hot-toast";
 import DatePicker from "../ui/DatePicker";
+import { useDashboard } from "../../context/DashboardContext";
+import { useReferences } from "../../context/ReferenceContext";
+import MonthPicker from "../ui/MonthPicker";
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
   const { logout, userRole } = useAuth();
   const {
-    referralSites,
-    dispositions,
-    pendingData,
-    finalizedData,
-    activityData,
-    getRegistrations,
+    clearAllFilters,
+    setActiveTab,
+    activeTab,
+    dashboardStats,
+    clearRegistrationFilters,
+    clearActivityFilters,
+    searchDate,
+    searchEndDate,
+    handleMonthSearch,
+    handleEndDateSearch,
+    searchMonth,
+    searchName,
+    searchDisposition,
+    searchReferralSite,
+    activityStatusFilter,
+    activitySearchTerm,
+    handleDateSearch,
+    handleNameSearch,
+    handleDispositionSearch,
+    handleReferralSiteSearch,
+    handleActivityTermSearch,
+    handleActivityStatusSearch,
     getDashboardActivities,
-  } = useRegistration();
+    getDashboardRegistrations,
+    deleteRegistration,
+    saveRegistration,
+    revertToPending,
+    finalizeRegistration,
+    filteredActivity,
+    filteredSubmitted,
+    filteredPending,
+    deleteActivity,
+  } = useDashboard();
+  const { options } = useReferences();
 
   // Core state
-  const [activeTab, setActiveTab] = useState(
-    userRole !== "limited" ? "activities" : "submitted",
-  );
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalRecords, setTotalRecords] = useState(0);
 
-  // Search and filter state
-  const [searchName, setSearchName] = useState("");
-  const [searchDate, setSearchDate] = useState("");
-  const [searchDisposition, setSearchDisposition] = useState("");
-  const [searchReferralSite, setSearchReferralSite] = useState("");
-  const [activitySearchTerm, setActivitySearchTerm] = useState("");
-  const [activityStatusFilter, setActivityStatusFilter] = useState("all");
-
-  // Action states
-  const [finalizingId, setFinalizingId] = useState(null);
-  const [deletingId, setDeletingId] = useState(null);
-  const [revertingId, setRevertingId] = useState(null);
-
-  // Confirmation
+  // Actions
   const [deleteRegistrationId, setDeleteRegistrationId] = useState(null);
+  const [deleteActivityId, setDeleteActivityId] = useState(null);
   const [finalizeRegistrationId, setFinalizeRegistrationId] = useState(null);
   const [revertRegistrationId, setRevertRegistrationId] = useState(null);
   const [saveRegistrationId, setSaveRegistrationId] = useState(null);
-
   const [showConfirm, setShowConfirm] = useState("");
 
-  // Data state - now paginated
-  const [currentData, setCurrentData] = useState([]);
-  const [dashboardStats, setDashboardStats] = useState({
-    pending_registrations: 0,
-    submitted_registrations: 0,
-    total_activities: 0,
-  });
+  let currentData =
+    activeTab === "activities"
+      ? filteredActivity
+      : activeTab === "pending"
+        ? filteredPending
+        : filteredSubmitted;
+
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
 
   const handleLogout = async () => {
     try {
@@ -72,33 +86,30 @@ const AdminDashboard = () => {
     }
   };
 
-  const setDisplayed = () => {
-    if (activeTab === "activities") {
-      setCurrentData(activityData);
-    } else if (activeTab === "pending") {
-      setCurrentData(pendingData);
-    } else {
-      setCurrentData(finalizedData);
-    }
+  const handleDelete = async (id) => {
+    setDeleteRegistrationId(id);
+    setShowConfirm("delete");
   };
 
-  useEffect(() => {
-    window.scrollTo(0, 0);
-  }, []);
+  const handleDeleteActivity = async (patient_id, activity_id) => {
+    setDeleteActivityId([patient_id, activity_id]);
+    setShowConfirm("deleteActivity");
+  };
 
-  useEffect(() => {
-    setDashboardStats({
-      pending_registrations: pendingData.length,
-      submitted_registrations: finalizedData.length,
-      total_activities: activityData.length,
-    });
-    setDisplayed();
-  }, [activityData, pendingData, finalizedData]);
+  const handleFinalize = async (id) => {
+    setFinalizeRegistrationId(id);
+    setShowConfirm("finalize");
+  };
 
-  useEffect(() => {
-    setCurrentPage(1);
-    setDisplayed();
-  }, [activeTab]);
+  const handleSave = async (id) => {
+    setSaveRegistrationId(id);
+    setShowConfirm("save");
+  };
+
+  const handleRevertToPending = async (id) => {
+    setRevertRegistrationId(id);
+    setShowConfirm("revert");
+  };
 
   // Handle search changes with debouncing
   useEffect(() => {
@@ -124,270 +135,16 @@ const AdminDashboard = () => {
   };
 
   const handle_refresh = async () => {
-    getDashboardActivities();
-    getRegistrations();
-  };
+    setIsRefreshing(true);
 
-  // Optimized search handlers
-  const handleNameSearch = (value) => {
-    setSearchName(value);
-  };
+    // Run data fetches and minimum delay in parallel
+    await Promise.all([
+      getDashboardActivities(),
+      getDashboardRegistrations(),
+      new Promise((resolve) => setTimeout(resolve, 500)), // 500ms minimum
+    ]);
 
-  const handleDateSearch = (value) => {
-    setSearchDate(value);
-  };
-
-  const handleDispositionSearch = (value) => {
-    setSearchDisposition(value);
-  };
-
-  const handleReferralSiteSearch = (value) => {
-    setSearchReferralSite(value);
-  };
-
-  const clearAllFilters = () => {
-    setSearchName("");
-    setSearchDate("");
-    setSearchDisposition("");
-    setSearchReferralSite("");
-    setActivitySearchTerm("");
-    setActivityStatusFilter("all");
-  };
-
-  const deleteRegistration = async () => {
-    const result =
-      await PatientServices.delete_patient_by_id(deleteRegistrationId);
-
-    if (result.success) {
-      getDashboardActivities();
-      getRegistrations();
-      toast.success("Registration deleted successfully");
-    } else {
-      if (result.status === 400 || result.status === 409) {
-        toast.error(result.message || "Error deleting patient.");
-      } else {
-        toast.error("Error deleting patient. Please try again.");
-      }
-    }
-  };
-
-  const handleDelete = async (id) => {
-    setDeleteRegistrationId(id);
-    setShowConfirm("delete");
-  };
-
-  const finalizeRegistration = async () => {
-    setError(null);
-
-    const result = await PatientServices.update_patient_status(
-      finalizeRegistrationId,
-      {
-        status: "finalized",
-      },
-    );
-
-    if (result.success) {
-      getDashboardActivities();
-      getRegistrations();
-      toast.success("Registration finalized successfully");
-    } else {
-      if (result.status === 400 || result.status === 409) {
-        toast.error(result.message || "Error updating patient status.");
-      } else {
-        toast.error("Error updating patient status. Please try again.");
-      }
-    }
-  };
-
-  const handleFinalize = async (id) => {
-    setFinalizeRegistrationId(id);
-    setShowConfirm("finalize");
-  };
-
-  const saveRegistration = async () => {
-    setError(null);
-
-    const result = await PatientServices.update_patient_status(
-      saveRegistrationId,
-      {
-        status: "saved",
-      },
-    );
-
-    if (result.success) {
-      getDashboardActivities();
-      getRegistrations();
-      toast.success("Registration saved successfully");
-    } else {
-      if (result.status === 400 || result.status === 409) {
-        toast.error(result.message || "Error updating patient status.");
-      } else {
-        toast.error("Error updating patient status. Please try again.");
-      }
-    }
-  };
-
-  const handleSave = async (id) => {
-    setSaveRegistrationId(id);
-    setShowConfirm("save");
-  };
-
-  const revertToPending = async () => {
-    setError(null);
-
-    const result = await PatientServices.update_patient_status(
-      revertRegistrationId,
-      {
-        status: "pending",
-      },
-    );
-
-    if (result.success) {
-      getDashboardActivities();
-      getRegistrations();
-      toast.success("Registration reverted to pending");
-    } else {
-      if (result.status === 400 || result.status === 409) {
-        toast.error(result.message || "Error updating patient status.");
-      } else {
-        toast.error("Error updating patient status. Please try again.");
-      }
-    }
-  };
-
-  const handleRevertToPending = async (id) => {
-    setRevertRegistrationId(id);
-    setShowConfirm("revert");
-  };
-
-  // Compute filtered data based on active tab + filters
-  const getFilteredData = () => {
-    let data = [];
-
-    if (activeTab === "activities") {
-      data = activityData;
-      if (activitySearchTerm) {
-        const terms = activitySearchTerm.toLowerCase().trim().split(/\s+/);
-
-        data = data.filter((item) => {
-          const haystack =
-            `${item.first_name ?? ""} ${item.last_name ?? ""} ${item.description ?? ""}`.toLowerCase();
-          return terms.every((term) => haystack.includes(term));
-        });
-      }
-
-      if (searchDate) {
-        data = data.filter((item) => item.date === searchDate);
-      }
-
-      if (searchDisposition) {
-        data = data.filter(
-          (item) =>
-            (item.disposition || "").toLowerCase() ===
-            searchDisposition.toLowerCase(),
-        );
-      }
-
-      if (searchReferralSite) {
-        data = data.filter(
-          (item) =>
-            (item.referral_site || "").toLowerCase() ===
-            searchReferralSite.toLowerCase(),
-        );
-      }
-
-      if (activityStatusFilter === "completed") {
-        data = data.filter((item) => item.completed === true);
-      } else if (
-        activityStatusFilter === "late" ||
-        activityStatusFilter === "upcoming"
-      ) {
-        data = data.filter((item) => {
-          if (item.completed) return false;
-
-          const itemDateTime = new Date(`${item.date}T${item.time}`);
-          const now = new Date();
-
-          const computedStatus = itemDateTime > now ? "upcoming" : "late";
-          return (
-            computedStatus.toLowerCase() === activityStatusFilter.toLowerCase()
-          );
-        });
-      }
-    } else if (activeTab === "pending") {
-      data = pendingData;
-
-      if (searchName) {
-        data = data.filter((item) =>
-          `${item.first_name} ${item.last_name}`
-            .toLowerCase()
-            .includes(searchName.toLowerCase()),
-        );
-      }
-      if (searchDate) {
-        data = data.filter(
-          (item) =>
-            new Date(item.created_at).toLocaleDateString("en-CA") ===
-            searchDate,
-        );
-      }
-
-      if (searchDisposition) {
-        data = data.filter(
-          (item) =>
-            (item.disposition || "").toLowerCase() ===
-            searchDisposition.toLowerCase(),
-        );
-      }
-      if (searchReferralSite) {
-        data = data.filter(
-          (item) =>
-            (item.referral_site || "").toLowerCase() ===
-            searchReferralSite.toLowerCase(),
-        );
-      }
-    } else if (activeTab === "submitted") {
-      data = finalizedData;
-      if (searchName) {
-        data = data.filter((item) =>
-          `${item.first_name} ${item.last_name}`
-            .toLowerCase()
-            .includes(searchName.toLowerCase()),
-        );
-      }
-      if (searchDate) {
-        data = data.filter(
-          (item) =>
-            new Date(item.created_at).toLocaleDateString("en-CA") ===
-            searchDate,
-        );
-      }
-      if (searchDisposition) {
-        data = data.filter(
-          (item) =>
-            (item.disposition || "").toLowerCase() ===
-            searchDisposition.toLowerCase(),
-        );
-      }
-      if (searchReferralSite) {
-        data = data.filter(
-          (item) =>
-            (item.referral_site || "").toLowerCase() ===
-            searchReferralSite.toLowerCase(),
-        );
-      }
-    }
-
-    return data;
-  };
-
-  useEffect(() => {
-    getDashboardActivities();
-    getRegistrations();
-  }, []);
-
-  const goBack = () => {
-    navigate("/");
+    setIsRefreshing(false);
   };
 
   return (
@@ -397,7 +154,17 @@ const AdminDashboard = () => {
           <ConfirmModal
             message={"Confirm to delete registration"}
             subMessage={"This action cannot be undone"}
-            confirm={deleteRegistration}
+            confirm={() => deleteRegistration(deleteRegistrationId)}
+            setShowConfirm={setShowConfirm}
+          />
+        )}
+        {showConfirm === "deleteActivity" && (
+          <ConfirmModal
+            message={"Confirm to delete activity"}
+            subMessage={"This action cannot be undone"}
+            confirm={() =>
+              deleteActivity(deleteActivityId[0], deleteActivityId[1])
+            }
             setShowConfirm={setShowConfirm}
           />
         )}
@@ -405,7 +172,7 @@ const AdminDashboard = () => {
           <ConfirmModal
             message={"Confirm save registration"}
             subMessage={"This will save registration without sending an email"}
-            confirm={saveRegistration}
+            confirm={() => saveRegistration(saveRegistrationId)}
             setShowConfirm={setShowConfirm}
           />
         )}
@@ -413,7 +180,7 @@ const AdminDashboard = () => {
           <ConfirmModal
             message={"Confirm finalize registration"}
             subMessage={"This will send the email notification"}
-            confirm={finalizeRegistration}
+            confirm={() => finalizeRegistration(finalizeRegistrationId)}
             setShowConfirm={setShowConfirm}
           />
         )}
@@ -423,7 +190,7 @@ const AdminDashboard = () => {
             subMessage={
               "This will allow you to make edits and resubmit with a new email notification"
             }
-            confirm={revertToPending}
+            confirm={() => revertToPending(revertRegistrationId)}
             setShowConfirm={setShowConfirm}
           />
         )}
@@ -453,10 +220,7 @@ const AdminDashboard = () => {
               Admin Menu
             </button>
             <button
-              onClick={() => {
-                sessionStorage.setItem("admin_authenticated", "true");
-                navigate("/admin-register");
-              }}
+              onClick={() => navigate("/admin-register")}
               className="inline-flex items-center gap-1 px-2 py-1 bg-black text-white rounded-md hover:bg-gray-800 transition-colors text-xs font-medium"
             >
               <svg
@@ -475,7 +239,7 @@ const AdminDashboard = () => {
               Register
             </button>
             <button
-              onClick={goBack}
+              onClick={() => navigate("/")}
               className="inline-flex items-center gap-1 px-2 py-1 bg-white text-black border border-black rounded-md hover:bg-gray-100 transition-colors text-xs font-medium"
             >
               <svg
@@ -531,7 +295,7 @@ const AdminDashboard = () => {
                 >
                   Activities (
                   {activeTab === "activities"
-                    ? getFilteredData().length
+                    ? filteredActivity.length
                     : dashboardStats.total_activities}
                   )
                 </button>
@@ -545,7 +309,7 @@ const AdminDashboard = () => {
                 >
                   Pending (
                   {activeTab === "pending"
-                    ? getFilteredData().length
+                    ? filteredPending.length
                     : dashboardStats.pending_registrations}
                   )
                 </button>
@@ -561,7 +325,7 @@ const AdminDashboard = () => {
             >
               Submitted (
               {activeTab === "submitted"
-                ? getFilteredData().length
+                ? filteredSubmitted.length
                 : dashboardStats.submitted_registrations}
               )
             </button>
@@ -601,52 +365,42 @@ const AdminDashboard = () => {
             </div>
             <button
               onClick={() => handle_refresh()}
-              disabled={loading}
+              // disabled={isRefreshing}
               className="bg-gray-100 text-gray-700 py-1 px-3 rounded-md hover:bg-gray-200 transition-colors text-sm disabled:opacity-50 flex items-center gap-2"
             >
-              {loading ? (
-                <>
-                  <svg
-                    className="animate-spin h-4 w-4 text-gray-500"
-                    xmlns="http://www.w3.org/2000/svg"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                  >
-                    <circle
-                      className="opacity-25"
-                      cx="12"
-                      cy="12"
-                      r="10"
-                      stroke="currentColor"
-                      strokeWidth="4"
-                    ></circle>
-                    <path
-                      className="opacity-75"
-                      fill="currentColor"
-                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                    ></path>
-                  </svg>
-                  Refreshing...
-                </>
+              {isRefreshing ? (
+                <svg
+                  className="h-4 w-4"
+                  style={{ animation: "spin 1s linear infinite reverse" }}
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2"
+                    d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                  />
+                </svg>
               ) : (
-                <>
-                  <svg
-                    className="h-4 w-4"
-                    xmlns="http://www.w3.org/2000/svg"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth="2"
-                      d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-                    />
-                  </svg>
-                  Refresh
-                </>
-              )}
+                <svg
+                  className="h-4 w-4"
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2"
+                    d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                  />
+                </svg>
+              )}{" "}
+              Refresh
             </button>
           </div>
 
@@ -671,7 +425,7 @@ const AdminDashboard = () => {
                   }
                   onChange={(e) =>
                     activeTab === "activities"
-                      ? setActivitySearchTerm(e.target.value)
+                      ? handleActivityTermSearch(e.target.value)
                       : handleNameSearch(e.target.value)
                   }
                   className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -699,6 +453,42 @@ const AdminDashboard = () => {
                 />
               </div>
 
+              {searchDate && (
+                <div className="min-w-0">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    End Date
+                  </label>
+                  <DatePicker
+                    name="reg_date"
+                    value={searchEndDate}
+                    onChange={(e) => handleEndDateSearch(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    style={{
+                      height: "40px",
+                      minHeight: "40px",
+                      maxHeight: "40px",
+                    }}
+                  />
+                </div>
+              )}
+
+              <div className="min-w-0">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Search by Month
+                </label>
+                <MonthPicker
+                  name="reg_date"
+                  value={searchMonth}
+                  onChange={(e) => handleMonthSearch(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  style={{
+                    height: "40px",
+                    minHeight: "40px",
+                    maxHeight: "40px",
+                  }}
+                />
+              </div>
+
               <div className="min-w-0">
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Disposition
@@ -715,7 +505,7 @@ const AdminDashboard = () => {
                 >
                   <option value="">All</option>
                   {/* Most Frequently Used */}
-                  {dispositions
+                  {options["disposition"]
                     .filter((d) => d.is_frequent)
                     .map((disposition) => (
                       <option key={disposition.id} value={disposition.name}>
@@ -723,11 +513,10 @@ const AdminDashboard = () => {
                       </option>
                     ))}
                   {/* Separator */}
-                  {dispositions.filter((d) => !d.is_frequent).length > 0 && (
-                    <option disabled>-------</option>
-                  )}
+                  {options["disposition"].filter((d) => !d.is_frequent).length >
+                    0 && <option disabled>-------</option>}
                   {/* All Others in Alphabetical Order */}
-                  {dispositions
+                  {options["disposition"]
                     .filter((d) => !d.is_frequent)
                     .sort((a, b) => a.name.localeCompare(b.name))
                     .map((disposition) => (
@@ -754,7 +543,7 @@ const AdminDashboard = () => {
                 >
                   <option value="">Select Referral Site</option>
                   {/* Most Frequently Used */}
-                  {referralSites
+                  {options["referral_site"]
                     .filter((s) => s.is_frequent)
                     .map((site) => (
                       <option key={site.id} value={site.name}>
@@ -762,11 +551,10 @@ const AdminDashboard = () => {
                       </option>
                     ))}
                   {/* Separator */}
-                  {referralSites.filter((s) => !s.is_frequent).length > 0 && (
-                    <option disabled>-------</option>
-                  )}
+                  {options["referral_site"].filter((s) => !s.is_frequent)
+                    .length > 0 && <option disabled>-------</option>}
                   {/* All Others in Alphabetical Order */}
-                  {referralSites
+                  {options["referral_site"]
                     .filter((s) => !s.is_frequent)
                     .sort((a, b) => a.name.localeCompare(b.name))
                     .map((site) => (
@@ -784,7 +572,7 @@ const AdminDashboard = () => {
                   </label>
                   <select
                     value={activityStatusFilter}
-                    onChange={(e) => setActivityStatusFilter(e.target.value)}
+                    onChange={(e) => handleActivityStatusSearch(e.target.value)}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                     style={{
                       height: "40px",
@@ -802,21 +590,41 @@ const AdminDashboard = () => {
             </div>
 
             {/* Clear All Filters Button */}
-            {(searchName ||
-              searchDate ||
-              searchDisposition ||
-              searchReferralSite ||
-              activitySearchTerm ||
-              activityStatusFilter !== "all") && (
-              <div className="mt-4 flex justify-center">
-                <button
-                  onClick={clearAllFilters}
-                  className="bg-gray-500 text-white py-2 px-4 rounded-md hover:bg-gray-600 transition-colors text-sm"
-                >
-                  Clear All Filters
-                </button>
-              </div>
-            )}
+            {activeTab !== "activities" &&
+              (searchName ||
+                searchEndDate ||
+                searchMonth ||
+                searchDate ||
+                searchDisposition ||
+                searchReferralSite) && (
+                <div className="mt-4 flex justify-center">
+                  <button
+                    onClick={clearAllFilters}
+                    className="bg-gray-500 text-white py-2 px-4 rounded-md hover:bg-gray-600 transition-colors text-sm"
+                  >
+                    Clear All Filters
+                  </button>
+                </div>
+              )}
+
+            {/* Clear All Filters Button */}
+            {activeTab === "activities" &&
+              (searchDate ||
+                searchEndDate ||
+                searchMonth ||
+                searchDisposition ||
+                searchReferralSite ||
+                activitySearchTerm ||
+                activityStatusFilter !== "all") && (
+                <div className="mt-4 flex justify-center">
+                  <button
+                    onClick={clearAllFilters}
+                    className="bg-gray-500 text-white py-2 px-4 rounded-md hover:bg-gray-600 transition-colors text-sm"
+                  >
+                    Clear All Filters
+                  </button>
+                </div>
+              )}
           </div>
 
           {error && (
@@ -849,20 +657,18 @@ const AdminDashboard = () => {
                   {/* Performance optimized rendering */}
                   <div className="space-y-4">
                     {activeTab === "activities" ? (
-                      <ActivityItems filteredData={getFilteredData()} />
-                    ) : (
-                      <RegistrationItems
-                        activeTab={activeTab}
-                        deletingId={deletingId}
-                        finalizingId={finalizingId}
-                        revertingId={revertingId}
-                        finalizedData={finalizedData}
-                        pendingData={pendingData}
-                        handleDelete={handleDelete}
+                      <ActivityItems
+                        handleDelete={handleDeleteActivity}
                         handleSave={handleSave}
                         handleFinalize={handleFinalize}
                         handleRevertToPending={handleRevertToPending}
-                        filteredData={getFilteredData()}
+                      />
+                    ) : (
+                      <RegistrationItems
+                        handleSave={handleSave}
+                        handleDelete={handleDelete}
+                        handleFinalize={handleFinalize}
+                        handleRevertToPending={handleRevertToPending}
                       />
                     )}
                   </div>

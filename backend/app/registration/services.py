@@ -1,3 +1,4 @@
+import json
 from datetime import datetime, timezone
 from typing import List, Optional, Union
 import datetime as dt
@@ -5,6 +6,9 @@ from app.registration.schemas import (
     ActivityCreate,
     ActivityRead,
     ActivityUpdate,
+    AssessementUpdate,
+    AssessmentCreate,
+    AssessmentRead,
     DispensingCreate,
     DispensingRead,
     DispensingUpdate,
@@ -26,9 +30,6 @@ from app.registration.schemas import (
     PatientCreate,
     PatientRead,
     PatientUpdate,
-    TestCreate,
-    TestRead,
-    TestUpdate,
 )
 from app.database import database
 
@@ -312,96 +313,116 @@ class PatientService:
             return bool(row)
 
 
-class TestService:
+class AssessmentService:
     # Test
     @staticmethod
-    async def create_test(patient_id: int, test: TestCreate) -> bool:
+    async def create_assessment(
+        patient_id: int, data: AssessmentCreate
+    ) -> bool:
         query = """
-        INSERT INTO tests (
-            patient_id, test_type, test_date, hiv_result, hiv_type, hiv_tester,
-            hcv_result, hcv_tester, bloodwork_type, bloodwork_circles, 
-            bloodwork_result, bloodwork_date_submitted, bloodwork_tester
-        )
-        VALUES (
-            $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13
-        )
+        INSERT INTO assessments (patient_id, type, date, result, tester, data)
+        VALUES ($1, $2, $3, $4, $5, $6)
         RETURNING id;
         """
+        # Convert data dict to JSON string if present
+        json_data = json.dumps(data.data) if data.data else None
+
         # Insert test and get the generated ID
         async with database.get_transaction() as conn:
             row = await conn.fetchrow(
                 query,
                 patient_id,
-                test.test_type,
-                test.test_date,
-                test.hiv_result,
-                test.hiv_type,
-                test.hiv_tester,
-                test.hcv_result,
-                test.hcv_tester,
-                test.bloodwork_type,
-                test.bloodwork_circles,
-                test.bloodwork_result,
-                test.bloodwork_date_submitted,
-                test.bloodwork_tester,
+                data.type,
+                data.date,
+                data.result,
+                data.tester,
+                json_data,
             )
             return bool(row)
 
     @staticmethod
-    async def get_tests() -> List[TestRead]:
+    async def get_assessments() -> List[AssessmentRead]:
         query = """
-        SELECT * FROM tests; 
+        SELECT * FROM assessments; 
         """
         async with database.get_connection() as conn:
             rows = await conn.fetch(query)
-        result = []
-        if rows:
+
+            # Parse JSON string back to dict
+            assessments = []
             for row in rows:
-                result.append(TestRead(**dict(row)))
-        return result
+                row_dict = dict(row)
+                # Parse the JSON string in the 'data' field
+                if row_dict.get("data"):
+                    row_dict["data"] = json.loads(row_dict["data"])
+                assessments.append(AssessmentRead(**row_dict))
+
+            return assessments
 
     @staticmethod
-    async def get_tests_by_patient(patient_id: int) -> List[TestRead]:
+    async def get_assessment_by_patient(
+        patient_id: int,
+    ) -> List[AssessmentRead]:
         query = """
         SELECT * 
-        FROM tests 
+        FROM assessments 
         WHERE patient_id = $1 
-        ORDER BY test_date DESC;
+        ORDER BY date DESC;
         """
         async with database.get_connection() as conn:
             rows = await conn.fetch(query, patient_id)
-        result = []
-        if rows:
+
+            # Parse JSON string back to dict
+            assessments = []
             for row in rows:
-                result.append(TestRead(**dict(row)))
-        return result
+                row_dict = dict(row)
+                # Parse the JSON string in the 'data' field
+                if row_dict.get("data"):
+                    row_dict["data"] = json.loads(row_dict["data"])
+                assessments.append(AssessmentRead(**row_dict))
+
+            return assessments
 
     @staticmethod
-    async def get_test_by_id(test_id: int) -> Union[TestRead, None]:
+    async def get_assessment_by_id(
+        assessment_id: int,
+    ) -> Union[AssessmentRead, None]:
         query = """
         SELECT * 
-        FROM tests 
+        FROM assessments 
         WHERE id = $1; 
         """
         async with database.get_connection() as conn:
-            row = await conn.fetchrow(query, test_id)
+            row = await conn.fetchrow(query, assessment_id)
 
-        if row:
-            return TestRead(**dict(row)) if row else None
+        if not row:
+            return None
+
+        row_dict = dict(row)
+
+        # Parse the JSON string in the 'data' field
+        if row_dict.get("data"):
+            row_dict["data"] = json.loads(row_dict["data"])
+
+        return AssessmentRead(**dict(row_dict))
 
     @staticmethod
-    async def delete_test_by_id(id: int) -> bool:
-        query = """DELETE FROM tests WHERE id=$1 RETURNING id;"""
+    async def delete_assessment_by_id(id: int) -> bool:
+        query = """DELETE FROM assessments WHERE id=$1 RETURNING id;"""
         async with database.get_transaction() as conn:
             row = await conn.fetchrow(query, id)
             return bool(row)
 
     @staticmethod
-    async def update_test(
-        test_id: int,
-        test_updates: TestUpdate,
+    async def update_assessment(
+        assessment_id: int,
+        assessment_updates: AssessementUpdate,
     ) -> bool:
-        updates = test_updates.model_dump(exclude_unset=True)
+        updates = assessment_updates.model_dump(exclude_unset=True)
+
+        # Convert data dict to JSON string if present
+        if "data" in updates and updates["data"] is not None:
+            updates["data"] = json.dumps(updates["data"])
 
         if not updates:
             return False
@@ -409,8 +430,8 @@ class TestService:
         set_clauses = [
             f"{field} = ${i+1}" for i, field in enumerate(updates.keys())
         ]
-        query = f"UPDATE tests SET {', '.join(set_clauses)} WHERE id = ${len(updates)+1} RETURNING id;"
-        values = list(updates.values()) + [test_id]
+        query = f"UPDATE assessments SET {', '.join(set_clauses)} WHERE id = ${len(updates)+1} RETURNING id;"
+        values = list(updates.values()) + [assessment_id]
         async with database.get_transaction() as conn:
             row = await conn.fetchrow(query, *values)
             return bool(row)
@@ -834,12 +855,8 @@ class ActivityService:
         patient_id: int, activity: ActivityCreate
     ) -> bool:
         query = """
-        INSERT INTO activities (
-            patient_id, date, time, description
-        )
-        VALUES (
-            $1, $2, $3, $4
-        )
+        INSERT INTO activities (patient_id, date, time, description, name)
+        VALUES ($1, $2, $3, $4, $5)
         RETURNING id;
         """
         async with database.get_transaction() as conn:
@@ -849,6 +866,7 @@ class ActivityService:
                 activity.date,
                 activity.time,
                 activity.description,
+                activity.name,
             )
             return bool(row)
 
@@ -861,7 +879,12 @@ class ActivityService:
             p.last_name, 
             p.phone1,
             p.disposition,
-            p.referral_site
+            p.referral_site,
+            p.finalized_at, 
+            p.status,
+            p.reg_date, 
+            p.file_id,
+            p.created_at AS submitted_date
         FROM activities a
         JOIN patients p ON a.patient_id = p.id
         ORDER BY a.date DESC, a.time DESC;

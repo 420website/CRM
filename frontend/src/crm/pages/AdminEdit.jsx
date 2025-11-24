@@ -1,15 +1,11 @@
 import { useState, useEffect, useRef } from "react";
 import Client from "../components/Client";
-import Tests from "../tabs/Tests";
 import Dispensing from "../tabs/Dispensing";
 import Medications from "../tabs/Medication";
 import Notes from "../tabs/Notes";
 import Activities from "../tabs/Activities";
 import Interactions from "../tabs/Interactions";
 import Attachments from "../tabs/Attachments";
-import ClinicalTemplateManager from "../managers/ClinicalTemplateManager";
-import DispositionManager from "../managers/DispositionManager";
-import ReferralSiteManager from "../managers/ReferralSiteManager";
 import VoiceDataModal from "../components/VoiceDateModal";
 import { useAuth } from "../../context/AuthContext";
 import { calculateAge, normalizeFormData } from "../../utils/formatData";
@@ -21,23 +17,21 @@ import { useNavigate, useParams } from "react-router-dom";
 import { DEFAULT_FORM } from "../forms/Registration";
 import VoiceFillModal from "../components/VoiceInput";
 import { ObjectServices } from "../../services/objectService";
-import DocumentTypeManager from "../managers/DocumentTypeManager";
 import { useRegistration } from "../../context/RegistrationContext";
 import toast from "react-hot-toast";
 import DuplicateModal from "../components/DuplicateModal";
+import { useDashboard } from "../../context/DashboardContext";
+import Assessments from "../tabs/Assessments";
 
 const AdminEdit = () => {
   const navigate = useNavigate();
-  const hasRun = useRef(false);
-  const {
-    showDispositionManager,
-    showReferralSiteManager,
-    showClinicalManager,
-    showDocumentTypeManager,
-    getRegistrationData,
-  } = useRegistration();
   const { registrationId } = useParams();
   const { userRole, userPermissions } = useAuth();
+  const { setLastItem } = useDashboard();
+  const { getClientAssociatedData } = useRegistration();
+  const { getDashboardRegistrations, getDashboardActivities } = useDashboard();
+  const hasRun = useRef(false);
+
   const [voiceInputText, setVoiceInputText] = useState("");
   const [loading, setLoading] = useState(false);
   const [saveStatus, setSaveStatus] = useState(null);
@@ -73,7 +67,7 @@ const AdminEdit = () => {
   const getFirstAllowedTab = () => {
     const allTabs = [
       { id: "client", name: "Client" },
-      { id: "tests", name: "Tests" },
+      { id: "assessments", name: "Assessments" },
       { id: "medication", name: "Medication" },
       { id: "dispensing", name: "Dispensing" },
       { id: "notes", name: "Notes" },
@@ -159,6 +153,16 @@ const AdminEdit = () => {
   const getRegistration = async () => {
     setLoading(true);
 
+    try {
+      await getClientPhoto();
+      await getClientData();
+    } catch (error) {
+      toast.error(error);
+    }
+    setLoading(false);
+  };
+
+  const getClientData = async () => {
     const result = await PatientServices.get_patient_by_id(registrationId);
 
     if (result.success) {
@@ -174,28 +178,38 @@ const AdminEdit = () => {
       } else {
         setSelectedTemplate("Select");
       }
-
-      const photoRes = await ObjectServices.get_photo_raw(registrationId);
-
-      if (photoRes.success) {
-        const blob = new Blob([photoRes.data], { type: "image/jpeg" });
-        const url = URL.createObjectURL(blob);
-        setPhotoPreview(url);
-        setPhotoData({
-          name: photoRes.headers["file-name"],
-        });
-      }
     } else {
       if (result.status === 400 || result.status === 409) {
-        toast.error(result.message || "Invalid credentials.");
+        toast.error(result.message || "Failed to get client data.");
       } else {
-        toast.error(result.message || "Failed to Fetch Registration.");
+        toast.error(result.message || "Failed to get client data.");
       }
     }
 
-    getRegistrationData(registrationId);
+    getClientAssociatedData(registrationId);
+  };
+
+  const getClientPhoto = async () => {
+    const result = await ObjectServices.get_photo_raw(registrationId);
+
+    if (result.success) {
+      const blob = new Blob([result.data], { type: "image/jpeg" });
+      const url = URL.createObjectURL(blob);
+      setPhotoPreview(url);
+      setPhotoData({
+        name: result.headers["file-name"],
+      });
+    } else {
+      if (result.status === 404) {
+        return;
+      } else if (result.status === 400 || result.status === 409) {
+        toast.error(result.message || "Failed to fetch client photo.");
+      } else {
+        toast.error(result.message || "Failed to fetch client photo.");
+      }
+    }
+
     setPhotoChanged(false);
-    setLoading(false);
   };
 
   useEffect(() => {
@@ -220,8 +234,8 @@ const AdminEdit = () => {
         setCurrentVoiceDateField={setCurrentVoiceDateField}
       />
     ),
-    tests: (
-      <Tests
+    assessments: (
+      <Assessments
         setActiveTab={setActiveTab}
         currentRegistrationId={registrationId}
       />
@@ -269,7 +283,7 @@ const AdminEdit = () => {
   const getAllowedTabs = () => {
     const allTabs = [
       { id: "client", name: "Client" },
-      { id: "tests", name: "Tests" },
+      { id: "assessments", name: "Assessments" },
       { id: "medication", name: "Medication" },
       { id: "dispensing", name: "Dispensing" },
       { id: "notes", name: "Notes" },
@@ -404,19 +418,28 @@ const AdminEdit = () => {
         if (photoRes.success) {
           setPhotoData({ name: photoData.name });
           setPhotoChanged(false);
+          getDashboardRegistrations();
+          getDashboardActivities();
           toast.success("Changes saved successfully");
+          await getClientData();
         } else {
           toast.error(result.message || "Error updating photo.");
         }
       } else if (!photoPreview && photoChanged) {
         const deleteRes = await ObjectServices.delete_photo(registrationId);
         if (deleteRes.success) {
+          getDashboardRegistrations();
+          getDashboardActivities();
           toast.success("Changes saved successfully");
+          await getClientData();
         } else {
           toast.error(result.message || "Error removing photo.");
         }
       } else {
+        getDashboardRegistrations();
+        getDashboardActivities();
         toast.success("Changes saved successfully");
+        await getClientData();
       }
     } else {
       if (result.status === 400 || result.status === 409) {
@@ -562,7 +585,10 @@ const AdminEdit = () => {
           <div className="flex gap-2">
             <button
               type="button"
-              onClick={() => navigate("/admin-menu")}
+              onClick={() => {
+                setLastItem(null);
+                navigate("/admin-menu");
+              }}
               className="inline-flex items-center gap-1 px-3 py-1 bg-black text-white rounded-md hover:bg-gray-800 transition-colors text-xs font-medium"
             >
               <svg
@@ -642,6 +668,7 @@ const AdminEdit = () => {
           ) : (
             <form onSubmit={handleSubmit} className="space-y-6">
               <EditPhoto
+                formData={formData}
                 photoData={photoData}
                 setPhotoData={setPhotoData}
                 photoPreview={photoPreview}
@@ -728,10 +755,6 @@ const AdminEdit = () => {
           handleVoiceDateSubmit={handleVoiceDateSubmit}
         />
       )}
-      {showDispositionManager && <DispositionManager />}
-      {showReferralSiteManager && <ReferralSiteManager />}
-      {showClinicalManager && <ClinicalTemplateManager />}
-      {showDocumentTypeManager && <DocumentTypeManager />}
     </div>
   );
 };

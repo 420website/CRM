@@ -26,22 +26,24 @@ from app.registration.router import (
     check_healthcard,
     check_name_dob,
     create_activity,
+    create_assessment,
     create_dispensing,
     create_interaction,
     create_medication,
     create_note,
     create_patient,
-    create_test,
     delete_activity_by_id,
+    delete_assessment_by_id,
     delete_dispensing_by_id,
     delete_interaction_by_id,
     delete_medication_by_id,
     delete_note_by_id,
     delete_patient_by_id,
     delete_patient_by_name,
-    delete_test_by_id,
     get_activities_by_patient,
     get_activity_by_id,
+    get_assessment_by_id,
+    get_assessments_by_patient,
     get_dispensing_by_id,
     get_dispensings_by_patient,
     get_interaction_by_id,
@@ -52,20 +54,20 @@ from app.registration.router import (
     get_notes_by_patient,
     get_patient,
     get_patients,
-    get_test_by_id,
-    get_tests_by_patient,
     update_activity,
+    update_assessment,
     update_dispensing,
     update_interaction,
     update_medication,
     update_note,
     update_patient,
     update_patient_status,
-    update_test,
 )
 from app.registration.schemas import (
     ActivityCreate,
     ActivityUpdate,
+    AssessementUpdate,
+    AssessmentCreate,
     DispensingCreate,
     DispensingUpdate,
     HealthcardCheck,
@@ -79,10 +81,12 @@ from app.registration.schemas import (
     PatientCreate,
     PatientStatus,
     PatientUpdate,
-    TestCreate,
-    TestUpdate,
 )
-from app.registration.services import MedicationService, PatientService
+from app.registration.services import (
+    AssessmentService,
+    MedicationService,
+    PatientService,
+)
 
 email = "test4@example.com"
 password = "securepassword123"
@@ -843,13 +847,13 @@ class TestPatientRouter(IsolatedAsyncioTestCase):
 
 
 ###############
-# Tests
+# Assessments
 ###############
 email = "test497@example.com"
 password = "securepassword123"
 
 
-class TestPatientTestsRouter(IsolatedAsyncioTestCase):
+class TestPatientAssessmentssRouter(IsolatedAsyncioTestCase):
     @classmethod
     async def get_validated_user(cls):
         token = await mock_register()
@@ -916,20 +920,20 @@ class TestPatientTestsRouter(IsolatedAsyncioTestCase):
         result = await create_patient(patient_data, self.user)
         return result["patient_id"]
 
-    async def mock_create_test(self, patient_id):
+    async def mock_create_assessment(self, patient_id):
         """Helper to create a test for a patient"""
-        test_data = TestCreate(
-            test_type="HIV",
-            test_date=date.today(),
-            hiv_result="Negative",
-            hiv_type="Rapid",
-            hiv_tester="Lab Tech",
+        test_data = AssessmentCreate(
+            type="HIV",
+            date=date.today(),
+            result="Negative",
+            tester="Lab Tech",
+            data={"hiv_type": "Rapid"},
         )
 
-        await create_test(patient_id, test_data, self.user)
+        await create_assessment(patient_id, test_data, self.user)
 
         # Get the created test to return its ID
-        tests = await get_tests_by_patient(patient_id, self.user)
+        tests = await get_assessments_by_patient(patient_id, self.user)
         return tests[0].id if tests else None
 
     async def asyncSetUp(self) -> None:
@@ -949,223 +953,207 @@ class TestPatientTestsRouter(IsolatedAsyncioTestCase):
             health_card_version="AB",
         )
 
-        self.test_data = TestCreate(
-            test_type="HIV",
-            test_date=date.today(),
-            hiv_result="Negative",
-            hiv_type="Rapid",
-            hiv_tester="Lab Tech",
+        self.hiv_data = AssessmentCreate(
+            type="HIV",
+            date=date.today(),
+            result="Negative",
+            tester="Lab Tech",
+            data={"hiv_type": "Rapid"},
         )
 
-        self.test_update_data = TestUpdate(
-            hiv_result="Positive", hcv_result="Negative"
+        self.hiv_update_data = AssessementUpdate(
+            result="Positive", data={"hiv_type": "Type 1"}
         )
 
     async def asyncTearDown(self):
         await database.disconnect()
 
     # create test
-    async def test_create_test_success(self):
+    async def test_create_assessment_success(self):
         patient_id = await self.mock_create_patient("John")
-        result = await create_test(patient_id, self.test_data, self.user)
+        result = await create_assessment(patient_id, self.hiv_data, self.user)
 
-        self.assertEqual(result["message"], "Test created successfully.")
+        self.assertEqual(result["message"], "Assessment created successfully.")
+
+        data = await AssessmentService.get_assessments()
+        self.assertGreaterEqual(len(data), 1)
+        self.assertEqual(data[0].type, "HIV")
+        self.assertEqual(data[0].date, self.hiv_data.date)
+        self.assertEqual(data[0].result, self.hiv_data.result)
+        self.assertEqual(data[0].tester, self.hiv_data.tester)
+        self.assertEqual(data[0].data, self.hiv_data.data)
 
         # Cleanup
         await PatientService.delete_patient_by_id(patient_id)
 
-    # async def test_create_test_patient_not_found(self):
-    #     with self.assertRaises(HTTPException) as cm:
-    #         await create_test(99999, self.test_data, self.user)
-    #
-    #     self.assertEqual(cm.exception.status_code, 400)
-    #     self.assertIn("Test not created.", str(cm.exception.detail))
+    async def test_create_assessment_patient_not_found(self):
+        with self.assertRaises(HTTPException) as cm:
+            await create_assessment(99999, self.hiv_data, self.user)
 
-    async def test_create_test_with_all_fields(self):
-        patient_id = await self.mock_create_patient("John")
-
-        comprehensive_test_data = TestCreate(
-            test_type="Comprehensive",
-            test_date=date.today(),
-            hiv_result="Negative",
-            hiv_type="Rapid",
-            hiv_tester="CM",
-            hcv_result="Negative",
-            hcv_tester="CM",
-            bloodwork_type="Full Panel",
-            bloodwork_circles="5",
-            bloodwork_result="Normal",
-            bloodwork_date_submitted=date.today(),
-            bloodwork_tester="CM",
-        )
-
-        result = await create_test(
-            patient_id,
-            comprehensive_test_data,
-            self.user,
-        )
-
-        self.assertEqual(result["message"], "Test created successfully.")
-
-        # Cleanup
-        await PatientService.delete_patient_by_id(patient_id)
+        self.assertEqual(cm.exception.status_code, 500)
+        self.assertIn("Assessment not created", str(cm.exception.detail))
 
     # get tests by patient
-    async def test_get_tests_by_patient_success(self):
+    async def test_get_assessment_by_patient_success(self):
         patient_id = await self.mock_create_patient("John")
-        await self.mock_create_test(patient_id)
+        await self.mock_create_assessment(patient_id)
 
-        result = await get_tests_by_patient(patient_id, self.user)
+        result = await get_assessments_by_patient(patient_id, self.user)
 
         self.assertIsInstance(result, list)
         self.assertGreaterEqual(len(result), 1)
-        self.assertEqual(result[0].test_type, "HIV")
+        self.assertEqual(result[0].type, "HIV")
 
         # Cleanup
         await PatientService.delete_patient_by_id(patient_id)
 
-    async def test_get_tests_by_patient_empty_list(self):
+    async def test_get_assessment_by_patient_empty_list(self):
         patient_id = await self.mock_create_patient("John")
 
-        result = await get_tests_by_patient(patient_id, self.user)
+        result = await get_assessments_by_patient(patient_id, self.user)
 
         self.assertIsInstance(result, list)
 
         # Cleanup
         await PatientService.delete_patient_by_id(patient_id)
 
-    async def test_get_tests_by_patient_not_found(self):
-        result = await get_tests_by_patient(99999, self.user)
+    async def test_get_assessmentss_by_patient_not_found(self):
+        result = await get_assessments_by_patient(99999, self.user)
 
         self.assertIsInstance(result, list)
         self.assertEqual(len(result), 0)
 
     # get test by id
-    async def test_get_test_by_id_success(self):
+    async def test_get_assessment_by_id_success(self):
         patient_id = await self.mock_create_patient("John")
-        test_id = await self.mock_create_test(patient_id)
+        test_id = await self.mock_create_assessment(patient_id)
 
-        result = await get_test_by_id(patient_id, test_id, self.user)
+        result = await get_assessment_by_id(patient_id, test_id, self.user)
 
         self.assertEqual(result.id, test_id)
         self.assertEqual(result.patient_id, patient_id)
-        self.assertEqual(result.test_type, "HIV")
+        self.assertEqual(result.type, "HIV")
 
         # Cleanup
         await PatientService.delete_patient_by_id(patient_id)
 
-    async def test_get_test_by_id_not_found(self):
+    async def test_get_assessment_by_id_not_found(self):
         patient_id = await self.mock_create_patient("John")
 
         with self.assertRaises(HTTPException) as cm:
-            await get_test_by_id(patient_id, 99999, self.user)
+            await get_assessment_by_id(patient_id, 99999, self.user)
 
         self.assertEqual(cm.exception.status_code, 404)
-        self.assertIn("Test not found.", str(cm.exception.detail))
+        self.assertIn("Assessment not found.", str(cm.exception.detail))
 
         # Cleanup
         await PatientService.delete_patient_by_id(patient_id)
 
-    async def test_get_test_by_id_wrong_patient(self):
+    async def test_get_assessment_by_id_wrong_patient(self):
         patient_id1 = await self.mock_create_patient("Tim")
         patient_id2 = await self.mock_create_patient("John")
-        test_id = await self.mock_create_test(patient_id1)
+        test_id = await self.mock_create_assessment(patient_id1)
 
         # Try to get test from patient1 using patient2's ID
         with self.assertRaises(HTTPException) as cm:
-            await get_test_by_id(patient_id2, test_id, self.user)
+            await get_assessment_by_id(patient_id2, test_id, self.user)
+
         self.assertEqual(cm.exception.status_code, 404)
-        self.assertIn("Test not found.", str(cm.exception.detail))
+        self.assertIn("Assessment not found.", str(cm.exception.detail))
 
         # Cleanup
         await PatientService.delete_patient_by_id(patient_id1)
         await PatientService.delete_patient_by_id(patient_id2)
 
     # delete test by id
-    async def test_delete_test_by_id_success(self):
+    async def test_delete_assessment_by_id_success(self):
         patient_id = await self.mock_create_patient("Tim")
-        test_id = await self.mock_create_test(patient_id)
+        test_id = await self.mock_create_assessment(patient_id)
 
-        result = await delete_test_by_id(patient_id, test_id, self.user)
+        result = await delete_assessment_by_id(patient_id, test_id, self.user)
 
-        self.assertEqual(result["message"], "Test deleted successfully.")
+        self.assertEqual(result["message"], "Assessment deleted successfully.")
+
         # Cleanup
         await PatientService.delete_patient_by_id(patient_id)
 
-    async def test_delete_test_by_id_not_found(self):
+    async def test_delete_assessment_by_id_not_found(self):
         patient_id = await self.mock_create_patient("John")
 
         with self.assertRaises(HTTPException) as cm:
-            await delete_test_by_id(patient_id, 99999, self.user)
+            await delete_assessment_by_id(patient_id, 99999, self.user)
 
         self.assertEqual(cm.exception.status_code, 404)
-        self.assertIn("Test not found.", str(cm.exception.detail))
+        self.assertIn("Assessment not found.", str(cm.exception.detail))
 
         # Cleanup
         await PatientService.delete_patient_by_id(patient_id)
 
-    async def test_delete_test_by_id_wrong_patient(self):
+    async def test_delete_assessment_by_id_wrong_patient(self):
         patient_id1 = await self.mock_create_patient("Tim")
         patient_id2 = await self.mock_create_patient("John")
-        test_id = await self.mock_create_test(patient_id1)
+        test_id = await self.mock_create_assessment(patient_id1)
 
         # Try to delete test from patient1 using patient2's ID
         with self.assertRaises(HTTPException) as cm:
-            await delete_test_by_id(patient_id2, test_id, self.user)
+            await delete_assessment_by_id(patient_id2, test_id, self.user)
 
         self.assertEqual(cm.exception.status_code, 404)
-        self.assertIn("Test not found.", str(cm.exception.detail))
+        self.assertIn("Assessment not found.", str(cm.exception.detail))
 
         # Cleanup
         await PatientService.delete_patient_by_id(patient_id1)
         await PatientService.delete_patient_by_id(patient_id2)
 
     # update test
-    async def test_update_test_success(self):
+    async def test_update_assessment_success(self):
         patient_id = await self.mock_create_patient("John")
-        test_id = await self.mock_create_test(patient_id)
+        id = await self.mock_create_assessment(patient_id)
 
-        result = await update_test(
-            patient_id, test_id, self.test_update_data, self.user
+        hiv_update_data = AssessementUpdate(
+            result="Positive", data={"hiv_type": "Type 1"}
+        )
+        result = await update_assessment(
+            patient_id, id, hiv_update_data, self.user
         )
 
-        self.assertEqual(result["message"], "Test updated successfully.")
+        self.assertEqual(result["message"], "Assessment updated successfully.")
 
         # Verify update
-        updated_test = await get_test_by_id(patient_id, test_id, self.user)
-        self.assertEqual(updated_test.hiv_result, "Positive")
-        self.assertEqual(updated_test.hcv_result, "Negative")
+        updated_test = await get_assessment_by_id(patient_id, id, self.user)
+        self.assertEqual(updated_test.result, "Positive")
+        self.assertEqual(updated_test.data, {"hiv_type": "Type 1"})
 
         # Cleanup
         await PatientService.delete_patient_by_id(patient_id)
 
-    async def test_update_test_not_found(self):
+    async def test_update_assessment_not_found(self):
         patient_id = await self.mock_create_patient("John")
 
         with self.assertRaises(HTTPException) as cm:
-            await update_test(
-                patient_id, 99999, self.test_update_data, self.user
+            await update_assessment(
+                patient_id, 99999, self.hiv_update_data, self.user
             )
 
         self.assertEqual(cm.exception.status_code, 404)
-        self.assertIn("Test not found.", str(cm.exception.detail))
+        self.assertIn("Assessment not found.", str(cm.exception.detail))
 
         # Cleanup
         await PatientService.delete_patient_by_id(patient_id)
 
-    async def test_update_test_wrong_patient(self):
+    async def test_update_assessment_wrong_patient(self):
         patient_id1 = await self.mock_create_patient("Tim")
         patient_id2 = await self.mock_create_patient("John")
-        test_id = await self.mock_create_test(patient_id1)
+        id = await self.mock_create_assessment(patient_id1)
 
         # Try to update test from patient1 using patient2's ID
         with self.assertRaises(HTTPException) as cm:
-            await update_test(
-                patient_id2, test_id, self.test_update_data, self.user
+            await update_assessment(
+                patient_id2, id, self.hiv_update_data, self.user
             )
 
         self.assertEqual(cm.exception.status_code, 404)
-        self.assertIn("Test not found.", str(cm.exception.detail))
+        self.assertIn("Assessment not found.", str(cm.exception.detail))
 
         # Cleanup
         await PatientService.delete_patient_by_id(patient_id1)
@@ -1915,7 +1903,7 @@ class TestPatientDispensingRouter(IsolatedAsyncioTestCase):
         )
 
         self.dispensing_update_data = DispensingUpdate(
-            quantity=60, lot="LOT999"
+            medication="Lisinopril", quantity=60, lot="LOT999"
         )
 
     async def asyncTearDown(self):
@@ -1996,6 +1984,32 @@ class TestPatientDispensingRouter(IsolatedAsyncioTestCase):
         )
         self.assertEqual(updated_dispensing.quantity, 60)
         self.assertEqual(updated_dispensing.lot, "LOT999")
+
+        # Cleanup
+        await PatientService.delete_patient_by_id(patient_id)
+
+    async def test_update_dispensing_nonexistant(self):
+        patient_id = await self.mock_create_patient("Jim")
+        await self.create_medication(patient_id)
+
+        dispensing_id = await self.mock_create_dispensing(patient_id)
+
+        # Verify update
+        self.dispensing_update_data.medication = "Unknown"
+
+        with self.assertRaises(HTTPException) as cm:
+            await update_dispensing(
+                patient_id,
+                dispensing_id,
+                self.dispensing_update_data,
+                self.user,
+            )
+
+        self.assertEqual(cm.exception.status_code, 400)
+        self.assertEqual(
+            cm.exception.detail,
+            "Medication none existant for client please create medication and retry.",
+        )
 
         # Cleanup
         await PatientService.delete_patient_by_id(patient_id)
@@ -2105,9 +2119,10 @@ class TestPatientActivityRouter(IsolatedAsyncioTestCase):
     async def mock_create_activity(self, patient_id):
         """Helper to create an activity for a patient"""
         activity_data = ActivityCreate(
-            description="Blood pressure check",
-            time=datetime.now().time(),
             date=date.today(),
+            time=datetime.now().time(),
+            name="Check Blood pressure",
+            description="History of low BP.",
         )
 
         await create_activity(patient_id, activity_data, self.user)
@@ -2135,13 +2150,14 @@ class TestPatientActivityRouter(IsolatedAsyncioTestCase):
 
         # Activity test data
         self.activity_data = ActivityCreate(
-            description="Blood pressure check",
-            time=datetime.now().time(),
             date=date.today(),
+            time=datetime.now().time(),
+            name="Get Results",
+            description="Pick up at 5:00pm",
         )
 
         self.activity_update_data = ActivityUpdate(
-            description="Updated blood pressure check"
+            name="New", description="Updated blood pressure check"
         )
 
     async def asyncTearDown(self):
@@ -2166,7 +2182,8 @@ class TestPatientActivityRouter(IsolatedAsyncioTestCase):
 
         self.assertIsInstance(result, list)
         self.assertGreaterEqual(len(result), 1)
-        self.assertEqual(result[0].description, "Blood pressure check")
+        self.assertEqual(result[0].name, "Check Blood pressure")
+        self.assertEqual(result[0].description, "History of low BP.")
 
         # Cleanup
         await PatientService.delete_patient_by_id(patient_id)
@@ -2179,7 +2196,8 @@ class TestPatientActivityRouter(IsolatedAsyncioTestCase):
 
         self.assertEqual(result.id, activity_id)
         self.assertEqual(result.patient_id, patient_id)
-        self.assertEqual(result.description, "Blood pressure check")
+        self.assertEqual(result.name, "Check Blood pressure")
+        self.assertEqual(result.description, "History of low BP.")
 
         # Cleanup
         await PatientService.delete_patient_by_id(patient_id)
@@ -2198,9 +2216,11 @@ class TestPatientActivityRouter(IsolatedAsyncioTestCase):
         updated_activity = await get_activity_by_id(
             patient_id, activity_id, self.user
         )
+
         self.assertEqual(
             updated_activity.description, "Updated blood pressure check"
         )
+        self.assertEqual(updated_activity.name, "New")
 
         # Cleanup
         await PatientService.delete_patient_by_id(patient_id)

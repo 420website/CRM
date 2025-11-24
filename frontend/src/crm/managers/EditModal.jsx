@@ -10,9 +10,7 @@ export default function EditModal({
       <div className="fixed inset-0 bg-black/50 bg-opacity-50 flex items-center justify-center z-[60]">
         <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
           <div className="flex justify-between items-center mb-4">
-            <h3 className="text-lg font-bold text-gray-900">
-              {`Edit ${name}`}
-            </h3>
+            <h3 className="text-lg font-bold text-gray-900">{`Edit Option`}</h3>
             <button
               onClick={() => setShowTemplateEditPopup(false)}
               className="text-gray-500 hover:text-gray-700"
@@ -36,7 +34,7 @@ export default function EditModal({
           <div className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                {`${name} Name`}
+                {`Option Name`}
               </label>
               <input
                 type="text"
