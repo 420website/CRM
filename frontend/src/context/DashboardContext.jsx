@@ -17,6 +17,7 @@ export function DashboardProvider({ children }) {
   );
 
   // Search and filter state
+  const [filtering, setFiltering] = useState(false);
   const [searchName, setSearchName] = useState("");
   const [searchDate, setSearchDate] = useState("");
   const [searchDisposition, setSearchDisposition] = useState("");
@@ -38,6 +39,7 @@ export function DashboardProvider({ children }) {
     submitted_registrations: 0,
     total_activities: 0,
   });
+  const [totalRegistrations, setTotalRegistrations] = useState(0);
 
   const resetActiveTab = () => {
     setActiveTab(userRole !== "limited" ? "activities" : "submitted");
@@ -45,6 +47,7 @@ export function DashboardProvider({ children }) {
 
   // -- Filters
   const clearAllFilters = () => {
+    setFiltering(false);
     setSearchName("");
     setSearchDate("");
     setSearchEndDate(null);
@@ -325,6 +328,17 @@ export function DashboardProvider({ children }) {
       filterPending();
       filterActivity();
     }
+
+    setFiltering(
+      searchName ||
+        searchEndDate ||
+        searchMonth ||
+        searchDate ||
+        searchDisposition ||
+        searchReferralSite ||
+        activitySearchTerm ||
+        (activityStatusFilter && activityStatusFilter !== "all"),
+    );
   }, [
     searchName,
     searchDate,
@@ -352,6 +366,12 @@ export function DashboardProvider({ children }) {
           ? filteredActivity.length
           : activityData.length,
     });
+
+    setTotalRegistrations(
+      filtering
+        ? filteredSubmitted.length + filteredPending.length
+        : finalizedData.length + pendingData.length,
+    );
   }, [
     activeTab,
     activityData,
@@ -580,6 +600,8 @@ export function DashboardProvider({ children }) {
         clearAllFilters,
         handleEndDateSearch,
         handleMonthSearch,
+        totalRegistrations,
+        filtering,
       }}
     >
       {children}
