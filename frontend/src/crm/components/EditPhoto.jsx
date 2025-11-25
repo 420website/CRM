@@ -78,10 +78,6 @@ export default function EditPhoto({
                     Upload Photo
                   </button>
 
-                  <span className="text-sm text-gray-600 truncate max-w-[200px]">
-                    {photoData.name || "No file chosen"}
-                  </span>
-
                   <input
                     type="file"
                     id="photo-upload"
