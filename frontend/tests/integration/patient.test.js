@@ -405,13 +405,10 @@ describe("PatientServices.patient assessments", () => {
     const found = listRes.data.find((t) => t.patient_id === createdPatientId);
     const createdId = found.id;
 
-    console.log(createdId);
-
     const deleteRes = await PatientServices.delete_assessment_by_id(
       createdPatientId,
       createdId,
     );
-    console.log(deleteRes);
 
     expect(deleteRes.success).toBe(true);
 

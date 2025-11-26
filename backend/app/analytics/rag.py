@@ -66,12 +66,8 @@ class RagService:
 
     @staticmethod
     async def generate_query(schema: str, request: ClaudeChatRequest) -> str:
-        system_prompt = query_prompt(
-            schema, request.timezone, request.local_datetime
-        )
+        system_prompt = query_prompt(schema, request.datetime)
         user_prompt = f"Question: {request.message}\nSQL:"
-        # print(system_prompt)
-        # print(user_prompt)
 
         message = await settings.anthropic_client.messages.create(
             model=settings.anthropic_model,
