@@ -353,7 +353,7 @@ const AdminDashboard = () => {
                         className={`py-2 px-4 font-medium border-b-2 flex-shrink-0 transition-colors ${
                           activeTab === "activities"
                             ? "border-blue-600 text-blue-600"
-                            : "border-black text-gray-500 hover:text-gray-700"
+                            : "border-gray-500 text-gray-500 hover:text-gray-700"
                         }`}
                         style={{ width: "33.333%" }}
                       >
@@ -368,7 +368,7 @@ const AdminDashboard = () => {
                         className={`py-2 px-4 font-medium border-b-2 flex-shrink-0 transition-colors ${
                           activeTab === "pending"
                             ? "border-blue-600 text-blue-600"
-                            : "border-black text-gray-500 hover:text-gray-700"
+                            : "border-gray-500 text-gray-500 hover:text-gray-700"
                         }`}
                         style={{ width: "33.333%" }}
                       >
@@ -385,7 +385,7 @@ const AdminDashboard = () => {
                     className={`py-2 px-4 font-medium border-b-2 flex-shrink-0 transition-colors ${
                       activeTab === "submitted"
                         ? "border-blue-600 text-blue-600"
-                        : "border-black text-gray-500 hover:text-gray-700"
+                        : "border-gray-500 text-gray-500 hover:text-gray-700"
                     }`}
                     style={{ width: "33.333%" }}
                   >
@@ -395,9 +395,9 @@ const AdminDashboard = () => {
                       : dashboardStats.submitted_registrations}
                     )
                   </button>
-                  {filtering && (
+                  {filtering && userRole !== "limited" && (
                     <div
-                      className="py-2 px-4 font-medium border-b-2 border-black text-gray-500 hover:text-gray-700 flex-shrink-0 flex flex-col items-center"
+                      className="py-2 px-4 font-medium border-b-2 border-gray-500 text-gray-500 hover:text-gray-700 flex-shrink-0 flex flex-col items-center"
                       style={{ width: "33.333%" }}
                     >
                       <div>Total</div>

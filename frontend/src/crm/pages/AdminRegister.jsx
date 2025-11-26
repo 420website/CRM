@@ -564,7 +564,7 @@ const AdminRegister = () => {
           </div>
         </div>
         <div className="bg-white rounded-lg shadow-md p-4">
-          {getAllowedTabs().length == 0 ? (
+          {!hasTabPermission("client") || getAllowedTabs().length == 0 ? (
             <div className="text-center py-8">
               <h1 className="text-gray-500 text-bold text-lg mb-2">
                 🔒 Access Restricted

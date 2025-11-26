@@ -10,6 +10,13 @@ import { useReferences } from "../../context/ReferenceContext";
 import TemplateManager from "../managers/TemplateManager";
 import { CheckCircleIcon, CircleIcon, SquarePenIcon } from "lucide-react";
 import { Trash } from "lucide-react";
+const formatTime12Hour = (time24) => {
+  const [hours, minutes] = time24.split(":");
+  const hour = parseInt(hours, 10);
+  const ampm = hour >= 12 ? "PM" : "AM";
+  const hour12 = hour % 12 || 12; // Convert 0 to 12
+  return `${hour12}:${minutes} ${ampm}`;
+};
 
 function ActivityItem({ item, editActivity, handleDeleteActivity }) {
   const { getDashboardActivities } = useDashboard();
@@ -122,7 +129,7 @@ function ActivityItem({ item, editActivity, handleDeleteActivity }) {
                 <div className="text-sm text-gray-600 mb-1 text-wrap min-w-0">
                   {item.time && (
                     <p>
-                      <strong>Time:</strong> {item.time}
+                      <strong>Time:</strong> {formatTime12Hour(item.time)}
                     </p>
                   )}
                 </div>
