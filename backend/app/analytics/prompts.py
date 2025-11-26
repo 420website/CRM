@@ -7,8 +7,7 @@ from app.analytics.metadata import (
 
 def query_prompt(
     schema_text: str,
-    user_timezone: str = "UTC",
-    user_local_datetime: str = None,
+    user_local_datetime: str,
 ) -> str:
     relationship_text = "\n".join(
         f"{a}.{col} = {b}.{col}" for a, b, col in RELATIONSHIPS
@@ -22,31 +21,69 @@ def query_prompt(
 
     # Timezone handling section
     timezone_note = f"""
-⚠️ CRITICAL TIMEZONE HANDLING:
-- User's timezone: {user_timezone}
-- User's current local date/time: {user_local_datetime}
-- Database timezone: ALL timestamps in the database are stored in UTC
-
-When the user references relative dates like "today", "yesterday", "this week", "this month", "this year":
-  • They mean in THEIR timezone ({user_timezone}), NOT UTC
-  • You MUST convert these to UTC datetime ranges for accurate queries
-  
-Examples:
-  • User says "today" → means {user_local_datetime.split(',')[0]} in {user_timezone}
-    Convert to UTC range: >= 'YYYY-MM-DD 00:00:00+00' AND < 'YYYY-MM-DD+1 00:00:00+00'
-  
-  • User says "this month" → means current month in {user_timezone}
-    Convert to UTC range for that month
-  
-  • User says "2024" or "this year" → means that year in {user_timezone}
-    Convert to UTC range: >= '2024-01-01 00:00:00+00' AND < '2025-01-01 00:00:00+00'
-
-IMPORTANT: 
-- Extract the date from user's local time: {user_local_datetime}
-- Calculate the UTC equivalent for start and end of that period
-- Use >= and < operators for date ranges (not BETWEEN)
-- All timestamp columns (created_at, updated_at, date, uploaded_at, etc.) are in UTC
-"""
+        ⚠️ CRITICAL TIMEZONE HANDLING - FOLLOW EXACTLY:
+        - User's current local date/time: {user_local_datetime} (ISO 8601 format with UTC offset)
+        - Database timezone: ALL timestamps in the database are stored in UTC
+        
+        MANDATORY 3-STEP PROCESS FOR "TODAY", "YESTERDAY", ETC:
+        
+        STEP 1: EXTRACT LOCAL DATE (DO NOT CONVERT YET!)
+        From {user_local_datetime}, extract ONLY the date portion (YYYY-MM-DD) as shown.
+        - Example: "2025-02-01T23:00:00-05:00" → Extract "2025-02-01" 
+        - Example: "2025-11-26T10:56:39-05:00" → Extract "2025-11-26"
+        - DO NOT add or subtract anything yet!
+        
+        STEP 2: CREATE LOCAL TIMEZONE BOUNDARIES
+        Using the extracted local date, create full day boundaries in LOCAL timezone:
+        - Start of day: YYYY-MM-DD 00:00:00 with the SAME offset as user's timestamp
+        - End of day: (YYYY-MM-DD + 1 day) 00:00:00 with the SAME offset
+        - Example: Local date "2025-02-01" with offset "-05:00"
+          → Start: "2025-02-01 00:00:00-05:00"
+          → End: "2025-02-02 00:00:00-05:00"
+        
+        STEP 3: CONVERT TO UTC
+        Apply the offset to convert to UTC:
+        - If offset is NEGATIVE (e.g., -05:00): ADD those hours to get UTC
+        - If offset is POSITIVE (e.g., +05:30): SUBTRACT those hours to get UTC
+        - Example: "2025-02-01 00:00:00-05:00" → ADD 5 hours → "2025-02-01 05:00:00+00:00"
+        - Example: "2025-02-02 00:00:00-05:00" → ADD 5 hours → "2025-02-02 05:00:00+00:00"
+        
+        COMPLETE WORKED EXAMPLE:
+        Input: {user_local_datetime}
+        User asks: "today"
+        
+        Step 1: Extract local date from the ISO string
+                "2025-02-01T23:00:00-05:00" → "2025-02-01"
+        
+        Step 2: Create boundaries in local timezone
+                Start: "2025-02-01 00:00:00-05:00"
+                End:   "2025-02-02 00:00:00-05:00"
+        
+        Step 3: Convert to UTC (offset is -05:00, so ADD 5 hours)
+                Start UTC: "2025-02-01 05:00:00+00:00"
+                End UTC:   "2025-02-02 05:00:00+00:00"
+        
+        Final Query:
+        WHERE uploaded_at >= '2025-02-01 05:00:00+00:00'
+          AND uploaded_at < '2025-02-02 05:00:00+00:00'
+        
+        CRITICAL ERRORS TO AVOID:
+        ❌ DO NOT convert the user's current time to UTC first
+        ❌ DO NOT use the date from UTC conversion
+        ❌ DO NOT skip extracting the local date
+        ✅ ALWAYS extract local date FIRST, then build boundaries, then convert
+        
+        OTHER RELATIVE TERMS:
+        - "yesterday": Use (local_date - 1 day) for boundaries, then convert to UTC
+        - "this week": Find Sunday-Saturday in local timezone, then convert to UTC (week starts SUNDAY)
+        - "this month": Use 1st to last day of month in local timezone, then convert to UTC
+        - "this year": Use Jan 1 to Dec 31 in local timezone, then convert to UTC
+        
+        IMPORTANT REMINDERS:
+        - All timestamp columns (created_at, updated_at, uploaded_at) are stored in UTC
+        - Use >= and < operators (not BETWEEN)
+        - Week starts on SUNDAY and ends on SATURDAY
+        """
 
     return f"""
 You are an expert SQL analyst generating queries over a Postgres CRM database.
@@ -65,7 +102,6 @@ Database Field Overview:
 Important Notes:
 - The "patients" table may also be referred to as "registrations" in natural language.
 - All other tables connect to patients via patient_id.
-- HIV/HCV results exist both in patients and assessments, depending on data entry context.
 
 Rules for SQL generation:
 1. Generate **valid PostgreSQL SELECT queries ONLY**.
@@ -73,10 +109,11 @@ Rules for SQL generation:
 3. Do NOT include any Markdown code fences or backticks.
 4. Use JOINs based on patient_id when needed.
 5. Use table aliases (e.g. p for patients, a for assessments) to keep SQL concise.
-6. Only query relevant columns based on the question.
-7. Do NOT modify, update, or insert any data.
-8. Prefer aggregations (COUNT, AVG, GROUP BY) when the question asks for trends or totals.
-9. If asked about DBS, Cepheid or Serum assessments/tests those will be found in the assessments data.bloodwork_type
+6. **Return FULL ROWS (SELECT *) whenever possible** to provide maximum context for analysis.
+7. **Even if the user asks "how many", "count", or "total", return the full rows instead.** The count will be derived from the number of rows returned.
+8. Do NOT modify, update, or insert any data.
+9. Use GROUP BY or date ranges for filtering, but still return full row data when feasible.
+10. If asked about DBS, Cepheid or Serum assessments/tests those will be found in the assessments data object.
 
 Schema:
 {schema_text}

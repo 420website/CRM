@@ -214,10 +214,6 @@ export default function Intake({ submitStatus, setPhotoData }) {
                       Upload Photo
                     </button>
 
-                    <span className="text-sm text-gray-600 truncate max-w-[200px]">
-                      {selectedFileName || "No file chosen"}
-                    </span>
-
                     <input
                       type="file"
                       id="photo-upload"

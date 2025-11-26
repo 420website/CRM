@@ -564,7 +564,7 @@ const AdminRegister = () => {
           </div>
         </div>
         <div className="bg-white rounded-lg shadow-md p-4">
-          {getAllowedTabs().length == 0 ? (
+          {!hasTabPermission("client") || getAllowedTabs().length == 0 ? (
             <div className="text-center py-8">
               <h1 className="text-gray-500 text-bold text-lg mb-2">
                 🔒 Access Restricted
@@ -598,7 +598,7 @@ const AdminRegister = () => {
                         onClick={() => setActiveTab(tab.id)}
                         className={`px-4 py-2 text-sm font-medium whitespace-nowrap relative ${
                           activeTab === tab.id
-                            ? "border-b-2 border-white text-black bg-white -mb-0.5 z-10"
+                            ? "border-b-2 border-white text-black bg-white"
                             : "border-b-2 border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-50"
                         }`}
                       >

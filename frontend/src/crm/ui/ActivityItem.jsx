@@ -215,17 +215,15 @@ export default function ActivityItem({
       >
         <div className="flex justify-between items-start">
           <div className="flex-1 min-w-0">
-            <div className="flex justify-between items-center">
-              <div className="flex items-center gap-3 break-all">
-                <div className="flex gap-2 items-center">
-                  <h3 className="text-lg font-semibold text-gray-900">
-                    {item.name}
-                  </h3>
-                  <button onClick={handleEdit}>
-                    <SquarePenIcon className="w-3 h-4" />
-                  </button>
-                </div>
+            <div className="flex gap-2 justify-between items-start">
+              <div className="flex break-words">
+                <h3 className="text-lg font-semibold text-gray-900">
+                  {item.name}
+                </h3>
               </div>
+              <button onClick={handleEdit} className="py-1">
+                <SquarePenIcon className="w-3 h-4" />
+              </button>
               <div className="flex items-center  ml-auto">
                 <span
                   className={`pl-2 pr-0  py-1 text-xs font-normal rounded-l-full rounded-r-none ${

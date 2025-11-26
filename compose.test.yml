@@ -3,12 +3,15 @@ x-backend-base: &backend_base
   build: 
     context: ./backend
     dockerfile: Dockerfile.test
+  env_file: 
+    - path: .env
+      required: false
   environment:
     - JWT_ALGORITHM=HS256
     - JWT_ACCESS_SECRET=STUFRZH-MKLFj4j-6c9Z50WNWkvd9uqiWQJOpeCtI9Q
     - MFA_ENCRYPTION_KEY=7CrUl1rG4NBNk4bSV2uU7RW79Z_dRdvrrZn3Eqgytqg=
     - ALLOWED_ORIGINS=http://localhost:8000,http://localhost:3000
-    - ANTHROPIC_API_KEY=7CrUl1rG4NBNk4bSV2uU7RW79Z_dRdvrrZn3Eqgytqg
+    - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-sk-ant-dummy-key-for-testing}
     - APP_NAME=testing
     - APP_URL=http://localhost:8001 
     - SMTP_EMAIL=email@exmaple.com
@@ -88,6 +91,11 @@ services:
       - redis_data:/data
     networks: 
       - backend-net
+    environment: 
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: password
+    command: sh -c 'redis-server --requirepass password'
     profiles:
       - test
       - database
@@ -162,6 +170,9 @@ services:
     build: 
       context: ./backend
       dockerfile : Dockerfile.test
+    env_file: 
+    - path: .env
+      required: false
     environment:
       - JWT_ALGORITHM=HS256
       - JWT_ACCESS_SECRET=STUFRZH-MKLFj4j-6c9Z50WNWkvd9uqiWQJOpeCtI9Q
@@ -171,7 +182,7 @@ services:
       - APP_URL=http://localhost:5174 
       - DEBUG=True
       - ENVIRONMENT=dev
-      - ANTHROPIC_API_KEY=7CrUl1rG4NBNk4bSV2uU7RW79Z_dRdvrrZn3Eqgytqg
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-sk-ant-dummy-key-for-testing}
       - SUPPORT_EMAIL=email@exmaple.com
       - ENVIRONMENT=Testing
       - SMTP_EMAIL=email@exmaple.com
@@ -318,6 +329,7 @@ services:
     environment:
       - BACKEND_URL=http://backend_dummy:8000
       - VITE_API_BASE_URL=http://backend_dummy:8000
+      - TZ=America/Toronto
     profiles:
       - test_frontend_integration_watch
     ports:
@@ -332,6 +344,7 @@ services:
                 npm run test:integration:watch; 
                 inotifywait -e modify,create,delete -r /frontend/src /frontend/tests;
               done"
+    # npm run test:integration:watch --file=tests/integration/analytics.test.js; 
 
 volumes:
   mongo_data:

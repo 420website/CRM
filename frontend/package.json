@@ -13,7 +13,7 @@
     "test:unit": "vitest run tests/unit",
     "test:unit:watch": "vitest tests/unit",
     "test:integration": "vitest run tests/integration",
-    "test:integration:watch": "vitest tests/integration",
+    "test:integration:watch": "vitest ${npm_config_file:-tests/integration}",
     "test:e2e": "playwright test --reporter=list"
   },
   "dependencies": {

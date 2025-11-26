@@ -9,15 +9,18 @@ import DatePicker from "../ui/DatePicker";
 import { useDashboard } from "../../context/DashboardContext";
 import { useReferences } from "../../context/ReferenceContext";
 import MonthPicker from "../ui/MonthPicker";
+import { ChevronRight, ChevronLeft } from "lucide-react";
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
   const { logout, userRole } = useAuth();
   const {
+    filtering,
     clearAllFilters,
     setActiveTab,
     activeTab,
     dashboardStats,
+    totalRegistrations,
     clearRegistrationFilters,
     clearActivityFilters,
     searchDate,
@@ -146,6 +149,38 @@ const AdminDashboard = () => {
 
     setIsRefreshing(false);
   };
+
+  const checkArrows = () => {
+    const container = document.getElementById("tabs-container");
+    const leftArrow = document.getElementById("scroll-left");
+    const rightArrow = document.getElementById("scroll-right");
+
+    if (!container || !leftArrow || !rightArrow) return;
+
+    // Check if scrolled to the left
+    if (container.scrollLeft <= 0) {
+      leftArrow.classList.add("hidden");
+    } else {
+      leftArrow.classList.remove("hidden");
+    }
+
+    // Check if scrolled to the right
+    if (
+      container.scrollLeft + container.clientWidth >=
+      container.scrollWidth - 1
+    ) {
+      rightArrow.classList.add("hidden");
+    } else {
+      rightArrow.classList.remove("hidden");
+    }
+  };
+
+  // Call on mount to set initial arrow visibility
+  useEffect(() => {
+    if (filtering) {
+      checkArrows();
+    }
+  }, [filtering]);
 
   return (
     <div className="flex-grow flex flex-col bg-gray-50">
@@ -280,188 +315,235 @@ const AdminDashboard = () => {
         </div>
 
         {/* Main Content */}
-        <div className="flex-grow flex flex-col bg-white rounded-lg shadow-md p-6">
-          {/* Tabs */}
-          <div className="flex border-b mb-6">
-            {userRole !== "limited" && (
-              <>
+        <div className="flex-grow flex flex-col bg-white rounded-lg shadow-md pt-6">
+          {/* Left Arrow */}
+          <div className="flex items-center">
+            {/* Left Arrow - always takes up space */}
+            <div className="flex-shrink-0 w-6 flex justify-end">
+              {filtering && (
                 <button
-                  onClick={() => setActiveTab("activities")}
-                  className={`py-2 px-4 font-medium border-b-2 transition-colors ${
-                    activeTab === "activities"
-                      ? "border-blue-600 text-blue-600"
-                      : "border-transparent text-gray-500 hover:text-gray-700"
-                  }`}
+                  id="scroll-left"
+                  onClick={() => {
+                    const container = document.getElementById("tabs-container");
+                    const scrollAmount = container.offsetWidth * 0.3333; // 33.33% of container width
+                    container.scrollBy({
+                      left: -scrollAmount, // negative to scroll left
+                      behavior: "smooth",
+                    });
+                    setTimeout(checkArrows, 300);
+                  }}
+                  className="hover:bg-gray-100 text-gray-500 hidden"
                 >
-                  Activities (
-                  {activeTab === "activities"
-                    ? filteredActivity.length
-                    : dashboardStats.total_activities}
-                  )
+                  <ChevronLeft />
                 </button>
+              )}
+            </div>
+            {/* Tabs */}
+            <div className="flex-grow overflow-hidden">
+              <div
+                id="tabs-container"
+                className="flex space-x-1 overflow-x-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
+                onScroll={() => checkArrows()}
+              >
+                <div className="flex  mb-6 w-full">
+                  {userRole !== "limited" && (
+                    <>
+                      <button
+                        onClick={() => setActiveTab("activities")}
+                        className={`py-2 px-4 font-medium border-b-2 flex-shrink-0 transition-colors ${
+                          activeTab === "activities"
+                            ? "border-blue-600 text-blue-600"
+                            : "border-gray-500 text-gray-500 hover:text-gray-700"
+                        }`}
+                        style={{ width: "33.333%" }}
+                      >
+                        Activities (
+                        {activeTab === "activities"
+                          ? filteredActivity.length
+                          : dashboardStats.total_activities}
+                        )
+                      </button>
+                      <button
+                        onClick={() => setActiveTab("pending")}
+                        className={`py-2 px-4 font-medium border-b-2 flex-shrink-0 transition-colors ${
+                          activeTab === "pending"
+                            ? "border-blue-600 text-blue-600"
+                            : "border-gray-500 text-gray-500 hover:text-gray-700"
+                        }`}
+                        style={{ width: "33.333%" }}
+                      >
+                        Pending (
+                        {activeTab === "pending"
+                          ? filteredPending.length
+                          : dashboardStats.pending_registrations}
+                        )
+                      </button>
+                    </>
+                  )}
+                  <button
+                    onClick={() => setActiveTab("submitted")}
+                    className={`py-2 px-4 font-medium border-b-2 flex-shrink-0 transition-colors ${
+                      activeTab === "submitted"
+                        ? "border-blue-600 text-blue-600"
+                        : "border-gray-500 text-gray-500 hover:text-gray-700"
+                    }`}
+                    style={{ width: "33.333%" }}
+                  >
+                    Submitted (
+                    {activeTab === "submitted"
+                      ? filteredSubmitted.length
+                      : dashboardStats.submitted_registrations}
+                    )
+                  </button>
+                  {filtering && userRole !== "limited" && (
+                    <div
+                      className="py-2 px-4 font-medium border-b-2 border-gray-500 text-gray-500 hover:text-gray-700 flex-shrink-0 flex flex-col items-center"
+                      style={{ width: "33.333%" }}
+                    >
+                      <div>Total</div>
+                      <div>({totalRegistrations})</div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+            <div className="flex-shrink-0 w-6 flex justify-start">
+              {filtering && (
                 <button
-                  onClick={() => setActiveTab("pending")}
-                  className={`py-2 px-4 font-medium border-b-2 transition-colors ${
-                    activeTab === "pending"
-                      ? "border-blue-600 text-blue-600"
-                      : "border-transparent text-gray-500 hover:text-gray-700"
-                  }`}
+                  id="scroll-right"
+                  onClick={() => {
+                    const container = document.getElementById("tabs-container");
+                    const scrollAmount = container.offsetWidth * 0.3333; // 33% of container width
+                    container.scrollBy({
+                      left: scrollAmount, // negative to scroll left
+                      behavior: "smooth",
+                    });
+                    setTimeout(checkArrows, 300);
+                  }}
+                  className="hover:bg-gray-100 text-gray-500"
                 >
-                  Pending (
-                  {activeTab === "pending"
-                    ? filteredPending.length
-                    : dashboardStats.pending_registrations}
-                  )
+                  <ChevronRight />
                 </button>
-              </>
-            )}
-            <button
-              onClick={() => setActiveTab("submitted")}
-              className={`py-2 px-4 font-medium border-b-2 transition-colors ${
-                activeTab === "submitted"
-                  ? "border-blue-600 text-blue-600"
-                  : "border-transparent text-gray-500 hover:text-gray-700"
-              }`}
-            >
-              Submitted (
-              {activeTab === "submitted"
-                ? filteredSubmitted.length
-                : dashboardStats.submitted_registrations}
-              )
-            </button>
+              )}
+            </div>
           </div>
 
           {/* Header */}
-          <div className="flex justify-between items-center mb-4">
-            <div className="flex items-center gap-3">
-              <h2 className="text-xl font-bold text-gray-900">
-                {activeTab === "activities" ? "Activities" : "Registrations"}
-              </h2>
-              {loading && (
-                <span className="text-xs text-blue-600 flex items-center gap-1">
+          <div className="pl-6 pr-6 pb-6">
+            <div className="flex justify-between items-center mb-4">
+              <div className="flex items-center gap-3">
+                <h2 className="text-xl font-bold text-gray-900">
+                  {activeTab === "activities" ? "Activities" : "Registrations"}
+                </h2>
+                {loading && (
+                  <span className="text-xs text-blue-600 flex items-center gap-1">
+                    <svg
+                      className="animate-spin h-3 w-3"
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                    >
+                      <circle
+                        className="opacity-25"
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        strokeWidth="4"
+                      ></circle>
+                      <path
+                        className="opacity-75"
+                        fill="currentColor"
+                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                      ></path>
+                    </svg>
+                    Loading...
+                  </span>
+                )}
+              </div>
+              <button
+                onClick={() => handle_refresh()}
+                // disabled={isRefreshing}
+                className="bg-gray-100 text-gray-700 py-1 px-3 rounded-md hover:bg-gray-200 transition-colors text-sm disabled:opacity-50 flex items-center gap-2"
+              >
+                {isRefreshing ? (
                   <svg
-                    className="animate-spin h-3 w-3"
+                    className="h-4 w-4"
+                    style={{ animation: "spin 1s linear infinite reverse" }}
                     xmlns="http://www.w3.org/2000/svg"
                     fill="none"
                     viewBox="0 0 24 24"
+                    stroke="currentColor"
                   >
-                    <circle
-                      className="opacity-25"
-                      cx="12"
-                      cy="12"
-                      r="10"
-                      stroke="currentColor"
-                      strokeWidth="4"
-                    ></circle>
                     <path
-                      className="opacity-75"
-                      fill="currentColor"
-                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                    ></path>
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth="2"
+                      d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                    />
                   </svg>
-                  Loading...
-                </span>
-              )}
+                ) : (
+                  <svg
+                    className="h-4 w-4"
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth="2"
+                      d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                    />
+                  </svg>
+                )}{" "}
+                Refresh
+              </button>
             </div>
-            <button
-              onClick={() => handle_refresh()}
-              // disabled={isRefreshing}
-              className="bg-gray-100 text-gray-700 py-1 px-3 rounded-md hover:bg-gray-200 transition-colors text-sm disabled:opacity-50 flex items-center gap-2"
-            >
-              {isRefreshing ? (
-                <svg
-                  className="h-4 w-4"
-                  style={{ animation: "spin 1s linear infinite reverse" }}
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="2"
-                    d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-                  />
-                </svg>
-              ) : (
-                <svg
-                  className="h-4 w-4"
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="2"
-                    d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-                  />
-                </svg>
-              )}{" "}
-              Refresh
-            </button>
-          </div>
 
-          {/* Search and Filters - Mobile Responsive */}
-          <div className="mb-6 p-4 bg-gray-50 rounded-lg">
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
-              <div className="min-w-0">
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  {activeTab === "activities"
-                    ? "Search Activities"
-                    : "Search by Name"}
-                </label>
-                <input
-                  type="text"
-                  placeholder={
-                    activeTab === "activities"
-                      ? "Search description or client"
-                      : "e.g. smith, j"
-                  }
-                  value={
-                    activeTab === "activities" ? activitySearchTerm : searchName
-                  }
-                  onChange={(e) =>
-                    activeTab === "activities"
-                      ? handleActivityTermSearch(e.target.value)
-                      : handleNameSearch(e.target.value)
-                  }
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  style={{
-                    height: "40px",
-                    minHeight: "40px",
-                    maxHeight: "40px",
-                  }}
-                />
-              </div>
-              <div className="min-w-0">
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Search by Date
-                </label>
-                <DatePicker
-                  name="reg_date"
-                  value={searchDate}
-                  onChange={(e) => handleDateSearch(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  style={{
-                    height: "40px",
-                    minHeight: "40px",
-                    maxHeight: "40px",
-                  }}
-                />
-              </div>
-
-              {searchDate && (
+            {/* Search and Filters - Mobile Responsive */}
+            <div className="mb-6 p-4 bg-gray-50 rounded-lg">
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
                 <div className="min-w-0">
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    End Date
+                    {activeTab === "activities"
+                      ? "Search Activities"
+                      : "Search by Name"}
+                  </label>
+                  <input
+                    type="text"
+                    placeholder={
+                      activeTab === "activities"
+                        ? "Search description or client"
+                        : "e.g. smith, j"
+                    }
+                    value={
+                      activeTab === "activities"
+                        ? activitySearchTerm
+                        : searchName
+                    }
+                    onChange={(e) =>
+                      activeTab === "activities"
+                        ? handleActivityTermSearch(e.target.value)
+                        : handleNameSearch(e.target.value)
+                    }
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    style={{
+                      height: "40px",
+                      minHeight: "40px",
+                      maxHeight: "40px",
+                    }}
+                  />
+                </div>
+                <div className="min-w-0">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Search by Date
                   </label>
                   <DatePicker
                     name="reg_date"
-                    value={searchEndDate}
-                    onChange={(e) => handleEndDateSearch(e.target.value)}
+                    value={searchDate}
+                    onChange={(e) => handleDateSearch(e.target.value)}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                     style={{
                       height: "40px",
@@ -470,109 +552,50 @@ const AdminDashboard = () => {
                     }}
                   />
                 </div>
-              )}
 
-              <div className="min-w-0">
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Search by Month
-                </label>
-                <MonthPicker
-                  name="reg_date"
-                  value={searchMonth}
-                  onChange={(e) => handleMonthSearch(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  style={{
-                    height: "40px",
-                    minHeight: "40px",
-                    maxHeight: "40px",
-                  }}
-                />
-              </div>
+                {searchDate && (
+                  <div className="min-w-0">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      End Date
+                    </label>
+                    <DatePicker
+                      name="reg_date"
+                      value={searchEndDate}
+                      onChange={(e) => handleEndDateSearch(e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      style={{
+                        height: "40px",
+                        minHeight: "40px",
+                        maxHeight: "40px",
+                      }}
+                    />
+                  </div>
+                )}
 
-              <div className="min-w-0">
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Disposition
-                </label>
-                <select
-                  value={searchDisposition}
-                  onChange={(e) => handleDispositionSearch(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  style={{
-                    height: "40px",
-                    minHeight: "40px",
-                    maxHeight: "40px",
-                  }}
-                >
-                  <option value="">All</option>
-                  {/* Most Frequently Used */}
-                  {options["disposition"]
-                    .filter((d) => d.is_frequent)
-                    .map((disposition) => (
-                      <option key={disposition.id} value={disposition.name}>
-                        {disposition.name}
-                      </option>
-                    ))}
-                  {/* Separator */}
-                  {options["disposition"].filter((d) => !d.is_frequent).length >
-                    0 && <option disabled>-------</option>}
-                  {/* All Others in Alphabetical Order */}
-                  {options["disposition"]
-                    .filter((d) => !d.is_frequent)
-                    .sort((a, b) => a.name.localeCompare(b.name))
-                    .map((disposition) => (
-                      <option key={disposition.id} value={disposition.name}>
-                        {disposition.name}
-                      </option>
-                    ))}
-                </select>
-              </div>
-
-              <div className="min-w-0">
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Referral Site
-                </label>
-                <select
-                  value={searchReferralSite}
-                  onChange={(e) => handleReferralSiteSearch(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  style={{
-                    height: "40px",
-                    minHeight: "40px",
-                    maxHeight: "40px",
-                  }}
-                >
-                  <option value="">Select Referral Site</option>
-                  {/* Most Frequently Used */}
-                  {options["referral_site"]
-                    .filter((s) => s.is_frequent)
-                    .map((site) => (
-                      <option key={site.id} value={site.name}>
-                        {site.name}
-                      </option>
-                    ))}
-                  {/* Separator */}
-                  {options["referral_site"].filter((s) => !s.is_frequent)
-                    .length > 0 && <option disabled>-------</option>}
-                  {/* All Others in Alphabetical Order */}
-                  {options["referral_site"]
-                    .filter((s) => !s.is_frequent)
-                    .sort((a, b) => a.name.localeCompare(b.name))
-                    .map((site) => (
-                      <option key={site.id} value={site.name}>
-                        {site.name}
-                      </option>
-                    ))}
-                </select>
-              </div>
-
-              {activeTab === "activities" && (
-                <div className="min-w-0 md:col-span-2 xl:col-span-1">
+                <div className="min-w-0">
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Status
+                    Search by Month
+                  </label>
+                  <MonthPicker
+                    name="reg_date"
+                    value={searchMonth}
+                    onChange={(e) => handleMonthSearch(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    style={{
+                      height: "40px",
+                      minHeight: "40px",
+                      maxHeight: "40px",
+                    }}
+                  />
+                </div>
+
+                <div className="min-w-0">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Disposition
                   </label>
                   <select
-                    value={activityStatusFilter}
-                    onChange={(e) => handleActivityStatusSearch(e.target.value)}
+                    value={searchDisposition}
+                    onChange={(e) => handleDispositionSearch(e.target.value)}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                     style={{
                       height: "40px",
@@ -580,105 +603,185 @@ const AdminDashboard = () => {
                       maxHeight: "40px",
                     }}
                   >
-                    <option value="all">All Activities</option>
-                    <option value="upcoming">Upcoming</option>
-                    <option value="completed">Completed</option>
-                    <option value="late">Late</option>
+                    <option value="">All</option>
+                    {/* Most Frequently Used */}
+                    {options["disposition"]
+                      .filter((d) => d.is_frequent)
+                      .map((disposition) => (
+                        <option key={disposition.id} value={disposition.name}>
+                          {disposition.name}
+                        </option>
+                      ))}
+                    {/* Separator */}
+                    {options["disposition"].filter((d) => !d.is_frequent)
+                      .length > 0 && <option disabled>-------</option>}
+                    {/* All Others in Alphabetical Order */}
+                    {options["disposition"]
+                      .filter((d) => !d.is_frequent)
+                      .sort((a, b) => a.name.localeCompare(b.name))
+                      .map((disposition) => (
+                        <option key={disposition.id} value={disposition.name}>
+                          {disposition.name}
+                        </option>
+                      ))}
                   </select>
                 </div>
-              )}
-            </div>
 
-            {/* Clear All Filters Button */}
-            {activeTab !== "activities" &&
-              (searchName ||
-                searchEndDate ||
-                searchMonth ||
-                searchDate ||
-                searchDisposition ||
-                searchReferralSite) && (
-                <div className="mt-4 flex justify-center">
-                  <button
-                    onClick={clearAllFilters}
-                    className="bg-gray-500 text-white py-2 px-4 rounded-md hover:bg-gray-600 transition-colors text-sm"
+                <div className="min-w-0">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Referral Site
+                  </label>
+                  <select
+                    value={searchReferralSite}
+                    onChange={(e) => handleReferralSiteSearch(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    style={{
+                      height: "40px",
+                      minHeight: "40px",
+                      maxHeight: "40px",
+                    }}
                   >
-                    Clear All Filters
-                  </button>
+                    <option value="">Select Referral Site</option>
+                    {/* Most Frequently Used */}
+                    {options["referral_site"]
+                      .filter((s) => s.is_frequent)
+                      .map((site) => (
+                        <option key={site.id} value={site.name}>
+                          {site.name}
+                        </option>
+                      ))}
+                    {/* Separator */}
+                    {options["referral_site"].filter((s) => !s.is_frequent)
+                      .length > 0 && <option disabled>-------</option>}
+                    {/* All Others in Alphabetical Order */}
+                    {options["referral_site"]
+                      .filter((s) => !s.is_frequent)
+                      .sort((a, b) => a.name.localeCompare(b.name))
+                      .map((site) => (
+                        <option key={site.id} value={site.name}>
+                          {site.name}
+                        </option>
+                      ))}
+                  </select>
                 </div>
-              )}
 
-            {/* Clear All Filters Button */}
-            {activeTab === "activities" &&
-              (searchDate ||
-                searchEndDate ||
-                searchMonth ||
-                searchDisposition ||
-                searchReferralSite ||
-                activitySearchTerm ||
-                activityStatusFilter !== "all") && (
-                <div className="mt-4 flex justify-center">
-                  <button
-                    onClick={clearAllFilters}
-                    className="bg-gray-500 text-white py-2 px-4 rounded-md hover:bg-gray-600 transition-colors text-sm"
-                  >
-                    Clear All Filters
-                  </button>
-                </div>
-              )}
-          </div>
-
-          {error && (
-            <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
-              {error}
-            </div>
-          )}
-
-          {/* Content Area */}
-          {loading && currentData.length === 0 ? (
-            <div className="text-center py-8">
-              <div className="text-gray-600">Loading {activeTab}...</div>
-            </div>
-          ) : (
-            <div>
-              {/* No Data Messages */}
-              {currentData.length === 0 && (
-                <div className="text-center py-8">
-                  <p className="text-gray-600">
-                    {totalRecords === 0
-                      ? `No ${activeTab} found.`
-                      : `No ${activeTab} match your search criteria.`}
-                  </p>
-                </div>
-              )}
-
-              {/* Data Display */}
-              {currentData.length > 0 && (
-                <>
-                  {/* Performance optimized rendering */}
-                  <div className="space-y-4">
-                    {activeTab === "activities" ? (
-                      <ActivityItems
-                        handleDelete={handleDeleteActivity}
-                        handleSave={handleSave}
-                        handleFinalize={handleFinalize}
-                        handleRevertToPending={handleRevertToPending}
-                      />
-                    ) : (
-                      <RegistrationItems
-                        handleSave={handleSave}
-                        handleDelete={handleDelete}
-                        handleFinalize={handleFinalize}
-                        handleRevertToPending={handleRevertToPending}
-                      />
-                    )}
+                {activeTab === "activities" && (
+                  <div className="min-w-0 md:col-span-2 xl:col-span-1">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Status
+                    </label>
+                    <select
+                      value={activityStatusFilter}
+                      onChange={(e) =>
+                        handleActivityStatusSearch(e.target.value)
+                      }
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      style={{
+                        height: "40px",
+                        minHeight: "40px",
+                        maxHeight: "40px",
+                      }}
+                    >
+                      <option value="all">All Activities</option>
+                      <option value="upcoming">Upcoming</option>
+                      <option value="completed">Completed</option>
+                      <option value="late">Late</option>
+                    </select>
                   </div>
+                )}
+              </div>
 
-                  {/* Pagination Controls */}
-                  {totalPages > 1 && <PaginationControls />}
-                </>
-              )}
+              {/* Clear All Filters Button */}
+              {activeTab !== "activities" &&
+                (searchName ||
+                  searchEndDate ||
+                  searchMonth ||
+                  searchDate ||
+                  searchDisposition ||
+                  searchReferralSite) && (
+                  <div className="mt-4 flex justify-center">
+                    <button
+                      onClick={clearAllFilters}
+                      className="bg-gray-500 text-white py-2 px-4 rounded-md hover:bg-gray-600 transition-colors text-sm"
+                    >
+                      Clear All Filters
+                    </button>
+                  </div>
+                )}
+
+              {/* Clear All Filters Button */}
+              {activeTab === "activities" &&
+                (searchDate ||
+                  searchEndDate ||
+                  searchMonth ||
+                  searchDisposition ||
+                  searchReferralSite ||
+                  activitySearchTerm ||
+                  activityStatusFilter !== "all") && (
+                  <div className="mt-4 flex justify-center">
+                    <button
+                      onClick={clearAllFilters}
+                      className="bg-gray-500 text-white py-2 px-4 rounded-md hover:bg-gray-600 transition-colors text-sm"
+                    >
+                      Clear All Filters
+                    </button>
+                  </div>
+                )}
             </div>
-          )}
+
+            {error && (
+              <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+                {error}
+              </div>
+            )}
+
+            {/* Content Area */}
+            {loading && currentData.length === 0 ? (
+              <div className="text-center py-8">
+                <div className="text-gray-600">Loading {activeTab}...</div>
+              </div>
+            ) : (
+              <div>
+                {/* No Data Messages */}
+                {currentData.length === 0 && (
+                  <div className="text-center py-8">
+                    <p className="text-gray-600">
+                      {totalRecords === 0
+                        ? `No ${activeTab} found.`
+                        : `No ${activeTab} match your search criteria.`}
+                    </p>
+                  </div>
+                )}
+
+                {/* Data Display */}
+                {currentData.length > 0 && (
+                  <>
+                    {/* Performance optimized rendering */}
+                    <div className="space-y-4">
+                      {activeTab === "activities" ? (
+                        <ActivityItems
+                          handleDelete={handleDeleteActivity}
+                          handleSave={handleSave}
+                          handleFinalize={handleFinalize}
+                          handleRevertToPending={handleRevertToPending}
+                        />
+                      ) : (
+                        <RegistrationItems
+                          handleSave={handleSave}
+                          handleDelete={handleDelete}
+                          handleFinalize={handleFinalize}
+                          handleRevertToPending={handleRevertToPending}
+                        />
+                      )}
+                    </div>
+
+                    {/* Pagination Controls */}
+                    {totalPages > 1 && <PaginationControls />}
+                  </>
+                )}
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>
