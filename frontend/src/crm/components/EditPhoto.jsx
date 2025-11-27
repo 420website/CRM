@@ -1,6 +1,9 @@
-import { useEffect } from "react";
+import { useState } from "react";
 import { compressImageToBlob } from "../../utils/compressImage";
 import toast from "react-hot-toast";
+import { Trash } from "lucide-react";
+import { Image } from "lucide-react";
+import { ImageOff } from "lucide-react";
 
 export default function EditPhoto({
   formData,
@@ -10,6 +13,8 @@ export default function EditPhoto({
   setPhotoPreview,
   setPhotoChanged,
 }) {
+  const [showingPhoto, setShowingPhoto] = useState(false);
+
   const handlePhotoChange = async (e) => {
     const file = e.target.files[0];
     if (file) {
@@ -61,7 +66,9 @@ export default function EditPhoto({
     <div id="editPhoto" className="mb-0">
       {/* Photo Upload Section */}
       <div className="border-b border-gray-200 pb-2">
-        <h2 className="text-lg font-medium text-gray-900 mb-4">Client Photo</h2>
+        <h2 className="text-lg font-medium text-gray-900 mb-4">
+          Client Profile
+        </h2>
         <div className="space-y-4">
           <div className="p-0 mb-0">
             {/* Upload Option */}
@@ -95,26 +102,44 @@ export default function EditPhoto({
           </div>
 
           {photoPreview && (
-            <div className="mt-4 mb-0">
-              <h3 className="text-sm font-medium text-gray-900 mb-2">
-                Photo Preview
-              </h3>
-              <div className="w-48 h-48 border-2 border-gray-300 rounded-lg overflow-hidden">
-                <img
-                  src={photoPreview}
-                  alt="Client photo preview"
-                  className="w-full h-full object-cover"
-                />
+            <>
+              <div className="flex items-center gap-4 mt-2 mb-0">
+                <h3 className="text-sm font-medium text-gray-900">
+                  Photo Preview
+                </h3>
+
+                <div className="flex gap-2">
+                  {showingPhoto ? (
+                    <button
+                      type="button"
+                      onClick={() => setShowingPhoto(false)}
+                    >
+                      <ImageOff className="w-3 h-4" />
+                    </button>
+                  ) : (
+                    <button type="button" onClick={() => setShowingPhoto(true)}>
+                      <Image className="w-3 h-4" />
+                    </button>
+                  )}
+                  <button type="button" onClick={removePhoto}>
+                    <Trash className="w-3 h-4" />
+                  </button>
+                </div>
               </div>
-              <button
-                type="button"
-                onClick={removePhoto}
-                className="mt-2 text-red-600 hover:text-red-800 text-sm font-medium"
-              >
-                Remove Photo
-              </button>
-            </div>
+              {showingPhoto && (
+                <div className="mt-2 mb-0">
+                  <div className="w-48 h-48 border-2 border-gray-300 rounded-lg overflow-hidden">
+                    <img
+                      src={photoPreview}
+                      alt="Client photo preview"
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                </div>
+              )}
+            </>
           )}
+
           <p className="mt-2 text-sm text-gray-500">
             File: {formData.file_id || "NA"} ID: {formData.id || "Unknown"}
           </p>
