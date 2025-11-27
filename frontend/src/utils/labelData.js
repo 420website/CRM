@@ -135,7 +135,6 @@ const getFormattedCopyData = async (currentRegistrationId, formData) => {
         testSummary += `Result: ${test.result || "Not specified"}\n`;
 
         if (test.type === "HIV") {
-          console.log("hellog");
           if (test.result === "Positive" && test.data?.hiv_type) {
             testSummary += `HIV Type: (${test.data?.hiv_type})\n`;
           }

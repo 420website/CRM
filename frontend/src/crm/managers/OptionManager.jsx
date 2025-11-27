@@ -260,11 +260,7 @@ export default function OptionManager({ type }) {
                 ))}
             </div>
             {getFilteredOptions().filter((s) => s.is_frequent).length === 0 && (
-              <p className="text-sm text-gray-500 italic">
-                {optionsSearch
-                  ? "No frequently used coverage match your search."
-                  : "No frequently used coverage."}
-              </p>
+              <p className="text-sm text-gray-500 italic">None</p>
             )}
           </div>
 
@@ -297,13 +293,7 @@ export default function OptionManager({ type }) {
                 ))}
             </div>
             {getFilteredOptions().filter((s) => !s.is_frequent).length ===
-              0 && (
-              <p className="text-sm text-gray-500 italic">
-                {optionsSearch
-                  ? "No other coverage match your search."
-                  : "No other coverage."}
-              </p>
-            )}
+              0 && <p className="text-sm text-gray-500 italic">None</p>}
           </div>
         </div>
 
