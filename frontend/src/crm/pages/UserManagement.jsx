@@ -99,7 +99,7 @@ function EditUser({
           <label className="block text-sm font-medium text-gray-700 mb-3">
             User Role
           </label>
-          <div class="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-2 gap-4">
             {["admin", "standard", "guest", "limited"].map((roleOption) => (
               <div key={roleOption} className="flex items-center">
                 <input
@@ -134,7 +134,7 @@ function EditUser({
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             {[
               "Client",
-              "Tests",
+              "Assessments",
               "Medication",
               "Dispensing",
               "Notes",

@@ -3,10 +3,11 @@ import { ObjectServices } from "../../services/objectService";
 import { loadImage, loadPDF, loadWord } from "../../utils/loadFile";
 import DocumentFullScreen from "../components/DocumentFullScreen";
 import DocumentPreview from "../components/DocumentPreview";
-import { useRegistration } from "../../context/RegistrationContext";
 import toast from "react-hot-toast";
 import { useAuth } from "../../context/AuthContext";
 import { Download } from "lucide-react";
+import OptionManager from "../managers/OptionManager";
+import { useReferences } from "../../context/ReferenceContext";
 
 export default function Attachments({
   setActiveTab,
@@ -14,8 +15,9 @@ export default function Attachments({
   fileId,
 }) {
   const { userRole } = useAuth();
-  const { setShowDocumentTypeManager, documentTypes } = useRegistration();
+  const { setShowManager, showManager, options } = useReferences();
   const [loading, setLoading] = useState(false);
+
   const [documentType, setDocumentType] = useState("");
   const [documentUrl, setDocumentUrl] = useState("");
   const [isLoadingDocument, setIsLoadingDocument] = useState(false);
@@ -298,6 +300,10 @@ export default function Attachments({
   return (
     <div className="tab-content">
       <div className="space-y-6">
+        {showManager === "document_type" && (
+          <OptionManager type={showManager} />
+        )}
+
         {!currentRegistrationId && (
           <div className="border-2 border-orange-200 bg-orange-50 p-4 rounded-lg">
             <div className="flex items-center">
@@ -361,7 +367,7 @@ export default function Attachments({
               {userRole == "admin" && (
                 <button
                   type="button"
-                  onClick={() => setShowDocumentTypeManager(true)}
+                  onClick={() => setShowManager("document_type")}
                   className="text-blue-600 hover:text-blue-800 text-sm"
                 >
                   Manage Document Types
@@ -379,7 +385,7 @@ export default function Attachments({
             >
               <option value="">Select Document Type</option>
               {/* Most Frequently Used */}
-              {documentTypes
+              {options["document_type"]
                 .filter((d) => d.is_frequent)
                 .map((documentType) => (
                   <option key={documentType.id} value={documentType.name}>
@@ -387,11 +393,10 @@ export default function Attachments({
                   </option>
                 ))}
               {/* Separator */}
-              {documentTypes.filter((d) => !d.is_frequent).length > 0 && (
-                <option disabled>-------</option>
-              )}
+              {options["document_type"].filter((d) => !d.is_frequent).length >
+                0 && <option disabled>-------</option>}
               {/* All Others in Alphabetical Order */}
-              {documentTypes
+              {options["document_type"]
                 .filter((d) => !d.is_frequent)
                 .sort((a, b) => a.name.localeCompare(b.name))
                 .map((documentType) => (

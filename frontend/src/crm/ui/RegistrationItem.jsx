@@ -2,23 +2,26 @@ import { useNavigate } from "react-router-dom";
 import { ObjectServices } from "../../services/objectService";
 import { useCallback, useEffect, useRef, useState } from "react";
 import toast from "react-hot-toast";
+import { useDashboard } from "../../context/DashboardContext";
 
 export function RegistrationItems({
-  activeTab,
-  deletingId,
-  finalizingId,
-  revertingId,
-  finalizedData,
-  pendingData,
   handleSave,
   handleDelete,
   handleFinalize,
   handleRevertToPending,
-  filteredData,
 }) {
+  const {
+    activeTab,
+    filteredPending,
+    filteredSubmitted,
+    lastItem,
+    setLastItem,
+  } = useDashboard();
   const [showingPhotos, setShowingPhotos] = useState([]);
   const [loadedPhotos, setLoadedPhotos] = useState({});
   const [loadingPhotos, setLoadingPhotos] = useState(new Set());
+  const filteredData =
+    activeTab === "pending" ? filteredPending : filteredSubmitted;
 
   const getPhoto = async (registrationId) => {
     const result = await ObjectServices.get_photo_raw(registrationId);
@@ -48,11 +51,13 @@ export function RegistrationItems({
     let patient;
 
     if (activeTab === "finalized") {
-      patient = finalizedData.filter(
+      patient = filteredSubmitted.filter(
         (patient) => patient.id === registrationId,
       );
     } else {
-      patient = pendingData.filter((patient) => patient.id === registrationId);
+      patient = filteredPending.filter(
+        (patient) => patient.id === registrationId,
+      );
     }
 
     const photo = await getPhoto(registrationId);
@@ -72,6 +77,17 @@ export function RegistrationItems({
     );
   };
 
+  useEffect(() => {
+    if (lastItem && filteredData.length > 0) {
+      setTimeout(() => {
+        document
+          .getElementById(`item-${lastItem}`)
+          ?.scrollIntoView({ behavior: "smooth" });
+        setLastItem(null); // Clear after scrolling
+      }, 300);
+    }
+  }, []);
+
   const renderRegistrationItem = useCallback(
     (item, index) => (
       <RegistrationItem
@@ -81,9 +97,6 @@ export function RegistrationItems({
         item={item}
         loadingPhotos={loadingPhotos}
         loadedPhotos={loadedPhotos}
-        deletingId={deletingId}
-        finalizingId={finalizingId}
-        revertingId={revertingId}
         handleDelete={handleDelete}
         handleSave={handleSave}
         handleFinalize={handleFinalize}
@@ -94,12 +107,12 @@ export function RegistrationItems({
       />
     ),
     [
+      activeTab,
       loadedPhotos,
       loadingPhotos,
-      deletingId,
-      finalizingId,
-      activeTab,
       showingPhotos,
+      filteredPending,
+      filteredSubmitted,
     ],
   );
 
@@ -112,9 +125,6 @@ export default function RegistrationItem({
   item,
   loadingPhotos,
   loadedPhotos,
-  deletingId,
-  finalizingId,
-  revertingId,
   handleDelete,
   handleSave,
   handleFinalize,
@@ -123,6 +133,7 @@ export default function RegistrationItem({
   hidePhoto,
   showingPhotos,
 }) {
+  const { setLastItem } = useDashboard();
   const navigate = useNavigate();
   const nameRef = useRef(null);
   const [nameOnOneLine, setNameOnOneLine] = useState(true);
@@ -146,7 +157,11 @@ export default function RegistrationItem({
   }, [item.first_name, item.last_name]);
 
   return (
-    <div key={item.id} className="border rounded-lg p-4 bg-gray-50 mb-2">
+    <div
+      key={item.id}
+      id={`item-${item.id}`}
+      className="border rounded-lg p-4 bg-gray-50 mb-2 scroll-mt-[20px]"
+    >
       <div className="flex justify-between items-start">
         <div className="flex-1 min-w-0">
           <div className="flex justify-between items-start gap-2 min-w-0">
@@ -241,13 +256,13 @@ export default function RegistrationItem({
             >
               <button
                 onClick={() => handleDelete(item.id)}
-                disabled={deletingId === item.id}
                 className={`bg-red-600 hover:bg-red-700 text-white ${isShowing ? "py-1 px-2" : "py-2 px-3"} rounded-md transition-colors text-xs font-medium disabled:opacity-50 flex-1 min-w-[60px]`}
               >
-                {deletingId === item.id ? "Deleting..." : "Delete"}
+                Delete
               </button>
               <button
                 onClick={() => {
+                  setLastItem(item.id);
                   navigate(`/admin-edit/${item.id}`);
                 }}
                 className={`bg-black hover:bg-gray-800 text-white ${isShowing ? "py-1 px-2" : "py-2 px-3"} rounded-md transition-colors text-xs font-medium flex-1 min-w-[60px]`}
@@ -262,20 +277,18 @@ export default function RegistrationItem({
                       hidePhoto(item.id, index);
                       handleSave(item.id);
                     }}
-                    disabled={finalizingId === item.id}
                     className={`bg-black hover:bg-gray-800 text-white ${isShowing ? "py-1 px-2" : "py-2 px-3"} rounded-md transition-colors text-xs font-medium disabled:opacity-50 flex-1 min-w-[60px]`}
                   >
-                    {finalizingId === item.id ? "Saving..." : "Save"}
+                    Save
                   </button>
                   <button
                     onClick={() => {
                       hidePhoto(item.id, index);
                       handleFinalize(item.id);
                     }}
-                    disabled={finalizingId === item.id}
                     className={`bg-green-600 hover:bg-green-700 text-white ${isShowing ? "py-1 px-2" : "py-2 px-3"} rounded-md transition-colors text-xs font-medium disabled:opacity-50 flex-1 min-w-[60px]`}
                   >
-                    {finalizingId === item.id ? "Submitting..." : "Submit"}
+                    Submit
                   </button>
                 </>
               )}
@@ -283,10 +296,9 @@ export default function RegistrationItem({
               {activeTab === "submitted" && (
                 <button
                   onClick={() => handleRevertToPending(item.id)}
-                  disabled={revertingId === item.id}
                   className="bg-green-600 hover:bg-green-700 text-white py-2 px-3 rounded-md transition-colors text-xs font-medium disabled:opacity-50 flex-1 min-w-[60px]"
                 >
-                  {revertingId === item.id ? "Reverting..." : "Back to Pending"}
+                  Back to Pending
                 </button>
               )}
             </div>

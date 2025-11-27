@@ -3,24 +3,13 @@ import { compressImageToBlob } from "../../utils/compressImage";
 import toast from "react-hot-toast";
 
 export default function EditPhoto({
+  formData,
   photoData,
   setPhotoData,
   photoPreview,
   setPhotoPreview,
   setPhotoChanged,
 }) {
-  // useEffect(() => {
-  //   const compressAndSetPreview = async () => {
-  //     if (photoData.file) {
-  //       setPhotoPreview(URL.createObjectURL(photoData.file));
-  //     } else {
-  //       setPhotoPreview(null);
-  //     }
-  //   };
-  //
-  //   compressAndSetPreview();
-  // }, [photoData.file]);
-
   const handlePhotoChange = async (e) => {
     const file = e.target.files[0];
     if (file) {
@@ -71,12 +60,12 @@ export default function EditPhoto({
   return (
     <div id="editPhoto" className="mb-0">
       {/* Photo Upload Section */}
-      <div className="border-b border-gray-200 pb-6">
+      <div className="border-b border-gray-200 pb-2">
         <h2 className="text-lg font-medium text-gray-900 mb-4">Client Photo</h2>
         <div className="space-y-4">
-          <div>
+          <div className="p-0 mb-0">
             {/* Upload Option */}
-            <div className="mb-4">
+            <div className="mb-2">
               <div>
                 <div className="flex items-center gap-3">
                   <button
@@ -89,10 +78,6 @@ export default function EditPhoto({
                     Upload Photo
                   </button>
 
-                  <span className="text-sm text-gray-600 truncate max-w-[200px]">
-                    {photoData.name || "No file chosen"}
-                  </span>
-
                   <input
                     type="file"
                     id="photo-upload"
@@ -103,14 +88,14 @@ export default function EditPhoto({
                 </div>
               </div>
             </div>
-            <p className="mt-2 text-sm text-gray-500">
+            <p className="mt-0 text-sm text-gray-500">
               Photos are optimized to ~800KB while maintaining high quality.
               Supported formats: JPG, PNG, GIF.
             </p>
           </div>
 
           {photoPreview && (
-            <div className="mt-4">
+            <div className="mt-4 mb-0">
               <h3 className="text-sm font-medium text-gray-900 mb-2">
                 Photo Preview
               </h3>
@@ -130,6 +115,9 @@ export default function EditPhoto({
               </button>
             </div>
           )}
+          <p className="mt-2 text-sm text-gray-500">
+            File: {formData.file_id || "NA"} ID: {formData.id || "Unknown"}
+          </p>
         </div>
       </div>
     </div>

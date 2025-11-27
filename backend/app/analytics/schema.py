@@ -41,6 +41,7 @@ class DataSummaryResponse(BaseModel):
 class ClaudeChatRequest(BaseModel):
     legacy_data: bool
     message: str
+    datetime: str
     session_id: Optional[str] = Field(
         default_factory=lambda: str(uuid.uuid4())
     )

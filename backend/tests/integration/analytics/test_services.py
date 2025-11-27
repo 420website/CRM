@@ -1,30 +1,70 @@
 # pyright: reportOptionalMemberAccess=none, reportArgumentType=none, reportAttributeAccessIssue=none
 import asyncio
 from decimal import Decimal
+import mimetypes
+import os
 from unittest import IsolatedAsyncioTestCase, skip
 from app.analytics.prompts import internal_system_message
 from app.analytics.rag import RagService
-from app.database import database
+from app.analytics.schema import ClaudeChatRequest
+from app.database import database, minio_client, redis_client
+from app.objects.schemas import AttachmentCreate
+from app.objects.services import AttachmentService, ObjectService
 from app.registration.schemas import (
     ActivityCreate,
+    AssessmentCreate,
     DispensingCreate,
     InteractionCreate,
     MedicationCreate,
     NoteCreate,
     PatientCreate,
-    TestCreate,
 )
 from app.registration.services import (
     ActivityService,
+    AssessmentService,
     DispensingService,
     InteractionService,
     MedicationService,
     NoteService,
     PatientService,
-    TestService,
 )
-from datetime import date
+from datetime import date, datetime
 import datetime as dt
+from zoneinfo import ZoneInfo
+
+
+def read_file(path: str) -> bytes:
+    with open(path, "rb") as file:
+        file_bytes = file.read()
+        return file_bytes
+
+
+async def upload_attachment(patient_id: int, file_name: str, path: str):
+    bucket = "testing"
+    key = f"{patient_id}/{file_name}"
+
+    file = read_file(path)
+
+    mime_type, _ = mimetypes.guess_type(path)
+    if mime_type is None:
+        mime_type = "application/octet-stream"  # default for unknown types
+
+    # Get document type (extension)
+    document_type = os.path.splitext(path)[1].lstrip(".")
+    if not document_type:
+        document_type = "pdf"
+
+    # # Create AttachmentCreate from form fields
+    metadata = AttachmentCreate(
+        file_name=file_name,
+        file_key=key,
+        file_size=file.__sizeof__(),
+        mime_type=mime_type,
+        document_type=document_type,
+    )
+
+    await ObjectService.upload_object(bucket=bucket, key=key, data=file)
+    await AttachmentService.upload_attachment(patient_id, metadata)
 
 
 class TestRagService(IsolatedAsyncioTestCase):
@@ -43,10 +83,22 @@ class TestRagService(IsolatedAsyncioTestCase):
             except Exception:
                 pass  # Ignore if patient doesn't exist
 
-    async def asyncSetUp(self) -> None:
+    @classmethod
+    async def asyncSetUpClass(cls):
         asyncio.get_event_loop().set_debug(False)
 
+    async def asyncSetUp(self) -> None:
+        asyncio.get_event_loop().set_debug(False)
+        await minio_client.connect()
         await database.connect()
+        await redis_client.connect()
+
+        self.bucket = "testing"
+        try:
+            await ObjectService.create_bucket(self.bucket)
+        except Exception:
+            pass
+
         await self._cleanup_test_data()
 
         self.patient = PatientCreate(
@@ -98,21 +150,16 @@ class TestRagService(IsolatedAsyncioTestCase):
         patients = await PatientService.get_patients()
         self.patient_id = patients[0].id
 
-        self.test_data = TestCreate(
-            test_type="HIV Screening",
-            test_date=date(2025, 10, 10),
-            hiv_result="Negative",
-            hiv_type="Rapid",
-            hiv_tester="Tester A",
-            hcv_result=None,
-            hcv_tester=None,
-            bloodwork_type="CBC",
-            bloodwork_circles="2",
-            bloodwork_result="Normal",
-            bloodwork_date_submitted=date(2025, 10, 10),
-            bloodwork_tester="Lab Tech B",
+        self.assessment_data = AssessmentCreate(
+            type="HIV",
+            date=date(2025, 10, 10),
+            result="Negative",
+            tester="Tester A",
+            data={"hiv_type": "Rapid"},
         )
-        await TestService.create_test(self.patient_id, self.test_data)
+        await AssessmentService.create_assessment(
+            self.patient_id, self.assessment_data
+        )
 
         # A valid note to use
         self.note_data = NoteCreate(
@@ -158,27 +205,242 @@ class TestRagService(IsolatedAsyncioTestCase):
         )
 
         self.activity_data = ActivityCreate(
-            description="Initial activity",
             date=date(2024, 1, 1),
             time=dt.time(9, 0),
+            name="Delivery",
+            description="Initial activity",
         )
         await ActivityService.create_activity(
             self.patient_id, self.activity_data
         )
 
     async def asyncTearDown(self) -> None:
+        await ObjectService.delete_objects(self.bucket, "")
+        await ObjectService.delete_bucket(self.bucket)
         await self._cleanup_test_data()
+
+        await redis_client.disconnect()
+        await minio_client.disconnect()
         await database.disconnect()
 
-    # create
+    @skip
+    async def test_prompt_midday(self):
+        # Request
+        tz = ZoneInfo("America/Toronto")
+        time = datetime(2025, 2, 1, 12, 0, 0, tzinfo=tz)
+        iso_string = time.isoformat()
+
+        request = ClaudeChatRequest(
+            legacy_data=False,
+            message="How many documents were uploaded under attachments today ?",
+            datetime=iso_string,
+        )
+
+        # Test
+        schema = await RagService.get_schema()
+        query = await RagService.generate_query(schema, request)
+
+        # validate
+        expected_query = """
+        SELECT *
+         FROM attachments a
+         WHERE a.uploaded_at >= '2025-02-01 05:00:00+00:00'
+         AND a.uploaded_at < '2025-02-02 05:00:00+00:00'
+        """
+
+        self.assertEqual(
+            " ".join(query.split()), " ".join(expected_query.split())
+        )
+
+    @skip
+    async def test_prompt_morning(self):
+        # Request
+        tz = ZoneInfo("America/Toronto")
+        time = datetime(2025, 2, 1, 1, 0, 0, tzinfo=tz)
+        iso_string = time.isoformat()
+
+        request = ClaudeChatRequest(
+            legacy_data=False,
+            message="How many documents were uploaded under attachments today ?",
+            datetime=iso_string,
+        )
+
+        # # Test
+        schema = await RagService.get_schema()
+        query = await RagService.generate_query(schema, request)
+
+        # validate
+        expected_query = """
+        SELECT *
+         FROM attachments a
+         WHERE a.uploaded_at >= '2025-02-01 05:00:00+00:00'
+         AND a.uploaded_at < '2025-02-02 05:00:00+00:00'
+        """
+
+        self.assertEqual(
+            " ".join(query.split()), " ".join(expected_query.split())
+        )
+
+    @skip
+    async def test_prompt_night(self):
+        # Request
+        tz = ZoneInfo("America/Toronto")
+        time = datetime(2025, 2, 1, 23, 0, 0, tzinfo=tz)
+        iso_string = time.isoformat()
+
+        request = ClaudeChatRequest(
+            legacy_data=False,
+            message="How many documents were uploaded under attachments today ?",
+            datetime=iso_string,
+        )
+
+        # Test
+        schema = await RagService.get_schema()
+        query = await RagService.generate_query(schema, request)
+
+        # validate
+        expected_query = """
+        SELECT *
+         FROM attachments a
+         WHERE a.uploaded_at >= '2025-02-01 05:00:00+00:00'
+         AND a.uploaded_at < '2025-02-02 05:00:00+00:00'
+        """
+
+        self.assertEqual(
+            " ".join(query.split()), " ".join(expected_query.split())
+        )
+
+    @skip
+    async def test_prompt_by_date(self):
+        # Request
+        tz = ZoneInfo("America/Toronto")
+        time = datetime(2025, 2, 1, 23, 0, 0, tzinfo=tz)
+        iso_string = time.isoformat()
+
+        request = ClaudeChatRequest(
+            legacy_data=False,
+            message="How many documents were uploaded under attachments nov 26th 2025 ?",
+            datetime=iso_string,
+        )
+
+        # Test
+        schema = await RagService.get_schema()
+        query = await RagService.generate_query(schema, request)
+
+        # validate
+        expected_query = """
+        SELECT *
+         FROM attachments a
+         WHERE a.uploaded_at >= '2025-11-26 05:00:00+00:00'
+         AND a.uploaded_at < '2025-11-27 05:00:00+00:00'
+        """
+
+        self.assertEqual(
+            " ".join(query.split()), " ".join(expected_query.split())
+        )
+
+    @skip
+    async def test_prompt_by_week(self):
+        # Request
+        tz = ZoneInfo("America/Toronto")
+        time = datetime(2025, 11, 29, 23, 0, 0, tzinfo=tz)
+        iso_string = time.isoformat()
+
+        request = ClaudeChatRequest(
+            legacy_data=False,
+            message="How many documents were uploaded under attachments this week ?",
+            datetime=iso_string,
+        )
+
+        # Test
+        schema = await RagService.get_schema()
+        query = await RagService.generate_query(schema, request)
+
+        # validate
+        expected_query = """
+        SELECT *
+         FROM attachments a
+         WHERE a.uploaded_at >= '2025-11-24 05:00:00+00:00'
+         AND a.uploaded_at < '2025-12-01 05:00:00+00:00'
+        """
+
+        self.assertEqual(
+            " ".join(query.split()), " ".join(expected_query.split())
+        )
+
+    @skip
+    async def test_prompt_by_month(self):
+        # Request
+        tz = ZoneInfo("America/Toronto")
+        time = datetime(2025, 11, 29, 23, 0, 0, tzinfo=tz)
+        iso_string = time.isoformat()
+
+        request = ClaudeChatRequest(
+            legacy_data=False,
+            message="How many documents were uploaded under attachments this month ?",
+            datetime=iso_string,
+        )
+
+        # Test
+        schema = await RagService.get_schema()
+        query = await RagService.generate_query(schema, request)
+
+        # validate
+        expected_query = """
+        SELECT *
+         FROM attachments a
+         WHERE a.uploaded_at >= '2025-11-01 05:00:00+00:00'
+         AND a.uploaded_at < '2025-12-01 05:00:00+00:00'
+        """
+
+        self.assertEqual(
+            " ".join(query.split()), " ".join(expected_query.split())
+        )
+
+    @skip
+    async def test_prompt_by_year(self):
+        # Request
+        tz = ZoneInfo("America/Toronto")
+        time = datetime(2025, 11, 29, 23, 0, 0, tzinfo=tz)
+        iso_string = time.isoformat()
+
+        request = ClaudeChatRequest(
+            legacy_data=False,
+            message="How many documents were uploaded under attachments this year ?",
+            datetime=iso_string,
+        )
+
+        # Test
+        schema = await RagService.get_schema()
+        query = await RagService.generate_query(schema, request)
+
+        # validate
+        expected_query = """
+        SELECT *
+         FROM attachments a
+         WHERE a.uploaded_at >= '2025-01-01 05:00:00+00:00'
+         AND a.uploaded_at < '2026-01-01 05:00:00+00:00'
+        """
+
+        self.assertEqual(
+            " ".join(query.split()), " ".join(expected_query.split())
+        )
+
     @skip
     async def test_prompt_internal(self):
-        question = (
-            "How many HCV,HIV and bloodwork tests were completed this month?"
+        tz = ZoneInfo("America/Toronto")
+        now_local = datetime.now(tz)
+        iso_string_local = now_local.isoformat()
+
+        request = ClaudeChatRequest(
+            legacy_data=False,
+            message="How many HCV,HIV and bloodwork tests were completed this month?",
+            datetime=iso_string_local,
         )
+
+        question = ()
         schema = await RagService.get_schema()
         query = await RagService.generate_query(schema, question)
         context = await RagService.retrieve_context(query)
         system_msg = internal_system_message(context)
         answer = await RagService.prompt_llm(system_msg, question, "14232")
-        print(answer)

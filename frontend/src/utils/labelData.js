@@ -78,7 +78,7 @@ const getFormattedCopyData = async (currentRegistrationId, formData) => {
     let currentTests = [];
     if (currentRegistrationId) {
       try {
-        const result = await PatientServices.get_tests_by_patient(
+        const result = await PatientServices.get_assessments_by_patient(
           currentRegistrationId,
         );
 
@@ -127,32 +127,30 @@ const getFormattedCopyData = async (currentRegistrationId, formData) => {
     if (currentTests && currentTests.length > 0) {
       testSummary = "\n\nTEST SUMMARY:\n";
       currentTests.forEach((test, index) => {
-        const testDate = test.test_date
-          ? new Date(test.test_date).toLocaleDateString()
+        const testDate = test.date
+          ? new Date(test.date).toLocaleDateString()
           : "No date";
         testSummary += `\nTest ${index + 1} (${testDate}):\n`;
-        testSummary += `Type: ${test.test_type || "Not specified"}\n`;
+        testSummary += `Type: ${test.type || "Not specified"}\n`;
+        testSummary += `Result: ${test.result || "Not specified"}\n`;
 
-        if (test.test_type === "HIV" || test.test_type === "Combined") {
-          testSummary += `HIV Result: ${test.hiv_result || "Not specified"}`;
-          if (test.hiv_result === "positive" && test.hiv_type) {
-            testSummary += ` (${test.hiv_type})`;
+        if (test.type === "HIV") {
+          if (test.result === "Positive" && test.data?.hiv_type) {
+            testSummary += `HIV Type: (${test.data?.hiv_type})\n`;
           }
-          testSummary += `\nHIV Tester: ${test.hiv_tester || "Not specified"}\n`;
         }
 
-        if (test.test_type === "HCV" || test.test_type === "Combined") {
-          testSummary += `HCV Result: ${test.hcv_result || "Not specified"}\n`;
-          testSummary += `HCV Tester: ${test.hcv_tester || "Not specified"}\n`;
-        }
-
-        if (test.bloodwork_type) {
-          testSummary += `Bloodwork Type: ${test.bloodwork_type}`;
-          if (test.bloodwork_type === "DBS" && test.bloodwork_circles) {
-            testSummary += ` (${test.bloodwork_circles} circles)`;
+        if (test.type === "Bloodwork") {
+          testSummary += `Bloodwork Type: ${test.data?.bloodwork_type}`;
+          if (
+            test.data?.bloodwork_type === "DBS" &&
+            test.data?.bloodwork_circles
+          ) {
+            testSummary += ` (${test.data?.bloodwork_circles} circles)`;
           }
           testSummary += "\n";
         }
+        testSummary += `Tester: ${test.tester || "Not specified"}\n`;
       });
     }
 

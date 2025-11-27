@@ -136,36 +136,32 @@ class PatientRead(PatientBase):
         from_attributes = True
 
 
-# Test Models
-class TestBase(BaseModel):
-    test_type: Optional[str] = None
-    test_date: Optional[dt.date] = None
-    # HIV Testing
-    hiv_result: Optional[str] = None
-    hiv_type: Optional[str] = None
-    hiv_tester: Optional[str] = None
-    # HCV Testing
-    hcv_result: Optional[str] = None
-    hcv_tester: Optional[str] = None
-    # Bloodwork Testing
-    bloodwork_type: Optional[str] = None
-    bloodwork_circles: Optional[str] = None
-    bloodwork_result: Optional[str] = None
-    bloodwork_date_submitted: Optional[dt.date] = None
-    bloodwork_tester: Optional[str] = None
+class AssessmentBase(BaseModel):
+    data: Optional[dict] = None
 
 
-class TestCreate(TestBase):
-    pass
+class AssessmentCreate(AssessmentBase):
+    type: str
+    date: dt.date
+    result: str
+    tester: str
 
 
-class TestUpdate(TestBase):
+class AssessementUpdate(AssessmentBase):
     patient_id: Optional[int] = None
+    type: Optional[str] = None
+    date: Optional[dt.date] = None
+    result: Optional[str] = None
+    tester: Optional[str] = None
 
 
-class TestRead(TestBase):
+class AssessmentRead(AssessmentBase):
     id: int
     patient_id: int
+    type: str
+    date: dt.date
+    result: str
+    tester: str
     created_at: datetime
     updated_at: datetime
 
@@ -276,7 +272,7 @@ class DispensingCreate(DispensingBase):
 
 class DispensingUpdate(DispensingBase):
     patient_id: Optional[int] = None
-    medication: Optional[str] = None
+    medication: str
 
 
 class DispensingRead(DispensingBase):
@@ -298,12 +294,13 @@ class ActivityBase(BaseModel):
 
 
 class ActivityCreate(ActivityBase):
-    # patient_id: int  # Required for creation
-    description: str  # Required for creation
+    name: str
+    description: str
 
 
 class ActivityUpdate(ActivityBase):
     patient_id: Optional[int] = None
+    name: Optional[str] = None
     description: Optional[str] = None
     completed: Optional[bool] = None
 
@@ -312,6 +309,7 @@ class ActivityRead(ActivityBase):
     id: int
     patient_id: int
     description: str
+    name: str
     completed: bool
     created_at: datetime
     updated_at: datetime
@@ -325,9 +323,15 @@ class PatientActivity(ActivityBase):
     patient_id: int
     first_name: str
     last_name: str
+    status: str
+    submitted_date: datetime
+    finalized_at: Optional[datetime] = None
+    reg_date: Optional[dt.date] = None
+    file_id: Optional[str] = None
     phone1: Optional[str] = None
     disposition: Optional[str] = None
     referral_site: Optional[str] = None
+    name: str
     description: str
     completed: bool
     created_at: datetime

@@ -60,46 +60,47 @@ export const PatientServices = {
   },
 
   // ======================
-  // Test
+  // Assessment
   // ======================
 
   // Create a test for a patient
-  create_test: async (patient_id, data) => {
+  create_assessment: async (patient_id, data) => {
     return apiCall(
-      () => api.post(`/patients/${patient_id}/tests/`, data),
-      "Creating test failed.",
+      () => api.post(`/patients/${patient_id}/assessment/`, data),
+      "Creating assessment failed.",
     );
   },
 
   // Get all tests for a patient
-  get_tests_by_patient: async (patient_id) => {
+  get_assessments_by_patient: async (patient_id) => {
     return apiCall(
-      () => api.get(`/patients/${patient_id}/tests/`),
-      "Fetching tests by patient failed.",
+      () => api.get(`/patients/${patient_id}/assessments/`),
+      "Fetching assessments by patient failed.",
     );
   },
 
   // Get a specific test by ID for a patient
-  get_test_by_id: async (patient_id, test_id) => {
+  get_assessment_by_id: async (patient_id, assessment_id) => {
     return apiCall(
-      () => api.get(`/patients/${patient_id}/tests/${test_id}`),
-      "Fetching test by ID failed.",
+      () => api.get(`/patients/${patient_id}/assessment/${assessment_id}`),
+      "Fetching assessment by ID failed.",
     );
   },
 
   // Update a test for a patient
-  update_test: async (patient_id, test_id, data) => {
+  update_assessment: async (patient_id, assessment_id, data) => {
     return apiCall(
-      () => api.patch(`/patients/${patient_id}/tests/${test_id}`, data),
-      "Updating test failed.",
+      () =>
+        api.patch(`/patients/${patient_id}/assessment/${assessment_id}`, data),
+      "Updating assessment failed.",
     );
   },
 
   // Delete a test for a patient
-  delete_test_by_id: async (patient_id, test_id) => {
+  delete_assessment_by_id: async (patient_id, assessment_id) => {
     return apiCall(
-      () => api.delete(`/patients/${patient_id}/tests/${test_id}`),
-      "Deleting test failed.",
+      () => api.delete(`/patients/${patient_id}/assessment/${assessment_id}`),
+      "Deleting assessment failed.",
     );
   },
 
