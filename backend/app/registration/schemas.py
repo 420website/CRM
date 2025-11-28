@@ -13,7 +13,10 @@ class IdentityCheck(BaseModel):
 
     @field_validator("first_name", "last_name")
     def normalize_name(cls, v):
-        return v.strip().title() if v else v
+        if v:
+            stripped = v.strip()
+            return stripped[0].upper() + stripped[1:] if stripped else stripped
+        return v
 
 
 class IdentityUser(BaseModel):
@@ -97,7 +100,10 @@ class PatientCreate(PatientBase):
 
     @field_validator("first_name", "last_name", "aka")
     def normalize_name(cls, v):
-        return v.strip().title() if v else v
+        if v:
+            stripped = v.strip()
+            return stripped[0].upper() + stripped[1:] if stripped else stripped
+        return v
 
 
 # Schema for updating patient data - inherits all optional fields
@@ -111,7 +117,10 @@ class PatientUpdate(PatientBase):
 
     @field_validator("first_name", "last_name", "aka")
     def normalize_name(cls, v):
-        return v.strip().title() if v else v
+        if v:
+            stripped = v.strip()
+            return stripped[0].upper() + stripped[1:] if stripped else stripped
+        return v
 
 
 class PatientStatus(BaseModel):
