@@ -25,7 +25,7 @@ import Assessments from "../tabs/Assessments";
 
 const AdminRegister = () => {
   const navigate = useNavigate();
-  const { userRole, userPermissions } = useAuth();
+  const { userRole, userPermissions, userProvince } = useAuth();
   const { getDashboardRegistrations } = useDashboard();
 
   const [loading, setLoading] = useState(false);
@@ -51,6 +51,7 @@ const AdminRegister = () => {
 
   const getDefaultForm = () => ({
     ...DEFAULT_FORM,
+    province: userProvince,
     reg_date: new Date().toISOString().split("T")[0],
     rna_sample_date: new Date().toISOString().split("T")[0],
   });

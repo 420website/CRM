@@ -26,7 +26,7 @@ import Assessments from "../tabs/Assessments";
 const AdminEdit = () => {
   const navigate = useNavigate();
   const { registrationId } = useParams();
-  const { userRole, userPermissions } = useAuth();
+  const { userRole, userPermissions, userProvince } = useAuth();
   const { setLastItem } = useDashboard();
   const { getClientAssociatedData } = useRegistration();
   const { getDashboardRegistrations, getDashboardActivities } = useDashboard();
@@ -55,6 +55,7 @@ const AdminEdit = () => {
 
   const getDefaultForm = () => ({
     ...DEFAULT_FORM,
+    province: userProvince,
     reg_date: new Date().toISOString().split("T")[0],
     rna_sample_date: new Date().toISOString().split("T")[0],
   });

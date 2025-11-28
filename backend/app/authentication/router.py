@@ -26,6 +26,7 @@ from app.authentication.schemas import (
     UserCreate,
     Email,
     ForgotPassword,
+    UserPermissions,
     UserRead,
     LoginResponse,
     MFAVerfiedResponse,
@@ -281,16 +282,12 @@ async def verify_authenticator_mfa(
             recovery_codes=recovery_codes,
             access_token=access_token,
             expires_at=expiry,
-            user_role=user.role,
-            user_permissions=user.permissions,
         )
 
     return MFAVerfiedResponse(
         recovery_codes=None,
         access_token=access_token,
         expires_at=expiry,
-        user_role=user.role,
-        user_permissions=user.permissions,
     )
 
 
@@ -317,8 +314,6 @@ async def verify_email_mfa(
         recovery_codes=None,
         access_token=access_token,
         expires_at=expiry,
-        user_role=user.role,
-        user_permissions=user.permissions,
     )
 
 
@@ -431,8 +426,6 @@ async def refresh_token(request: Request):
     return RefreshResponse(
         access_token=refresh_token.access_token,
         expires_at=refresh_token.expires_at,
-        user_role=user.role,
-        user_permissions=user.permissions,
     )
 
 
@@ -482,6 +475,16 @@ async def get_users(user: UserRead = Depends(get_current_user)):
         )
 
     return result
+
+
+@router.get("/user/permissions", response_model=UserPermissions)
+async def get_user_permissions(user: UserRead = Depends(get_current_user)):
+    return UserPermissions(
+        user_role=user.role,
+        user_permissions=user.permissions,
+        province=user.province,
+        location_permissions=user.location_permissions,
+    )
 
 
 @router.post("/users")

@@ -5,6 +5,25 @@ import PasswordInput from "../ui/PasswordInput";
 import ConfirmModal from "../components/ConfirmModal";
 import { useUsers } from "../../context/UserContext";
 import toast from "react-hot-toast";
+import ProvinceDropdown from "../components/ProvinceDropdown";
+import MultiSelectWithTags from "../components/MultiSelectWithTags";
+
+const provinceMap = [
+  "All",
+  "Alberta",
+  "British Columbia",
+  "Manitoba",
+  "Nova Scotia",
+  "New Brunswick",
+  "Newfoundland and Labrador",
+  "Northwest Territories",
+  "Nunavut",
+  "Ontario",
+  "Prince Edward Island",
+  "Quebec",
+  "Saskatchewan",
+  "Yukon",
+];
 
 function EditUser({
   editingUser,
@@ -15,6 +34,8 @@ function EditUser({
   loading,
   handlePermissionChange,
   resetForm,
+  handleLocationAdd,
+  handleLocationRemove,
 }) {
   return (
     <div className="bg-white rounded-lg shadow-md p-6 mb-6">
@@ -33,7 +54,7 @@ function EditUser({
               name="first_name"
               value={formData.first_name}
               onChange={handleInputChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-black"
               style={{ height: "40px" }}
               required
             />
@@ -48,7 +69,7 @@ function EditUser({
               name="last_name"
               value={formData.last_name}
               onChange={handleInputChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-black"
               style={{ height: "40px" }}
               required
             />
@@ -65,7 +86,7 @@ function EditUser({
               name="email"
               value={formData.email}
               onChange={handleInputChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-black"
               style={{ height: "40px" }}
               required
             />
@@ -81,7 +102,7 @@ function EditUser({
               value={formData.phone_number}
               onChange={handleInputChange}
               placeholder="(XXX) XXX-XXXX"
-              className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-black"
               style={{ height: "40px" }}
               required
             />
@@ -93,6 +114,24 @@ function EditUser({
           handleInputChange={handleInputChange}
           required={editingUser ? false : true}
         />
+
+        <div className="mb-4">
+          <ProvinceDropdown
+            value={formData.province}
+            handleChange={handleInputChange}
+          />
+        </div>
+
+        <div className="mb-4">
+          <MultiSelectWithTags
+            options={provinceMap}
+            values={formData.location_permissions}
+            handleRemove={handleLocationRemove}
+            handleAdd={handleLocationAdd}
+            placeholder="Select"
+            header="Location Permissions"
+          />
+        </div>
 
         {/* Role Selection Section */}
         <div className="mb-6">
@@ -241,10 +280,22 @@ function UserList({ handleEditUser, handleDeleteUser }) {
                           <strong>Phone:</strong> {user.phone_number}
                         </p>
                         <p>
+                          <strong>Location:</strong> {user.province}
+                        </p>
+                        <p>
                           <strong>Tab Access:</strong>{" "}
                           {Array.isArray(user.permissions) &&
                           user.permissions.length > 0
                             ? user.permissions
+                                .map((tab) => capitalizeFirstLetter(tab))
+                                .join(", ")
+                            : "No access"}
+                        </p>
+                        <p>
+                          <strong>Location Access:</strong>{" "}
+                          {Array.isArray(user.location_permissions) &&
+                          user.location_permissions.length > 0
+                            ? user.location_permissions
                                 .map((tab) => capitalizeFirstLetter(tab))
                                 .join(", ")
                             : "No access"}
@@ -299,6 +350,8 @@ const UserManagement = () => {
     password: "",
     role: "",
     permissions: [],
+    province: "",
+    location_permissions: [],
   });
 
   const resetForm = () => {
@@ -310,6 +363,8 @@ const UserManagement = () => {
       password: "",
       role: "",
       permissions: [],
+      province: "",
+      location_permissions: [],
     });
     setEditingUser(null);
     setShowAddUser(false);
@@ -340,10 +395,21 @@ const UserManagement = () => {
       toast.error("Password required");
       return false;
     }
+
     if (!formData.role) {
       toast.error("Role required");
       return false;
     }
+
+    if (!formData.province) {
+      toast.error("Province is required");
+      return false;
+    }
+
+    // if (formData.location_permissions.length === 0) {
+    //   toast.error("Must have access to atleast 1 location");
+    //   return false;
+    // }
 
     return true;
   };
@@ -366,6 +432,11 @@ const UserManagement = () => {
 
     if (!formData.phone_number) {
       toast.error("Phone number required");
+      return false;
+    }
+
+    if (!formData.province) {
+      toast.error("Province is required");
       return false;
     }
 
@@ -454,6 +525,8 @@ const UserManagement = () => {
       password: "",
       role: user.role,
       permissions: user.permissions || [],
+      province: user.province || "",
+      location_permissions: user.location_permissions || [],
     });
     setEditingUser(user);
     setUser(user);
@@ -481,6 +554,28 @@ const UserManagement = () => {
           ? prev.permissions.filter((p) => p !== tab) // remove if already selected
           : [...prev.permissions, tab], // add if not
       };
+    });
+  };
+
+  const handleLocationRemove = (v) => {
+    setFormData((prev) => {
+      return {
+        ...prev,
+        location_permissions: prev.location_permissions.filter((p) => p !== v),
+      };
+    });
+  };
+
+  const handleLocationAdd = (v) => {
+    setFormData((prev) => {
+      if (!prev.location_permissions.includes(v)) {
+        return {
+          ...prev,
+          location_permissions: [...prev.location_permissions, v],
+        };
+      } else {
+        return { ...prev };
+      }
     });
   };
 
@@ -558,6 +653,8 @@ const UserManagement = () => {
             formData={formData}
             loading={loading}
             resetForm={resetForm}
+            handleLocationAdd={handleLocationAdd}
+            handleLocationRemove={handleLocationRemove}
           />
         )}
 

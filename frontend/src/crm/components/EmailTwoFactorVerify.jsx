@@ -224,11 +224,10 @@ const EmailTwoFactorVerify = ({ email, onCancel }) => {
   const [code, setCode] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const { startTokenRefreshCycle } = useAuth();
+  const { handleAuthenticated } = useAuth();
   const [sendingCode, setSendingCode] = useState(false);
   const [timeLeft, setTimeLeft] = useState(0);
   const [showInputScreen, setShowInputScreen] = useState(false);
-  const { setUserRole, setUserPermissions } = useAuth();
 
   async function send_email() {
     const result = await AuthServices.send_mfa_email();
@@ -279,12 +278,10 @@ const EmailTwoFactorVerify = ({ email, onCancel }) => {
     const result = await AuthServices.verify_email_mfa(code);
 
     if (result.success) {
-      startTokenRefreshCycle(
+      await handleAuthenticated(
         result.data?.access_token,
         result.data?.expires_at,
       );
-      setUserRole(result.data?.user_role);
-      setUserPermissions(result.data?.user_permissions);
       navigate("/admin-menu");
     } else {
       if (result.status === 400 || result.status === 409) {

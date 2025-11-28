@@ -31,8 +31,8 @@ async def register_user(data: RegisterRequest) -> UserResponse:
     password_hash = SecurityService.hash_password(data.password)
 
     insert_query = """
-    INSERT INTO users (email, password_hash, is_verified, role)
-    VALUES ($1, $2, $3, 'admin')
+    INSERT INTO users (email, password_hash, is_verified, role, location_permissions)
+    VALUES ($1, $2, $3, 'admin', ARRAY['All'])
     RETURNING id;
     """
 

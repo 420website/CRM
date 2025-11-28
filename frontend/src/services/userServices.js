@@ -5,6 +5,13 @@ export const UserServices = {
     return apiCall(() => api.get("/auth/users"), "Get users failed.");
   },
 
+  get_permissions: async () => {
+    return apiCall(
+      () => api.get("/auth/user/permissions"),
+      "Failed to get permissions",
+    );
+  },
+
   create_user: async (data) => {
     return apiCall(() => api.post("/auth/users", data), "Create user failed.");
   },

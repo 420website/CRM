@@ -2,6 +2,7 @@ import { createContext, useContext, useEffect, useState } from "react";
 import { AuthServices } from "../services/authService";
 import { useNavigate } from "react-router-dom";
 import { tokenManager } from "../tokenManager";
+import { UserServices } from "../services/userServices";
 
 const AuthContext = createContext();
 
@@ -11,6 +12,8 @@ export function AuthProvider({ children }) {
   const navigate = useNavigate();
   const [userRole, setUserRole] = useState("admin");
   const [userPermissions, setUserPermissions] = useState([]);
+  const [userProvince, setUserProvince] = useState("");
+  const [userLocationPermissions, setUserLocationPermissions] = useState([]);
   const [isAuthenticatorMfaSetup, setIsAuthenticatorMfaSetup] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -29,11 +32,13 @@ export function AuthProvider({ children }) {
     navigate("/");
   };
 
-  const startTokenRefreshCycle = (accessToken, expiresAt) => {
+  const handleAuthenticated = async (accessToken, expiresAt) => {
     setIsAuthenticated(true);
     setIsLoggedIn(true);
     tokenManager.setAccessToken(accessToken);
     tokenManager.setExpiresAt(expiresAt); // Store expiry time
+
+    await getPermissions();
   };
 
   const tryRefresh = async () => {
@@ -45,13 +50,8 @@ export function AuthProvider({ children }) {
       const response = await AuthServices.refresh_token();
 
       if (response.success) {
-        setUserRole(response.data?.user_role);
-        setUserPermissions(response.data?.user_permissions);
         const { access_token, expires_at } = response.data;
-        tokenManager.setAccessToken(access_token);
-        tokenManager.setExpiresAt(expires_at);
-        setIsAuthenticated(true);
-        setIsLoggedIn(true);
+        await handleAuthenticated(access_token, expires_at);
       } else {
         if (isAuthenticated) {
           logout();
@@ -63,6 +63,21 @@ export function AuthProvider({ children }) {
       }
     } finally {
       setIsRefreshing(false);
+    }
+  };
+
+  const getPermissions = async () => {
+    try {
+      const response = await UserServices.get_permissions();
+
+      if (response.success) {
+        setUserRole(response.data?.user_role);
+        setUserPermissions(response.data?.user_permissions);
+        setUserProvince(response.data?.province);
+        setUserLocationPermissions(response.data?.location_permissions);
+      }
+    } catch (error) {
+      console.log(error);
     }
   };
 
@@ -109,9 +124,12 @@ export function AuthProvider({ children }) {
         setUserRole,
         userPermissions,
         setUserPermissions,
-        startTokenRefreshCycle,
         currentRegistrationId,
         setCurrentRegistrationId,
+        userProvince,
+        userLocationPermissions,
+        getPermissions,
+        handleAuthenticated,
       }}
     >
       {children}
