@@ -20,7 +20,7 @@ export default function PasswordInput({
           value={formData.password}
           onChange={handleInputChange}
           required={required}
-          className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 pr-10"
+          className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-black pr-10"
           style={{ height: "40px" }}
         />
         <button

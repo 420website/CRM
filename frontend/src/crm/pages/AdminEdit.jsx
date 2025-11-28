@@ -343,6 +343,22 @@ const AdminEdit = () => {
       return false;
     }
 
+    if (!formData.gender) {
+      setIsSubmitting(false);
+      toast.error("Gender required");
+      document.querySelector("#gender")?.scrollIntoView({ behavior: "smooth" });
+      return false;
+    }
+
+    if (!formData.disposition) {
+      setIsSubmitting(false);
+      toast.error("Disposition required");
+      document
+        .querySelector("#disposition")
+        ?.scrollIntoView({ behavior: "smooth" });
+      return false;
+    }
+
     if (formData.health_card && formData.health_card.length != 10) {
       setIsSubmitting(false);
       toast.error("Health Card Number must be 10 digits.");
@@ -359,6 +375,24 @@ const AdminEdit = () => {
           ?.scrollIntoView({ behavior: "smooth" });
         return false;
       }
+    }
+
+    if (!formData.referral_site) {
+      setIsSubmitting(false);
+      toast.error("Referral Site required");
+      document
+        .querySelector("#referral_site")
+        ?.scrollIntoView({ behavior: "smooth" });
+      return false;
+    }
+
+    if (!formData.province) {
+      setIsSubmitting(false);
+      toast.error("Province required");
+      document
+        .querySelector("#province")
+        ?.scrollIntoView({ behavior: "smooth" });
+      return false;
     }
 
     return true;
@@ -391,9 +425,7 @@ const AdminEdit = () => {
     if (cleanedFormData.reg_date === "") {
       cleanedFormData.reg_date = null;
     }
-    if (cleanedFormData.address === "") {
-      cleanedFormData.province = null;
-    }
+
     if (cleanedFormData.coverage_type === "Select") {
       cleanedFormData.coverage_type = null;
     }

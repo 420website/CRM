@@ -370,7 +370,7 @@ export default function Client({
                   name="first_name"
                   value={formData.first_name}
                   onChange={handleChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black"
                   placeholder="Enter first name"
                   autoComplete="given-name"
                   // required
@@ -390,7 +390,7 @@ export default function Client({
                   name="last_name"
                   value={formData.last_name}
                   onChange={handleChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black"
                   placeholder="Enter last name"
                   autoComplete="family-name"
                   // required
@@ -402,7 +402,7 @@ export default function Client({
                   htmlFor="dob"
                   className="block text-sm font-medium text-gray-700 mb-2"
                 >
-                  Date of Birth<span className="text-red-500">*</span>
+                  Date of Birth <span className="text-red-500">*</span>
                 </label>
                 <div className="flex items-center space-x-2">
                   <DatePicker
@@ -440,17 +440,17 @@ export default function Client({
                   name="age"
                   value={formData.age}
                   readOnly
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-gray-600 cursor-not-allowed"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-gray-600 cursor-not-allowed focus:outline-none"
                   placeholder="Select date of birth to calculate age"
                 />
               </div>
 
-              <div>
+              <div id="gender" className="scroll-mt-[60px]">
                 <label
                   htmlFor="gender"
-                  className="block text-sm font-medium text-gray-700 mb-2"
+                  className="block text-sm font-medium text-gray-700 mb-2 "
                 >
-                  Gender
+                  Gender <span className="text-red-500">*</span>
                 </label>
                 <select
                   id="gender"
@@ -465,13 +465,13 @@ export default function Client({
                 </select>
               </div>
 
-              <div>
+              <div id="disposition" className="scroll-mt-[60px]">
                 <div className="flex items-center justify-between mb-2">
                   <label
                     htmlFor="disposition"
                     className="block text-sm font-medium text-gray-700"
                   >
-                    Disposition
+                    Disposition <span className="text-red-500">*</span>
                   </label>
                   {userRole == "admin" && (
                     <button
@@ -571,13 +571,13 @@ export default function Client({
                 </div>
               </div>
 
-              <div>
+              <div id="referral_site" className="scroll-mt-[60px]">
                 <div className="flex items-center justify-between mb-2">
                   <label
                     htmlFor="referral_site"
                     className="block text-sm font-medium text-gray-700"
                   >
-                    Referral Site
+                    Referral Site <span className="text-red-500">*</span>
                   </label>
                   {userRole == "admin" && (
                     <button
@@ -682,12 +682,12 @@ export default function Client({
                 />
               </div>
 
-              <div>
+              <div id="province" className="scroll-mt-[60px]">
                 <label
                   htmlFor="province"
                   className="block text-sm font-medium text-gray-700 mb-2"
                 >
-                  Province
+                  Province <span className="text-red-500">*</span>
                 </label>
                 <select
                   id="province"
