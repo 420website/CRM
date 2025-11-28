@@ -118,6 +118,27 @@ class PatientService:
         return result
 
     @staticmethod
+    async def get_patients_by_location(
+        locations: List[str],
+    ) -> List[PatientBase]:
+        if len(locations) == 0:
+            return []
+
+        query = """
+        SELECT * 
+        FROM patients
+        WHERE province= ANY($1); 
+        """
+        async with database.get_connection() as conn:
+            rows = await conn.fetch(query, locations)
+
+        result = []
+        if rows:
+            for row in rows:
+                result.append(PatientRead(**dict(row)))
+        return result
+
+    @staticmethod
     async def get_patient_by_id(id: int) -> Union[PatientRead, None]:
         query = """
         SELECT * 

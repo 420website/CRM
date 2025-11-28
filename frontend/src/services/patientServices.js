@@ -13,6 +13,13 @@ export const PatientServices = {
   get_patients: async () => {
     return apiCall(() => api.get("/patients"), "Fetching patients failed.");
   },
+
+  get_patients_by_location: async (locations) => {
+    return apiCall(
+      () => api.get("/patients", { params: { locations: locations } }),
+      "Fetching patients failed.",
+    );
+  },
   get_patient_by_id: async (id) => {
     return apiCall(
       () => api.get(`/patients/${id}`),

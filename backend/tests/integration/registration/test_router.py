@@ -18,6 +18,7 @@ from app.authentication.schemas import (
     LoginRequest,
     MFAVerifiactionCode,
     RegisterRequest,
+    UserUpdate,
 )
 from app.authentication.services import UserService
 from app.dependencies import get_current_user, get_user_pending_mfa
@@ -54,6 +55,7 @@ from app.registration.router import (
     get_notes_by_patient,
     get_patient,
     get_patients,
+    get_patients_by_location,
     update_activity,
     update_assessment,
     update_dispensing,
@@ -176,28 +178,19 @@ class TestPatientRouter(IsolatedAsyncioTestCase):
         user = await get_current_user(credentials=credentials)
         return user
 
-    @classmethod
-    async def asyncSetUpClass(cls):
-        await database.connect()
-
-        await UserService.delete_user(email, password)
-        cls.user = await cls.get_validated_user()
-        await database.disconnect()
-
-    @classmethod
-    async def asyncTearDownClass(cls):
-        await database.connect()
-
-        await UserService.delete_user(email, password)
-        await database.disconnect()
-
-    @property
-    def user(self):
-        return self.__class__.user
-
     async def asyncSetUp(self) -> None:
         await database.connect()
         await minio_client.connect()
+
+        await UserService.delete_user(email, password)
+        user = await self.get_validated_user()
+
+        self.updates = UserUpdate(
+            province="Ontario", location_permissions=["All"]
+        )
+
+        await UserService.update_user(user.id, self.updates)
+        self.user = await UserService.get_user_by_id(user.id)
 
         asyncio.get_event_loop().set_debug(False)
         await self._cleanup_test_data()
@@ -215,7 +208,30 @@ class TestPatientRouter(IsolatedAsyncioTestCase):
             health_card_version="AB",
         )
 
+        self.ontario_patient = PatientCreate(
+            first_name="John",
+            last_name="Doe",
+            dob=date(1990, 3, 22),
+            province="Ontario",
+        )
+
+        self.alberta_patient = PatientCreate(
+            first_name="John",
+            last_name="Doe",
+            dob=date(1990, 3, 22),
+            province="Alberta",
+        )
+
+        self.nunavut_patient = PatientCreate(
+            first_name="John",
+            last_name="Doe",
+            dob=date(1990, 3, 22),
+            province="Nunavut",
+        )
+
     async def asyncTearDown(self):
+        await UserService.delete_user(email, password)
+
         await minio_client.disconnect()
         await database.disconnect()
 
@@ -383,6 +399,112 @@ class TestPatientRouter(IsolatedAsyncioTestCase):
         result = await get_patient(99999, self.user)
 
         self.assertIsNone(result)
+
+    async def test_get_patients_by_all_with_all_permission(self):
+        await PatientService.create_patient(self.ontario_patient)
+        await PatientService.create_patient(self.alberta_patient)
+        await PatientService.create_patient(self.nunavut_patient)
+
+        patients = await get_patients_by_location(["All"], self.user)
+
+        self.assertEqual(len(patients), 3)
+
+    async def test_get_patients_by_multiple_location_specific_permissions(
+        self,
+    ):
+        updates = UserUpdate(
+            province="Ontario", location_permissions=["Alberta", "Ontario"]
+        )
+        await UserService.update_user(self.user.id, updates)
+        user = await UserService.get_user_by_id(self.user.id)
+
+        await PatientService.create_patient(self.ontario_patient)
+        await PatientService.create_patient(self.alberta_patient)
+        await PatientService.create_patient(self.nunavut_patient)
+
+        patients = await get_patients_by_location(["Alberta", "Ontario"], user)
+
+        self.assertEqual(len(patients), 2)
+
+    async def test_get_patients_by_location_none(self):
+        # test
+        with self.assertRaises(HTTPException) as cm:
+            await get_patients_by_location([], self.user)
+
+        self.assertEqual(cm.exception.status_code, 400)
+        self.assertEqual(
+            cm.exception.detail, "Atleast one location is required"
+        )
+
+    async def test_get_patients_by_location_no_permission(self):
+        updates = UserUpdate(province="Ontario", location_permissions=[])
+        await UserService.update_user(self.user.id, updates)
+        user = await UserService.get_user_by_id(self.user.id)
+
+        with self.assertRaises(HTTPException) as cm:
+            await get_patients_by_location(["Alberta"], user)
+
+        self.assertEqual(cm.exception.status_code, 401)
+        self.assertEqual(
+            cm.exception.detail, "User does not have access to any locations."
+        )
+
+    async def test_get_patients_by_location_w_all_permission(self):
+        await PatientService.create_patient(self.ontario_patient)
+        await PatientService.create_patient(self.alberta_patient)
+        await PatientService.create_patient(self.nunavut_patient)
+
+        patients = await get_patients_by_location(["Alberta"], self.user)
+
+        self.assertEqual(len(patients), 1)
+        self.assertEqual(patients[0].province, "Alberta")
+
+    async def test_get_patients_by_some_locations(
+        self,
+    ):
+        updates = UserUpdate(
+            province="Ontario", location_permissions=["Alberta", "Ontario"]
+        )
+        await UserService.update_user(self.user.id, updates)
+        user = await UserService.get_user_by_id(self.user.id)
+
+        await PatientService.create_patient(self.ontario_patient)
+        await PatientService.create_patient(self.alberta_patient)
+
+        patients = await get_patients_by_location(["Ontario"], user)
+
+        self.assertEqual(len(patients), 1)
+
+    async def test_get_patients_by_some_locations_invalid(
+        self,
+    ):
+        updates = UserUpdate(
+            province="Ontario", location_permissions=["Alberta", "Ontario"]
+        )
+        await UserService.update_user(self.user.id, updates)
+        user = await UserService.get_user_by_id(self.user.id)
+
+        await PatientService.create_patient(self.ontario_patient)
+        await PatientService.create_patient(self.alberta_patient)
+
+        with self.assertRaises(HTTPException) as cm:
+            await get_patients_by_location(["Nunuvat"], user)
+
+        self.assertEqual(cm.exception.status_code, 401)
+        self.assertEqual(
+            cm.exception.detail,
+            "User does not have access to all locations requested.",
+        )
+
+    async def test_get_patients_by_some_locations_w_all(
+        self,
+    ):
+        await PatientService.create_patient(self.ontario_patient)
+        await PatientService.create_patient(self.alberta_patient)
+
+        results = await get_patients_by_location(["Ontario", "All"], self.user)
+
+        self.assertEqual(len(results), 2)
 
     # delete patient by id
     async def test_delete_patient_by_id_success(self):
@@ -849,10 +971,6 @@ class TestPatientRouter(IsolatedAsyncioTestCase):
 ###############
 # Assessments
 ###############
-email = "test497@example.com"
-password = "securepassword123"
-
-
 class TestPatientAssessmentssRouter(IsolatedAsyncioTestCase):
     @classmethod
     async def get_validated_user(cls):
@@ -883,24 +1001,6 @@ class TestPatientAssessmentssRouter(IsolatedAsyncioTestCase):
 
         user = await get_current_user(credentials=credentials)
         return user
-
-    @classmethod
-    async def asyncSetUpClass(cls):
-        await database.connect()
-
-        await UserService.delete_user(email, password)
-        cls.user = await cls.get_validated_user()
-        await database.disconnect()
-
-    @classmethod
-    async def asyncTearDownClass(cls):
-        await database.connect()
-        await UserService.delete_user(email, password)
-        await database.disconnect()
-
-    @property
-    def user(self):
-        return self.__class__.user
 
     async def mock_create_patient(self, name: str):
         """Helper to create a test patient using class user"""
@@ -938,6 +1038,10 @@ class TestPatientAssessmentssRouter(IsolatedAsyncioTestCase):
 
     async def asyncSetUp(self) -> None:
         await database.connect()
+
+        await UserService.delete_user(email, password)
+        self.user = await self.get_validated_user()
+
         asyncio.get_event_loop().set_debug(False)
 
         self.patient_data = PatientCreate(
@@ -966,6 +1070,7 @@ class TestPatientAssessmentssRouter(IsolatedAsyncioTestCase):
         )
 
     async def asyncTearDown(self):
+        await UserService.delete_user(email, password)
         await database.disconnect()
 
     # create test
@@ -1163,10 +1268,6 @@ class TestPatientAssessmentssRouter(IsolatedAsyncioTestCase):
 ###############
 # Notes
 ###############
-email = "test497@example.com"
-password = "securepassword123"
-
-
 class TestPatientNotesRouter(IsolatedAsyncioTestCase):
     @classmethod
     async def get_validated_user(cls):
@@ -1197,24 +1298,6 @@ class TestPatientNotesRouter(IsolatedAsyncioTestCase):
 
         user = await get_current_user(credentials=credentials)
         return user
-
-    @classmethod
-    async def asyncSetUpClass(cls):
-        await database.connect()
-
-        await UserService.delete_user(email, password)
-        cls.user = await cls.get_validated_user()
-        await database.disconnect()
-
-    @classmethod
-    async def asyncTearDownClass(cls):
-        await database.connect()
-        await UserService.delete_user(email, password)
-        await database.disconnect()
-
-    @property
-    def user(self):
-        return self.__class__.user
 
     async def mock_create_patient(self, name: str):
         """Helper to create a test patient using class user"""
@@ -1250,6 +1333,9 @@ class TestPatientNotesRouter(IsolatedAsyncioTestCase):
 
     async def asyncSetUp(self) -> None:
         await database.connect()
+        await UserService.delete_user(email, password)
+        self.user = await self.get_validated_user()
+
         asyncio.get_event_loop().set_debug(False)
 
         self.patient_data = PatientCreate(
@@ -1276,6 +1362,7 @@ class TestPatientNotesRouter(IsolatedAsyncioTestCase):
         )
 
     async def asyncTearDown(self):
+        await UserService.delete_user(email, password)
         await database.disconnect()
 
     async def test_create_note_success(self):
@@ -1356,10 +1443,6 @@ class TestPatientNotesRouter(IsolatedAsyncioTestCase):
 ###############
 # Interactions
 ###############
-email = "test497@example.com"
-password = "securepassword123"
-
-
 class TestPatientInteractionsRouter(IsolatedAsyncioTestCase):
     @classmethod
     async def get_validated_user(cls):
@@ -1390,24 +1473,6 @@ class TestPatientInteractionsRouter(IsolatedAsyncioTestCase):
 
         user = await get_current_user(credentials=credentials)
         return user
-
-    @classmethod
-    async def asyncSetUpClass(cls):
-        await database.connect()
-
-        await UserService.delete_user(email, password)
-        cls.user = await cls.get_validated_user()
-        await database.disconnect()
-
-    @classmethod
-    async def asyncTearDownClass(cls):
-        await database.connect()
-        await UserService.delete_user(email, password)
-        await database.disconnect()
-
-    @property
-    def user(self):
-        return self.__class__.user
 
     async def mock_create_patient(self, name: str):
         """Helper to create a test patient using class user"""
@@ -1445,6 +1510,8 @@ class TestPatientInteractionsRouter(IsolatedAsyncioTestCase):
 
     async def asyncSetUp(self) -> None:
         await database.connect()
+        await UserService.delete_user(email, password)
+        self.user = await self.get_validated_user()
         asyncio.get_event_loop().set_debug(False)
 
         self.patient_data = PatientCreate(
@@ -1474,6 +1541,7 @@ class TestPatientInteractionsRouter(IsolatedAsyncioTestCase):
         )
 
     async def asyncTearDown(self):
+        await UserService.delete_user(email, password)
         await database.disconnect()
 
     async def test_create_interaction_success(self):
@@ -1572,10 +1640,6 @@ class TestPatientInteractionsRouter(IsolatedAsyncioTestCase):
 ###############
 # Medication
 ###############
-email = "test497@example.com"
-password = "securepassword123"
-
-
 class TestPatienMedicationsRouter(IsolatedAsyncioTestCase):
     @classmethod
     async def get_validated_user(cls):
@@ -1606,24 +1670,6 @@ class TestPatienMedicationsRouter(IsolatedAsyncioTestCase):
 
         user = await get_current_user(credentials=credentials)
         return user
-
-    @classmethod
-    async def asyncSetUpClass(cls):
-        await database.connect()
-
-        await UserService.delete_user(email, password)
-        cls.user = await cls.get_validated_user()
-        await database.disconnect()
-
-    @classmethod
-    async def asyncTearDownClass(cls):
-        await database.connect()
-        await UserService.delete_user(email, password)
-        await database.disconnect()
-
-    @property
-    def user(self):
-        return self.__class__.user
 
     async def mock_create_patient(self, name: str):
         """Helper to create a test patient using class user"""
@@ -1660,6 +1706,9 @@ class TestPatienMedicationsRouter(IsolatedAsyncioTestCase):
 
     async def asyncSetUp(self) -> None:
         await database.connect()
+        await UserService.delete_user(email, password)
+        self.user = await self.get_validated_user()
+
         asyncio.get_event_loop().set_debug(False)
 
         self.patient_data = PatientCreate(
@@ -1687,6 +1736,7 @@ class TestPatienMedicationsRouter(IsolatedAsyncioTestCase):
         )
 
     async def asyncTearDown(self):
+        await UserService.delete_user(email, password)
         await database.disconnect()
 
     async def test_create_medication_success(self):
@@ -1777,10 +1827,6 @@ class TestPatienMedicationsRouter(IsolatedAsyncioTestCase):
 # ###############
 # # Dispensing
 # ###############
-email = "test497@example.com"
-password = "securepassword123"
-
-
 class TestPatientDispensingRouter(IsolatedAsyncioTestCase):
     @classmethod
     async def get_validated_user(cls):
@@ -1811,24 +1857,6 @@ class TestPatientDispensingRouter(IsolatedAsyncioTestCase):
 
         user = await get_current_user(credentials=credentials)
         return user
-
-    @classmethod
-    async def asyncSetUpClass(cls):
-        await database.connect()
-
-        await UserService.delete_user(email, password)
-        cls.user = await cls.get_validated_user()
-        await database.disconnect()
-
-    @classmethod
-    async def asyncTearDownClass(cls):
-        await database.connect()
-        await UserService.delete_user(email, password)
-        await database.disconnect()
-
-    @property
-    def user(self):
-        return self.__class__.user
 
     async def mock_create_patient(self, name: str):
         """Helper to create a test patient using class user"""
@@ -1877,6 +1905,9 @@ class TestPatientDispensingRouter(IsolatedAsyncioTestCase):
 
     async def asyncSetUp(self) -> None:
         await database.connect()
+        await UserService.delete_user(email, password)
+        self.user = await self.get_validated_user()
+
         asyncio.get_event_loop().set_debug(False)
 
         self.patient_data = PatientCreate(
@@ -1907,6 +1938,7 @@ class TestPatientDispensingRouter(IsolatedAsyncioTestCase):
         )
 
     async def asyncTearDown(self):
+        await UserService.delete_user(email, password)
         await database.disconnect()
 
     async def test_create_dispensing_success(self):
@@ -2045,10 +2077,6 @@ class TestPatientDispensingRouter(IsolatedAsyncioTestCase):
 ###############
 # Activity
 ###############
-email = "test497@example.com"
-password = "securepassword123"
-
-
 class TestPatientActivityRouter(IsolatedAsyncioTestCase):
     @classmethod
     async def get_validated_user(cls):
@@ -2079,24 +2107,6 @@ class TestPatientActivityRouter(IsolatedAsyncioTestCase):
 
         user = await get_current_user(credentials=credentials)
         return user
-
-    @classmethod
-    async def asyncSetUpClass(cls):
-        await database.connect()
-
-        await UserService.delete_user(email, password)
-        cls.user = await cls.get_validated_user()
-        await database.disconnect()
-
-    @classmethod
-    async def asyncTearDownClass(cls):
-        await database.connect()
-        await UserService.delete_user(email, password)
-        await database.disconnect()
-
-    @property
-    def user(self):
-        return self.__class__.user
 
     async def mock_create_patient(self, name: str):
         """Helper to create a test patient using class user"""
@@ -2133,6 +2143,9 @@ class TestPatientActivityRouter(IsolatedAsyncioTestCase):
 
     async def asyncSetUp(self) -> None:
         await database.connect()
+        await UserService.delete_user(email, password)
+        self.user = await self.get_validated_user()
+
         asyncio.get_event_loop().set_debug(False)
 
         self.patient_data = PatientCreate(
@@ -2161,6 +2174,7 @@ class TestPatientActivityRouter(IsolatedAsyncioTestCase):
         )
 
     async def asyncTearDown(self):
+        await UserService.delete_user(email, password)
         await database.disconnect()
 
     async def test_create_activity_success(self):

@@ -1,11 +1,13 @@
-from typing import List
+from typing import List, Optional
 from asyncpg import UniqueViolationError
 from fastapi import (
     APIRouter,
     Depends,
     HTTPException,
+    Query,
     status,
 )
+from starlette.status import HTTP_400_BAD_REQUEST, HTTP_401_UNAUTHORIZED
 from app.logger import logger
 from app.authentication.schemas import UserRead
 from app.email.messages import FinalizedEmailMessage
@@ -148,7 +150,65 @@ async def check_healthcard(
 
 @router.get("", response_model=List[PatientRead])
 async def get_patients(user: UserRead = Depends(get_current_user)):
-    result = await PatientService.get_patients()
+    """Returns patients to the highest level of permission the user has."""
+    if len(user.location_permissions) == 0:
+        raise HTTPException(
+            status_code=HTTP_401_UNAUTHORIZED,
+            detail="User does not have access to any locations.",
+        )
+    else:
+        if "All" in user.location_permissions:
+            result = await PatientService.get_patients()
+        else:
+            result = await PatientService.get_patients_by_location(
+                user.location_permissions
+            )
+
+    return result
+
+
+@router.get("", response_model=List[PatientRead])
+async def get_patients_by_location(
+    locations: Optional[List[str]] = Query(None),
+    user: UserRead = Depends(get_current_user),
+):
+    """Returns patients to the highest level of permission the user has."""
+    if not locations or len(locations) == 0:
+        raise HTTPException(
+            status_code=HTTP_400_BAD_REQUEST,
+            detail="Atleast one location is required",
+        )
+
+    if len(user.location_permissions) == 0:
+        logger.info(
+            f"User {user.id} tried to access records without proper permissions."
+        )
+        raise HTTPException(
+            status_code=HTTP_401_UNAUTHORIZED,
+            detail="User does not have access to any locations.",
+        )
+    else:
+        if "All" in locations:
+            if "All" not in user.location_permissions:
+                raise HTTPException(
+                    status_code=HTTP_401_UNAUTHORIZED,
+                    detail="User does not have access to all locations.",
+                )
+            else:
+                result = await PatientService.get_patients()
+        else:
+            if "All" in user.location_permissions or all(
+                l in user.location_permissions for l in locations
+            ):
+                result = await PatientService.get_patients_by_location(
+                    locations=locations
+                )
+            else:
+                raise HTTPException(
+                    status_code=HTTP_401_UNAUTHORIZED,
+                    detail="User does not have access to all locations requested.",
+                )
+
     return result
 
 

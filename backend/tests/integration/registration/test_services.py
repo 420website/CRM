@@ -109,6 +109,7 @@ class TestPatientService(IsolatedAsyncioTestCase):
             first_name="John",
             last_name="Doe",
             dob=date(1990, 3, 22),
+            province="Ontario",
             # health_card="1234567890",
             # health_card_version="AB",
         )
@@ -117,6 +118,7 @@ class TestPatientService(IsolatedAsyncioTestCase):
             first_name="Jane",
             last_name="Smith",
             dob=date(1990, 3, 22),
+            province="Alberta",
             health_card="0987654321",
             health_card_version="AB",
         )
@@ -128,6 +130,7 @@ class TestPatientService(IsolatedAsyncioTestCase):
             dob=date(2000, 1, 1),
             health_card="1234567890",
             health_card_version="AB",
+            province="Alberta",
             # Testing optional fields with various data types
             age=24,
             gender="Female",
@@ -287,6 +290,51 @@ class TestPatientService(IsolatedAsyncioTestCase):
 
         self.assertIsInstance(patients, list)
         self.assertGreaterEqual(len(patients), 2)
+
+        # Verify our patients are in the results
+        patient_names = [p.first_name for p in patients]
+        self.assertIn("Jane", patient_names)
+        self.assertIn("John", patient_names)
+
+        # Verify patient structure
+        for patient in patients:
+            self.assertIsInstance(patient, PatientRead)
+            self.assertIsInstance(patient.id, int)
+            self.assertIsInstance(patient.first_name, str)
+            self.assertIsInstance(patient.last_name, str)
+            self.assertIsInstance(patient.dob, dt.date)
+
+    async def test_get_patients_by_location(self):
+        await PatientService.create_patient(self.minimal_patient)
+        await PatientService.create_patient(self.minimal_patient2)
+
+        patients = await PatientService.get_patients_by_location(["Alberta"])
+
+        self.assertEqual(1, len(patients))
+        self.assertEqual(
+            patients[0].first_name, self.minimal_patient2.first_name
+        )
+        self.assertEqual(
+            patients[0].last_name, self.minimal_patient2.last_name
+        )
+
+    async def test_get_patients_by_no_location(self):
+        await PatientService.create_patient(self.minimal_patient)
+        await PatientService.create_patient(self.minimal_patient2)
+
+        patients = await PatientService.get_patients_by_location([])
+
+        self.assertEqual(patients, [])
+
+    async def test_get_patients_by_locations(self):
+        await PatientService.create_patient(self.minimal_patient)
+        await PatientService.create_patient(self.minimal_patient2)
+
+        patients = await PatientService.get_patients_by_location(
+            ["Alberta", "Ontario"]
+        )
+
+        self.assertEqual(2, len(patients))
 
         # Verify our patients are in the results
         patient_names = [p.first_name for p in patients]
