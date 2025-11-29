@@ -38,6 +38,7 @@ export default function Client({
   setFormData,
   selectedTemplate,
   setSelectedTemplate,
+  missingFields,
   openVoiceDateInput,
   openVoiceFillInput,
 }) {
@@ -370,7 +371,7 @@ export default function Client({
                   name="first_name"
                   value={formData.first_name}
                   onChange={handleChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black"
+                  className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 ${missingFields && !formData.first_name?.trim() ? "border-red-700" : "border-gray-300 focus:ring-black"}`}
                   placeholder="Enter first name"
                   autoComplete="given-name"
                   // required
@@ -390,7 +391,7 @@ export default function Client({
                   name="last_name"
                   value={formData.last_name}
                   onChange={handleChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black"
+                  className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 ${missingFields && !formData.last_name?.trim() ? "border-red-700" : "border-gray-300 focus:ring-black"}`}
                   placeholder="Enter last name"
                   autoComplete="family-name"
                   // required
@@ -409,7 +410,7 @@ export default function Client({
                     name="dob"
                     value={formData.dob}
                     onChange={handleChange}
-                    className="px-3 py-2 bg-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-black text-left font-medium cursor-pointer border border-gray-300"
+                    className={`px-3 py-2 bg-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-black text-left font-medium cursor-pointer border ${missingFields && !formData.dob ? "border-red-700" : "border-gray-300"}`}
                     style={{
                       width: "160px",
                     }}
@@ -457,7 +458,7 @@ export default function Client({
                   name="gender"
                   value={formData.gender}
                   onChange={handleChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black"
+                  className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 ${missingFields && !formData.gender ? "border-red-700" : "border-gray-300"} focus:ring-black`}
                 >
                   <option value="">Select Gender</option>
                   <option value="Male">Male</option>
@@ -488,7 +489,7 @@ export default function Client({
                   name="disposition"
                   value={formData.disposition}
                   onChange={handleChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black"
+                  className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 ${missingFields && !formData.disposition ? "border-red-700" : "border-gray-300 focus:ring-black"}`}
                 >
                   <option value="">Select Disposition</option>
                   {/* Most Frequently Used */}
@@ -594,7 +595,7 @@ export default function Client({
                   name="referral_site"
                   value={formData.referral_site}
                   onChange={handleChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black"
+                  className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 ${missingFields && !formData.referral_site?.trim() ? "border-red-700" : "border-gray-300 focus:ring-black"}`}
                 >
                   <option value="">Select Referral Site</option>
                   {/* Most Frequently Used */}
@@ -694,7 +695,7 @@ export default function Client({
                   name="province"
                   value={formData.province}
                   onChange={handleChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black"
+                  className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 ${missingFields && !formData.province ? "border-red-700" : "border-gray-300"} focus:ring-black`}
                 >
                   <option value="">Select Province</option>
                   <option value="Ontario">Ontario</option>

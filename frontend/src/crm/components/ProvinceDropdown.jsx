@@ -16,12 +16,12 @@ export default function ProvinceDropdown({ value, handleChange }) {
   ];
 
   return (
-    <div>
+    <div id="province" className="scroll-mt-[60px]">
       <label
         htmlFor="province"
         className="block text-sm font-medium text-gray-700 mb-2"
       >
-        Province
+        Province <span className="text-red-500">*</span>
       </label>
       <select
         id="province"

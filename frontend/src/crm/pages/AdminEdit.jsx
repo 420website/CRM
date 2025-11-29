@@ -31,6 +31,7 @@ const AdminEdit = () => {
   const { getClientAssociatedData } = useRegistration();
   const { getDashboardRegistrations, getDashboardActivities } = useDashboard();
   const hasRun = useRef(false);
+  const [missingFields, setMissingFields] = useState(false);
 
   const [voiceInputText, setVoiceInputText] = useState("");
   const [loading, setLoading] = useState(false);
@@ -223,16 +224,12 @@ const AdminEdit = () => {
     client: (
       <Client
         formData={formData}
-        setShowVoiceDateModal={setShowVoiceDateModal}
         setFormData={setFormData}
-        setTemplates={setTemplates}
-        templates={templates}
         selectedTemplate={selectedTemplate}
         setSelectedTemplate={setSelectedTemplate}
+        missingFields={missingFields}
         openVoiceDateInput={openVoiceDateInput}
         openVoiceFillInput={openVoiceFillInput}
-        currentVoiceDateField={currentVoiceDateField}
-        setCurrentVoiceDateField={setCurrentVoiceDateField}
       />
     ),
     assessments: (
@@ -302,11 +299,13 @@ const AdminEdit = () => {
         "Photo is too large for submission. Please try uploading a different photo.",
       );
       setIsSubmitting(false);
+      setMissingFields(true);
       return false;
     }
 
     if (!formData.reg_date) {
       setIsSubmitting(false);
+      setMissingFields(true);
       toast.error("Registration date required");
       document
         .querySelector("#regDate")
@@ -317,6 +316,8 @@ const AdminEdit = () => {
 
     if (!formData.first_name.trim()) {
       setIsSubmitting(false);
+      setMissingFields(true);
+
       toast.error("First Name required");
       document
         .querySelector("#firstName")
@@ -327,6 +328,8 @@ const AdminEdit = () => {
 
     if (!formData.last_name.trim()) {
       setIsSubmitting(false);
+      setMissingFields(true);
+
       toast.error("Last Name required");
       document
         .querySelector("#lastName")
@@ -336,6 +339,8 @@ const AdminEdit = () => {
 
     if (!formData.dob) {
       setIsSubmitting(false);
+      setMissingFields(true);
+
       toast.error("Date of birth required");
       document
         .querySelector("#dateOfBirth")
@@ -345,6 +350,8 @@ const AdminEdit = () => {
 
     if (!formData.gender) {
       setIsSubmitting(false);
+      setMissingFields(true);
+
       toast.error("Gender required");
       document.querySelector("#gender")?.scrollIntoView({ behavior: "smooth" });
       return false;
@@ -352,6 +359,8 @@ const AdminEdit = () => {
 
     if (!formData.disposition) {
       setIsSubmitting(false);
+      setMissingFields(true);
+
       toast.error("Disposition required");
       document
         .querySelector("#disposition")
@@ -361,6 +370,8 @@ const AdminEdit = () => {
 
     if (formData.health_card && formData.health_card.length != 10) {
       setIsSubmitting(false);
+      setMissingFields(true);
+
       toast.error("Health Card Number must be 10 digits.");
       document
         .querySelector("#healthcard")
@@ -370,6 +381,8 @@ const AdminEdit = () => {
 
     if (formData.health_card && formData.health_card !== "0000000000") {
       if (await checkIfHealthcardExists(formData.health_card)) {
+        setMissingFields(true);
+
         document
           .querySelector("#healthcard")
           ?.scrollIntoView({ behavior: "smooth" });
@@ -379,6 +392,8 @@ const AdminEdit = () => {
 
     if (!formData.referral_site) {
       setIsSubmitting(false);
+      setMissingFields(true);
+
       toast.error("Referral Site required");
       document
         .querySelector("#referral_site")
@@ -388,6 +403,8 @@ const AdminEdit = () => {
 
     if (!formData.province) {
       setIsSubmitting(false);
+      setMissingFields(true);
+
       toast.error("Province required");
       document
         .querySelector("#province")

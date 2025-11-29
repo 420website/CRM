@@ -45,9 +45,9 @@ function EditUser({
 
       <form onSubmit={editingUser ? handleUpdateUser : handleAddUser}>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-          <div>
+          <div id="firstName" className="scroll-mt-[60px]">
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              First Name *
+              First Name <span className="text-red-500">*</span>
             </label>
             <input
               type="text"
@@ -56,13 +56,13 @@ function EditUser({
               onChange={handleInputChange}
               className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-black"
               style={{ height: "40px" }}
-              required
+              // required
             />
           </div>
 
-          <div>
+          <div id="lastName" className="scroll-mt-[60px]">
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Last Name *
+              Last Name <span className="text-red-500">*</span>
             </label>
             <input
               type="text"
@@ -71,15 +71,15 @@ function EditUser({
               onChange={handleInputChange}
               className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-black"
               style={{ height: "40px" }}
-              required
+              // required
             />
           </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-          <div>
+          <div id="email" className="scroll-mt-[60px]">
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Email Address *
+              Email Address <span className="text-red-500">*</span>
             </label>
             <input
               type="email"
@@ -88,13 +88,13 @@ function EditUser({
               onChange={handleInputChange}
               className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-black"
               style={{ height: "40px" }}
-              required
+              // required
             />
           </div>
 
-          <div>
+          <div id="phone" className="scroll-mt-[60px]">
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Phone Number *
+              Phone Number <span className="text-red-500">*</span>
             </label>
             <input
               type="tel"
@@ -104,7 +104,7 @@ function EditUser({
               placeholder="(XXX) XXX-XXXX"
               className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-black"
               style={{ height: "40px" }}
-              required
+              // required
             />
           </div>
         </div>
@@ -129,14 +129,14 @@ function EditUser({
             handleRemove={handleLocationRemove}
             handleAdd={handleLocationAdd}
             placeholder="Select"
-            header="Location Permissions"
+            header="Location Permissions "
           />
         </div>
 
         {/* Role Selection Section */}
-        <div className="mb-6">
+        <div id="role" className="mb-6 scroll-mt-[60px]">
           <label className="block text-sm font-medium text-gray-700 mb-3">
-            User Role
+            User Role <span className="text-red-500">*</span>
           </label>
           <div className="grid grid-cols-2 gap-4">
             {["admin", "standard", "guest", "limited"].map((roleOption) => (
@@ -373,36 +373,53 @@ const UserManagement = () => {
   const validateAddForm = () => {
     if (!formData.first_name) {
       toast.error("First Name required");
+      document
+        .querySelector("#firstName")
+        ?.scrollIntoView({ behavior: "smooth" });
       return false;
     }
 
     if (!formData.last_name) {
       toast.error("Last Name required");
+      document
+        .querySelector("#lastName")
+        ?.scrollIntoView({ behavior: "smooth" });
       return false;
     }
 
     if (!formData.email) {
-      toast.error("Please fill in all required fields");
+      toast.error("Email required");
+      document.querySelector("#email")?.scrollIntoView({ behavior: "smooth" });
       return false;
     }
 
     if (!formData.phone_number) {
       toast.error("Phone number required");
+      document.querySelector("#phone")?.scrollIntoView({ behavior: "smooth" });
       return false;
     }
 
-    if (!formData.password) {
-      toast.error("Password required");
+    if (!editingUser) {
+      if (!formData.password) {
+        toast.error("Password required");
+        document
+          .querySelector("#password")
+          ?.scrollIntoView({ behavior: "smooth" });
+        return false;
+      }
+    }
+
+    if (!formData.province) {
+      toast.error("Province is required");
+      document
+        .querySelector("#province")
+        ?.scrollIntoView({ behavior: "smooth" });
       return false;
     }
 
     if (!formData.role) {
       toast.error("Role required");
-      return false;
-    }
-
-    if (!formData.province) {
-      toast.error("Province is required");
+      document.querySelector("#role")?.scrollIntoView({ behavior: "smooth" });
       return false;
     }
 
@@ -417,26 +434,40 @@ const UserManagement = () => {
   const validateEditForm = () => {
     if (!formData.first_name) {
       toast.error("First Name required");
+      document
+        .querySelector("#firstName")
+        ?.scrollIntoView({ behavior: "smooth" });
       return false;
     }
 
     if (!formData.last_name) {
       toast.error("Last Name required");
+      document
+        .querySelector("#lastName")
+        ?.scrollIntoView({ behavior: "smooth" });
       return false;
     }
 
     if (!formData.email) {
-      toast.error("Please fill in all required fields");
+      toast.error("Email required");
+      document.querySelector("#email")?.scrollIntoView({ behavior: "smooth" });
       return false;
     }
 
     if (!formData.phone_number) {
       toast.error("Phone number required");
+      document.querySelector("#phone")?.scrollIntoView({ behavior: "smooth" });
       return false;
     }
 
     if (!formData.province) {
       toast.error("Province is required");
+      return false;
+    }
+
+    if (!formData.role) {
+      toast.error("Role required");
+      document.querySelector("#role")?.scrollIntoView({ behavior: "smooth" });
       return false;
     }
 

@@ -9,9 +9,9 @@ export default function PasswordInput({
   const [showPassword, setShowPassword] = useState(false);
 
   return (
-    <div className="mb-4">
+    <div id="password" className="mb-4 scroll-mt-[60px]">
       <label className="block text-sm font-medium text-gray-700 mb-1">
-        Password
+        Password <span className="text-red-500">*</span>
       </label>
       <div className="relative w-full md:w-1/2">
         <input
@@ -19,7 +19,7 @@ export default function PasswordInput({
           name="password"
           value={formData.password}
           onChange={handleInputChange}
-          required={required}
+          // required={required}
           className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-black pr-10"
           style={{ height: "40px" }}
         />
