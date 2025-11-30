@@ -41,6 +41,7 @@ from app.registration.router import (
     delete_note_by_id,
     delete_patient_by_id,
     delete_patient_by_name,
+    get_activities,
     get_activities_by_patient,
     get_activity_by_id,
     get_assessment_by_id,
@@ -80,6 +81,7 @@ from app.registration.schemas import (
     MedicationUpdate,
     NoteCreate,
     NoteUpdate,
+    PatientActivity,
     PatientCreate,
     PatientStatus,
     PatientUpdate,
@@ -206,6 +208,9 @@ class TestPatientRouter(IsolatedAsyncioTestCase):
             status="pending",
             health_card="1234567890",
             health_card_version="AB",
+            disposition="Active",
+            referral_site="Toronto",
+            province="Ontario",
         )
 
         self.ontario_patient = PatientCreate(
@@ -213,6 +218,10 @@ class TestPatientRouter(IsolatedAsyncioTestCase):
             last_name="Doe",
             dob=date(1990, 3, 22),
             province="Ontario",
+            disposition="Active",
+            referral_site="Toronto",
+            age=30,
+            gender="Male",
         )
 
         self.alberta_patient = PatientCreate(
@@ -220,6 +229,10 @@ class TestPatientRouter(IsolatedAsyncioTestCase):
             last_name="Doe",
             dob=date(1990, 3, 22),
             province="Alberta",
+            disposition="Active",
+            referral_site="Toronto",
+            age=30,
+            gender="Male",
         )
 
         self.nunavut_patient = PatientCreate(
@@ -227,6 +240,10 @@ class TestPatientRouter(IsolatedAsyncioTestCase):
             last_name="Doe",
             dob=date(1990, 3, 22),
             province="Nunavut",
+            disposition="Active",
+            referral_site="Toronto",
+            age=30,
+            gender="Male",
         )
 
     async def asyncTearDown(self):
@@ -248,6 +265,9 @@ class TestPatientRouter(IsolatedAsyncioTestCase):
             status="pending",
             health_card="1234567890",
             health_card_version="AB",
+            disposition="Active",
+            referral_site="Toronto",
+            province="Ontario",
         )
 
         result = await create_patient(patient_data, self.user)
@@ -265,6 +285,11 @@ class TestPatientRouter(IsolatedAsyncioTestCase):
             dob=date(1985, 5, 15),
             health_card="1234567890",
             health_card_version="AB",
+            disposition="Active",
+            referral_site="Toronto",
+            province="Ontario",
+            age=30,
+            gender="Male",
         )
 
         result = await create_patient(patient_data, self.user)
@@ -280,6 +305,11 @@ class TestPatientRouter(IsolatedAsyncioTestCase):
             dob=date(1985, 5, 15),
             health_card="1234567890",
             health_card_version="AB",
+            disposition="Active",
+            referral_site="Toronto",
+            province="Ontario",
+            age=30,
+            gender="Male",
         )
 
         result = await create_patient(patient_data, self.user)
@@ -305,6 +335,11 @@ class TestPatientRouter(IsolatedAsyncioTestCase):
             dob=date(1985, 5, 15),
             health_card="0000000000",
             health_card_version="NA",
+            disposition="Active",
+            referral_site="Toronto",
+            province="Ontario",
+            age=30,
+            gender="Male",
         )
 
         result = await create_patient(patient_data, self.user)
@@ -326,6 +361,11 @@ class TestPatientRouter(IsolatedAsyncioTestCase):
             dob=date(1985, 5, 15),
             health_card="0000000000",
             health_card_version="NA",
+            disposition="Active",
+            referral_site="Toronto",
+            province="Ontario",
+            age=30,
+            gender="Male",
         )
 
         result = await create_patient(patient_data, self.user)
@@ -346,6 +386,11 @@ class TestPatientRouter(IsolatedAsyncioTestCase):
             dob=date(1985, 5, 15),
             health_card="1234567890",
             health_card_version="AB",
+            disposition="Active",
+            referral_site="Toronto",
+            province="Ontario",
+            age=30,
+            gender="Male",
         )
 
         result = await create_patient(patient_data, self.user)
@@ -572,6 +617,9 @@ class TestPatientRouter(IsolatedAsyncioTestCase):
             status="pending",
             health_card="1234567890",
             health_card_version="AB",
+            disposition="Active",
+            referral_site="Toronto",
+            province="Ontario",
         )
 
         patient2 = PatientCreate(
@@ -585,6 +633,9 @@ class TestPatientRouter(IsolatedAsyncioTestCase):
             status="pending",
             health_card="1234567898",
             health_card_version="AB",
+            disposition="Active",
+            referral_site="Toronto",
+            province="Ontario",
         )
 
         result = await create_patient(patient1, self.user)
@@ -619,6 +670,9 @@ class TestPatientRouter(IsolatedAsyncioTestCase):
             status="pending",
             health_card="1234567890",
             health_card_version="AB",
+            disposition="Active",
+            referral_site="Toronto",
+            province="Ontario",
         )
 
         patient2 = PatientCreate(
@@ -632,6 +686,9 @@ class TestPatientRouter(IsolatedAsyncioTestCase):
             status="pending",
             health_card="1234567898",
             health_card_version="AB",
+            disposition="Active",
+            referral_site="Toronto",
+            province="Ontario",
         )
 
         result = await create_patient(patient1, self.user)
@@ -667,6 +724,9 @@ class TestPatientRouter(IsolatedAsyncioTestCase):
             status="pending",
             health_card="1234567890",
             health_card_version="AB",
+            disposition="Active",
+            referral_site="Toronto",
+            province="Ontario",
         )
 
         patient2 = PatientCreate(
@@ -680,6 +740,9 @@ class TestPatientRouter(IsolatedAsyncioTestCase):
             status="pending",
             health_card="1234567898",
             health_card_version="AB",
+            disposition="Active",
+            referral_site="Toronto",
+            province="Ontario",
         )
 
         result = await create_patient(patient1, self.user)
@@ -863,6 +926,11 @@ class TestPatientRouter(IsolatedAsyncioTestCase):
             dob=date(1990, 3, 22),
             health_card="1234567890",
             health_card_version="AB",
+            disposition="Active",
+            referral_site="Toronto",
+            province="Ontario",
+            age=30,
+            gender="Male",
         )
         result = await create_patient(patient, self.user)
         patient_id = result["patient_id"]
@@ -886,6 +954,11 @@ class TestPatientRouter(IsolatedAsyncioTestCase):
             dob=date(1990, 3, 22),
             health_card="1234567890",
             health_card_version="AB",
+            disposition="Active",
+            referral_site="Toronto",
+            province="Ontario",
+            age=30,
+            gender="Male",
         )
         result = await create_patient(patient, self.user)
         patient_id = result["patient_id"]
@@ -920,6 +993,11 @@ class TestPatientRouter(IsolatedAsyncioTestCase):
             dob=date(1990, 3, 22),
             health_card="1234567890",
             health_card_version="AB",
+            disposition="Active",
+            referral_site="Toronto",
+            province="Ontario",
+            age=30,
+            gender="Male",
         )
         result = await create_patient(patient, self.user)
         patient_id = result["patient_id"]
@@ -955,6 +1033,11 @@ class TestPatientRouter(IsolatedAsyncioTestCase):
             dob=date(1990, 3, 22),
             health_card="1234567890",
             health_card_version="AB",
+            disposition="Active",
+            referral_site="Toronto",
+            province="Ontario",
+            age=30,
+            gender="Male",
         )
         result = await create_patient(patient, self.user)
         patient_id = result["patient_id"]
@@ -1015,6 +1098,9 @@ class TestPatientAssessmentssRouter(IsolatedAsyncioTestCase):
             status="pending",
             health_card="0000000000",
             health_card_version="AB",
+            disposition="Active",
+            referral_site="Toronto",
+            province="Ontario",
         )
 
         result = await create_patient(patient_data, self.user)
@@ -1055,6 +1141,9 @@ class TestPatientAssessmentssRouter(IsolatedAsyncioTestCase):
             status="pending",
             health_card="1234567890",
             health_card_version="AB",
+            disposition="Active",
+            referral_site="Toronto",
+            province="Ontario",
         )
 
         self.hiv_data = AssessmentCreate(
@@ -1312,6 +1401,9 @@ class TestPatientNotesRouter(IsolatedAsyncioTestCase):
             status="pending",
             health_card="1234567890",
             health_card_version="AB",
+            disposition="Active",
+            referral_site="Toronto",
+            province="Ontario",
         )
 
         result = await create_patient(patient_data, self.user)
@@ -1349,6 +1441,9 @@ class TestPatientNotesRouter(IsolatedAsyncioTestCase):
             status="pending",
             health_card="1234567890",
             health_card_version="AB",
+            disposition="Active",
+            referral_site="Toronto",
+            province="Ontario",
         )
 
         self.note_data = NoteCreate(
@@ -1487,6 +1582,9 @@ class TestPatientInteractionsRouter(IsolatedAsyncioTestCase):
             status="pending",
             health_card="1234567890",
             health_card_version="AB",
+            disposition="Active",
+            referral_site="Toronto",
+            province="Ontario",
         )
 
         result = await create_patient(patient_data, self.user)
@@ -1525,6 +1623,9 @@ class TestPatientInteractionsRouter(IsolatedAsyncioTestCase):
             status="pending",
             health_card="1234567890",
             health_card_version="AB",
+            disposition="Active",
+            referral_site="Toronto",
+            province="Ontario",
         )
 
         # Interaction test data
@@ -1684,6 +1785,9 @@ class TestPatienMedicationsRouter(IsolatedAsyncioTestCase):
             status="pending",
             health_card="1234567890",
             health_card_version="AB",
+            disposition="Active",
+            referral_site="Toronto",
+            province="Ontario",
         )
 
         result = await create_patient(patient_data, self.user)
@@ -1722,6 +1826,9 @@ class TestPatienMedicationsRouter(IsolatedAsyncioTestCase):
             status="pending",
             health_card="1234567890",
             health_card_version="AB",
+            disposition="Active",
+            referral_site="Toronto",
+            province="Ontario",
         )
 
         self.medication_data = MedicationCreate(
@@ -1871,6 +1978,9 @@ class TestPatientDispensingRouter(IsolatedAsyncioTestCase):
             status="pending",
             health_card="1234567890",
             health_card_version="AB",
+            disposition="Active",
+            referral_site="Toronto",
+            province="Ontario",
         )
 
         result = await create_patient(patient_data, self.user)
@@ -1921,6 +2031,9 @@ class TestPatientDispensingRouter(IsolatedAsyncioTestCase):
             status="pending",
             health_card="1234567890",
             health_card_version="AB",
+            disposition="Active",
+            referral_site="Toronto",
+            province="Ontario",
         )
 
         # Dispensing test data
@@ -2115,12 +2228,15 @@ class TestPatientActivityRouter(IsolatedAsyncioTestCase):
             last_name="Doe",
             dob=date(1990, 1, 1),
             age=33,
+            province="Ontario",
             gender="Male",
             email="jim.doe@example.com",
             phone1="416-555-0123",
             status="pending",
             health_card="1234567890",
             health_card_version="AB",
+            disposition="Active",
+            referral_site="Toronto",
         )
 
         result = await create_patient(patient_data, self.user)
@@ -2144,7 +2260,14 @@ class TestPatientActivityRouter(IsolatedAsyncioTestCase):
     async def asyncSetUp(self) -> None:
         await database.connect()
         await UserService.delete_user(email, password)
-        self.user = await self.get_validated_user()
+        user = await self.get_validated_user()
+
+        self.updates = UserUpdate(
+            province="Ontario", location_permissions=["All"]
+        )
+
+        await UserService.update_user(user.id, self.updates)
+        self.user = await UserService.get_user_by_id(user.id)
 
         asyncio.get_event_loop().set_debug(False)
 
@@ -2153,12 +2276,48 @@ class TestPatientActivityRouter(IsolatedAsyncioTestCase):
             last_name="Doe",
             dob=date(1990, 1, 1),
             age=33,
+            province="Ontario",
             gender="Male",
             email="jim.doe@example.com",
             phone1="416-555-0123",
             status="pending",
             health_card="1234567890",
             health_card_version="AB",
+            disposition="Active",
+            referral_site="Toronto",
+        )
+
+        self.ontario_patient = PatientCreate(
+            first_name="John",
+            last_name="Doe",
+            dob=date(1990, 3, 22),
+            province="Ontario",
+            disposition="Active",
+            referral_site="Toronto",
+            age=30,
+            gender="Male",
+        )
+
+        self.alberta_patient = PatientCreate(
+            first_name="John",
+            last_name="Doe",
+            dob=date(1990, 3, 22),
+            province="Alberta",
+            disposition="Active",
+            referral_site="Toronto",
+            age=30,
+            gender="Male",
+        )
+
+        self.nunavut_patient = PatientCreate(
+            first_name="John",
+            last_name="Doe",
+            dob=date(1990, 3, 22),
+            province="Nunavut",
+            disposition="Active",
+            referral_site="Toronto",
+            age=30,
+            gender="Male",
         )
 
         # Activity test data
@@ -2187,6 +2346,84 @@ class TestPatientActivityRouter(IsolatedAsyncioTestCase):
 
         # Cleanup
         await PatientService.delete_patient_by_id(patient_id)
+
+    async def test_get_activities_success(self):
+        patient_id = await self.mock_create_patient("Jim")
+        await self.mock_create_activity(patient_id)
+
+        result = await get_activities(self.user)
+
+        self.assertEqual(1, len(result))
+        self.assertIsInstance(result[0], PatientActivity)
+
+        # Cleanup
+        await PatientService.delete_patient_by_id(patient_id)
+
+    async def test_get_activities_one_location(self):
+        updates = UserUpdate(location_permissions=["Ontario"])
+        await UserService.update_user(self.user.id, updates)
+        user = await UserService.get_user_by_id(self.user.id)
+
+        o_id = await PatientService.create_patient(self.ontario_patient)
+        await self.mock_create_activity(o_id)
+
+        a_id = await PatientService.create_patient(self.alberta_patient)
+        await self.mock_create_activity(a_id)
+
+        result = await get_activities(user)
+        self.assertEqual(1, len(result))
+        self.assertIsInstance(result[0], PatientActivity)
+
+        # Cleanup
+        await PatientService.delete_patient_by_id(o_id)
+        await PatientService.delete_patient_by_id(a_id)
+
+    async def test_get_activities_some_locations(self):
+        updates = UserUpdate(location_permissions=["Ontario", "Alberta"])
+        await UserService.update_user(self.user.id, updates)
+        user = await UserService.get_user_by_id(self.user.id)
+
+        o_id = await PatientService.create_patient(self.ontario_patient)
+        await self.mock_create_activity(o_id)
+
+        a_id = await PatientService.create_patient(self.alberta_patient)
+        await self.mock_create_activity(a_id)
+
+        result = await get_activities(user)
+        self.assertEqual(2, len(result))
+        self.assertIsInstance(result[0], PatientActivity)
+
+        # Cleanup
+        await PatientService.delete_patient_by_id(o_id)
+        await PatientService.delete_patient_by_id(a_id)
+
+    async def test_get_activities_partial_locations(self):
+        updates = UserUpdate(location_permissions=["Ontario", "Nunavut"])
+        await UserService.update_user(self.user.id, updates)
+        user = await UserService.get_user_by_id(self.user.id)
+
+        o_id = await PatientService.create_patient(self.ontario_patient)
+        await self.mock_create_activity(o_id)
+
+        a_id = await PatientService.create_patient(self.alberta_patient)
+        await self.mock_create_activity(a_id)
+
+        result = await get_activities(user)
+        self.assertEqual(1, len(result))
+        self.assertIsInstance(result[0], PatientActivity)
+
+        # Cleanup
+        await PatientService.delete_patient_by_id(o_id)
+        await PatientService.delete_patient_by_id(a_id)
+
+    async def test_get_patients_by_location_none(self):
+        updates = UserUpdate(location_permissions=[])
+        await UserService.update_user(self.user.id, updates)
+        user = await UserService.get_user_by_id(self.user.id)
+
+        # test
+        result = await get_activities(user)
+        self.assertEqual(len(result), 0)
 
     async def test_get_activities_by_patient_success(self):
         patient_id = await self.mock_create_patient("Jim")

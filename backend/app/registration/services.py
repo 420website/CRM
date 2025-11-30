@@ -899,6 +899,7 @@ class ActivityService:
             p.first_name, 
             p.last_name, 
             p.phone1,
+            p.province,
             p.disposition,
             p.referral_site,
             p.finalized_at, 
@@ -912,6 +913,58 @@ class ActivityService:
         """
         async with database.get_connection() as conn:
             rows = await conn.fetch(query)
+
+        result = []
+        if rows:
+            for row in rows:
+                result.append(PatientActivity(**dict(row)))
+        return result
+
+    @staticmethod
+    async def get_activites_by_location(
+        locations: List[str],
+    ) -> List[PatientActivity]:
+        if len(locations) == 0:
+            return []
+
+        query = """
+        WITH location_patients AS (
+            SELECT 
+                id,
+                first_name, 
+                last_name, 
+                province,
+                phone1,
+                disposition,
+                referral_site,
+                finalized_at, 
+                status,
+                reg_date, 
+                file_id,
+                created_at
+            FROM patients
+            WHERE province= ANY($1)
+        )
+        SELECT 
+            a.*, 
+            lp.first_name, 
+            lp.last_name, 
+            lp.province,
+            lp.phone1,
+            lp.disposition,
+            lp.referral_site,
+            lp.finalized_at, 
+            lp.status,
+            lp.reg_date, 
+            lp.file_id,
+            lp.created_at AS submitted_date
+        FROM activities a
+        JOIN location_patients lp ON a.patient_id = lp.id
+        ORDER BY a.date DESC, a.time DESC;
+        """
+
+        async with database.get_connection() as conn:
+            rows = await conn.fetch(query, locations)
 
         result = []
         if rows:

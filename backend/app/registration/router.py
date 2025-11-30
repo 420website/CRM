@@ -684,7 +684,17 @@ async def get_activities_by_patient(
 async def get_activities(
     user: UserRead = Depends(get_current_user),
 ):
-    result = await ActivityService.get_patient_activities()
+    """Returns patients to the highest level of permission the user has."""
+    if len(user.location_permissions) == 0:
+        return []
+    else:
+        if "All" in user.location_permissions:
+            result = await ActivityService.get_patient_activities()
+        else:
+            result = await ActivityService.get_activites_by_location(
+                user.location_permissions
+            )
+
     return result
 
 

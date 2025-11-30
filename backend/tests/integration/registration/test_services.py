@@ -112,6 +112,10 @@ class TestPatientService(IsolatedAsyncioTestCase):
             province="Ontario",
             # health_card="1234567890",
             # health_card_version="AB",
+            disposition="Active",
+            referral_site="Toronto",
+            age=30,
+            gender="Male",
         )
 
         self.minimal_patient2 = PatientCreate(
@@ -121,6 +125,10 @@ class TestPatientService(IsolatedAsyncioTestCase):
             province="Alberta",
             health_card="0987654321",
             health_card_version="AB",
+            disposition="Active",
+            referral_site="Toronto",
+            age=30,
+            gender="Male",
         )
 
         # PatientCreate for testing edge cases
@@ -141,6 +149,8 @@ class TestPatientService(IsolatedAsyncioTestCase):
             voicemail=False,
             text=True,
             reg_date=date(2024, 1, 10),
+            disposition="Active",
+            referral_site="Toronto",
         )
 
     async def asyncTearDown(self) -> None:
@@ -455,6 +465,11 @@ class TestPatientService(IsolatedAsyncioTestCase):
             dob=date(1990, 3, 22),
             health_card="0000000000",
             health_card_version="AB",
+            disposition="Active",
+            referral_site="Toronto",
+            province="Ontario",
+            age=30,
+            gender="Male",
         )
 
         id1 = await PatientService.create_patient(patient)
@@ -489,6 +504,11 @@ class TestPatientService(IsolatedAsyncioTestCase):
             dob=date(1990, 3, 22),
             health_card="1234567890",
             health_card_version="AB",
+            disposition="Active",
+            referral_site="Toronto",
+            province="Ontario",
+            age=30,
+            gender="Male",
         )
         id = await PatientService.create_patient(patient)
 
@@ -510,6 +530,11 @@ class TestPatientService(IsolatedAsyncioTestCase):
             dob=date(1990, 3, 22),
             health_card="1234567890",
             health_card_version="AB",
+            disposition="Active",
+            referral_site="Toronto",
+            province="Ontario",
+            age=30,
+            gender="Male",
         )
         id = await PatientService.create_patient(patient)
 
@@ -540,6 +565,11 @@ class TestPatientService(IsolatedAsyncioTestCase):
             dob=date(1990, 3, 22),
             health_card="1234567890",
             health_card_version="AB",
+            disposition="Active",
+            referral_site="Toronto",
+            province="Ontario",
+            age=30,
+            gender="Male",
         )
         id = await PatientService.create_patient(patient)
 
@@ -564,6 +594,11 @@ class TestPatientService(IsolatedAsyncioTestCase):
             dob=date(1990, 3, 22),
             health_card="1234567890",
             health_card_version="AB",
+            disposition="Active",
+            referral_site="Toronto",
+            province="Ontario",
+            age=30,
+            gender="Male",
         )
         id = await PatientService.create_patient(patient)
 
@@ -579,6 +614,11 @@ class TestPatientService(IsolatedAsyncioTestCase):
             dob=date(1990, 3, 22),
             health_card="1234567890",
             health_card_version="AB",
+            disposition="Active",
+            referral_site="Toronto",
+            province="Ontario",
+            age=30,
+            gender="Male",
         )
         id = await PatientService.create_patient(patient)
 
@@ -595,6 +635,11 @@ class TestPatientService(IsolatedAsyncioTestCase):
             dob=date(1990, 3, 22),
             health_card="1234567890",
             health_card_version="AB",
+            disposition="Active",
+            referral_site="Toronto",
+            province="Ontario",
+            age=30,
+            gender="Male",
         )
         id = await PatientService.create_patient(patient)
 
@@ -615,6 +660,11 @@ class TestPatientService(IsolatedAsyncioTestCase):
             dob=date(1990, 3, 22),
             health_card="1234567890",
             health_card_version="AB",
+            disposition="Active",
+            referral_site="Toronto",
+            province="Ontario",
+            age=30,
+            gender="Male",
         )
         id = await PatientService.create_patient(patient)
 
@@ -627,6 +677,11 @@ class TestPatientService(IsolatedAsyncioTestCase):
             first_name="Jane",
             last_name="Doe",
             dob=date(1990, 3, 22),
+            disposition="Active",
+            referral_site="Toronto",
+            province="Ontario",
+            age=30,
+            gender="Male",
         )
         id = await PatientService.create_patient(patient)
 
@@ -641,6 +696,11 @@ class TestPatientService(IsolatedAsyncioTestCase):
             dob=date(1990, 3, 22),
             health_card="1234567890",
             health_card_version="AB",
+            disposition="Active",
+            referral_site="Toronto",
+            province="Ontario",
+            age=30,
+            gender="Male",
         )
         id = await PatientService.create_patient(patient)
         result = await PatientService.get_patient_by_id(id)
@@ -664,6 +724,11 @@ class TestPatientService(IsolatedAsyncioTestCase):
             dob=date(1990, 3, 22),
             health_card="1234567890",
             health_card_version="AB",
+            disposition="Active",
+            referral_site="Toronto",
+            province="Ontario",
+            age=30,
+            gender="Male",
         )
         id = await PatientService.create_patient(patient)
         result = await PatientService.get_patient_by_id(id)
@@ -693,6 +758,11 @@ class TestAssessmentService(IsolatedAsyncioTestCase):
             dob=date(1990, 3, 22),
             health_card="1234567890",
             health_card_version="AB",
+            disposition="Active",
+            referral_site="Toronto",
+            province="Ontario",
+            age=30,
+            gender="Male",
         )
         await PatientService.create_patient(self.minimal_patient)
         patients = await PatientService.get_patients()
@@ -920,6 +990,11 @@ class TestNotesService(IsolatedAsyncioTestCase):
             dob=date(1990, 3, 22),
             health_card="1234567890",
             health_card_version="AB",
+            disposition="Active",
+            referral_site="Toronto",
+            province="Ontario",
+            age=30,
+            gender="Male",
         )
         await PatientService.create_patient(self.minimal_patient)
         patients = await PatientService.get_patients()
@@ -1064,6 +1139,11 @@ class TestInteractionsService(IsolatedAsyncioTestCase):
             dob=date(1990, 3, 22),
             health_card="1234567890",
             health_card_version="AB",
+            disposition="Active",
+            referral_site="Toronto",
+            province="Ontario",
+            age=30,
+            gender="Male",
         )
         await PatientService.create_patient(self.minimal_patient)
         patients = await PatientService.get_patients()
@@ -1200,6 +1280,11 @@ class TestMedicationsService(IsolatedAsyncioTestCase):
             dob=date(1990, 3, 22),
             health_card="1234567890",
             health_card_version="AB",
+            disposition="Active",
+            referral_site="Toronto",
+            province="Ontario",
+            age=30,
+            gender="Male",
         )
         await PatientService.create_patient(self.minimal_patient)
         patients = await PatientService.get_patients()
@@ -1314,6 +1399,11 @@ class TestDispensingService(IsolatedAsyncioTestCase):
             dob=date(1990, 3, 22),
             health_card="1234567890",
             health_card_version="AB",
+            disposition="Active",
+            referral_site="Toronto",
+            province="Ontario",
+            age=30,
+            gender="Male",
         )
         await PatientService.create_patient(self.minimal_patient)
         patients = await PatientService.get_patients()
@@ -1459,10 +1549,29 @@ class TestActivitiesService(IsolatedAsyncioTestCase):
             first_name="Jim",
             last_name="Doe",
             dob=date(1990, 3, 22),
-            health_card="1234567890",
+            health_card="0000000000",
             health_card_version="AB",
             reg_date=date(2024, 1, 1),
+            province="Ontario",
+            disposition="Active",
+            referral_site="Toronto",
+            age=30,
+            gender="Male",
         )
+
+        self.minimal_patient2 = PatientCreate(
+            first_name="Jane",
+            last_name="Smith",
+            dob=date(1990, 3, 22),
+            province="Alberta",
+            health_card="0987654321",
+            health_card_version="AB",
+            disposition="Active",
+            referral_site="Toronto",
+            age=30,
+            gender="Male",
+        )
+
         await PatientService.create_patient(self.minimal_patient)
         patients = await PatientService.get_patients()
         self.patient_id = patients[0].id
@@ -1545,11 +1654,47 @@ class TestActivitiesService(IsolatedAsyncioTestCase):
             self.assertEqual(a.disposition, patient.disposition)
             self.assertEqual(a.referral_site, patient.referral_site)
             self.assertEqual(a.phone1, patient.phone1)
+            self.assertEqual(a.province, patient.province)
             self.assertEqual(a.reg_date, patient.reg_date)
             self.assertEqual(a.file_id, patient.file_id)
             self.assertEqual(a.submitted_date, patient.created_at)
             self.assertEqual(a.status, patient.status)
             self.assertEqual(a.finalized_at, patient.finalized_at)
+
+    async def test_get_activities_location(self):
+        id1 = await PatientService.create_patient(self.minimal_patient)
+        id2 = await PatientService.create_patient(self.minimal_patient2)
+
+        await ActivityService.create_activity(id1, self.activity_data)
+        await ActivityService.create_activity(id2, self.activity_data)
+
+        # Test
+        patients = await ActivityService.get_activites_by_location(["Alberta"])
+        self.assertEqual(1, len(patients))
+
+        await PatientService.delete_patient("Jane", "Smith")
+
+    async def test_get_activities_locations(self):
+        id1 = await PatientService.create_patient(self.minimal_patient)
+        id2 = await PatientService.create_patient(self.minimal_patient2)
+
+        await ActivityService.create_activity(id1, self.activity_data)
+        await ActivityService.create_activity(id2, self.activity_data)
+
+        # Test
+        patients = await ActivityService.get_activites_by_location(
+            ["Alberta", "Ontario"]
+        )
+        self.assertEqual(2, len(patients))
+
+        await PatientService.delete_patient("Jane", "Smith")
+
+    async def test_get_activities_none(self):
+        # Test
+        patients = await ActivityService.get_activites_by_location(["Nunavut"])
+        self.assertEqual(0, len(patients))
+
+        await PatientService.delete_patient("Jane", "Smith")
 
     #### UPDATE
     async def test_update_activity_success(self):
