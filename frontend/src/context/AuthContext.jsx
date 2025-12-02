@@ -19,6 +19,8 @@ export function AuthProvider({ children }) {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [refreshTimer, setRefreshTimer] = useState(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [isCheckingAuth, setIsCheckingAuth] = useState(false);
+
   const [currentRegistrationId, setCurrentRegistrationId] = useState(null);
 
   const logout = async () => {
@@ -33,12 +35,14 @@ export function AuthProvider({ children }) {
   };
 
   const handleAuthenticated = async (accessToken, expiresAt) => {
-    setIsAuthenticated(true);
-    setIsLoggedIn(true);
     tokenManager.setAccessToken(accessToken);
     tokenManager.setExpiresAt(expiresAt); // Store expiry time
 
     await getPermissions();
+
+    setIsAuthenticated(true);
+    setIsLoggedIn(true);
+    setIsCheckingAuth(false);
   };
 
   const tryRefresh = async () => {
@@ -46,6 +50,7 @@ export function AuthProvider({ children }) {
       return;
     }
     setIsRefreshing(true);
+    setIsCheckingAuth(true);
     try {
       const response = await AuthServices.refresh_token();
 
@@ -63,6 +68,7 @@ export function AuthProvider({ children }) {
       }
     } finally {
       setIsRefreshing(false);
+      setIsCheckingAuth(false);
     }
   };
 

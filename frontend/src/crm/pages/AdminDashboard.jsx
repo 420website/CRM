@@ -473,7 +473,7 @@ const AdminDashboard = () => {
                   activityStatusFilter !== "all") && (
                   <button
                     onClick={clearAllFilters}
-                    className="bg-gray-100 text-gray-700 py-1 px-3 rounded-md hover:bg-gray-200 transition-colors text-sm disabled:opacity-50 flex items-center gap-2"
+                    className="bg-gray-100 text-gray-700 py-1 px-2 rounded-md hover:bg-gray-200 transition-colors text-sm disabled:opacity-50 flex items-center gap-2"
                   >
                     Clear
                   </button>
@@ -481,7 +481,7 @@ const AdminDashboard = () => {
                 <button
                   onClick={() => handle_refresh()}
                   // disabled={isRefreshing}
-                  className="bg-gray-100 text-gray-700 py-1 px-3 rounded-md hover:bg-gray-200 transition-colors text-sm disabled:opacity-50 flex items-center gap-2"
+                  className="bg-gray-100 text-gray-700 py-1 px-2 rounded-md hover:bg-gray-200 transition-colors text-xs disabled:opacity-50 flex items-center gap-2"
                 >
                   {isRefreshing ? (
                     <svg

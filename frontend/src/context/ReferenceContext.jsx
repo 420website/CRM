@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useContext, useEffect, useMemo, useState } from "react";
 import { useAuth } from "./AuthContext";
 import { ReferenceServices } from "../services/referenceService";
 import { PROVINCES } from "../constants";
@@ -11,11 +11,17 @@ export function ReferenceProvider({ children }) {
   const { userRole, userLocationPermissions } = useAuth();
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const [userProvinces] = useState(
-    userLocationPermissions.includes("All")
+  // const [userProvinces] = useState(
+  //   userLocationPermissions.includes("All")
+  //     ? PROVINCES
+  //     : userLocationPermissions,
+  // );
+
+  const userProvinces = useMemo(() => {
+    return userLocationPermissions.includes("All")
       ? PROVINCES
-      : userLocationPermissions,
-  );
+      : userLocationPermissions;
+  }, [userLocationPermissions]);
 
   // Updated
   const [showManager, setShowManager] = useState("");
