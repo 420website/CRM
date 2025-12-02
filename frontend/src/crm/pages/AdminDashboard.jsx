@@ -461,45 +461,63 @@ const AdminDashboard = () => {
                   </span>
                 )}
               </div>
-              <button
-                onClick={() => handle_refresh()}
-                // disabled={isRefreshing}
-                className="bg-gray-100 text-gray-700 py-1 px-3 rounded-md hover:bg-gray-200 transition-colors text-sm disabled:opacity-50 flex items-center gap-2"
-              >
-                {isRefreshing ? (
-                  <svg
-                    className="h-4 w-4"
-                    style={{ animation: "spin 1s linear infinite reverse" }}
-                    xmlns="http://www.w3.org/2000/svg"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
+              <div className="flex gap-2 ">
+                {/* Clear All Filters Button */}
+                {(searchDate ||
+                  searchName ||
+                  searchEndDate ||
+                  searchMonth ||
+                  searchDisposition ||
+                  searchReferralSite ||
+                  activitySearchTerm ||
+                  activityStatusFilter !== "all") && (
+                  <button
+                    onClick={clearAllFilters}
+                    className="bg-gray-100 text-gray-700 py-1 px-3 rounded-md hover:bg-gray-200 transition-colors text-sm disabled:opacity-50 flex items-center gap-2"
                   >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth="2"
-                      d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-                    />
-                  </svg>
-                ) : (
-                  <svg
-                    className="h-4 w-4"
-                    xmlns="http://www.w3.org/2000/svg"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth="2"
-                      d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-                    />
-                  </svg>
-                )}{" "}
-                Refresh
-              </button>
+                    Clear
+                  </button>
+                )}
+                <button
+                  onClick={() => handle_refresh()}
+                  // disabled={isRefreshing}
+                  className="bg-gray-100 text-gray-700 py-1 px-3 rounded-md hover:bg-gray-200 transition-colors text-sm disabled:opacity-50 flex items-center gap-2"
+                >
+                  {isRefreshing ? (
+                    <svg
+                      className="h-4 w-4"
+                      style={{ animation: "spin 1s linear infinite reverse" }}
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth="2"
+                        d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                      />
+                    </svg>
+                  ) : (
+                    <svg
+                      className="h-4 w-4"
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth="2"
+                        d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                      />
+                    </svg>
+                  )}{" "}
+                  Refresh
+                </button>
+              </div>
             </div>
 
             {/* Search and Filters - Mobile Responsive */}
@@ -690,43 +708,6 @@ const AdminDashboard = () => {
                   </div>
                 )}
               </div>
-
-              {/* Clear All Filters Button */}
-              {activeTab !== "activities" &&
-                (searchName ||
-                  searchEndDate ||
-                  searchMonth ||
-                  searchDate ||
-                  searchDisposition ||
-                  searchReferralSite) && (
-                  <div className="mt-4 flex justify-center">
-                    <button
-                      onClick={clearAllFilters}
-                      className="bg-gray-500 text-white py-2 px-4 rounded-md hover:bg-gray-600 transition-colors text-sm"
-                    >
-                      Clear All Filters
-                    </button>
-                  </div>
-                )}
-
-              {/* Clear All Filters Button */}
-              {activeTab === "activities" &&
-                (searchDate ||
-                  searchEndDate ||
-                  searchMonth ||
-                  searchDisposition ||
-                  searchReferralSite ||
-                  activitySearchTerm ||
-                  activityStatusFilter !== "all") && (
-                  <div className="mt-4 flex justify-center">
-                    <button
-                      onClick={clearAllFilters}
-                      className="bg-gray-500 text-white py-2 px-4 rounded-md hover:bg-gray-600 transition-colors text-sm"
-                    >
-                      Clear All Filters
-                    </button>
-                  </div>
-                )}
             </div>
 
             {error && (

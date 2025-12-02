@@ -11,6 +11,7 @@ import { PhoneCall } from "lucide-react";
 import { useReferences } from "../../context/ReferenceContext";
 import OptionManager from "../managers/OptionManager";
 import TemplateManager from "../managers/TemplateManager";
+import ProvinceDropdown from "./ProvinceDropdown";
 
 // Map Google Places province codes to full province names
 const getProvince = (code) => {
@@ -232,6 +233,10 @@ export default function Client({
       [name]: processedValue,
     };
 
+    if (name === "province" && value) {
+      newFormData.referral_site = "";
+    }
+
     // Update clinical summary ONLY if user has explicitly selected Positive template
     if (
       selectedTemplate === "Positive" &&
@@ -282,13 +287,29 @@ export default function Client({
       },
     });
 
-    setFormData((prev) => ({
-      ...prev,
-      address: place.displayName,
-      city: place.city,
-      postal_code: place.postal_code,
-      province: getProvince(place.province),
-    }));
+    const newProvince = getProvince(place.province);
+
+    let newFormData = { ...formData };
+
+    if (newProvince !== newFormData.province) {
+      newFormData.province = newProvince;
+      newFormData.referral_site = "";
+    }
+
+    newFormData.address = place.displayName;
+    newFormData.city = place.city;
+    newFormData.postal_code = place.postal_code;
+
+    setFormData(newFormData);
+  };
+
+  const filterReferralSites = () => {
+    const filteredSites = options["referral_site"].filter((s) => {
+      const siteProvince = s?.custom_fields?.province;
+      return !formData.province || siteProvince === formData.province;
+    });
+
+    return filteredSites;
   };
 
   return (
@@ -599,7 +620,7 @@ export default function Client({
                 >
                   <option value="">Select Referral Site</option>
                   {/* Most Frequently Used */}
-                  {options["referral_site"]
+                  {filterReferralSites()
                     .filter((s) => s.is_frequent)
                     .map((site) => (
                       <option key={site.id} value={site.name}>
@@ -607,10 +628,10 @@ export default function Client({
                       </option>
                     ))}
                   {/* Separator */}
-                  {options["referral_site"].filter((s) => !s.is_frequent)
-                    .length > 0 && <option disabled>-------</option>}
+                  {filterReferralSites().filter((s) => !s.is_frequent).length >
+                    0 && <option disabled>-------</option>}
                   {/* All Others in Alphabetical Order */}
-                  {options["referral_site"]
+                  {filterReferralSites()
                     .filter((s) => !s.is_frequent)
                     .sort((a, b) => a.name.localeCompare(b.name))
                     .map((site) => (
@@ -684,40 +705,12 @@ export default function Client({
               </div>
 
               <div id="province" className="scroll-mt-[60px]">
-                <label
-                  htmlFor="province"
-                  className="block text-sm font-medium text-gray-700 mb-2"
-                >
-                  Province <span className="text-red-500">*</span>
-                </label>
-                <select
-                  id="province"
-                  name="province"
+                <ProvinceDropdown
                   value={formData.province}
-                  onChange={handleChange}
-                  className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 ${missingFields && !formData.province ? "border-red-700" : "border-gray-300"} focus:ring-black`}
-                >
-                  <option value="">Select Province</option>
-                  <option value="Ontario">Ontario</option>
-                  <option value="Quebec">Quebec</option>
-                  <option value="British Columbia">British Columbia</option>
-                  <option value="Alberta">Alberta</option>
-                  <option value="Manitoba">Manitoba</option>
-                  <option value="Saskatchewan">Saskatchewan</option>
-                  <option value="Nova Scotia">Nova Scotia</option>
-                  <option value="New Brunswick">New Brunswick</option>
-                  <option value="Newfoundland and Labrador">
-                    Newfoundland and Labrador
-                  </option>
-                  <option value="Prince Edward Island">
-                    Prince Edward Island
-                  </option>
-                  <option value="Northwest Territories">
-                    Northwest Territories
-                  </option>
-                  <option value="Nunavut">Nunavut</option>
-                  <option value="Yukon">Yukon</option>
-                </select>
+                  handleChange={handleChange}
+                  required={true}
+                  all_provinces={false}
+                />
               </div>
 
               <div>

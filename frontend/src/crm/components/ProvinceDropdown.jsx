@@ -1,19 +1,18 @@
-export default function ProvinceDropdown({ value, handleChange }) {
-  const provinceMap = [
-    "Alberta",
-    "British Columbia",
-    "Manitoba",
-    "Nova Scotia",
-    "New Brunswick",
-    "Newfoundland and Labrador",
-    "Northwest Territories",
-    "Nunavut",
-    "Ontario",
-    "Prince Edward Island",
-    "Quebec",
-    "Saskatchewan",
-    "Yukon",
-  ];
+import { PROVINCES } from "../../constants";
+import { useAuth } from "../../context/AuthContext";
+
+export default function ProvinceDropdown({
+  value,
+  handleChange,
+  required = false,
+  all_provinces = true,
+}) {
+  const { userLocationPermissions } = useAuth();
+  let provinces = PROVINCES;
+
+  if (!all_provinces && !userLocationPermissions.includes("All")) {
+    provinces = userLocationPermissions;
+  }
 
   return (
     <div id="province" className="scroll-mt-[60px]">
@@ -21,7 +20,7 @@ export default function ProvinceDropdown({ value, handleChange }) {
         htmlFor="province"
         className="block text-sm font-medium text-gray-700 mb-2"
       >
-        Province <span className="text-red-500">*</span>
+        Province {required && <span className="text-red-500">*</span>}
       </label>
       <select
         id="province"
@@ -32,7 +31,7 @@ export default function ProvinceDropdown({ value, handleChange }) {
       >
         <option value="">Select</option>
         {/* Most Frequently Used */}
-        {provinceMap.map((value, index) => (
+        {provinces.map((value, index) => (
           <option key={index} value={value}>
             {value}
           </option>

@@ -1,7 +1,11 @@
+import ProvinceDropdown from "../components/ProvinceDropdown";
+
 export default function EditModal({
-  name,
+  type,
   editingTemplate,
   setShowTemplateEditPopup,
+  handleUpdate,
+  handleProvinceChange,
   updateTemplate,
   deleteTemplate,
 }) {
@@ -40,15 +44,27 @@ export default function EditModal({
                 type="text"
                 id="editTemplateName"
                 defaultValue={editingTemplate.name}
+                onChange={(e) => handleUpdate("name", e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black"
               />
             </div>
+
+            {type === "referral_site" && (
+              <div id="province" className="scroll-mt-[60px]">
+                <ProvinceDropdown
+                  value={editingTemplate.custom_fields.province}
+                  handleChange={handleProvinceChange}
+                  all_provinces={false}
+                />
+              </div>
+            )}
 
             <div className="flex items-center gap-2">
               <input
                 type="checkbox"
                 id="editTemplateFrequent"
                 defaultChecked={editingTemplate.is_frequent}
+                onChange={(e) => handleUpdate("is_frequent", e.target.checked)}
                 className="w-4 h-4 text-black bg-gray-100 border-gray-300 rounded focus:ring-black"
               />
               <label
@@ -88,15 +104,7 @@ export default function EditModal({
               <button
                 type="button"
                 onClick={() => {
-                  const nameInput = document.getElementById("editTemplateName");
-                  const frequentInput = document.getElementById(
-                    "editTemplateFrequent",
-                  );
-                  updateTemplate(
-                    editingTemplate.id,
-                    nameInput.value,
-                    frequentInput.checked,
-                  );
+                  updateTemplate(editingTemplate.id);
                 }}
                 className="flex-1 py-2 px-4 rounded-md text-sm font-medium bg-black text-white hover:bg-gray-800 transition-colors"
               >

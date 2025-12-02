@@ -122,7 +122,7 @@ function EditUser({
           />
         </div>
 
-        <div className="mb-4">
+        <div id="locationPermissions" className="mb-4 scroll-mt-[60px]">
           <MultiSelectWithTags
             options={provinceMap}
             values={formData.location_permissions}
@@ -417,16 +417,23 @@ const UserManagement = () => {
       return false;
     }
 
+    if (
+      formData.location_permissions.length === 0 ||
+      (!formData.location_permissions.includes("All") &&
+        !formData.location_permissions.includes(formData.province))
+    ) {
+      toast.error("User must have access to their location");
+      document
+        .querySelector("#locationPermissions")
+        ?.scrollIntoView({ behavior: "smooth" });
+      return false;
+    }
+
     if (!formData.role) {
       toast.error("Role required");
       document.querySelector("#role")?.scrollIntoView({ behavior: "smooth" });
       return false;
     }
-
-    // if (formData.location_permissions.length === 0) {
-    //   toast.error("Must have access to atleast 1 location");
-    //   return false;
-    // }
 
     return true;
   };
@@ -462,6 +469,18 @@ const UserManagement = () => {
 
     if (!formData.province) {
       toast.error("Province is required");
+      return false;
+    }
+
+    if (
+      formData.location_permissions.length === 0 ||
+      (!formData.location_permissions.includes("All") &&
+        !formData.location_permissions.includes(formData.province))
+    ) {
+      toast.error("User must have access to their location");
+      document
+        .querySelector("#locationPermissions")
+        ?.scrollIntoView({ behavior: "smooth" });
       return false;
     }
 
