@@ -25,13 +25,6 @@ export const ReferenceServices = {
     );
   },
 
-  delete_option_by_name: async (type, name) => {
-    return apiCall(
-      () => api.delete(`/reference-data/option/${type}/${name}`),
-      `Deleting ${type} by name failed.`,
-    );
-  },
-
   update_option: async (type, id, data) => {
     data = { ...data, type: type };
 

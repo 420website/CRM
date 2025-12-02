@@ -1,4 +1,5 @@
 # app/database.py
+import json
 from typing import Optional
 import asyncpg
 from asyncpg.pool import Pool
@@ -109,6 +110,15 @@ class Database:
         self.pool: Pool
 
     async def connect(self):
+        async def init_connection(conn):
+            # Register JSONB codec for proper dict parsing
+            await conn.set_type_codec(
+                "jsonb",
+                encoder=json.dumps,
+                decoder=json.loads,
+                schema="pg_catalog",
+            )
+
         self.pool = await asyncpg.create_pool(
             host=settings.pg_host,
             user=settings.pg_user,
@@ -117,6 +127,7 @@ class Database:
             min_size=2,  # Adjust based on server size
             max_size=5,  # Adjust based on server size
             ssl=ssl_context(),
+            init=init_connection,
         )
 
     async def disconnect(self):

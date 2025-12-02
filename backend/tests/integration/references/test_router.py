@@ -8,7 +8,6 @@ from app.references.router import (
     create_option_type,
     create_template,
     delete_option_id,
-    delete_option_name,
     delete_template_id,
     delete_template_name,
     get_option_type,
@@ -26,7 +25,7 @@ from app.references.services import (
     ReferenceOptionService,
     ReferenceTemplateService,
 )
-
+from unittest import mock
 
 email = "test444@example.com"
 password = "securepassword123"
@@ -44,9 +43,12 @@ class TestReferecenceOptionAPI(IsolatedAsyncioTestCase):
             "default_general",
         ]
         for t in types:
-            for name in test_names:
+            options = await ReferenceOptionService.get_options(t)
+
+            for o in options:
                 try:
-                    await ReferenceOptionService.delete_option(name, t)
+                    if o.name in test_names:
+                        await ReferenceOptionService.delete_option_by_id(o.id)
                 except Exception:
                     pass  # Ignore if general site doesn't exist
 
@@ -72,12 +74,13 @@ class TestReferecenceOptionAPI(IsolatedAsyncioTestCase):
 
     # Create
     async def test_create_option_success(self):
-        """Test successful creation of a general via API"""
+        """Test successful creation of option"""
         option = ReferenceOption(
             name="test_general",
             type="interaction",
             is_frequent=False,
             is_default=False,
+            custom_fields={"province": "Ontario"},
         )
 
         # Test
@@ -100,6 +103,7 @@ class TestReferecenceOptionAPI(IsolatedAsyncioTestCase):
             type="coverage",
             is_frequent=True,
             is_default=True,
+            custom_fields={"province": "Ontario"},
         )
 
         # Test
@@ -119,6 +123,7 @@ class TestReferecenceOptionAPI(IsolatedAsyncioTestCase):
         self.assertTrue(default.is_default)
         self.assertTrue(default.is_frequent)
         self.assertEqual(default.type, "coverage")
+        self.assertEqual(default.custom_fields, data.custom_fields)
 
     async def test_create_duplicate_option_name(self):
         """Test creating general with duplicate name via API"""
@@ -127,6 +132,7 @@ class TestReferecenceOptionAPI(IsolatedAsyncioTestCase):
             type="coverage",
             is_frequent=False,
             is_default=False,
+            custom_fields={"province": "Ontario"},
         )
 
         # Create first general
@@ -140,7 +146,36 @@ class TestReferecenceOptionAPI(IsolatedAsyncioTestCase):
         with self.assertRaises(HTTPException) as context:
             await create_option_type(data, self.user)
 
-        self.assertEqual(context.exception.status_code, 400)
+        self.assertEqual(context.exception.status_code, 409)
+        self.assertIn("Option already exists.", context.exception.detail)
+
+    @mock.patch.object(
+        ReferenceOptionService, "check_exists", new_callable=mock.AsyncMock
+    )
+    async def test_create_duplicate_option_check_failed(self, mock_check):
+        """Test creating general with duplicate name via API"""
+        mock_check.return_value = False
+
+        data = ReferenceOption(
+            name="test_general",
+            type="coverage",
+            is_frequent=False,
+            is_default=False,
+            custom_fields={"province": "Ontario"},
+        )
+
+        # Create first general
+        result1 = await create_option_type(data, self.user)
+        self.assertEqual(
+            result1["message"],
+            "Option created successfully.",
+        )
+
+        # Test
+        with self.assertRaises(HTTPException) as context:
+            await create_option_type(data, self.user)
+
+        self.assertEqual(context.exception.status_code, 409)
         self.assertIn("Option already exists.", context.exception.detail)
 
     # Get
@@ -148,7 +183,6 @@ class TestReferecenceOptionAPI(IsolatedAsyncioTestCase):
         """Test getting generals when none exist via API"""
         options = await get_option_type("interaction", self.user)
         self.assertIsInstance(options, list)
-        # self.assertEqual(len(generals), 0)
 
     async def test_get_option_with_data(self):
         """Test getting generals when data exists via API"""
@@ -158,12 +192,14 @@ class TestReferecenceOptionAPI(IsolatedAsyncioTestCase):
             type="coverage",
             is_frequent=False,
             is_default=False,
+            custom_fields={"province": "Ontario"},
         )
         option2 = ReferenceOption(
             name="test_general_2",
             type="coverage",
             is_frequent=True,
             is_default=True,
+            custom_fields={"province": "Ontario"},
         )
         await create_option_type(option1, self.user)
         await create_option_type(option2, self.user)
@@ -186,32 +222,9 @@ class TestReferecenceOptionAPI(IsolatedAsyncioTestCase):
             self.assertIsInstance(o.is_default, bool)
             self.assertIsInstance(o.type, str)
             self.assertIsNotNone(o.id)
+            self.assertIsInstance(o.custom_fields, dict)
 
     # Delete
-    async def test_delete_option_by_name_success(self):
-        """Test successful deletion of a general by name via API"""
-        # Create general first
-        option = ReferenceOption(
-            name="test_general",
-            type="coverage",
-            is_frequent=False,
-            is_default=False,
-        )
-
-        await create_option_type(option, self.user)
-
-        # Delete the general
-        result = await delete_option_name(
-            "coverage", "test_general", self.user
-        )
-        self.assertEqual(result["message"], "Option deleted successfully.")
-
-        # Verify general was deleted
-        options = await get_option_type("coverage", self.user)
-        option_names = [g.name for g in options]
-
-        self.assertNotIn("test_general", option_names)
-
     async def test_delete_option_by_id_success(self):
         """Test successful deletion of a general by ID via API"""
         # Create general first
@@ -220,6 +233,7 @@ class TestReferecenceOptionAPI(IsolatedAsyncioTestCase):
             type="interaction",
             is_frequent=True,
             is_default=False,
+            custom_fields={"province": "Ontario"},
         )
         await create_option_type(option, self.user)
 
@@ -238,16 +252,6 @@ class TestReferecenceOptionAPI(IsolatedAsyncioTestCase):
         option_names = [g.name for g in options]
         self.assertNotIn("test_general", option_names)
 
-    async def test_delete_option_not_found_by_name(self):
-        """Test deletion of non-existent general by name via API"""
-        with self.assertRaises(HTTPException) as context:
-            await delete_option_name(
-                "interaction", "non_existent_general", self.user
-            )
-
-        self.assertEqual(context.exception.status_code, 404)
-        self.assertIn("Option not found", context.exception.detail)
-
     async def test_delete_option_not_found_by_id(self):
         """Test deletion of non-existent general by ID via API"""
         with self.assertRaises(HTTPException) as context:
@@ -256,7 +260,7 @@ class TestReferecenceOptionAPI(IsolatedAsyncioTestCase):
         self.assertEqual(context.exception.status_code, 404)
         self.assertIn("Option not found", context.exception.detail)
 
-    # Update
+    ## Update
     async def test_update_option_success(self):
         """Test successful update of a general via API"""
         # Create general first
@@ -265,6 +269,7 @@ class TestReferecenceOptionAPI(IsolatedAsyncioTestCase):
             type="coverage",
             is_frequent=False,
             is_default=False,
+            custom_fields={"province": "Ontario"},
         )
         await create_option_type(option, self.user)
 
@@ -278,7 +283,9 @@ class TestReferecenceOptionAPI(IsolatedAsyncioTestCase):
             name="test_general",
             is_frequent=True,
             is_default=True,
+            custom_fields={"province": "Alberta"},
         )
+
         result = await update_option(
             option_id,
             update_data,
@@ -296,6 +303,7 @@ class TestReferecenceOptionAPI(IsolatedAsyncioTestCase):
         self.assertIsNotNone(updated)
         self.assertTrue(updated.is_frequent)
         self.assertTrue(updated.is_default)
+        self.assertEqual(updated.custom_fields, {"province": "Alberta"})
 
     async def test_update_option_partial(self):
         """Test partial update of a general via API"""
@@ -305,6 +313,7 @@ class TestReferecenceOptionAPI(IsolatedAsyncioTestCase):
             type="interaction",
             is_frequent=False,
             is_default=False,
+            custom_fields={"province": "Ontario"},
         )
 
         await create_option_type(option, self.user)
@@ -336,34 +345,6 @@ class TestReferecenceOptionAPI(IsolatedAsyncioTestCase):
         self.assertTrue(updated.is_frequent)
         self.assertFalse(updated.is_default)
 
-    async def test_update_option_empty_updates(self):
-        """Test update with no actual changes via API"""
-        # Create general first
-        option = ReferenceOption(
-            name="test_general",
-            type="interaction",
-            is_frequent=False,
-            is_default=False,
-        )
-
-        await create_option_type(option, self.user)
-
-        # Get general ID
-        options = await get_option_type("interaction", self.user)
-        option = next((g for g in options if g.name == "test_general"), None)
-        option_id = option.id
-
-        # Empty update
-        update_data = ReferenceOptionUpdate()
-        with self.assertRaises(HTTPException) as context:
-            await update_option(option_id, update_data, self.user)
-
-        self.assertEqual(context.exception.status_code, 404)
-        self.assertIn(
-            "Option not found or could not be updated",
-            context.exception.detail,
-        )
-
     async def test_update_option_not_found(self):
         """Test update of non-existent general via API"""
         update_data = ReferenceOptionUpdate(
@@ -376,9 +357,71 @@ class TestReferecenceOptionAPI(IsolatedAsyncioTestCase):
 
         self.assertEqual(context.exception.status_code, 404)
         self.assertIn(
-            "Option not found or could not be updated",
+            "Option not found",
             context.exception.detail,
         )
+
+    async def test_update_option_empty_updates(self):
+        """Test update with no actual changes via API"""
+        # Create general first
+        option = ReferenceOption(
+            name="test_general",
+            type="interaction",
+            is_frequent=False,
+            is_default=False,
+            custom_fields={"province": "Ontario"},
+        )
+
+        await create_option_type(option, self.user)
+
+        # Get general ID
+        options = await get_option_type("interaction", self.user)
+        option = next((g for g in options if g.name == "test_general"), None)
+        option_id = option.id
+
+        # Empty update
+        update_data = ReferenceOptionUpdate()
+        result = await update_option(option_id, update_data, self.user)
+
+        self.assertEqual(
+            result["message"],
+            "Option updated successfully.",
+        )
+
+    async def test_update_option_to_duplicate(self):
+        """Test update with no actual changes via API"""
+        # Create general first
+        option = ReferenceOption(
+            name="test_general",
+            type="interaction",
+            is_frequent=False,
+            is_default=False,
+            custom_fields={"province": "Ontario"},
+        )
+
+        option2 = ReferenceOption(
+            name="test_general_2",
+            type="interaction",
+            is_frequent=False,
+            is_default=False,
+            custom_fields={"province": "Ontario"},
+        )
+
+        await create_option_type(option, self.user)
+        await create_option_type(option2, self.user)
+
+        # Get general ID
+        options = await get_option_type("interaction", self.user)
+        option = next((g for g in options if g.name == "test_general2"), None)
+        option_id = option.id
+
+        # Empty update
+        update_data = ReferenceOptionUpdate(name="test_general")
+        with self.assertRaises(HTTPException) as e:
+            await update_option(option_id, update_data, self.user)
+
+        self.assertEqual(e.exception.status_code, 409)
+        self.assertEqual(e.exception.detail, "Option already exists.")
 
 
 class TestReferenceTemplateAPI(IsolatedAsyncioTestCase):
