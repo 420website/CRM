@@ -412,7 +412,7 @@ class TestReferecenceOptionAPI(IsolatedAsyncioTestCase):
 
         # Get general ID
         options = await get_option_type("interaction", self.user)
-        option = next((g for g in options if g.name == "test_general2"), None)
+        option = next((g for g in options if g.name == "test_general_2"), None)
         option_id = option.id
 
         # Empty update
