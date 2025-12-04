@@ -11,11 +11,7 @@ export function ReferenceProvider({ children }) {
   const { userRole, userLocationPermissions } = useAuth();
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  // const [userProvinces] = useState(
-  //   userLocationPermissions.includes("All")
-  //     ? PROVINCES
-  //     : userLocationPermissions,
-  // );
+  const [selectedProvince, setSelectedProvince] = useState(null);
 
   const userProvinces = useMemo(() => {
     return userLocationPermissions.includes("All")
@@ -130,6 +126,8 @@ export function ReferenceProvider({ children }) {
         showManager,
         getTemplate,
         getOption,
+        selectedProvince,
+        setSelectedProvince,
       }}
     >
       {children}

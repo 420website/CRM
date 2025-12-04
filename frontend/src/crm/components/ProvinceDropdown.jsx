@@ -6,6 +6,7 @@ export default function ProvinceDropdown({
   handleChange,
   required = false,
   all_provinces = true,
+  formatting = "",
 }) {
   const { userLocationPermissions } = useAuth();
   let provinces = PROVINCES;
@@ -27,7 +28,7 @@ export default function ProvinceDropdown({
         name="province"
         value={value}
         onChange={handleChange}
-        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black"
+        className={`w-full px-3 py-2 border border-gray-300 rounded-md  focus:outline-none focus:ring-2 focus:ring-black ${formatting}`}
       >
         <option value="">Select</option>
         {/* Most Frequently Used */}

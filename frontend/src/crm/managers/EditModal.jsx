@@ -1,11 +1,8 @@
-import ProvinceDropdown from "../components/ProvinceDropdown";
-
 export default function EditModal({
   type,
   editingTemplate,
   setShowTemplateEditPopup,
   handleUpdate,
-  handleProvinceChange,
   updateTemplate,
   deleteTemplate,
 }) {
@@ -51,11 +48,17 @@ export default function EditModal({
 
             {type === "referral_site" && (
               <div id="province" className="scroll-mt-[60px]">
-                <ProvinceDropdown
+                <select
+                  id="province"
+                  name="province"
                   value={editingTemplate.custom_fields.province}
-                  handleChange={handleProvinceChange}
-                  all_provinces={false}
-                />
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black"
+                  readOnly
+                >
+                  <option value="">
+                    {editingTemplate.custom_fields.province}
+                  </option>
+                </select>
               </div>
             )}
 

@@ -3,6 +3,7 @@ import { AuthServices } from "../services/authService";
 import { useNavigate } from "react-router-dom";
 import { tokenManager } from "../tokenManager";
 import { UserServices } from "../services/userServices";
+import toast from "react-hot-toast";
 
 const AuthContext = createContext();
 
@@ -83,7 +84,7 @@ export function AuthProvider({ children }) {
         setUserLocationPermissions(response.data?.location_permissions);
       }
     } catch (error) {
-      console.log(error);
+      toast.error("Error getting user permissions");
     }
   };
 

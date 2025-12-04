@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import AddressAutocomplete from "./AddressAutocomplete";
 import {
   calculateAge,
@@ -45,7 +45,18 @@ export default function Client({
 }) {
   const { userRole } = useAuth();
   const [error, setError] = useState("");
-  const { setShowManager, showManager, options, templates } = useReferences();
+  const {
+    setShowManager,
+    showManager,
+    options,
+    templates,
+    setSelectedProvince,
+    selectedProvince,
+  } = useReferences();
+
+  useEffect(() => {
+    setSelectedProvince(formData.province);
+  }, [formData.province]);
 
   const defaultPositiveClinicalSummary = async (formData) => {
     const baseTemplate = "Dx 10+ years ago and treated. ";
@@ -233,7 +244,8 @@ export default function Client({
       [name]: processedValue,
     };
 
-    if (name === "province" && value) {
+    if (name === "province") {
+      setSelectedProvince(value);
       newFormData.referral_site = "";
     }
 
@@ -304,9 +316,13 @@ export default function Client({
   };
 
   const filterReferralSites = () => {
+    if (!selectedProvince) {
+      return [];
+    }
+
     const filteredSites = options["referral_site"].filter((s) => {
       const siteProvince = s?.custom_fields?.province;
-      return !formData.province || siteProvince === formData.province;
+      return siteProvince === selectedProvince;
     });
 
     return filteredSites;
@@ -601,7 +617,7 @@ export default function Client({
                   >
                     Referral Site <span className="text-red-500">*</span>
                   </label>
-                  {userRole == "admin" && (
+                  {userRole == "admin" && selectedProvince && (
                     <button
                       type="button"
                       onClick={() => setShowManager("referral_site")}

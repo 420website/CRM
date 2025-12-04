@@ -2,13 +2,11 @@ import { useState } from "react";
 import EditModal from "./EditModal";
 import { useReferences } from "../../context/ReferenceContext";
 import { ReferenceServices } from "../../services/referenceService";
-import ProvinceDropdown from "../components/ProvinceDropdown";
 import toast from "react-hot-toast";
-import { useAuth } from "../../context/AuthContext";
 
 export default function OptionManager({ type }) {
-  const { userProvince } = useAuth();
-  const { options, setShowManager, getOption } = useReferences();
+  const { options, setShowManager, getOption, selectedProvince } =
+    useReferences();
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
@@ -19,7 +17,8 @@ export default function OptionManager({ type }) {
     name: "",
     is_frequent: false,
     is_default: false,
-    custom_fields: type === "referral_site" ? { province: userProvince } : {},
+    custom_fields:
+      type === "referral_site" ? { province: selectedProvince } : {},
   });
 
   const setResetData = () => {
@@ -27,7 +26,8 @@ export default function OptionManager({ type }) {
       name: "",
       is_frequent: false,
       is_default: false,
-      custom_fields: type === "referral_site" ? { province: userProvince } : {},
+      custom_fields:
+        type === "referral_site" ? { province: selectedProvince } : {},
     });
   };
 
@@ -200,14 +200,18 @@ export default function OptionManager({ type }) {
 
   // Filter based on search
   const getFilteredOptions = () => {
+    let opt = options[type];
+
+    if (type === "referral_site") {
+      opt = opt.filter((o) => o.custom_fields.province === selectedProvince);
+    }
+
     if (!optionsSearch.trim()) {
-      return options[type];
+      return opt;
     }
 
     const searchTerm = optionsSearch.toLowerCase();
-    return options[type].filter((site) =>
-      site.name.toLowerCase().includes(searchTerm),
-    );
+    return opt.filter((site) => site.name.toLowerCase().includes(searchTerm));
   };
 
   return (
@@ -281,11 +285,15 @@ export default function OptionManager({ type }) {
             </div>
             {type === "referral_site" && (
               <div id="province" className="scroll-mt-[60px]">
-                <ProvinceDropdown
+                <select
+                  id="province"
+                  name="province"
                   value={data.custom_fields.province}
-                  handleChange={handleProvinceChange}
-                  all_provinces={false}
-                />
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black"
+                  readOnly
+                >
+                  <option value="">{selectedProvince}</option>
+                </select>
               </div>
             )}
             <div className="flex items-center gap-2">
@@ -405,7 +413,6 @@ export default function OptionManager({ type }) {
           editingTemplate={editOptionData}
           setShowTemplateEditPopup={setShowOptionEditPopup}
           handleUpdate={handleEditUpdate}
-          handleProvinceChange={handleProvinceChange}
           updateTemplate={updateOption}
           deleteTemplate={deleteOption}
         />
