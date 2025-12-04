@@ -26,6 +26,7 @@ export function DashboardProvider({ children }) {
   const [activityStatusFilter, setActivityStatusFilter] = useState("all");
   const [searchMonth, setSearchMonth] = useState("");
   const [searchEndDate, setSearchEndDate] = useState(null);
+  const [searchProvince, setSearchProvince] = useState("");
 
   // Data state - now paginated
   const [pendingData, setPendingData] = useState([]);
@@ -49,6 +50,7 @@ export function DashboardProvider({ children }) {
   const clearAllFilters = () => {
     setFiltering(false);
     setSearchName("");
+    setSearchProvince("");
     setSearchDate("");
     setSearchEndDate(null);
     setSearchMonth("");
@@ -101,6 +103,11 @@ export function DashboardProvider({ children }) {
     setSearchMonth(value);
   };
 
+  const handleProvinceSearch = (e) => {
+    const { value } = e.target;
+    setSearchProvince(value);
+  };
+
   const handleDispositionSearch = (value) => {
     setSearchDisposition(value);
   };
@@ -119,10 +126,10 @@ export function DashboardProvider({ children }) {
 
   const filterActivity = () => {
     let data = activityData;
-
     const hasActiveFilters =
       searchName ||
       searchEndDate ||
+      searchProvince ||
       searchMonth ||
       searchDate ||
       searchDisposition ||
@@ -160,6 +167,14 @@ export function DashboardProvider({ children }) {
           (item) =>
             (item.disposition || "").toLowerCase() ===
             searchDisposition.toLowerCase(),
+        );
+      }
+
+      if (searchProvince) {
+        data = data.filter(
+          (item) =>
+            (item.province || "").toLowerCase() ===
+            searchProvince.toLowerCase(),
         );
       }
 
@@ -201,6 +216,7 @@ export function DashboardProvider({ children }) {
       searchName ||
       searchDate ||
       searchEndDate ||
+      searchProvince ||
       searchMonth ||
       searchDisposition ||
       searchReferralSite;
@@ -243,6 +259,15 @@ export function DashboardProvider({ children }) {
             searchDisposition.toLowerCase(),
         );
       }
+
+      if (searchProvince) {
+        data = data.filter(
+          (item) =>
+            (item.province || "").toLowerCase() ===
+            searchProvince.toLowerCase(),
+        );
+      }
+
       if (searchReferralSite) {
         data = data.filter(
           (item) =>
@@ -261,6 +286,7 @@ export function DashboardProvider({ children }) {
       searchName ||
       searchDate ||
       searchEndDate ||
+      searchProvince ||
       searchMonth ||
       searchDisposition ||
       searchReferralSite;
@@ -303,6 +329,15 @@ export function DashboardProvider({ children }) {
             searchDisposition.toLowerCase(),
         );
       }
+
+      if (searchProvince) {
+        data = data.filter(
+          (item) =>
+            (item.province || "").toLowerCase() ===
+            searchProvince.toLowerCase(),
+        );
+      }
+
       if (searchReferralSite) {
         data = data.filter(
           (item) =>
@@ -334,6 +369,7 @@ export function DashboardProvider({ children }) {
         searchEndDate ||
         searchMonth ||
         searchDate ||
+        searchProvince ||
         searchDisposition ||
         searchReferralSite ||
         activitySearchTerm ||
@@ -342,6 +378,7 @@ export function DashboardProvider({ children }) {
   }, [
     searchName,
     searchDate,
+    searchProvince,
     searchEndDate,
     searchMonth,
     searchDisposition,
@@ -602,6 +639,8 @@ export function DashboardProvider({ children }) {
         handleMonthSearch,
         totalRegistrations,
         filtering,
+        searchProvince,
+        handleProvinceSearch,
       }}
     >
       {children}

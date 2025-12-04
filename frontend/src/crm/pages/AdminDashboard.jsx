@@ -10,6 +10,7 @@ import { useDashboard } from "../../context/DashboardContext";
 import { useReferences } from "../../context/ReferenceContext";
 import MonthPicker from "../ui/MonthPicker";
 import { ChevronRight, ChevronLeft } from "lucide-react";
+import ProvinceDropdown from "../components/ProvinceDropdown";
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
@@ -49,6 +50,8 @@ const AdminDashboard = () => {
     filteredSubmitted,
     filteredPending,
     deleteActivity,
+    searchProvince,
+    handleProvinceSearch,
   } = useDashboard();
   const { options } = useReferences();
 
@@ -465,6 +468,7 @@ const AdminDashboard = () => {
                 {/* Clear All Filters Button */}
                 {(searchDate ||
                   searchName ||
+                  searchProvince ||
                   searchEndDate ||
                   searchMonth ||
                   searchDisposition ||
@@ -644,6 +648,14 @@ const AdminDashboard = () => {
                       ))}
                   </select>
                 </div>
+                <div id="province" className="scroll-mt-[60px]">
+                  <ProvinceDropdown
+                    value={searchProvince}
+                    handleChange={handleProvinceSearch}
+                    all_provinces={false}
+                    formatting={"text-sm"}
+                  />
+                </div>
 
                 <div className="min-w-0">
                   <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -663,17 +675,32 @@ const AdminDashboard = () => {
                     {/* Most Frequently Used */}
                     {options["referral_site"]
                       .filter((s) => s.is_frequent)
+                      .filter(
+                        (s) =>
+                          !searchProvince ||
+                          s.custom_fields.province === searchProvince,
+                      )
                       .map((site) => (
                         <option key={site.id} value={site.name}>
                           {site.name}
                         </option>
                       ))}
                     {/* Separator */}
-                    {options["referral_site"].filter((s) => !s.is_frequent)
-                      .length > 0 && <option disabled>-------</option>}
+                    {options["referral_site"]
+                      .filter((s) => !s.is_frequent)
+                      .filter(
+                        (s) =>
+                          !searchProvince ||
+                          s.custom_fields.province === searchProvince,
+                      ).length > 0 && <option disabled>-------</option>}
                     {/* All Others in Alphabetical Order */}
                     {options["referral_site"]
                       .filter((s) => !s.is_frequent)
+                      .filter(
+                        (s) =>
+                          !searchProvince ||
+                          s.custom_fields.province === searchProvince,
+                      )
                       .sort((a, b) => a.name.localeCompare(b.name))
                       .map((site) => (
                         <option key={site.id} value={site.name}>
