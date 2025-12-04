@@ -10,6 +10,20 @@ import { useReferences } from "../../context/ReferenceContext";
 import TemplateManager from "../managers/TemplateManager";
 import { CheckCircleIcon, CircleIcon, SquarePenIcon } from "lucide-react";
 import { Trash } from "lucide-react";
+
+const nextHour = () => {
+  const now = new Date();
+  const time = now.getTime(); // milliseconds since epoch
+
+  // Calculate milliseconds until next hour
+  const msInHour = 3600000;
+  const nextHour = time + (msInHour - (time % msInHour));
+  const nextHourDate = new Date(nextHour);
+
+  const hours = nextHourDate.getHours().toString().padStart(2, "0");
+  return `${hours}:00`;
+};
+
 const formatTime12Hour = (time24) => {
   const [hours, minutes] = time24.split(":");
   const hour = parseInt(hours, 10);
@@ -171,7 +185,7 @@ export default function Activities({ setActiveTab, currentRegistrationId }) {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [activityForm, setActivityForm] = useState({
     date: new Date().toLocaleDateString("en-CA"), // Default to today
-    time: "",
+    time: nextHour(),
     name: "General Activity",
     description: "",
   });
@@ -324,7 +338,7 @@ export default function Activities({ setActiveTab, currentRegistrationId }) {
   const editActivity = (activity) => {
     setActivityForm({
       date: activity.date || new Date().toLocaleDateString("en-CA"),
-      time: activity.time || "",
+      time: activity.time || nextHour(),
       name: activity.name || "General Activity",
       description: activity.description || "",
     });
@@ -339,7 +353,7 @@ export default function Activities({ setActiveTab, currentRegistrationId }) {
   const clearActivityForm = () => {
     setActivityForm({
       date: new Date().toLocaleDateString("en-CA"),
-      time: "",
+      time: nextHour(),
       name: "General Activity",
       description: "",
     });
