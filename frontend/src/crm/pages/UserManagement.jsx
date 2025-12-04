@@ -36,6 +36,7 @@ function EditUser({
   resetForm,
   handleLocationAdd,
   handleLocationRemove,
+  handleProvinceChange,
 }) {
   return (
     <div className="bg-white rounded-lg shadow-md p-6 mb-6">
@@ -118,7 +119,7 @@ function EditUser({
         <div className="mb-4">
           <ProvinceDropdown
             value={formData.province}
-            handleChange={handleInputChange}
+            handleChange={handleProvinceChange}
           />
         </div>
 
@@ -629,6 +630,21 @@ const UserManagement = () => {
     });
   };
 
+  const handleProvinceChange = (e) => {
+    const { name, value } = e.target;
+    const oldProvince = formData.province;
+
+    setFormData((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+
+    if (value !== "") {
+      handleLocationAdd(value);
+    }
+    handleLocationRemove(oldProvince);
+  };
+
   const goBack = () => {
     navigate("/admin-menu");
   };
@@ -705,6 +721,7 @@ const UserManagement = () => {
             resetForm={resetForm}
             handleLocationAdd={handleLocationAdd}
             handleLocationRemove={handleLocationRemove}
+            handleProvinceChange={handleProvinceChange}
           />
         )}
 
