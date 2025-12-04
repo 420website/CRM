@@ -470,6 +470,9 @@ const UserManagement = () => {
 
     if (!formData.province) {
       toast.error("Province is required");
+      document
+        .querySelector("#province")
+        ?.scrollIntoView({ behavior: "smooth" });
       return false;
     }
 
