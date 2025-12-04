@@ -657,58 +657,60 @@ const AdminDashboard = () => {
                   />
                 </div>
 
-                <div className="min-w-0">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Referral Site
-                  </label>
-                  <select
-                    value={searchReferralSite}
-                    onChange={(e) => handleReferralSiteSearch(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    style={{
-                      height: "40px",
-                      minHeight: "40px",
-                      maxHeight: "40px",
-                    }}
-                  >
-                    <option value="">Select Referral Site</option>
-                    {/* Most Frequently Used */}
-                    {options["referral_site"]
-                      .filter((s) => s.is_frequent)
-                      .filter(
-                        (s) =>
-                          !searchProvince ||
-                          s.custom_fields.province === searchProvince,
-                      )
-                      .map((site) => (
-                        <option key={site.id} value={site.name}>
-                          {site.name}
-                        </option>
-                      ))}
-                    {/* Separator */}
-                    {options["referral_site"]
-                      .filter((s) => !s.is_frequent)
-                      .filter(
-                        (s) =>
-                          !searchProvince ||
-                          s.custom_fields.province === searchProvince,
-                      ).length > 0 && <option disabled>-------</option>}
-                    {/* All Others in Alphabetical Order */}
-                    {options["referral_site"]
-                      .filter((s) => !s.is_frequent)
-                      .filter(
-                        (s) =>
-                          !searchProvince ||
-                          s.custom_fields.province === searchProvince,
-                      )
-                      .sort((a, b) => a.name.localeCompare(b.name))
-                      .map((site) => (
-                        <option key={site.id} value={site.name}>
-                          {site.name}
-                        </option>
-                      ))}
-                  </select>
-                </div>
+                {searchProvince && (
+                  <div className="min-w-0">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Referral Site
+                    </label>
+                    <select
+                      value={searchReferralSite}
+                      onChange={(e) => handleReferralSiteSearch(e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      style={{
+                        height: "40px",
+                        minHeight: "40px",
+                        maxHeight: "40px",
+                      }}
+                    >
+                      <option value="">Select Referral Site</option>
+                      {/* Most Frequently Used */}
+                      {options["referral_site"]
+                        .filter((s) => s.is_frequent)
+                        .filter(
+                          (s) =>
+                            !searchProvince ||
+                            s.custom_fields.province === searchProvince,
+                        )
+                        .map((site) => (
+                          <option key={site.id} value={site.name}>
+                            {site.name}
+                          </option>
+                        ))}
+                      {/* Separator */}
+                      {options["referral_site"]
+                        .filter((s) => !s.is_frequent)
+                        .filter(
+                          (s) =>
+                            !searchProvince ||
+                            s.custom_fields.province === searchProvince,
+                        ).length > 0 && <option disabled>-------</option>}
+                      {/* All Others in Alphabetical Order */}
+                      {options["referral_site"]
+                        .filter((s) => !s.is_frequent)
+                        .filter(
+                          (s) =>
+                            !searchProvince ||
+                            s.custom_fields.province === searchProvince,
+                        )
+                        .sort((a, b) => a.name.localeCompare(b.name))
+                        .map((site) => (
+                          <option key={site.id} value={site.name}>
+                            {site.name}
+                          </option>
+                        ))}
+                    </select>
+                  </div>
+                )}
 
                 {activeTab === "activities" && (
                   <div className="min-w-0 md:col-span-2 xl:col-span-1">

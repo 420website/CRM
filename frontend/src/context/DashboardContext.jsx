@@ -106,6 +106,7 @@ export function DashboardProvider({ children }) {
   const handleProvinceSearch = (e) => {
     const { value } = e.target;
     setSearchProvince(value);
+    setSearchReferralSite("");
   };
 
   const handleDispositionSearch = (value) => {
