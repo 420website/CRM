@@ -8,6 +8,7 @@ from fastapi import (
 )
 from app.authentication.schemas import UserRead
 from app.dependencies import get_current_user
+from app.exceptions import DuplicateError, NotFoundError
 from app.references.schemas import (
     ReferenceOption,
     ReferenceOptionUpdate,
@@ -31,18 +32,30 @@ async def create_option_type(
     user: UserRead = Depends(get_current_user),
 ):
 
-    if await ReferenceOptionService.check_exists(data.name, data.type):
+    try:
+        if await ReferenceOptionService.check_exists(
+            data.name, data.type, data.custom_fields
+        ):
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="Option already exists.",
+            )
+        if not await ReferenceOptionService.create_option(data):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Option not created.",
+            )
+        return {"message": "Option created successfully."}
+    except HTTPException:
+        raise
+    except DuplicateError as e:
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Option already exists.",
+            status_code=status.HTTP_409_CONFLICT, detail=str(e)
         )
-
-    if not await ReferenceOptionService.create_option(data):
+    except Exception as e:
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Option not created.",
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)
         )
-    return {"message": "Option created successfully."}
 
 
 @router.get("/option/{option_type}", response_model=List[ReferenceOption])
@@ -68,33 +81,27 @@ async def delete_option_id(
     return {"message": "Option deleted successfully."}
 
 
-@router.delete("/option/{option_type}/{name}")
-async def delete_option_name(
-    option_type: str,
-    name: str,
-    user: UserRead = Depends(get_current_user),
-):
-    if not await ReferenceOptionService.delete_option(name, option_type):
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Option not found.",
-        )
-    return {"message": "Option deleted successfully."}
-
-
 @router.patch("/option/{id}")
 async def update_option(
     id: int,
     data: ReferenceOptionUpdate,
     user: UserRead = Depends(get_current_user),
 ):
-    if not await ReferenceOptionService.update_option(id, data):
+    try:
+        await ReferenceOptionService.update_option(id, data)
+        return {"message": "Option updated successfully."}
+    except NotFoundError as e:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Option not found or could not be updated.",
+            status_code=status.HTTP_404_NOT_FOUND, detail=str(e)
         )
-
-    return {"message": "Option updated successfully."}
+    except DuplicateError as e:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT, detail=str(e)
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)
+        )
 
 
 ###############

@@ -151,6 +151,9 @@ class TestPatientPhotosRouter(IsolatedAsyncioTestCase):
             status="pending",
             health_card="1234567890",
             health_card_version="AB",
+            disposition="Active",
+            referral_site="Toronto",
+            province="Ontario",
         )
 
         result = await create_patient(patient_data, self.user)
@@ -185,6 +188,9 @@ class TestPatientPhotosRouter(IsolatedAsyncioTestCase):
             status="pending",
             health_card="1234567890",
             health_card_version="AB",
+            disposition="Active",
+            referral_site="Toronto",
+            province="Ontario",
         )
 
         self.patient_id = await self.mock_create_patient("Jim")
@@ -410,6 +416,9 @@ class TestPatientAttachmentsRouter(IsolatedAsyncioTestCase):
             status="pending",
             health_card="0000000000",
             health_card_version="AB",
+            disposition="Active",
+            referral_site="Toronto",
+            province="Ontario",
         )
 
         result = await create_patient(patient_data, self.user)
@@ -454,6 +463,9 @@ class TestPatientAttachmentsRouter(IsolatedAsyncioTestCase):
             status="pending",
             health_card="0000000000",
             health_card_version="AB",
+            disposition="Active",
+            referral_site="Toronto",
+            province="Ontario",
         )
 
         self.patient_id = await self.mock_create_patient("Timothy")

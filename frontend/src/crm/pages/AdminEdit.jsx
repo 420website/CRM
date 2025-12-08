@@ -26,11 +26,12 @@ import Assessments from "../tabs/Assessments";
 const AdminEdit = () => {
   const navigate = useNavigate();
   const { registrationId } = useParams();
-  const { userRole, userPermissions } = useAuth();
+  const { userRole, userPermissions, userProvince } = useAuth();
   const { setLastItem } = useDashboard();
   const { getClientAssociatedData } = useRegistration();
   const { getDashboardRegistrations, getDashboardActivities } = useDashboard();
   const hasRun = useRef(false);
+  const [missingFields, setMissingFields] = useState(false);
 
   const [voiceInputText, setVoiceInputText] = useState("");
   const [loading, setLoading] = useState(false);
@@ -41,10 +42,6 @@ const AdminEdit = () => {
   const [currentVoiceDateField, setCurrentVoiceDateField] = useState("");
   const [voiceDateInput, setVoiceDateInput] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [photoPreview, setPhotoPreview] = useState(null);
-  const [photoData, setPhotoData] = useState({});
-  const [photoChanged, setPhotoChanged] = useState(false);
-  const [templates, setTemplates] = useState({});
   const [showNavigateModal, setShowNavigateModal] = useState(false);
   const [duplicateHealthcardPatient, setDuplicateHealthcardPatient] =
     useState(null);
@@ -55,6 +52,7 @@ const AdminEdit = () => {
 
   const getDefaultForm = () => ({
     ...DEFAULT_FORM,
+    province: userProvince,
     reg_date: new Date().toISOString().split("T")[0],
     rna_sample_date: new Date().toISOString().split("T")[0],
   });
@@ -154,7 +152,6 @@ const AdminEdit = () => {
     setLoading(true);
 
     try {
-      await getClientPhoto();
       await getClientData();
     } catch (error) {
       toast.error(error);
@@ -189,29 +186,6 @@ const AdminEdit = () => {
     getClientAssociatedData(registrationId);
   };
 
-  const getClientPhoto = async () => {
-    const result = await ObjectServices.get_photo_raw(registrationId);
-
-    if (result.success) {
-      const blob = new Blob([result.data], { type: "image/jpeg" });
-      const url = URL.createObjectURL(blob);
-      setPhotoPreview(url);
-      setPhotoData({
-        name: result.headers["file-name"],
-      });
-    } else {
-      if (result.status === 404) {
-        return;
-      } else if (result.status === 400 || result.status === 409) {
-        toast.error(result.message || "Failed to fetch client photo.");
-      } else {
-        toast.error(result.message || "Failed to fetch client photo.");
-      }
-    }
-
-    setPhotoChanged(false);
-  };
-
   useEffect(() => {
     if (registrationId) {
       getRegistration();
@@ -222,16 +196,12 @@ const AdminEdit = () => {
     client: (
       <Client
         formData={formData}
-        setShowVoiceDateModal={setShowVoiceDateModal}
         setFormData={setFormData}
-        setTemplates={setTemplates}
-        templates={templates}
         selectedTemplate={selectedTemplate}
         setSelectedTemplate={setSelectedTemplate}
+        missingFields={missingFields}
         openVoiceDateInput={openVoiceDateInput}
         openVoiceFillInput={openVoiceFillInput}
-        currentVoiceDateField={currentVoiceDateField}
-        setCurrentVoiceDateField={setCurrentVoiceDateField}
       />
     ),
     assessments: (
@@ -296,16 +266,9 @@ const AdminEdit = () => {
   };
 
   async function validateForm() {
-    if (formData.photo && formData.photo.length > 1200 * 1024) {
-      toast.error(
-        "Photo is too large for submission. Please try uploading a different photo.",
-      );
-      setIsSubmitting(false);
-      return false;
-    }
-
     if (!formData.reg_date) {
       setIsSubmitting(false);
+      setMissingFields(true);
       toast.error("Registration date required");
       document
         .querySelector("#regDate")
@@ -316,6 +279,8 @@ const AdminEdit = () => {
 
     if (!formData.first_name.trim()) {
       setIsSubmitting(false);
+      setMissingFields(true);
+
       toast.error("First Name required");
       document
         .querySelector("#firstName")
@@ -326,6 +291,8 @@ const AdminEdit = () => {
 
     if (!formData.last_name.trim()) {
       setIsSubmitting(false);
+      setMissingFields(true);
+
       toast.error("Last Name required");
       document
         .querySelector("#lastName")
@@ -335,6 +302,8 @@ const AdminEdit = () => {
 
     if (!formData.dob) {
       setIsSubmitting(false);
+      setMissingFields(true);
+
       toast.error("Date of birth required");
       document
         .querySelector("#dateOfBirth")
@@ -342,8 +311,30 @@ const AdminEdit = () => {
       return false;
     }
 
+    if (!formData.gender) {
+      setIsSubmitting(false);
+      setMissingFields(true);
+
+      toast.error("Gender required");
+      document.querySelector("#gender")?.scrollIntoView({ behavior: "smooth" });
+      return false;
+    }
+
+    if (!formData.disposition) {
+      setIsSubmitting(false);
+      setMissingFields(true);
+
+      toast.error("Disposition required");
+      document
+        .querySelector("#disposition")
+        ?.scrollIntoView({ behavior: "smooth" });
+      return false;
+    }
+
     if (formData.health_card && formData.health_card.length != 10) {
       setIsSubmitting(false);
+      setMissingFields(true);
+
       toast.error("Health Card Number must be 10 digits.");
       document
         .querySelector("#healthcard")
@@ -353,11 +344,35 @@ const AdminEdit = () => {
 
     if (formData.health_card && formData.health_card !== "0000000000") {
       if (await checkIfHealthcardExists(formData.health_card)) {
+        setMissingFields(true);
+
         document
           .querySelector("#healthcard")
           ?.scrollIntoView({ behavior: "smooth" });
         return false;
       }
+    }
+
+    if (!formData.referral_site) {
+      setIsSubmitting(false);
+      setMissingFields(true);
+
+      toast.error("Referral Site required");
+      document
+        .querySelector("#referral_site")
+        ?.scrollIntoView({ behavior: "smooth" });
+      return false;
+    }
+
+    if (!formData.province) {
+      setIsSubmitting(false);
+      setMissingFields(true);
+
+      toast.error("Province required");
+      document
+        .querySelector("#province")
+        ?.scrollIntoView({ behavior: "smooth" });
+      return false;
     }
 
     return true;
@@ -390,9 +405,7 @@ const AdminEdit = () => {
     if (cleanedFormData.reg_date === "") {
       cleanedFormData.reg_date = null;
     }
-    if (cleanedFormData.address === "") {
-      cleanedFormData.province = null;
-    }
+
     if (cleanedFormData.coverage_type === "Select") {
       cleanedFormData.coverage_type = null;
     }
@@ -409,38 +422,10 @@ const AdminEdit = () => {
     const result = await PatientServices.update_patient(registrationId, data);
 
     if (result.success) {
-      if (photoData.file) {
-        const photoRes = await ObjectServices.upload_photo(
-          registrationId,
-          photoData.name,
-          photoData.file,
-        );
-        if (photoRes.success) {
-          setPhotoData({ name: photoData.name });
-          setPhotoChanged(false);
-          getDashboardRegistrations();
-          getDashboardActivities();
-          toast.success("Changes saved successfully");
-          await getClientData();
-        } else {
-          toast.error(result.message || "Error updating photo.");
-        }
-      } else if (!photoPreview && photoChanged) {
-        const deleteRes = await ObjectServices.delete_photo(registrationId);
-        if (deleteRes.success) {
-          getDashboardRegistrations();
-          getDashboardActivities();
-          toast.success("Changes saved successfully");
-          await getClientData();
-        } else {
-          toast.error(result.message || "Error removing photo.");
-        }
-      } else {
-        getDashboardRegistrations();
-        getDashboardActivities();
-        toast.success("Changes saved successfully");
-        await getClientData();
-      }
+      getDashboardRegistrations();
+      getDashboardActivities();
+      toast.success("Changes saved successfully");
+      await getClientData();
     } else {
       if (result.status === 400 || result.status === 409) {
         toast.error(result.message || "Failed editing registration.");
@@ -452,7 +437,6 @@ const AdminEdit = () => {
     window.scrollTo({ top: 0, behavior: "smooth" });
     setLoading(false);
     setIsSubmitting(false);
-    setPhotoChanged(false);
   };
 
   const checkIfUserExists = async (firstName, lastName, dob) => {
@@ -667,14 +651,7 @@ const AdminEdit = () => {
             </div>
           ) : (
             <form onSubmit={handleSubmit} className="space-y-6">
-              <EditPhoto
-                formData={formData}
-                photoData={photoData}
-                setPhotoData={setPhotoData}
-                photoPreview={photoPreview}
-                setPhotoPreview={setPhotoPreview}
-                setPhotoChanged={setPhotoChanged}
-              />
+              <EditPhoto registrationId={registrationId} formData={formData} />
 
               {/* Tabs Navigation */}
               <div

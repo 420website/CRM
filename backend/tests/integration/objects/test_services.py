@@ -80,8 +80,13 @@ class TestPhotoServices(IsolatedAsyncioTestCase):
             first_name="Jim",
             last_name="Doe",
             dob=date(1990, 3, 22),
+            age=30,
+            gender="Male",
             health_card="1234567890",
             health_card_version="AB",
+            disposition="Active",
+            referral_site="Toronto",
+            province="Ontario",
         )
         await PatientService.create_patient(self.minimal_patient)
         patients = await PatientService.get_patients()
@@ -202,6 +207,11 @@ class TestAttachmentsService(IsolatedAsyncioTestCase):
             dob=date(1990, 3, 22),
             health_card="1234567890",
             health_card_version="AB",
+            disposition="Active",
+            referral_site="Toronto",
+            province="Ontario",
+            age=30,
+            gender="Male",
         )
 
         await PatientService.create_patient(self.minimal_patient)

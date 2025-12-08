@@ -28,8 +28,19 @@ import { DashboardProvider } from "./context/DashboardContext.jsx";
 import { ReferenceProvider } from "./context/ReferenceContext.jsx";
 
 function AuthenticatedRoute() {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, isCheckingAuth } = useAuth();
   const location = useLocation();
+
+  if (isCheckingAuth) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 mx-auto mb-4"></div>
+          <p>Loading...</p>
+        </div>
+      </div>
+    );
+  }
 
   if (!isAuthenticated) {
     return <Navigate to="/admin-pin" state={{ from: location }} replace />;

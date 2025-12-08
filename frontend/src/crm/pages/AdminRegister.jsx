@@ -25,8 +25,9 @@ import Assessments from "../tabs/Assessments";
 
 const AdminRegister = () => {
   const navigate = useNavigate();
-  const { userRole, userPermissions } = useAuth();
+  const { userRole, userPermissions, userProvince } = useAuth();
   const { getDashboardRegistrations } = useDashboard();
+  const [missingFields, setMissingFields] = useState(false);
 
   const [loading, setLoading] = useState(false);
   const [voiceInputText, setVoiceInputText] = useState("");
@@ -51,6 +52,7 @@ const AdminRegister = () => {
 
   const getDefaultForm = () => ({
     ...DEFAULT_FORM,
+    province: userProvince,
     reg_date: new Date().toISOString().split("T")[0],
     rna_sample_date: new Date().toISOString().split("T")[0],
   });
@@ -130,16 +132,12 @@ const AdminRegister = () => {
     client: (
       <Client
         formData={formData}
-        setShowVoiceDateModal={setShowVoiceDateModal}
         setFormData={setFormData}
-        setTemplates={setTemplates}
-        // templates={templates}
         selectedTemplate={selectedTemplate}
         setSelectedTemplate={setSelectedTemplate}
+        missingFields={missingFields}
         openVoiceDateInput={openVoiceDateInput}
         openVoiceFillInput={openVoiceFillInput}
-        currentVoiceDateField={currentVoiceDateField}
-        setCurrentVoiceDateField={setCurrentVoiceDateField}
       />
     ),
     assessments: (
@@ -220,11 +218,13 @@ const AdminRegister = () => {
         "Photo is too large for submission. Please try uploading a different photo.",
       );
       setIsSubmitting(false);
+      setMissingFields(true);
       return false;
     }
 
     if (!formData.reg_date) {
       setIsSubmitting(false);
+      setMissingFields(true);
       toast.error("Registration date required");
       document
         .querySelector("#regDate")
@@ -235,6 +235,8 @@ const AdminRegister = () => {
 
     if (!formData.first_name.trim()) {
       setIsSubmitting(false);
+      setMissingFields(true);
+
       toast.error("First Name required");
       document
         .querySelector("#firstName")
@@ -245,6 +247,8 @@ const AdminRegister = () => {
 
     if (!formData.last_name.trim()) {
       setIsSubmitting(false);
+      setMissingFields(true);
+
       toast.error("Last Name required");
       document
         .querySelector("#lastName")
@@ -254,6 +258,8 @@ const AdminRegister = () => {
 
     if (!formData.dob) {
       setIsSubmitting(false);
+      setMissingFields(true);
+
       toast.error("Date of birth required");
       document
         .querySelector("#dateOfBirth")
@@ -261,9 +267,31 @@ const AdminRegister = () => {
       return false;
     }
 
+    if (!formData.gender) {
+      setIsSubmitting(false);
+      setMissingFields(true);
+
+      toast.error("Gender required");
+      document.querySelector("#gender")?.scrollIntoView({ behavior: "smooth" });
+      return false;
+    }
+
+    if (!formData.disposition) {
+      setIsSubmitting(false);
+      setMissingFields(true);
+
+      toast.error("Disposition required");
+      document
+        .querySelector("#disposition")
+        ?.scrollIntoView({ behavior: "smooth" });
+      return false;
+    }
+
     if (formData.health_card && formData.health_card.length != 10) {
       setIsSubmitting(false);
-      toast.error("Health Card Number must be 10 digits");
+      setMissingFields(true);
+
+      toast.error("Health Card Number must be 10 digits.");
       document
         .querySelector("#healthcard")
         ?.scrollIntoView({ behavior: "smooth" });
@@ -272,11 +300,35 @@ const AdminRegister = () => {
 
     if (formData.health_card && formData.health_card !== "0000000000") {
       if (await checkIfHealthcardExists(formData.health_card)) {
+        setMissingFields(true);
+
         document
           .querySelector("#healthcard")
           ?.scrollIntoView({ behavior: "smooth" });
         return false;
       }
+    }
+
+    if (!formData.referral_site) {
+      setIsSubmitting(false);
+      setMissingFields(true);
+
+      toast.error("Referral Site required");
+      document
+        .querySelector("#referral_site")
+        ?.scrollIntoView({ behavior: "smooth" });
+      return false;
+    }
+
+    if (!formData.province) {
+      setIsSubmitting(false);
+      setMissingFields(true);
+
+      toast.error("Province required");
+      document
+        .querySelector("#province")
+        ?.scrollIntoView({ behavior: "smooth" });
+      return false;
     }
 
     return true;
@@ -310,9 +362,7 @@ const AdminRegister = () => {
     if (cleanedFormData.reg_date === "") {
       cleanedFormData.reg_date = null;
     }
-    if (cleanedFormData.address === "") {
-      cleanedFormData.province = null;
-    }
+
     if (cleanedFormData.coverage_type === "Select") {
       cleanedFormData.coverage_type = null;
     }

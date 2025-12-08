@@ -65,7 +65,7 @@ class Settings:
     mongo_name: str = get_env("MONGODB_NAME")
 
     # redis
-    max_chat_length = 20
+    max_chat_length = 10
     chat_history_ttl = 20 * 60
     redis_host = get_env("REDIS_HOST")
     redis_port = get_env("REDIS_PORT")

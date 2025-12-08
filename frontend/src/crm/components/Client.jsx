@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import AddressAutocomplete from "./AddressAutocomplete";
 import {
   calculateAge,
@@ -11,6 +11,7 @@ import { PhoneCall } from "lucide-react";
 import { useReferences } from "../../context/ReferenceContext";
 import OptionManager from "../managers/OptionManager";
 import TemplateManager from "../managers/TemplateManager";
+import ProvinceDropdown from "./ProvinceDropdown";
 
 // Map Google Places province codes to full province names
 const getProvince = (code) => {
@@ -38,12 +39,24 @@ export default function Client({
   setFormData,
   selectedTemplate,
   setSelectedTemplate,
+  missingFields,
   openVoiceDateInput,
   openVoiceFillInput,
 }) {
   const { userRole } = useAuth();
   const [error, setError] = useState("");
-  const { setShowManager, showManager, options, templates } = useReferences();
+  const {
+    setShowManager,
+    showManager,
+    options,
+    templates,
+    setSelectedProvince,
+    selectedProvince,
+  } = useReferences();
+
+  useEffect(() => {
+    setSelectedProvince(formData.province);
+  }, [formData.province]);
 
   const defaultPositiveClinicalSummary = async (formData) => {
     const baseTemplate = "Dx 10+ years ago and treated. ";
@@ -231,6 +244,11 @@ export default function Client({
       [name]: processedValue,
     };
 
+    if (name === "province") {
+      setSelectedProvince(value);
+      newFormData.referral_site = "";
+    }
+
     // Update clinical summary ONLY if user has explicitly selected Positive template
     if (
       selectedTemplate === "Positive" &&
@@ -281,13 +299,33 @@ export default function Client({
       },
     });
 
-    setFormData((prev) => ({
-      ...prev,
-      address: place.displayName,
-      city: place.city,
-      postal_code: place.postal_code,
-      province: getProvince(place.province),
-    }));
+    const newProvince = getProvince(place.province);
+
+    let newFormData = { ...formData };
+
+    if (newProvince !== newFormData.province) {
+      newFormData.province = newProvince;
+      newFormData.referral_site = "";
+    }
+
+    newFormData.address = place.displayName;
+    newFormData.city = place.city;
+    newFormData.postal_code = place.postal_code;
+
+    setFormData(newFormData);
+  };
+
+  const filterReferralSites = () => {
+    if (!selectedProvince) {
+      return [];
+    }
+
+    const filteredSites = options["referral_site"].filter((s) => {
+      const siteProvince = s?.custom_fields?.province;
+      return siteProvince === selectedProvince;
+    });
+
+    return filteredSites;
   };
 
   return (
@@ -370,7 +408,7 @@ export default function Client({
                   name="first_name"
                   value={formData.first_name}
                   onChange={handleChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 ${missingFields && !formData.first_name?.trim() ? "border-red-700" : "border-gray-300 focus:ring-black"}`}
                   placeholder="Enter first name"
                   autoComplete="given-name"
                   // required
@@ -390,7 +428,7 @@ export default function Client({
                   name="last_name"
                   value={formData.last_name}
                   onChange={handleChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 ${missingFields && !formData.last_name?.trim() ? "border-red-700" : "border-gray-300 focus:ring-black"}`}
                   placeholder="Enter last name"
                   autoComplete="family-name"
                   // required
@@ -402,14 +440,14 @@ export default function Client({
                   htmlFor="dob"
                   className="block text-sm font-medium text-gray-700 mb-2"
                 >
-                  Date of Birth<span className="text-red-500">*</span>
+                  Date of Birth <span className="text-red-500">*</span>
                 </label>
                 <div className="flex items-center space-x-2">
                   <DatePicker
                     name="dob"
                     value={formData.dob}
                     onChange={handleChange}
-                    className="px-3 py-2 bg-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-black text-left font-medium cursor-pointer border border-gray-300"
+                    className={`px-3 py-2 bg-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-black text-left font-medium cursor-pointer border ${missingFields && !formData.dob ? "border-red-700" : "border-gray-300"}`}
                     style={{
                       width: "160px",
                     }}
@@ -440,24 +478,24 @@ export default function Client({
                   name="age"
                   value={formData.age}
                   readOnly
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-gray-600 cursor-not-allowed"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-gray-600 cursor-not-allowed focus:outline-none"
                   placeholder="Select date of birth to calculate age"
                 />
               </div>
 
-              <div>
+              <div id="gender" className="scroll-mt-[60px]">
                 <label
                   htmlFor="gender"
-                  className="block text-sm font-medium text-gray-700 mb-2"
+                  className="block text-sm font-medium text-gray-700 mb-2 "
                 >
-                  Gender
+                  Gender <span className="text-red-500">*</span>
                 </label>
                 <select
                   id="gender"
                   name="gender"
                   value={formData.gender}
                   onChange={handleChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black"
+                  className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 ${missingFields && !formData.gender ? "border-red-700" : "border-gray-300"} focus:ring-black`}
                 >
                   <option value="">Select Gender</option>
                   <option value="Male">Male</option>
@@ -465,13 +503,13 @@ export default function Client({
                 </select>
               </div>
 
-              <div>
+              <div id="disposition" className="scroll-mt-[60px]">
                 <div className="flex items-center justify-between mb-2">
                   <label
                     htmlFor="disposition"
                     className="block text-sm font-medium text-gray-700"
                   >
-                    Disposition
+                    Disposition <span className="text-red-500">*</span>
                   </label>
                   {userRole == "admin" && (
                     <button
@@ -488,7 +526,7 @@ export default function Client({
                   name="disposition"
                   value={formData.disposition}
                   onChange={handleChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black"
+                  className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 ${missingFields && !formData.disposition ? "border-red-700" : "border-gray-300 focus:ring-black"}`}
                 >
                   <option value="">Select Disposition</option>
                   {/* Most Frequently Used */}
@@ -571,15 +609,15 @@ export default function Client({
                 </div>
               </div>
 
-              <div>
+              <div id="referral_site" className="scroll-mt-[60px]">
                 <div className="flex items-center justify-between mb-2">
                   <label
                     htmlFor="referral_site"
                     className="block text-sm font-medium text-gray-700"
                   >
-                    Referral Site
+                    Referral Site <span className="text-red-500">*</span>
                   </label>
-                  {userRole == "admin" && (
+                  {userRole == "admin" && selectedProvince && (
                     <button
                       type="button"
                       onClick={() => setShowManager("referral_site")}
@@ -594,11 +632,11 @@ export default function Client({
                   name="referral_site"
                   value={formData.referral_site}
                   onChange={handleChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black"
+                  className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 ${missingFields && !formData.referral_site?.trim() ? "border-red-700" : "border-gray-300 focus:ring-black"}`}
                 >
                   <option value="">Select Referral Site</option>
                   {/* Most Frequently Used */}
-                  {options["referral_site"]
+                  {filterReferralSites()
                     .filter((s) => s.is_frequent)
                     .map((site) => (
                       <option key={site.id} value={site.name}>
@@ -606,10 +644,10 @@ export default function Client({
                       </option>
                     ))}
                   {/* Separator */}
-                  {options["referral_site"].filter((s) => !s.is_frequent)
-                    .length > 0 && <option disabled>-------</option>}
+                  {filterReferralSites().filter((s) => !s.is_frequent).length >
+                    0 && <option disabled>-------</option>}
                   {/* All Others in Alphabetical Order */}
-                  {options["referral_site"]
+                  {filterReferralSites()
                     .filter((s) => !s.is_frequent)
                     .sort((a, b) => a.name.localeCompare(b.name))
                     .map((site) => (
@@ -682,41 +720,13 @@ export default function Client({
                 />
               </div>
 
-              <div>
-                <label
-                  htmlFor="province"
-                  className="block text-sm font-medium text-gray-700 mb-2"
-                >
-                  Province
-                </label>
-                <select
-                  id="province"
-                  name="province"
+              <div id="province" className="scroll-mt-[60px]">
+                <ProvinceDropdown
                   value={formData.province}
-                  onChange={handleChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black"
-                >
-                  <option value="">Select Province</option>
-                  <option value="Ontario">Ontario</option>
-                  <option value="Quebec">Quebec</option>
-                  <option value="British Columbia">British Columbia</option>
-                  <option value="Alberta">Alberta</option>
-                  <option value="Manitoba">Manitoba</option>
-                  <option value="Saskatchewan">Saskatchewan</option>
-                  <option value="Nova Scotia">Nova Scotia</option>
-                  <option value="New Brunswick">New Brunswick</option>
-                  <option value="Newfoundland and Labrador">
-                    Newfoundland and Labrador
-                  </option>
-                  <option value="Prince Edward Island">
-                    Prince Edward Island
-                  </option>
-                  <option value="Northwest Territories">
-                    Northwest Territories
-                  </option>
-                  <option value="Nunavut">Nunavut</option>
-                  <option value="Yukon">Yukon</option>
-                </select>
+                  handleChange={handleChange}
+                  required={true}
+                  all_provinces={false}
+                />
               </div>
 
               <div>

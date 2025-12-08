@@ -10,6 +10,7 @@ class ReferenceOption(BaseModel):
     type: str
     is_default: bool
     is_frequent: bool
+    custom_fields: dict
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
 
@@ -22,6 +23,7 @@ class ReferenceOptionUpdate(BaseModel):
     type: Optional[str] = None
     is_default: Optional[bool] = None
     is_frequent: Optional[bool] = None
+    custom_fields: Optional[dict] = None
     updated_at: Optional[datetime] = None
 
 

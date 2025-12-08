@@ -33,6 +33,7 @@ from app.authentication.router import (
     create_user,
     delete_user,
     disable_authenticator_mfa,
+    get_user_permissions,
     get_users,
     login,
     logout,
@@ -936,6 +937,18 @@ class TestAuthRouter(unittest.IsolatedAsyncioTestCase):
 
         await UserService.delete_user(email, password)
 
+    async def test_get_user_permissions_success(self):
+        user = await get_validated_user()
+        response = await get_user_permissions(user)
+
+        # validate
+        self.assertEqual(response.user_role, "admin")
+        self.assertEqual(response.user_permissions, [])
+        self.assertEqual(response.province, "Ontario")
+        self.assertEqual(response.location_permissions, ["All"])
+
+        await UserService.delete_user(email, password)
+
     @patch(
         "app.authentication.services.EmailService.send", new_callable=MagicMock
     )
@@ -954,6 +967,8 @@ class TestAuthRouter(unittest.IsolatedAsyncioTestCase):
             is_verified=False,
             role="standard",
             permissions=["", "write", "delete"],
+            province="Ontario",
+            location_permissions=["All"],
         )
 
         await create_user(new_user, user)
@@ -980,6 +995,8 @@ class TestAuthRouter(unittest.IsolatedAsyncioTestCase):
             is_verified=False,
             role="standard",
             permissions=["", "write", "delete"],
+            province="Ontario",
+            location_permissions=["All"],
         )
 
         await create_user(new_user, user)
@@ -1014,6 +1031,8 @@ class TestAuthRouter(unittest.IsolatedAsyncioTestCase):
             is_verified=False,
             role="standard",
             permissions=["", "write", "delete"],
+            province="Ontario",
+            location_permissions=["All"],
         )
 
         await create_user(new_user, user)

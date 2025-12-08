@@ -97,6 +97,22 @@ describe("PatientServices.patients", () => {
     await PatientServices.delete_patient_by_id(createdId);
   });
 
+  it("should fetch patients by location", async () => {
+    const createRes = await PatientServices.create_patient(patientForm);
+    createdId = createRes.data?.patient_id;
+
+    const listRes = await PatientServices.get_patients_by_location(["Ontario"]);
+
+    expect(listRes.success).toBe(true);
+    expect(Array.isArray(listRes.data)).toBe(true);
+
+    const found = listRes.data.find((p) => p.id == createdId);
+    expect(found).toBeDefined();
+
+    // Clean up
+    await PatientServices.delete_patient_by_id(createdId);
+  });
+
   it("should update a patient successfully", async () => {
     const createRes = await PatientServices.create_patient(patientForm);
     createdId = createRes.data?.patient_id;

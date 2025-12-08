@@ -20,6 +20,8 @@ describe("UserServices.users", () => {
     password: "password",
     role: "standard",
     permissions: [],
+    province: "Ontario",
+    location_permissions: [],
   };
 
   beforeEach(async () => {
@@ -55,6 +57,22 @@ describe("UserServices.users", () => {
     expect(result.data?.message).toBe(
       "Registration successful. Check your email to verify.",
     );
+
+    // Clean up
+    await UserServices.delete_user(result.data?.id);
+  });
+
+  it("should get user permissions successfully", async () => {
+    const result = await TestServices.create_user(userForm);
+    createdUserId = result.data?.id;
+
+    const permissions = await UserServices.get_permissions();
+
+    expect(permissions.success).toBe(true);
+    expect(permissions.data?.user_role).toBe("admin");
+    expect(permissions.data?.user_permissions).toStrictEqual([]);
+    expect(permissions.data?.province).toBe("Ontario");
+    expect(permissions.data?.location_permissions).toStrictEqual(["All"]);
 
     // Clean up
     await UserServices.delete_user(result.data?.id);

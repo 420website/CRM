@@ -1,15 +1,23 @@
-import { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useContext, useEffect, useMemo, useState } from "react";
 import { useAuth } from "./AuthContext";
 import { ReferenceServices } from "../services/referenceService";
+import { PROVINCES } from "../constants";
 
 const ReferenceContext = createContext();
 
 export const useReferences = () => useContext(ReferenceContext);
 
 export function ReferenceProvider({ children }) {
-  const { userRole } = useAuth();
+  const { userRole, userLocationPermissions } = useAuth();
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [selectedProvince, setSelectedProvince] = useState(null);
+
+  const userProvinces = useMemo(() => {
+    return userLocationPermissions.includes("All")
+      ? PROVINCES
+      : userLocationPermissions;
+  }, [userLocationPermissions]);
 
   // Updated
   const [showManager, setShowManager] = useState("");
@@ -42,7 +50,14 @@ export function ReferenceProvider({ children }) {
     const result = await ReferenceServices.get_options(type);
 
     if (result.success) {
-      setOptions((prev) => ({ ...prev, [type]: result.data }));
+      let data = result.data;
+      if (type === "referral_site") {
+        data = data.filter((item) =>
+          userProvinces.includes(item?.custom_fields?.province),
+        );
+      }
+
+      setOptions((prev) => ({ ...prev, [type]: data }));
     } else {
       if (result.status === 400 || result.status === 409) {
         setError(result.message || `Error getting ${type} options.`);
@@ -111,6 +126,8 @@ export function ReferenceProvider({ children }) {
         showManager,
         getTemplate,
         getOption,
+        selectedProvince,
+        setSelectedProvince,
       }}
     >
       {children}

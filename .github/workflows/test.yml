@@ -4,9 +4,12 @@ on:
   push:
     branches:
       - main
+      - nightly
+      - dev 
   pull_request:
     branches:
       - main
+      - nightly
       - dev
 
 jobs:

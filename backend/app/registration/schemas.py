@@ -13,7 +13,10 @@ class IdentityCheck(BaseModel):
 
     @field_validator("first_name", "last_name")
     def normalize_name(cls, v):
-        return v.strip().title() if v else v
+        if v:
+            stripped = v.strip()
+            return stripped[0].upper() + stripped[1:] if stripped else stripped
+        return v
 
 
 class IdentityUser(BaseModel):
@@ -41,15 +44,12 @@ class HealthcardUser(BaseModel):
 
 # Shared attributes - all optional for maximum flexibility
 class PatientBase(BaseModel):
-    age: Optional[int] = None
-    gender: Optional[str] = None
     health_card: Optional[str] = None
     health_card_version: Optional[str] = None
     aka: Optional[str] = None
     address: Optional[str] = None
     unit_number: Optional[str] = None
     city: Optional[str] = None
-    province: Optional[str] = None
     postal_code: Optional[str] = None
     phone1: Optional[str] = None
     phone2: Optional[str] = None
@@ -58,7 +58,6 @@ class PatientBase(BaseModel):
 
     # Health info
     coverage_type: Optional[str] = None
-    disposition: Optional[str] = None
     physician: Optional[str] = None
 
     # Consent / communication
@@ -74,7 +73,6 @@ class PatientBase(BaseModel):
     rna_sample_date: Optional[dt.date] = None
 
     # Referral / registration
-    referral_site: Optional[str] = None
     referral_person: Optional[str] = None
     reg_date: Optional[dt.date] = None
 
@@ -91,13 +89,21 @@ class PatientCreate(PatientBase):
     first_name: str
     last_name: str
     dob: dt.date
+    referral_site: str
+    province: str
+    disposition: str
+    gender: str
+    age: int
     force_create: bool = False
     limited: bool = True
     status: Optional[str] = None
 
     @field_validator("first_name", "last_name", "aka")
     def normalize_name(cls, v):
-        return v.strip().title() if v else v
+        if v:
+            stripped = v.strip()
+            return stripped[0].upper() + stripped[1:] if stripped else stripped
+        return v
 
 
 # Schema for updating patient data - inherits all optional fields
@@ -105,13 +111,21 @@ class PatientUpdate(PatientBase):
     first_name: Optional[str] = None
     last_name: Optional[str] = None
     dob: Optional[dt.date] = None
+    age: Optional[int] = None
+    gender: Optional[str] = None
+    province: Optional[str] = None
+    referral_site: Optional[str] = None
+    disposition: Optional[str] = None
     force_update: bool = False
     limited: bool = True
     status: Optional[str] = None
 
     @field_validator("first_name", "last_name", "aka")
     def normalize_name(cls, v):
-        return v.strip().title() if v else v
+        if v:
+            stripped = v.strip()
+            return stripped[0].upper() + stripped[1:] if stripped else stripped
+        return v
 
 
 class PatientStatus(BaseModel):
@@ -125,6 +139,11 @@ class PatientRead(PatientBase):
     first_name: str
     last_name: str
     dob: dt.date
+    age: int
+    gender: str
+    province: str
+    referral_site: str
+    disposition: str
     limited: bool
     health_card: Optional[str] = None
     health_card_version: Optional[str] = None
@@ -331,6 +350,7 @@ class PatientActivity(ActivityBase):
     phone1: Optional[str] = None
     disposition: Optional[str] = None
     referral_site: Optional[str] = None
+    province: str
     name: str
     description: str
     completed: bool

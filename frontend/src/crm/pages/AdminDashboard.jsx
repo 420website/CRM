@@ -10,6 +10,7 @@ import { useDashboard } from "../../context/DashboardContext";
 import { useReferences } from "../../context/ReferenceContext";
 import MonthPicker from "../ui/MonthPicker";
 import { ChevronRight, ChevronLeft } from "lucide-react";
+import ProvinceDropdown from "../components/ProvinceDropdown";
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
@@ -49,6 +50,8 @@ const AdminDashboard = () => {
     filteredSubmitted,
     filteredPending,
     deleteActivity,
+    searchProvince,
+    handleProvinceSearch,
   } = useDashboard();
   const { options } = useReferences();
 
@@ -461,45 +464,64 @@ const AdminDashboard = () => {
                   </span>
                 )}
               </div>
-              <button
-                onClick={() => handle_refresh()}
-                // disabled={isRefreshing}
-                className="bg-gray-100 text-gray-700 py-1 px-3 rounded-md hover:bg-gray-200 transition-colors text-sm disabled:opacity-50 flex items-center gap-2"
-              >
-                {isRefreshing ? (
-                  <svg
-                    className="h-4 w-4"
-                    style={{ animation: "spin 1s linear infinite reverse" }}
-                    xmlns="http://www.w3.org/2000/svg"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
+              <div className="flex gap-2 ">
+                {/* Clear All Filters Button */}
+                {(searchDate ||
+                  searchName ||
+                  searchProvince ||
+                  searchEndDate ||
+                  searchMonth ||
+                  searchDisposition ||
+                  searchReferralSite ||
+                  activitySearchTerm ||
+                  activityStatusFilter !== "all") && (
+                  <button
+                    onClick={clearAllFilters}
+                    className="bg-gray-100 text-gray-700 py-1 px-2 rounded-md hover:bg-gray-200 transition-colors text-sm disabled:opacity-50 flex items-center gap-2"
                   >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth="2"
-                      d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-                    />
-                  </svg>
-                ) : (
-                  <svg
-                    className="h-4 w-4"
-                    xmlns="http://www.w3.org/2000/svg"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth="2"
-                      d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-                    />
-                  </svg>
-                )}{" "}
-                Refresh
-              </button>
+                    Clear
+                  </button>
+                )}
+                <button
+                  onClick={() => handle_refresh()}
+                  // disabled={isRefreshing}
+                  className="bg-gray-100 text-gray-700 py-1 px-2 rounded-md hover:bg-gray-200 transition-colors text-xs disabled:opacity-50 flex items-center gap-2"
+                >
+                  {isRefreshing ? (
+                    <svg
+                      className="h-4 w-4"
+                      style={{ animation: "spin 1s linear infinite reverse" }}
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth="2"
+                        d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                      />
+                    </svg>
+                  ) : (
+                    <svg
+                      className="h-4 w-4"
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth="2"
+                        d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                      />
+                    </svg>
+                  )}{" "}
+                  Refresh
+                </button>
+              </div>
             </div>
 
             {/* Search and Filters - Mobile Responsive */}
@@ -626,44 +648,69 @@ const AdminDashboard = () => {
                       ))}
                   </select>
                 </div>
-
-                <div className="min-w-0">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Referral Site
-                  </label>
-                  <select
-                    value={searchReferralSite}
-                    onChange={(e) => handleReferralSiteSearch(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    style={{
-                      height: "40px",
-                      minHeight: "40px",
-                      maxHeight: "40px",
-                    }}
-                  >
-                    <option value="">Select Referral Site</option>
-                    {/* Most Frequently Used */}
-                    {options["referral_site"]
-                      .filter((s) => s.is_frequent)
-                      .map((site) => (
-                        <option key={site.id} value={site.name}>
-                          {site.name}
-                        </option>
-                      ))}
-                    {/* Separator */}
-                    {options["referral_site"].filter((s) => !s.is_frequent)
-                      .length > 0 && <option disabled>-------</option>}
-                    {/* All Others in Alphabetical Order */}
-                    {options["referral_site"]
-                      .filter((s) => !s.is_frequent)
-                      .sort((a, b) => a.name.localeCompare(b.name))
-                      .map((site) => (
-                        <option key={site.id} value={site.name}>
-                          {site.name}
-                        </option>
-                      ))}
-                  </select>
+                <div id="province" className="scroll-mt-[60px]">
+                  <ProvinceDropdown
+                    value={searchProvince}
+                    handleChange={handleProvinceSearch}
+                    all_provinces={false}
+                    formatting={"text-sm"}
+                  />
                 </div>
+
+                {searchProvince && (
+                  <div className="min-w-0">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Referral Site
+                    </label>
+                    <select
+                      value={searchReferralSite}
+                      onChange={(e) => handleReferralSiteSearch(e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      style={{
+                        height: "40px",
+                        minHeight: "40px",
+                        maxHeight: "40px",
+                      }}
+                    >
+                      <option value="">Select Referral Site</option>
+                      {/* Most Frequently Used */}
+                      {options["referral_site"]
+                        .filter((s) => s.is_frequent)
+                        .filter(
+                          (s) =>
+                            !searchProvince ||
+                            s.custom_fields.province === searchProvince,
+                        )
+                        .map((site) => (
+                          <option key={site.id} value={site.name}>
+                            {site.name}
+                          </option>
+                        ))}
+                      {/* Separator */}
+                      {options["referral_site"]
+                        .filter((s) => !s.is_frequent)
+                        .filter(
+                          (s) =>
+                            !searchProvince ||
+                            s.custom_fields.province === searchProvince,
+                        ).length > 0 && <option disabled>-------</option>}
+                      {/* All Others in Alphabetical Order */}
+                      {options["referral_site"]
+                        .filter((s) => !s.is_frequent)
+                        .filter(
+                          (s) =>
+                            !searchProvince ||
+                            s.custom_fields.province === searchProvince,
+                        )
+                        .sort((a, b) => a.name.localeCompare(b.name))
+                        .map((site) => (
+                          <option key={site.id} value={site.name}>
+                            {site.name}
+                          </option>
+                        ))}
+                    </select>
+                  </div>
+                )}
 
                 {activeTab === "activities" && (
                   <div className="min-w-0 md:col-span-2 xl:col-span-1">
@@ -690,43 +737,6 @@ const AdminDashboard = () => {
                   </div>
                 )}
               </div>
-
-              {/* Clear All Filters Button */}
-              {activeTab !== "activities" &&
-                (searchName ||
-                  searchEndDate ||
-                  searchMonth ||
-                  searchDate ||
-                  searchDisposition ||
-                  searchReferralSite) && (
-                  <div className="mt-4 flex justify-center">
-                    <button
-                      onClick={clearAllFilters}
-                      className="bg-gray-500 text-white py-2 px-4 rounded-md hover:bg-gray-600 transition-colors text-sm"
-                    >
-                      Clear All Filters
-                    </button>
-                  </div>
-                )}
-
-              {/* Clear All Filters Button */}
-              {activeTab === "activities" &&
-                (searchDate ||
-                  searchEndDate ||
-                  searchMonth ||
-                  searchDisposition ||
-                  searchReferralSite ||
-                  activitySearchTerm ||
-                  activityStatusFilter !== "all") && (
-                  <div className="mt-4 flex justify-center">
-                    <button
-                      onClick={clearAllFilters}
-                      className="bg-gray-500 text-white py-2 px-4 rounded-md hover:bg-gray-600 transition-colors text-sm"
-                    >
-                      Clear All Filters
-                    </button>
-                  </div>
-                )}
             </div>
 
             {error && (

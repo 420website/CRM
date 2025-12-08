@@ -62,6 +62,8 @@ class TestUserService(unittest.IsolatedAsyncioTestCase):
             is_verified=False,
             role="standard",
             permissions=["", "write", "delete"],
+            province="Ontario",
+            location_permissions=["All"],
         )
         await UserService.create_user(user)
 

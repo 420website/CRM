@@ -4,7 +4,7 @@ export const DEFAULT_FORM = {
   dob: "",
   patient_consent: "verbal", // Default to verbal
   gender: "",
-  province: "Ontario", // Default to Ontario
+  province: "", // Default to Ontario
   disposition: "",
   aka: "",
   age: "",

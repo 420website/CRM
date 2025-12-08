@@ -12,6 +12,20 @@ describe("ReferenceServices.option", () => {
     name: "test_general",
     is_frequent: true,
     is_default: true,
+    custom_fields: {},
+  };
+
+  const cleanData = async () => {
+    const interaction = await ReferenceServices.get_options("interaction");
+    const coverage = await ReferenceServices.get_options("coverage");
+
+    const allOptions = [...(interaction.data || []), ...(coverage.data || [])];
+
+    for (const item of allOptions) {
+      if (item.name === general.name) {
+        await ReferenceServices.delete_option_by_id("all", item.id);
+      }
+    }
   };
 
   beforeEach(async () => {
@@ -29,13 +43,14 @@ describe("ReferenceServices.option", () => {
       mfa_email.data?.code,
     );
     tokenManager.setAccessToken(mfa_result.data?.access_token);
+
+    // Clear old
+    await cleanData();
   });
 
   afterEach(async () => {
     // cleanup
-    await ReferenceServices.delete_option_by_name("interaction", general.name);
-    await ReferenceServices.delete_option_by_name("coverage", general.name);
-    await ReferenceServices.delete_option_by_name("coverage", general.name);
+    await cleanData();
 
     await TestServices.deleteUser(email, password);
     createdId = null;
@@ -81,20 +96,6 @@ describe("ReferenceServices.option", () => {
     const refreshed = await ReferenceServices.get_options("coverage");
     const updated = refreshed.data.find((g) => g.id === createdId);
     expect(updated.is_frequent).toBe(false);
-  });
-
-  it("should delete an option by name", async () => {
-    await ReferenceServices.create_option("coverage", general);
-    const deleteRes = await ReferenceServices.delete_option_by_name(
-      "coverage",
-      general.name,
-    );
-    expect(deleteRes.success).toBe(true);
-
-    // verify removal
-    const listRes = await ReferenceServices.get_options("coverage");
-    const stillThere = listRes.data.find((g) => g.name === general.name);
-    expect(stillThere).toBeUndefined();
   });
 
   it("should delete a option by id", async () => {

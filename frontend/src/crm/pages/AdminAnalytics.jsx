@@ -189,7 +189,8 @@ const AdminAnalytics = () => {
         const uploadMessage = {
           role: "assistant",
           content: `📊 Legacy data uploaded successfully! I now have access to ${result.records_count} historical records from ${file.name}. You can ask me questions about trends, dispositions, and patterns in your historical data.`,
-          timestamp: localTimestamp(),
+          utc_timestamp: currentTimestamp(),
+          local_timestamp: localTimestamp(),
         };
         setMessages((prev) => [...prev, uploadMessage]);
       } else {
@@ -240,6 +241,7 @@ const AdminAnalytics = () => {
         const errorMessage = {
           role: "assistant",
           content:
+            result.message ||
             "I apologize, but I'm having trouble accessing the registration data right now. Please try again in a moment.",
           utc_timestamp: currentTimestamp(),
           local_timestamp: localTimestamp(),

@@ -51,8 +51,6 @@ class MFAVerfiedResponse(BaseModel):
     recovery_codes: Optional[List[str]]
     access_token: str
     expires_at: datetime
-    user_role: str
-    user_permissions: List[str]
     token_type: str = "bearer"
 
 
@@ -101,6 +99,8 @@ class UserRead(UserBase):
     email: str
     role: str
     permissions: List[str]
+    province: str
+    location_permissions: List[str]
     authenticator_mfa_enabled: bool
 
     class Config:
@@ -111,6 +111,8 @@ class UserUpdate(UserBase):
     email: Optional[str] = None
     role: Optional[str] = None
     permissions: Optional[List[str]] = None
+    province: Optional[str] = None
+    location_permissions: Optional[List[str]] = None
     authenticator_mfa_enabled: Optional[bool] = None
 
 
@@ -125,6 +127,8 @@ class UserCreate(BaseModel):
     is_verified: Optional[bool] = False
     role: str
     permissions: List[str]
+    province: str
+    location_permissions: List[str]
 
     @field_validator("phone_number")
     def validate_phone(cls, v: str) -> str:
@@ -148,6 +152,16 @@ class UserResponse(BaseModel):
     # permissions: List[str]
     created_at: datetime
     last_login: Optional[datetime]
+
+    class Config:
+        from_attributes = True
+
+
+class UserPermissions(BaseModel):
+    user_role: str
+    user_permissions: List[str]
+    province: str
+    location_permissions: List[str]
 
     class Config:
         from_attributes = True
@@ -180,8 +194,6 @@ class TokenResponse(BaseModel):
 class RefreshResponse(BaseModel):
     access_token: str
     expires_at: datetime
-    user_role: str
-    user_permissions: List[str]
     token_type: str = "bearer"
 
 

@@ -6,6 +6,7 @@ from app.authentication.schemas import (
     UserCreate,
     RefreshToken,
     TokenResponse,
+    UserPermissions,
     UserRead,
     UserResponse,
     UserUpdate,
@@ -204,8 +205,8 @@ class UserService:
         password_hash = SecurityService.hash_password(user.password)
 
         query = """
-        INSERT INTO users (first_name, last_name, email, phone_number, role, permissions, password_hash, is_verified)
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+        INSERT INTO users (first_name, last_name, email, phone_number, role, province, location_permissions,  permissions, password_hash, is_verified)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
         RETURNING id;
         """
 
@@ -218,6 +219,8 @@ class UserService:
                 user.email,
                 user.phone_number,
                 user.role,
+                user.province,
+                user.location_permissions,
                 user.permissions,
                 password_hash,
                 False,
@@ -278,6 +281,18 @@ class UserService:
             result.append(UserRead(**dict(row)))
 
         return result
+
+    @staticmethod
+    async def get_user_permssions(patient_id) -> Union[UserPermissions, None]:
+        query = """
+            SELECT role, permissions, province, location_permissions 
+            FROM users
+            WHERE id=$1
+            LIMIT 1
+        """
+        async with database.get_connection() as conn:
+            row = await conn.fetchrow(query, patient_id)
+            return UserPermissions(**dict(row)) if row else None
 
     @staticmethod
     async def delete_user(email: str, password: str):

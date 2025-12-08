@@ -138,6 +138,9 @@ class TestShareLinkRouter(IsolatedAsyncioTestCase):
             status="pending",
             health_card="1234567890",
             health_card_version="AB",
+            disposition="Active",
+            referral_site="Toronto",
+            province="Ontario",
         )
         result = await create_patient(self.patient_data, self.user)
         self.patient_id = result["patient_id"]

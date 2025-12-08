@@ -2,12 +2,16 @@ import { useState } from "react";
 import { HealthServices } from "../../services/healthService";
 import { compressImageToBlob } from "../../utils/compressImage";
 import toast from "react-hot-toast";
+import { Trash } from "lucide-react";
+import { Image } from "lucide-react";
+import { ImageOff } from "lucide-react";
 
 export default function Intake({ submitStatus, setPhotoData }) {
   const [error, setError] = useState(null);
   const [selectedFileName, setSelectedFileName] = useState("");
   const [systemTestStatus, setSystemTestStatus] = useState(null);
   const [photoPreview, setPhotoPreview] = useState(null);
+  const [showingPhoto, setShowingPhoto] = useState(false);
 
   // Not really neccessary, backend should always be functioning
   const testPhotoUploadSystem = async () => {
@@ -194,14 +198,14 @@ export default function Intake({ submitStatus, setPhotoData }) {
 
       <div id="intake" className="space-y-6">
         {/* Photo Upload Section */}
-        <div className="border-b border-gray-200 pb-6">
+        <div className="border-b border-gray-200 pb-2">
           <h2 className="text-lg font-medium text-gray-900 mb-4">
-            Client Photo
+            Client Profile
           </h2>
           <div className="space-y-4">
-            <div>
+            <div className="p-0 mb-0">
               {/* Upload Option */}
-              <div className="mb-4">
+              <div className="mb-2">
                 <div>
                   <div className="flex items-center gap-3">
                     <button
@@ -224,32 +228,52 @@ export default function Intake({ submitStatus, setPhotoData }) {
                   </div>
                 </div>
               </div>
-              <p className="mt-2 text-sm text-gray-500">
+              <p className="mt-0 text-sm text-gray-500">
                 Photos are optimized to ~800KB while maintaining high quality.
                 Supported formats: JPG, PNG, GIF.
               </p>
             </div>
 
             {photoPreview && (
-              <div className="mt-4">
-                <h3 className="text-sm font-medium text-gray-900 mb-2">
-                  Photo Preview
-                </h3>
-                <div className="w-48 h-48 border-2 border-gray-300 rounded-lg overflow-hidden">
-                  <img
-                    src={photoPreview}
-                    alt="Client photo preview"
-                    className="w-full h-full object-cover"
-                  />
+              <>
+                <div className="flex items-center gap-4 mt-2 mb-0">
+                  <h3 className="text-sm font-medium text-gray-900">
+                    Photo Preview
+                  </h3>
+
+                  <div className="flex gap-2">
+                    {showingPhoto ? (
+                      <button
+                        type="button"
+                        onClick={() => setShowingPhoto(false)}
+                      >
+                        <ImageOff className="w-3 h-4" />
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => setShowingPhoto(true)}
+                      >
+                        <Image className="w-3 h-4" />
+                      </button>
+                    )}
+                    <button type="button" onClick={removePhoto}>
+                      <Trash className="w-3 h-4" />
+                    </button>
+                  </div>
                 </div>
-                <button
-                  type="button"
-                  onClick={removePhoto}
-                  className="mt-2 text-red-600 hover:text-red-800 text-sm font-medium"
-                >
-                  Remove Photo
-                </button>
-              </div>
+                {showingPhoto && (
+                  <div className="mt-2 mb-2">
+                    <div className="w-48 h-48 border-2 border-gray-300 rounded-lg overflow-hidden">
+                      <img
+                        src={photoPreview}
+                        alt="Client photo preview"
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                  </div>
+                )}
+              </>
             )}
           </div>
         </div>

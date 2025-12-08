@@ -2,71 +2,154 @@ import { useState } from "react";
 import EditModal from "./EditModal";
 import { useReferences } from "../../context/ReferenceContext";
 import { ReferenceServices } from "../../services/referenceService";
+import toast from "react-hot-toast";
 
 export default function OptionManager({ type }) {
-  const { options, setShowManager, getOption } = useReferences();
+  const { options, setShowManager, getOption, selectedProvince } =
+    useReferences();
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
-  const [newOptionName, setNewOptionName] = useState("");
-  const [editingOption, setEditingOption] = useState(null);
   const [optionsSearch, setOptionSearch] = useState("");
-  const [newOptionIsFrequent, setNewOptionIsFrequent] = useState(false);
   const [showOptionEditPopup, setShowOptionEditPopup] = useState(false);
+  const [editOptionData, setEditOptionData] = useState(null);
+  const [data, setData] = useState({
+    name: "",
+    is_frequent: false,
+    is_default: false,
+    custom_fields:
+      type === "referral_site" ? { province: selectedProvince } : {},
+  });
+
+  const setResetData = () => {
+    setData({
+      name: "",
+      is_frequent: false,
+      is_default: false,
+      custom_fields:
+        type === "referral_site" ? { province: selectedProvince } : {},
+    });
+  };
+
+  const handleUpdate = (name, value, customFlag = false) => {
+    if (customFlag) {
+      setData((prev) => {
+        const updated = { ...prev.custom_fields };
+        if (value) {
+          updated[name] = value;
+        } else {
+          delete updated[name];
+        }
+
+        return {
+          ...prev,
+          custom_fields: updated,
+        };
+      });
+    } else {
+      setData((prev) => ({
+        ...prev,
+        [name]: value,
+      }));
+    }
+  };
+
+  const handleEditUpdate = (name, value, customFlag = false) => {
+    if (customFlag) {
+      setEditOptionData((prev) => {
+        const updated = { ...prev.custom_fields };
+        if (value) {
+          updated[name] = value;
+        } else {
+          delete updated[name];
+        }
+
+        return {
+          ...prev,
+          custom_fields: updated,
+        };
+      });
+    } else {
+      setEditOptionData((prev) => ({
+        ...prev,
+        [name]: value,
+      }));
+    }
+  };
+
+  const handleProvinceChange = (e) => {
+    const { name, value } = e.target;
+    if (showOptionEditPopup) {
+      handleEditUpdate(name, value, true);
+    } else {
+      handleUpdate(name, value, true);
+    }
+  };
 
   const createOption = async () => {
     setLoading(true);
     setError("");
     setMessage("");
 
-    if (!newOptionName.trim()) {
-      alert("Please enter a option name");
+    if (!data.name.trim()) {
+      toast.error("Please enter an option name");
       return;
     }
 
-    const data = {
-      name: newOptionName.trim(),
-      is_frequent: newOptionIsFrequent,
-      is_default: false,
-    };
+    if (type === "referral_site" && !data.custom_fields.province) {
+      toast.error("Please enter an option province");
+      return;
+    }
 
     const result = await ReferenceServices.create_option(type, data);
 
     if (result.success) {
+      setResetData();
       getOption(type);
-      setMessage(`Created option successfully.`);
+      toast.success(`Created option successfully`);
     } else {
       if (result.status === 400 || result.status === 409) {
-        setError(result.message || `Error creating option.`);
+        toast.error(result.message || `Error creating option.`);
       } else {
-        setError(result.message || `Error creating option. Please try again.`);
+        toast.error(
+          result.message || `Error creating option. Please try again.`,
+        );
       }
     }
     setLoading(false);
   };
 
-  const updateOption = async (id, name, isFrequent) => {
+  const updateOption = async (id) => {
     setLoading(true);
     setError("");
     setMessage("");
 
-    const data = {
-      name: name.trim(),
-      is_frequent: isFrequent,
-    };
+    if (!editOptionData.name.trim()) {
+      toast.error("Please enter an option name");
+      return;
+    }
 
-    const result = await ReferenceServices.update_option(type, id, data);
+    if (type === "referral_site" && !editOptionData.custom_fields.province) {
+      toast.error("Please enter an option province");
+      return;
+    }
+
+    const result = await ReferenceServices.update_option(
+      type,
+      id,
+      editOptionData,
+    );
 
     if (result.success) {
-      setEditingOption(null);
+      setEditOptionData(null);
       setShowOptionEditPopup(false);
       getOption(type);
     } else {
       if (result.status === 400 || result.status === 409) {
-        setError(result.message || `Error creating ${type} option.`);
+        toast.error(result.message || `Error creating option.`);
       } else {
-        setError(
-          result.message || `Error creating ${type} option. Please try again.`,
+        toast.error(
+          result.message || `Error creating option. Please try again.`,
         );
       }
     }
@@ -86,46 +169,49 @@ export default function OptionManager({ type }) {
     const result = await ReferenceServices.delete_option_by_id(type, id);
 
     if (result.success) {
-      setEditingOption(null);
+      setResetData();
       setShowOptionEditPopup(false);
       getOption(type);
+      toast.success(`Deleted option successfully`);
     } else {
       if (result.status === 400 || result.status === 409) {
-        setError(result.message || `Error creating ${type} option.`);
+        toast.error(result.message || `Error creating option.`);
       } else {
-        setError(
-          result.message || `Error creating ${type} option. Please try again.`,
+        toast.error(
+          result.message || `Error creating option. Please try again.`,
         );
       }
     }
     setLoading(false);
   };
 
-  const openEditOption = (name) => {
-    setEditingOption(name);
+  const openEditOption = (option) => {
+    setEditOptionData(option);
     setShowOptionEditPopup(true);
   };
 
   const closeOptionManager = () => {
-    // setShowCoverageManager(false);
+    setEditOptionData(null);
     setShowManager("");
-    setNewOptionName("");
-    setNewOptionIsFrequent(false);
-    setEditingOption(null);
+    setResetData();
     setShowOptionEditPopup(false);
     setOptionSearch("");
   };
 
   // Filter based on search
   const getFilteredOptions = () => {
+    let opt = options[type];
+
+    if (type === "referral_site") {
+      opt = opt.filter((o) => o.custom_fields.province === selectedProvince);
+    }
+
     if (!optionsSearch.trim()) {
-      return options[type];
+      return opt;
     }
 
     const searchTerm = optionsSearch.toLowerCase();
-    return options[type].filter((site) =>
-      site.name.toLowerCase().includes(searchTerm),
-    );
+    return opt.filter((site) => site.name.toLowerCase().includes(searchTerm));
   };
 
   return (
@@ -191,18 +277,31 @@ export default function OptionManager({ type }) {
               </label>
               <input
                 type="text"
-                value={newOptionName}
-                onChange={(e) => setNewOptionName(e.target.value)}
+                value={data.name}
+                onChange={(e) => handleUpdate("name", e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black"
                 placeholder="Enter name"
               />
             </div>
+            {type === "referral_site" && (
+              <div id="province" className="scroll-mt-[60px]">
+                <select
+                  id="province"
+                  name="province"
+                  value={data.custom_fields.province}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black"
+                  readOnly
+                >
+                  <option value="">{selectedProvince}</option>
+                </select>
+              </div>
+            )}
             <div className="flex items-center gap-2">
               <input
                 type="checkbox"
                 id="newOptionFrequent"
-                checked={newOptionIsFrequent}
-                onChange={(e) => setNewOptionIsFrequent(e.target.checked)}
+                checked={data.is_frequent}
+                onChange={(e) => handleUpdate("is_frequent", e.target.checked)}
                 className="w-4 h-4 text-black bg-gray-100 border-gray-300 rounded focus:ring-black"
               />
               <label
@@ -308,11 +407,12 @@ export default function OptionManager({ type }) {
           </button>
         </div>
       </div>
-      {showOptionEditPopup && editingOption && (
+      {showOptionEditPopup && (
         <EditModal
-          name={type}
-          editingTemplate={editingOption}
+          type={type}
+          editingTemplate={editOptionData}
           setShowTemplateEditPopup={setShowOptionEditPopup}
+          handleUpdate={handleEditUpdate}
           updateTemplate={updateOption}
           deleteTemplate={deleteOption}
         />
