@@ -13,6 +13,7 @@ from app.analytics.schema import (
 from app.analytics.utils import read_legacy_data_file
 from app.dependencies import get_current_user
 from app.authentication.schemas import UserRead
+from app.exceptions import AnthropicRequestError, ContextRetrievalError
 
 router = APIRouter(prefix="/analytics", tags=["Analytics"])
 
@@ -136,6 +137,16 @@ async def claude_chat(
         else:
             result = await RagService.claude_chat_internal(request, user.id)
         return result
+    except AnthropicRequestError as e:
+        raise HTTPException(
+            status_code=400,
+            detail=f"{str(e)}",
+        )
+    except ContextRetrievalError as e:
+        raise HTTPException(
+            status_code=400,
+            detail=f"{str(e)}",
+        )
     except Exception as e:
         raise HTTPException(
             status_code=400,

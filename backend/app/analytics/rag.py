@@ -4,14 +4,21 @@ from app.analytics.services import LegacyDataService
 from app.database import database, redis_client
 from app.config import settings
 from app.analytics.prompts import (
+    time_prompt,
+    schema_prompt,
     internal_system_message,
     legacy_system_message,
-    query_prompt,
 )
 from app.analytics.schema import (
     ClaudeChatRequest,
     ClaudeChatResponse,
 )
+from app.exceptions import AnthropicRequestError, ContextRetrievalError
+from app.logger import logger
+
+# import asyncio
+# from anthropic import APIConnectionError, APITimeoutError, RateLimitError
+
 
 RELEVANT_TABLES = {
     "patients",
@@ -29,6 +36,7 @@ RELEVANT_TABLES = {
 
 
 class RagService:
+    # -- Schema
     @staticmethod
     async def store_schema(schema: str):
         redis = redis_client.get_client()
@@ -64,35 +72,7 @@ class RagService:
 
         return schema_text
 
-    @staticmethod
-    async def generate_query(schema: str, request: ClaudeChatRequest) -> str:
-        system_prompt = query_prompt(schema, request.datetime)
-        user_prompt = f"Question: {request.message}\nSQL:"
-
-        message = await settings.anthropic_client.messages.create(
-            model=settings.anthropic_model,
-            max_tokens=settings.anthropic_max_tokens,
-            system=system_prompt,
-            messages=[
-                {"role": "user", "content": user_prompt},
-            ],
-        )
-
-        response_text = message.content[0].text
-
-        return response_text
-
-    @staticmethod
-    async def retrieve_context(query: str) -> list:
-        if not query.lower().strip().startswith("select"):
-            raise ValueError("Only SELECT queries are allowed")
-
-        async with database.get_connection() as conn:
-            rows = await conn.fetch(query)
-            results = [dict(row) for row in rows]
-
-        return results
-
+    # -- Chat history
     @staticmethod
     async def update_chat_sesssion(
         user_id: str,
@@ -124,13 +104,64 @@ class RagService:
     @staticmethod
     async def clear_chat_history(user_id: int):
         client = redis_client.get_client()
-
         key = f"{user_id}:chatSession"
         await client.delete(key)
 
+    #  -- Retrieve internal context
     @staticmethod
-    async def prompt_llm(
-        system_msg: str,
+    async def generate_query(schema: str, request: ClaudeChatRequest) -> str:
+        try:
+            message = await settings.anthropic_client.messages.create(
+                model=settings.anthropic_model,
+                max_tokens=settings.anthropic_max_tokens,
+                system=[
+                    {
+                        "type": "text",
+                        "text": schema_prompt(schema),
+                        "cache_control": {"type": "ephemeral"},
+                    },
+                    {
+                        "type": "text",
+                        "text": time_prompt(request.datetime),
+                    },
+                ],
+                messages=[
+                    {
+                        "role": "user",
+                        "content": f"Question: {request.message}",
+                    },
+                ],
+            )
+
+            response_text = message.content[0].text
+            return response_text
+        except Exception as e:
+            logger.error(f"Error in query generation: {type(e).__name__}: {e}")
+            raise AnthropicRequestError(
+                "I had an issue generating the query for your request. Please try again in a moment.",
+            )
+
+    @staticmethod
+    async def retrieve_context(query: str) -> list:
+        try:
+            if not query.lower().strip().startswith("select"):
+                raise ValueError("Only SELECT queries are allowed")
+
+            async with database.get_connection() as conn:
+                rows = await conn.fetch(query)
+                results = [dict(row) for row in rows]
+
+            return results
+        except Exception as e:
+            logger.error(f"Error retrieving context: {e}")
+            raise ContextRetrievalError(
+                "I had an issue looking up the data needed to processing your request. Please try again in a moment."
+            )
+
+    # -- Internal data
+    @staticmethod
+    async def prompt_llm_internal(
+        context: str,
         user_msg: str,
         user_id: str,
         session_id: str = "99",
@@ -142,7 +173,17 @@ class RagService:
             message = await settings.anthropic_client.messages.create(
                 model=settings.anthropic_model,
                 max_tokens=settings.anthropic_max_tokens,
-                system=system_msg,
+                system=[
+                    {
+                        "type": "text",
+                        "text": internal_system_message(),
+                        "cache_control": {"type": "ephemeral"},
+                    },
+                    {
+                        "type": "text",
+                        "text": context,
+                    },
+                ],
                 messages=history,
             )
 
@@ -157,9 +198,10 @@ class RagService:
                 response=response_text,
                 session_id=session_id,
             )
-        except Exception:
-            raise Exception(
-                "No legacy data found. Please upload an Excel file first."
+        except Exception as e:
+            logger.error(f"Error retrieving answer: {e}")
+            raise AnthropicRequestError(
+                "I had an issue while generating your answer. Please try again in a moment."
             )
 
     @staticmethod
@@ -170,18 +212,67 @@ class RagService:
         try:
             schema = await RagService.get_schema()
             query = await RagService.generate_query(schema, request)
+            logger.info(f"Query: {query}")
             context = await RagService.retrieve_context(query)
-            system_msg = internal_system_message(str(context))
+            logger.info(f"Context: {context}")
 
-            return await RagService.prompt_llm(
-                system_msg,
+            return await RagService.prompt_llm_internal(
+                str(context),
                 request.message,
                 str(user_id),
                 request.session_id or "99",
             )
-        except Exception:
-            raise Exception(
-                "No legacy data found. Please upload an Excel file first."
+        except AnthropicRequestError:
+            raise
+        except ContextRetrievalError:
+            raise
+        except Exception as e:
+            raise Exception(f"Chat error {e}")
+
+    # -- Upload file
+    @staticmethod
+    async def prompt_llm_file(
+        context: str,
+        user_msg: str,
+        user_id: str,
+        session_id: str = "99",
+    ):
+        history = await RagService.get_chat_history(user_id)
+        history.append({"role": "user", "content": user_msg})
+
+        try:
+            message = await settings.anthropic_client.messages.create(
+                model=settings.anthropic_model,
+                max_tokens=settings.anthropic_max_tokens,
+                system=[
+                    {
+                        "type": "text",
+                        "text": legacy_system_message(),
+                        "cache_control": {"type": "ephemeral"},
+                    },
+                    {
+                        "type": "text",
+                        "text": context,
+                    },
+                ],
+                messages=history,
+            )
+
+            response_text = message.content[0].text
+
+            await RagService.update_chat_sesssion(user_id, "user", user_msg)
+            await RagService.update_chat_sesssion(
+                user_id, "assistant", response_text
+            )
+
+            return ClaudeChatResponse(
+                response=response_text,
+                session_id=session_id,
+            )
+        except Exception as e:
+            logger.error(f"Error retrieving answer: {e}")
+            raise AnthropicRequestError(
+                "I had an issue while generating your answer. Please try again in a moment."
             )
 
     @staticmethod
@@ -198,9 +289,8 @@ class RagService:
 
         try:
             context = await LegacyDataService.generate_context(raw_data)
-            system_msg = legacy_system_message(context)
-            return await RagService.prompt_llm(
-                system_msg,
+            return await RagService.prompt_llm_file(
+                context,
                 request.message,
                 str(user_id),
                 request.session_id or "99",
@@ -209,3 +299,58 @@ class RagService:
             raise Exception(
                 "No legacy data found. Please upload an Excel file first."
             )
+
+
+# --- With retry
+# #  -- Retrieve internal context
+# @staticmethod
+# async def generate_query(schema: str, request: ClaudeChatRequest) -> str:
+#     max_retries = 3
+#     retry_delay = 1  # Start with 1 second
+#
+#     for attempt in range(max_retries):
+#         try:
+#             message = await settings.anthropic_client.messages.create(
+#                 model=settings.anthropic_model,
+#                 max_tokens=settings.anthropic_max_tokens,
+#                 system=[
+#                     {
+#                         "type": "text",
+#                         "text": schema_prompt(schema),
+#                         "cache_control": {"type": "ephemeral"},
+#                     },
+#                     {
+#                         "type": "text",
+#                         "text": time_prompt(request.datetime),
+#                     },
+#                 ],
+#                 messages=[
+#                     {
+#                         "role": "user",
+#                         "content": f"Question: {request.message}",
+#                     },
+#                 ],
+#             )
+#
+#             response_text = message.content[0].text
+#             return response_text
+#         except (APIConnectionError, APITimeoutError, RateLimitError) as e:
+#             if attempt == max_retries - 1:  # Last attempt
+#                 logger.error(f"Failed after {max_retries} attempts: {e}")
+#                 raise AnthropicRequestError(
+#                     "I had an issue generating the query for your request. Please try again in a moment.",
+#                 )
+#
+#             logger.warning(
+#                 f"Attempt {attempt + 1} failed: {e}. Retrying in {retry_delay}s..."
+#             )
+#             await asyncio.sleep(retry_delay)
+#             retry_delay *= 2  # Exponential backoff: 1s, 2s, 4s
+#
+#         except Exception as e:
+#             logger.error(
+#                 f"Non-retryable error in query generation: {type(e).__name__}: {e}"
+#             )
+#             raise AnthropicRequestError(
+#                 "I had an issue generating the query for your request. Please try again in a moment.",
+#             )
