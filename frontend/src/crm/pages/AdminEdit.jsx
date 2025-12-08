@@ -42,10 +42,6 @@ const AdminEdit = () => {
   const [currentVoiceDateField, setCurrentVoiceDateField] = useState("");
   const [voiceDateInput, setVoiceDateInput] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [photoPreview, setPhotoPreview] = useState(null);
-  const [photoData, setPhotoData] = useState({});
-  const [photoChanged, setPhotoChanged] = useState(false);
-  const [templates, setTemplates] = useState({});
   const [showNavigateModal, setShowNavigateModal] = useState(false);
   const [duplicateHealthcardPatient, setDuplicateHealthcardPatient] =
     useState(null);
@@ -156,7 +152,6 @@ const AdminEdit = () => {
     setLoading(true);
 
     try {
-      await getClientPhoto();
       await getClientData();
     } catch (error) {
       toast.error(error);
@@ -189,29 +184,6 @@ const AdminEdit = () => {
     }
 
     getClientAssociatedData(registrationId);
-  };
-
-  const getClientPhoto = async () => {
-    const result = await ObjectServices.get_photo_raw(registrationId);
-
-    if (result.success) {
-      const blob = new Blob([result.data], { type: "image/jpeg" });
-      const url = URL.createObjectURL(blob);
-      setPhotoPreview(url);
-      setPhotoData({
-        name: result.headers["file-name"],
-      });
-    } else {
-      if (result.status === 404) {
-        return;
-      } else if (result.status === 400 || result.status === 409) {
-        toast.error(result.message || "Failed to fetch client photo.");
-      } else {
-        toast.error(result.message || "Failed to fetch client photo.");
-      }
-    }
-
-    setPhotoChanged(false);
   };
 
   useEffect(() => {
@@ -294,15 +266,6 @@ const AdminEdit = () => {
   };
 
   async function validateForm() {
-    if (formData.photo && formData.photo.length > 1200 * 1024) {
-      toast.error(
-        "Photo is too large for submission. Please try uploading a different photo.",
-      );
-      setIsSubmitting(false);
-      setMissingFields(true);
-      return false;
-    }
-
     if (!formData.reg_date) {
       setIsSubmitting(false);
       setMissingFields(true);
@@ -459,38 +422,10 @@ const AdminEdit = () => {
     const result = await PatientServices.update_patient(registrationId, data);
 
     if (result.success) {
-      if (photoData.file) {
-        const photoRes = await ObjectServices.upload_photo(
-          registrationId,
-          photoData.name,
-          photoData.file,
-        );
-        if (photoRes.success) {
-          setPhotoData({ name: photoData.name });
-          setPhotoChanged(false);
-          getDashboardRegistrations();
-          getDashboardActivities();
-          toast.success("Changes saved successfully");
-          await getClientData();
-        } else {
-          toast.error(result.message || "Error updating photo.");
-        }
-      } else if (!photoPreview && photoChanged) {
-        const deleteRes = await ObjectServices.delete_photo(registrationId);
-        if (deleteRes.success) {
-          getDashboardRegistrations();
-          getDashboardActivities();
-          toast.success("Changes saved successfully");
-          await getClientData();
-        } else {
-          toast.error(result.message || "Error removing photo.");
-        }
-      } else {
-        getDashboardRegistrations();
-        getDashboardActivities();
-        toast.success("Changes saved successfully");
-        await getClientData();
-      }
+      getDashboardRegistrations();
+      getDashboardActivities();
+      toast.success("Changes saved successfully");
+      await getClientData();
     } else {
       if (result.status === 400 || result.status === 409) {
         toast.error(result.message || "Failed editing registration.");
@@ -502,7 +437,6 @@ const AdminEdit = () => {
     window.scrollTo({ top: 0, behavior: "smooth" });
     setLoading(false);
     setIsSubmitting(false);
-    setPhotoChanged(false);
   };
 
   const checkIfUserExists = async (firstName, lastName, dob) => {
@@ -717,14 +651,7 @@ const AdminEdit = () => {
             </div>
           ) : (
             <form onSubmit={handleSubmit} className="space-y-6">
-              <EditPhoto
-                formData={formData}
-                photoData={photoData}
-                setPhotoData={setPhotoData}
-                photoPreview={photoPreview}
-                setPhotoPreview={setPhotoPreview}
-                setPhotoChanged={setPhotoChanged}
-              />
+              <EditPhoto registrationId={registrationId} formData={formData} />
 
               {/* Tabs Navigation */}
               <div
