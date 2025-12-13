@@ -26,6 +26,9 @@ import { UsersProvider } from "./context/UserContext.jsx";
 import MobileOnlyWrapper from "./mobileOnlyWrapper.jsx";
 import { DashboardProvider } from "./context/DashboardContext.jsx";
 import { ReferenceProvider } from "./context/ReferenceContext.jsx";
+import { ZoomProvider } from "./context/ZoomContext.jsx";
+import PreviewContainer from "./crm/pages/Preview.jsx";
+import VideoSession from "./crm/pages/VideoSession.jsx";
 
 function AuthenticatedRoute() {
   const { isAuthenticated, isCheckingAuth } = useAuth();
@@ -73,7 +76,11 @@ function LimitedRoute() {
   if (!["limited", "standard", "admin"].includes(userRole)) {
     return <Navigate to="/admin-menu" state={{ from: location }} replace />;
   }
-  return <Outlet />;
+  return (
+    <ZoomProvider>
+      <Outlet />
+    </ZoomProvider>
+  );
 }
 
 function StandardRoute() {
@@ -136,6 +143,13 @@ function AppRoutes() {
                 path="/admin-edit/:registrationId"
                 element={<AdminEdit />}
               />
+
+              {/* Zoom Routes */}
+              <Route
+                path="/preview/:registrationId"
+                element={<PreviewContainer />}
+              />
+              <Route path="/video/:registrationId" element={<VideoSession />} />
             </Route>
 
             {/* Authenticate Routes */}

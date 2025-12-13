@@ -17,6 +17,10 @@ def get_env(key: str) -> Any:
 
 
 class Settings:
+    # Zoom
+    sdk_key: str = get_env("ZOOM_VIDEO_SDK_KEY")
+    sdk_secret: str = get_env("ZOOM_VIDEO_SDK_SECRET")
+
     # JWT
     jwt_algorithm: str = get_env("JWT_ALGORITHM")
     jwt_access_secret: str = get_env("JWT_ACCESS_SECRET")

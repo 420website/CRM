@@ -7,8 +7,13 @@ import { ImageOff } from "lucide-react";
 import { ObjectServices } from "../../services/objectService";
 import ConfirmModal from "./ConfirmModal";
 import { useDashboard } from "../../context/DashboardContext";
+import { useNavigate } from "react-router-dom";
+import { useZoom } from "../../context/ZoomContext";
 
 export default function EditPhoto({ registrationId, formData }) {
+  const navigate = useNavigate();
+  const { setReturnUrl, setPatientSessionId } = useZoom();
+
   const { getDashboardRegistrations, getDashboardActivities } = useDashboard();
   const [showingPhoto, setShowingPhoto] = useState(false);
   const [showConfirm, setShowConfirm] = useState("");
@@ -118,6 +123,12 @@ export default function EditPhoto({ registrationId, formData }) {
     setShowConfirm("");
   };
 
+  const handleClickVideo = async () => {
+    setReturnUrl(`/admin-edit/${registrationId}`);
+    setPatientSessionId(registrationId);
+    navigate(`/preview/${registrationId}`);
+  };
+
   return (
     <div id="editPhoto" className="mb-0">
       {showConfirm === "delete" && (
@@ -146,7 +157,7 @@ export default function EditPhoto({ registrationId, formData }) {
           <div className="p-0 mb-0">
             {/* Upload Option */}
             <div className="mb-2">
-              <div>
+              <div className="flex gap-4">
                 <div className="flex items-center gap-3">
                   <button
                     type="button"
@@ -167,6 +178,15 @@ export default function EditPhoto({ registrationId, formData }) {
                     onChange={(e) => uploadPhoto(e)}
                     className="hidden"
                   />
+                </div>
+                <div className="flex items-center gap-3">
+                  <button
+                    type="button"
+                    className="bg-black text-white text-sm font-semibold py-2 px-4 rounded-md hover:bg-gray-800"
+                    onClick={handleClickVideo}
+                  >
+                    Video
+                  </button>
                 </div>
               </div>
             </div>
