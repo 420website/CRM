@@ -37,6 +37,7 @@ export function ZoomProvider({ children }) {
   });
   // Session
   const [sessionConfig, setSessionConfig] = useState(null);
+  const [sessionName, setSessionName] = useState(null);
   const [isInSession, setIsInSession] = useState(false);
   const [participants, setParticipants] = useState([]);
   const inSessionRef = useRef(false);
@@ -268,6 +269,7 @@ export function ZoomProvider({ children }) {
       );
       // setIsInSession(true);
       setPatientSessionId(patientId);
+      setSessionName(sessionName);
 
       // Update participants immediately
       // setParticipants(client.getAllUser());
@@ -595,6 +597,8 @@ export function ZoomProvider({ children }) {
         sessionVideoRef,
         sessionVideoRef,
         isInSession,
+        sessionName,
+        patientSessionId,
       }}
     >
       {children}

@@ -78,6 +78,8 @@ const PreviewContainer = () => {
   const [outputLevel, setOutputLevel] = useState(0);
   const [inputLevel, setInputLevel] = useState(0);
 
+  const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+
   useEffect(() => {
     const getDevices = async () => {
       setLoading(true);
@@ -156,6 +158,7 @@ const PreviewContainer = () => {
         if (previewMicFeedbackIntervalRef.current) {
           clearInterval(previewMicFeedbackIntervalRef.current);
         }
+        await previewAudioRef.current?.mute();
         setInputLevel(0);
         setIsMuted(true);
       }
@@ -428,11 +431,17 @@ const PreviewContainer = () => {
                   onChange={onSwitchSpeaker}
                   className="flex-1 min-w-0 px-3 py-2 border border-gray-600 bg-black text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm truncate h-full"
                 >
-                  {speakerList.map((m) => (
-                    <option key={m.deviceId} value={m.deviceId}>
-                      {m.label}
+                  {speakerList.length > 0 ? (
+                    speakerList.map((m) => (
+                      <option key={m.deviceId} value={m.deviceId}>
+                        {m.label}
+                      </option>
+                    ))
+                  ) : (
+                    <option value="default">
+                      {isMobile ? "Device Speaker" : "No speakers detected"}
                     </option>
-                  ))}
+                  )}
                 </select>
               </div>
 

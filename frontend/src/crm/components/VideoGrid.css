@@ -1,10 +1,57 @@
-/* video-player-container { */
+/* #session-container { */
 /*   width: 100%; */
 /*   height: 100%; */
+/*   touch-action: none; */
 /* } */
 /**/
-/* video-player { */
+/* #session-player { */
 /*   width: 100%; */
 /*   height: auto; */
 /*   aspect-ratio: 16/9; */
+/*   touch-action: none; */
+/*   pointer-events: none !important; */
+/*   touch-action: none !important; */
+/*   -webkit-tap-highlight-color: transparent !important; */
+/* } */
+/**/
+/* #session-container video, */
+/* #session-player video { */
+/*   pointer-events: none !important; */
+/*   touch-action: none !important; */
+/*   -webkit-tap-highlight-color: transparent !important; */
+/* } */
+/**/
+/* /* Target actual video elements created by Zoom SDK */
+/* video-player-container video, */
+/* video-player video { */
+/*   pointer-events: none !important; */
+/*   touch-action: none !important; */
+/*   -webkit-tap-highlight-color: transparent !important; */
+/* } */
+/**/
+/* /* Hide ALL video controls including play button */
+/* video-player-container video::-webkit-media-controls, */
+/* video-player video::-webkit-media-controls { */
+/*   display: none !important; */
+/*   -webkit-appearance: none !important; */
+/* } */
+/**/
+/* video-player-container video::-webkit-media-controls-enclosure, */
+/* video-player video::-webkit-media-controls-enclosure { */
+/*   display: none !important; */
+/* } */
+/**/
+/* video-player-container video::-webkit-media-controls-panel, */
+/* video-player video::-webkit-media-controls-panel { */
+/*   display: none !important; */
+/* } */
+/**/
+/* video-player-container video::-webkit-media-controls-play-button, */
+/* video-player video::-webkit-media-controls-play-button { */
+/*   display: none !important; */
+/* } */
+/**/
+/* video-player-container video::-webkit-media-controls-start-playback-button, */
+/* video-player video::-webkit-media-controls-start-playback-button { */
+/*   display: none !important; */
 /* } */

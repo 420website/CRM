@@ -4,7 +4,6 @@ import { useZoom } from "../../context/ZoomContext";
 import { HiMiniUsers } from "react-icons/hi2";
 import { Users, Mic, MicOff, Video, VideoOff } from "lucide-react";
 import ParticipantVideoGrid from "../components/VideoGrid";
-import LoadingScreen from "/src/components/Loading.jsx";
 
 export default function VideoSession() {
   const { registrationId } = useParams();
@@ -17,22 +16,11 @@ export default function VideoSession() {
     isVideoOn,
     participants,
     error,
-    joinSession,
-    loading,
-    isInSession,
+    patientSessionId,
   } = useZoom();
 
   const navigate = useNavigate();
   const [showUsers, setShowUsers] = useState(false);
-
-  // useEffect(() => {
-  //   if (isInSession) return;
-  //   joinSession(registrationId);
-  // }, []);
-  // //
-  // if (loading) {
-  //   return <LoadingScreen />;
-  // }
 
   return (
     <div className="flex-grow flex flex-col bg-gray-50">
@@ -47,7 +35,9 @@ export default function VideoSession() {
         {/* Participants Sidebar */}
         <div className="bg-white flex flex-col rounded-lg shadow-md p-4 m-4">
           <div className="flex justify-between items-center">
-            <h3 className="text-black font-semibold mb-2">Name</h3>
+            <h3 className="text-black font-semibold mb-2">
+              Patient: {patientSessionId}
+            </h3>
             <div className="relative">
               <h3 className="text-black font-semibold mb-2">
                 <button onClick={() => setShowUsers(!showUsers)}>
@@ -81,7 +71,7 @@ export default function VideoSession() {
             </div>
           </div>
 
-          <ParticipantVideoGrid registrationId={registrationId}/>
+          <ParticipantVideoGrid registrationId={registrationId} />
 
           {/* Control Bar */}
           <div className="flex justify-center items-center gap-4 pt-4">

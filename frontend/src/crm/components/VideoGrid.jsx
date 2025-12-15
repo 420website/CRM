@@ -21,12 +21,27 @@ const ParticipantVideoGrid = ({ registrationId }) => {
             className="relative overflow-hidden aspect-square w-full rounded-lg"
           >
             {/* Zoom SDK container */}
-            <video-player-container className="w-full h-full">
+            <video-player-container
+              id="session-container"
+              className="w-full h-full pointer-events-none"
+              style={{ WebkitTapHighlightColor: "transparent" }}
+            >
               <video-player
+                id="session-player"
                 data-user-id={participant.userId}
-                className="w-full h-full"
+                className="w-full h-full pointer-events-none"
+                style={{ WebkitTapHighlightColor: "transparent" }}
               />
             </video-player-container>
+            {/* Transparent overlay to allow scrolling */}
+            <div
+              className="absolute inset-0 z-10"
+              style={{
+                pointerEvents: "auto",
+                touchAction: "pan-y",
+                background: "transparent",
+              }}
+            />
 
             <div className="absolute top-0 left-0 right-0 bg-gradient-to-b from-black/70 to-transparent p-3 pointer-events-none">
               <div className="flex items-center gap-1">
