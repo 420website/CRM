@@ -126,30 +126,23 @@ class SecurityService:
         except JWTError:
             return None
 
-        # JWT Handling
-
+    # JWT Handling
     @staticmethod
-    def generate_zoom_jwt(user_id: int, config: dict) -> Tuple[str, datetime]:
+    def generate_zoom_jwt(user_id: str, config: dict) -> Tuple[str, datetime]:
         expiry = datetime.now(dt.timezone.utc) + timedelta(minutes=30)
         exp = int(expiry.timestamp())
         iat = int(datetime.now(dt.timezone.utc).timestamp())
-        print(config)
 
         payload: Dict[str, Any] = {
             "app_key": settings.sdk_key,
             "role_type": (1 if str(user_id) == config["host_id"] else 0),
-            "tpc": config["sessionName"],
+            "tpc": config["session_name"],
             "version": 1,
             "exp": exp,
             "iat": iat,
             "video_webrtc_mode": 1,
-            "user_identity": str(user_id),
-            # all below seem like 0 or 1 flags
-            # "cloud_recording_option": "cloudRecordingOption",
-            # "cloud_recording_election": "cloudRecordingElection",
+            "user_identity": user_id,
             # "telemetry_tracking_id": "telemetryTrackingId",
-            # "video_webrtc_mode": "videoWebRtcMode",
-            # "audio_webrtc_mode": "audioWebRtcMode ?? audioCompatibleMode",
         }
 
         return (
@@ -169,8 +162,6 @@ class SecurityService:
                 settings.sdk_secret,
                 algorithms=settings.jwt_algorithm,
             )
-            print(payload)
-            # payload["sub"] = int(payload["sub"])
             return payload
         except JWTError:
             return None
