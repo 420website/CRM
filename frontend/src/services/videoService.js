@@ -1,7 +1,7 @@
 import api, { apiCall } from "./api";
 
 export const VideoServices = {
-  syncPaticipants: async (patient_id, passcode, participants) => {
+  syncParticipants: async (patient_id, passcode, participants) => {
     return apiCall(
       () =>
         api.post(`/video/sync/${patient_id}`, {
@@ -48,53 +48,53 @@ export const VideoServices = {
 
   //-- Old --
 
-  internal_join_session: async (patient_id) => {
-    return apiCall(
-      () => api.post(`/video/session/internal/${patient_id}`),
-      "Joining session failed.",
-    );
-  },
-
-  heartbeat: async (patient_id) => {
-    return apiCall(
-      () => api.post(`/video/session/heartbeat/${patient_id}`),
-      "Heartbeat failed.",
-    );
-  },
-
-  leave_session: async (patient_id) => {
-    return apiCall(
-      () => api.post(`/video/session/leave/${patient_id}`),
-      "Heartbeat failed.",
-    );
-  },
-
-  delete_session: async () => {
-    return apiCall(
-      () => api.delete("/video/session"),
-      "Delete session failed.",
-    );
-  },
-
-  guest_join_session: async (patient_id, request) => {
-    return apiCall(
-      () => api.post(`/video/session/guest/${patient_id}`, request),
-      "Joining session failed.",
-    );
-  },
-
-  guest_heartbeat: async (patient_id, guest_id) => {
-    return apiCall(
-      () =>
-        api.post(`/video/session/guest/heartbeat/${patient_id}/${guest_id}`),
-      "Heartbeat failed.",
-    );
-  },
-
-  guest_leave_session: async (patient_id, guest_id) => {
-    return apiCall(
-      () => api.post(`/video/session/guest/leave/${patient_id}/${guest_id}`),
-      "Heartbeat failed.",
-    );
-  },
+  // internal_join_session: async (patient_id) => {
+  //   return apiCall(
+  //     () => api.post(`/video/session/internal/${patient_id}`),
+  //     "Joining session failed.",
+  //   );
+  // },
+  //
+  // heartbeat: async (patient_id) => {
+  //   return apiCall(
+  //     () => api.post(`/video/session/heartbeat/${patient_id}`),
+  //     "Heartbeat failed.",
+  //   );
+  // },
+  //
+  // leave_session: async (patient_id) => {
+  //   return apiCall(
+  //     () => api.post(`/video/session/leave/${patient_id}`),
+  //     "Heartbeat failed.",
+  //   );
+  // },
+  //
+  // delete_session: async () => {
+  //   return apiCall(
+  //     () => api.delete("/video/session"),
+  //     "Delete session failed.",
+  //   );
+  // },
+  //
+  // guest_join_session: async (patient_id, request) => {
+  //   return apiCall(
+  //     () => api.post(`/video/session/guest/${patient_id}`, request),
+  //     "Joining session failed.",
+  //   );
+  // },
+  //
+  // guest_heartbeat: async (patient_id, guest_id) => {
+  //   return apiCall(
+  //     () =>
+  //       api.post(`/video/session/guest/heartbeat/${patient_id}/${guest_id}`),
+  //     "Heartbeat failed.",
+  //   );
+  // },
+  //
+  // guest_leave_session: async (patient_id, guest_id) => {
+  //   return apiCall(
+  //     () => api.post(`/video/session/guest/leave/${patient_id}/${guest_id}`),
+  //     "Heartbeat failed.",
+  //   );
+  // },
 };

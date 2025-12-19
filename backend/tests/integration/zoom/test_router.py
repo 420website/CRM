@@ -4,16 +4,12 @@ from unittest import IsolatedAsyncioTestCase
 from app.authentication.schemas import UserRead
 from app.authentication.utils import SecurityService
 from app.database import database
-from app.exceptions import APIError
 from app.registration.schemas import PatientCreate
 from app.registration.services import PatientService
 from datetime import date, timedelta
 from app.database import redis_client
 from app.zoom.schema import SessionConfig
 from app.zoom.services import ZoomService
-import json
-from app.logger import logger
-from unittest.mock import MagicMock, Mock
 from httpx import ASGITransport, AsyncClient
 from app.main import app
 from app.dependencies import get_current_user
@@ -107,6 +103,9 @@ class TestZoomRoutes(IsolatedAsyncioTestCase):
 
         redis = redis_client.get_client()
         await redis.delete(f"session:config:{self.patient_id}")
+        await redis.delete(f"session:{self.patient_id}:is_locked")
+        await redis.delete(f"session:participants:{self.patient_id}")
+
         await redis_client.disconnect()
 
         await self._cleanup_test_data()
@@ -119,29 +118,6 @@ class TestZoomRoutes(IsolatedAsyncioTestCase):
         )
         return token
 
-    # # Delete
-    # async def test_delete_session_successful(self):
-    #     """Host user successfully deletes the session."""
-    #     await create_session(self.user_id, self.patient_id)
-    #
-    #     # Make request without auth header
-    #     response = await self.client.delete(f"/video/delete/{self.patient_id}")
-    #
-    #     self.assertEqual(response.status_code, 200)
-    #
-    # async def test_not_host_error_delete_session(self):
-    #     """Host user successfully deletes the session."""
-    #     await create_session(99, self.patient_id)
-    #
-    #     # Make request without auth header
-    #     response = await self.client.delete(f"/video/delete/{self.patient_id}")
-    #     res_json = response.json()
-    #
-    #     self.assertEqual(response.status_code, 403)
-    #     self.assertEqual(res_json["detail"], "User is not the session host")
-    #
-    #
-    #
     # DELETE /video/delete/{patient_id}
     async def test_delete_session_successful(self):
         """Host user successfully deletes the session."""
@@ -340,53 +316,146 @@ class TestZoomRoutes(IsolatedAsyncioTestCase):
         self.assertEqual(response.status_code, 403)
         self.assertIn("passcode", response.json()["detail"].lower())
 
-    # # POST /video/sync/{patient_id}
-    # async def test_sync_participants_valid_session_key(self):
-    #     """Sync participants with valid session key."""
-    #     await create_session(self.user_id, self.patient_id)
-    #     redis = redis_client.get_client()
-    #     session_key = await redis.hget(
-    #         f"session:config:{self.patient_id}", "session_key"
-    #     )
-    #
-    #     response = await self.client.post(
-    #         f"/video/sync/{self.patient_id}",
-    #         json={
-    #             "session_key": session_key,
-    #             "zoom_participants": [
-    #                 {"userId": "user1", "userName": "Test User 1"},
-    #                 {"userId": "user2", "userName": "Test User 2"}
-    #             ]
-    #         }
-    #     )
-    #
-    #     self.assertEqual(response.status_code, 200)
-    #     # Add assertions based on what sync_participants returns
-    #
-    # async def test_sync_participants_invalid_session_key(self):
-    #     """Sync participants fails with invalid session key."""
-    #     await create_session(self.user_id, self.patient_id)
-    #
-    #     response = await self.client.post(
-    #         f"/video/sync/{self.patient_id}",
-    #         json={
-    #             "session_key": "invalid_key",
-    #             "zoom_participants": []
-    #         }
-    #     )
-    #
-    #     self.assertEqual(response.status_code, 401)
-    #     self.assertIn("session key", response.json()["detail"].lower())
-    #
-    # async def test_sync_participants_session_not_found(self):
-    #     """Sync participants fails when session doesn't exist."""
-    #     response = await self.client.post(
-    #         f"/video/sync/{self.patient_id}",
-    #         json={
-    #             "session_key": "any_key",
-    #             "zoom_participants": []
-    #         }
-    #     )
-    #
-    #     self.assertEqual(response.status_code, 404)
-    #     self.assertEqual(response.json()["detail"], "Session not found")
+    # POST /video/sync/{patient_id}
+    async def test_sync_participants_successful(self):
+        """Successfully sync participants list."""
+        await create_session(self.user_id, self.patient_id)
+        redis = redis_client.get_client()
+        session_key = await redis.hget(
+            f"session:config:{self.patient_id}", "session_key"
+        )
+
+        response = await self.client.post(
+            f"/video/sync/{self.patient_id}",
+            json={
+                "session_key": session_key,
+                "zoom_participants": [str(self.user_id), "123"],
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+
+        # Verify participants were synced
+        participants = list(
+            await redis.smembers(f"session:participants:{self.patient_id}")
+        )
+        self.assertEqual(len(participants), 2)
+
+    async def test_sync_participants_clears_session(self):
+        """Syncing with empty list deletes the session."""
+        await create_session(self.user_id, self.patient_id)
+        redis = redis_client.get_client()
+        session_key = await redis.hget(
+            f"session:config:{self.patient_id}", "session_key"
+        )
+
+        response = await self.client.post(
+            f"/video/sync/{self.patient_id}",
+            json={"session_key": session_key, "zoom_participants": []},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["status"], "Session deleted.")
+
+        # Verify session cleared
+        isConfig = await redis.hget(
+            f"session:config:{self.patient_id}", "session_key"
+        )
+        self.assertFalse(isConfig)
+
+        async with database.get_connection() as conn:
+            result = await ZoomService._get_session(conn, self.patient_id)
+            self.assertIsNone(result)
+
+    async def test_sync_participants_invalid_passcode(self):
+        """Sync with invalid passcode returns 403."""
+        await create_session(self.user_id, self.patient_id)
+
+        response = await self.client.post(
+            f"/video/sync/{self.patient_id}",
+            json={"session_key": "invalid_key", "zoom_participants": []},
+        )
+
+        self.assertEqual(response.status_code, 403)
+        self.assertEqual(response.json()["detail"], "Invalid passcode")
+
+    async def test_sync_participants_with_lock(self):
+        """Syncing empty list clears lock."""
+        await create_session(self.user_id, self.patient_id)
+        redis = redis_client.get_client()
+
+        # Set lock
+        await redis.set(f"session:{self.patient_id}:is_locked", "true")
+
+        session_key = await redis.hget(
+            f"session:config:{self.patient_id}", "session_key"
+        )
+
+        response = await self.client.post(
+            f"/video/sync/{self.patient_id}",
+            json={"session_key": session_key, "zoom_participants": []},
+        )
+
+        self.assertEqual(response.status_code, 200)
+
+        # Verify lock cleared
+        isLock = await redis.get(f"session:{self.patient_id}:is_locked")
+        self.assertFalse(isLock)
+
+    async def test_sync_participants_already_deleted(self):
+        """Syncing already deleted session returns error."""
+        await create_session(self.user_id, self.patient_id)
+        redis = redis_client.get_client()
+        session_key = await redis.hget(
+            f"session:config:{self.patient_id}", "session_key"
+        )
+
+        # Delete first time
+        await self.client.post(
+            f"/video/sync/{self.patient_id}",
+            json={"session_key": session_key, "zoom_participants": []},
+        )
+
+        # Try again
+        response = await self.client.post(
+            f"/video/sync/{self.patient_id}",
+            json={"session_key": session_key, "zoom_participants": []},
+        )
+
+        self.assertEqual(response.status_code, 403)
+        self.assertEqual(response.json()["detail"], "Invalid passcode")
+
+    async def test_sync_multiple_participants(self):
+        """Syncing multiple participants works correctly."""
+        await create_session(self.user_id, self.patient_id)
+        redis = redis_client.get_client()
+        session_key = await redis.hget(
+            f"session:config:{self.patient_id}", "session_key"
+        )
+
+        participants = ["1", "2", "3", "4"]
+        response = await self.client.post(
+            f"/video/sync/{self.patient_id}",
+            json={
+                "session_key": session_key,
+                "zoom_participants": participants,
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+
+        # Verify all participants synced
+        synced = list(
+            await redis.smembers(f"session:participants:{self.patient_id}")
+        )
+        self.assertEqual(len(synced), 4)
+
+    async def test_sync_participants_no_session(self):
+        """Syncing when no session exists returns error."""
+        response = await self.client.post(
+            f"/video/sync/{self.patient_id}",
+            json={"session_key": "nonexistent", "zoom_participants": ["1"]},
+        )
+
+        self.assertEqual(response.status_code, 403)
+        self.assertEqual(response.json()["detail"], "Invalid passcode")

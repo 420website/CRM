@@ -135,7 +135,7 @@ class SecurityService:
 
         payload: Dict[str, Any] = {
             "app_key": settings.sdk_key,
-            "role_type": (1 if str(user_id) == config["host_id"] else 0),
+            "role_type": (1 if user_id == str(config["host_id"]) else 0),
             "tpc": config["session_name"],
             "version": 1,
             "exp": exp,

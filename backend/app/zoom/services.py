@@ -246,7 +246,7 @@ class ZoomService:
             config = SessionConfig(
                 patient_id=patient_id,
                 session_name=f"{patient_id}-{SecurityService.generate_secure_token(4)}",
-                session_key=SecurityService.generate_secure_token(8),
+                session_key=SecurityService.generate_secure_token(6),
                 host_id=user_id,
                 is_locked=False,
                 locked_at=None,
@@ -304,7 +304,9 @@ class ZoomService:
 
     @staticmethod
     async def sync_participants(
-        patient_id: int, session_key: str, zoom_participants: List[str]
+        patient_id: int,
+        session_key: str,
+        zoom_participants: List[str],
     ):
         """Sync participant list - idempotent, safe to call multiple times."""
         async with database.get_transaction() as conn:
@@ -312,84 +314,21 @@ class ZoomService:
             if not await ZoomService._valid_passcode(
                 conn, patient_id, session_key
             ):
-                raise APIError("Invalid passcode")
+                raise ForbiddenError("Invalid passcode")
 
             redis = redis_client.get_client()
 
             # Handle empty session
             if len(zoom_participants) == 0:
-                await redis.delete(f"session:active:{patient_id}")
                 await ZoomService._soft_delete_session(conn, patient_id)
-                return {"status": "deleted", "count": 0}
+                await redis.delete(f"session:config:{patient_id}")
+                await redis.delete(f"session:{patient_id}:is_locked")
+                await redis.delete(f"session:participants:{patient_id}")
+                return {"status": "Session deleted."}
 
             # Replace participant list (idempotent)
-            await redis.delete(f"session:active:{patient_id}")
+            await redis.delete(f"session:participants:{patient_id}")
             for uid in zoom_participants:
-                await redis.sadd(f"session:active:{patient_id}", uid)
+                await redis.sadd(f"session:participants:{patient_id}", uid)
 
         return {"status": "synced", "count": len(zoom_participants)}
-
-
-### Old
-
-# @staticmethod
-# async def join_session(patient_id: int, user_id: int, guest: bool = True):
-#     """Join existing session if active, else creates new session."""
-#
-#     # Check if session config exists
-#     try:
-#         is_locked = await redis.get(f"session:{patient_id}:is_locked")
-#
-#         if is_locked == "true":
-#             raise APIError("Session is locked.")
-#
-#         async with database.get_transaction() as conn:
-#             lock = await ZoomService._check_lock(conn, patient_id)
-#
-#             if lock:
-#                 raise APIError("Session is locked.")
-#
-#             if not await ZoomService._valid_passcode(patient_id, )
-#
-#             session_dict = await ZoomService._get_session(conn, patient_id)
-#
-#             if not session_dict:
-#                 if not guest:
-#                     raise APIError("Session not found.")
-#
-#                 config = SessionConfig(
-#                     patient_id=patient_id,
-#                     session_name=f"{patient_id}-{SecurityService.generate_secure_token(4)}",
-#                     session_key=SecurityService.generate_secure_token(4),
-#                     host_id=user_id,
-#                     is_locked=False,
-#                     locked_at=None,
-#                     is_deleted=False,
-#                     deleted_at=None,
-#                     created_at=None,
-#                 )
-#
-#                 session_dict = await ZoomService._upsert_session(
-#                     conn, config
-#                 )
-#
-#                 if not session_dict:
-#                     raise APIError("Error creating session.")
-#     except APIError:
-#         raise
-#     except Exception as e:
-#         raise e
-#
-#     try:
-#         redis = redis_client.get_client()
-#         await redis.hset(
-#             f"session:config:{patient_id}",
-#             mapping=session_dict,
-#         )
-#
-#     except Exception as e:
-#         logger.warning(
-#             f"Failed to update Redis cache for session config {patient_id}: {e}"
-#         )
-#
-#     return session_dict

@@ -75,6 +75,8 @@ class TestZoomService(IsolatedAsyncioTestCase):
         await self._cleanup_test_data()
         redis = redis_client.get_client()
         await redis.delete(f"session:config:{self.patient_id}")
+        await redis.delete(f"session:{self.patient_id}:is_locked")
+        await redis.delete(f"session:participants:{self.patient_id}")
 
         await redis_client.disconnect()
         await database.disconnect()
@@ -540,27 +542,222 @@ class TestZoomService(IsolatedAsyncioTestCase):
 
         self.assertEqual(str(err.exception), "Invalid passcode.")
 
-    # # sync participants
-    # async def test_sync_participants_success(self):
-    #     user_id = 1009
-    #     await create_session(user_id, self.patient_id)
-    #     redis = redis_client.get_client()
-    #     session_key = await redis.hget(
-    #         f"session:config:{self.patient_id}", "session_key"
-    #     )
-    #
-    #     # Test
-    #     result = await ZoomService.join_internal(self.patient_id, user_id)
-    #
-    #     # Validate
-    #     self.assertEqual(result["patient_id"], self.patient_id)
-    #     self.assertEqual(
-    #         result["session_name"].split("-")[0], str(self.patient_id)
-    #     )
-    #     self.assertNotEqual(result["session_key"], "")
-    #     self.assertEqual(result["host_id"], user_id)
-    #     self.assertEqual(result["is_locked"], False)
-    #     self.assertEqual(result["locked_at"], None)
-    #     self.assertEqual(result["is_deleted"], False)
-    #     self.assertEqual(result["deleted_at"], None)
-    #     self.assertEqual(result["created_at"], None)
+    # sync participants
+    async def test_sync_participants_success(self):
+        user_id = 1009
+        await create_session(user_id, self.patient_id)
+        redis = redis_client.get_client()
+        session_key = await redis.hget(
+            f"session:config:{self.patient_id}", "session_key"
+        )
+
+        participants = [str(user_id), str("1")]
+
+        await ZoomService.sync_participants(
+            self.patient_id, session_key, participants
+        )
+        get = list(
+            await redis.smembers(f"session:participants:{self.patient_id}")
+        )
+
+        self.assertTrue(len(get) == 2)
+        await ZoomService.sync_participants(self.patient_id, session_key, [])
+
+        isList = list(
+            await redis.smembers(f"session:participants:{self.patient_id}")
+        )
+        self.assertFalse(isList)
+        isConfig = await redis.hget(
+            f"session:config:{self.patient_id}", "session_key"
+        )
+        self.assertFalse(isConfig)
+        isLock = await redis.get(f"session:{self.patient_id}:is_locked")
+        self.assertFalse(isLock)
+
+        async with database.get_connection() as conn:
+            result = await ZoomService._get_session(conn, self.patient_id)
+            self.assertIsNone(result)
+
+    async def test_sync_participants_with_lock(self):
+        """Test sync with active session lock"""
+        user_id = 1009
+        await create_session(user_id, self.patient_id)
+        redis = redis_client.get_client()
+
+        # Set lock
+        await redis.set(f"session:{self.patient_id}:is_locked", "1")
+
+        session_key = await redis.hget(
+            f"session:config:{self.patient_id}", "session_key"
+        )
+
+        # Add participants then clear
+        participants = [str(user_id)]
+        await ZoomService.sync_participants(
+            self.patient_id, session_key, participants
+        )
+
+        await ZoomService.sync_participants(self.patient_id, session_key, [])
+
+        # Verify everything cleared including lock
+        isLock = await redis.get(f"session:{self.patient_id}:is_locked")
+        self.assertFalse(isLock)
+
+        isConfig = await redis.hget(
+            f"session:config:{self.patient_id}", "session_key"
+        )
+        self.assertFalse(isConfig)
+
+        async with database.get_connection() as conn:
+            result = await ZoomService._get_session(conn, self.patient_id)
+            self.assertIsNone(result)
+
+    async def test_sync_participants_without_lock(self):
+        """Test sync without session lock"""
+        user_id = 1009
+        await create_session(user_id, self.patient_id)
+        redis = redis_client.get_client()
+
+        session_key = await redis.hget(
+            f"session:config:{self.patient_id}", "session_key"
+        )
+
+        participants = [str(user_id)]
+        await ZoomService.sync_participants(
+            self.patient_id, session_key, participants
+        )
+
+        await ZoomService.sync_participants(self.patient_id, session_key, [])
+
+        # Verify cleared
+        isConfig = await redis.hget(
+            f"session:config:{self.patient_id}", "session_key"
+        )
+        self.assertFalse(isConfig)
+
+        async with database.get_connection() as conn:
+            result = await ZoomService._get_session(conn, self.patient_id)
+            self.assertIsNone(result)
+
+    async def test_sync_single_participant(self):
+        """Test sync with single participant remains active"""
+        user_id = 1009
+        await create_session(user_id, self.patient_id)
+        redis = redis_client.get_client()
+
+        session_key = await redis.hget(
+            f"session:config:{self.patient_id}", "session_key"
+        )
+
+        # Single participant
+        await ZoomService.sync_participants(
+            self.patient_id, session_key, [str(user_id)]
+        )
+
+        # Verify session still active
+        participants = list(
+            await redis.smembers(f"session:participants:{self.patient_id}")
+        )
+        self.assertEqual(len(participants), 1)
+
+        isConfig = await redis.hget(
+            f"session:config:{self.patient_id}", "session_key"
+        )
+        self.assertTrue(isConfig)
+
+        async with database.get_connection() as conn:
+            result = await ZoomService._get_session(conn, self.patient_id)
+            self.assertIsNotNone(result)
+
+    async def test_sync_invalid_key(self):
+        """Test sync on invalid key"""
+        user_id = 1009
+        await create_session(user_id, self.patient_id)
+        fake_key = "fake_session_key"
+
+        # Try to sync non-existent session
+        with self.assertRaises(APIError) as err:
+            await ZoomService.sync_participants(self.patient_id, fake_key, [])
+
+        self.assertEqual(str(err.exception), "Invalid passcode")
+
+        # Should handle gracefully (adjust based on your implementation)
+        # Either returns None or raises specific error
+        redis = redis_client.get_client()
+        isConfig = await redis.hget(
+            f"session:config:{self.patient_id}", "session_key"
+        )
+        self.assertTrue(isConfig)
+
+        async with database.get_connection() as conn:
+            result = await ZoomService._get_session(conn, self.patient_id)
+            self.assertIsNotNone(result)
+
+    async def test_delete_already_deleted(self):
+        """Test sync on invalid key"""
+        user_id = 1009
+        await create_session(user_id, self.patient_id)
+
+        redis = redis_client.get_client()
+        session_key = await redis.hget(
+            f"session:config:{self.patient_id}", "session_key"
+        )
+
+        # Try to sync non-existent session
+        result = await ZoomService.sync_participants(
+            self.patient_id, session_key, []
+        )
+        self.assertEqual(result["status"], "Session deleted.")
+
+        redis = redis_client.get_client()
+        isConfig = await redis.hget(
+            f"session:config:{self.patient_id}", "session_key"
+        )
+        self.assertFalse(isConfig)
+
+        async with database.get_connection() as conn:
+            result = await ZoomService._get_session(conn, self.patient_id)
+            self.assertIsNone(result)
+
+        # Try to sync non-existent session
+        with self.assertRaises(APIError) as err:
+            await ZoomService.sync_participants(
+                self.patient_id, session_key, []
+            )
+
+        self.assertEqual(str(err.exception), "Invalid passcode")
+
+    async def test_sync_multiple_participants_then_clear(self):
+        """Test adding multiple participants then clearing all"""
+        user_id = 1009
+        await create_session(user_id, self.patient_id)
+        redis = redis_client.get_client()
+
+        session_key = await redis.hget(
+            f"session:config:{self.patient_id}", "session_key"
+        )
+
+        # Add multiple participants
+        participants = [str(user_id), "2", "3", "4"]
+        await ZoomService.sync_participants(
+            self.patient_id, session_key, participants
+        )
+
+        get = list(
+            await redis.smembers(f"session:participants:{self.patient_id}")
+        )
+        self.assertEqual(len(get), 4)
+
+        # Clear all
+        await ZoomService.sync_participants(self.patient_id, session_key, [])
+
+        # Verify complete cleanup
+        isList = list(
+            await redis.smembers(f"session:participants:{self.patient_id}")
+        )
+        self.assertFalse(isList)
+
+        isConfig = await redis.hget(
+            f"session:config:{self.patient_id}", "session_key"
+        )
+        self.assertFalse(isConfig)

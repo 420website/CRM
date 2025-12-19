@@ -313,80 +313,139 @@ describe("VideoServices.tests", () => {
     expect(joinResult.success).toBe(false);
     expect(joinResult.message).toContain("locked");
   });
+  // Sync participants
+  it("should sync participants successfully", async () => {
+    const createResult =
+      await VideoServices.internalJoinVideo(createdPatientId);
+    const passcode = createResult.data.sessionPasscode;
 
-  // it("should allow external user to join and sync participants", async () => {
-  //   // Host creates session
-  //   const createResult =
-  //     await VideoServices.internalJoinVideo(createdPatientId);
-  //   const passcode = createResult.data.sessionPasscode;
-  //
-  //   // External user joins
-  //   const joinResult = await VideoServices.externalJoinVideo(
-  //     createdPatientId,
-  //     "guest123",
-  //     passcode,
-  //   );
-  //   expect(joinResult.success).toBe(true);
-  //
-  //   // Sync participants
-  //   const participants = [{ userId: "guest123", userName: "Guest User" }];
-  //   const syncResult = await VideoServices.syncParticipants(
-  //     createdPatientId,
-  //     passcode,
-  //     participants,
-  //   );
-  //   expect(syncResult.success).toBe(true);
-  // });
-  //
-  // // Sync Participants Tests
-  //   it("should successfully sync participants with valid session key", async () => {
-  //     // Create session
-  //     const createResult =
-  //       await VideoServices.internalJoinVideo(createdPatientId);
-  //     const passcode = createResult.data.sessionPasscode;
-  //
-  //     // Sync participants
-  //     const participants = [
-  //       { userId: "user1", userName: "Test User 1" },
-  //       { userId: "user2", userName: "Test User 2" },
-  //     ];
-  //
-  //     const result = await VideoServices.syncParticipants(
-  //       createdPatientId,
-  //       passcode,
-  //       participants,
-  //     );
-  //
-  //     expect(result.success).toBe(true);
-  //   });
-  //
-  //   it("should fail to sync with invalid session key", async () => {
-  //     // Create session
-  //     await VideoServices.internalJoinVideo(createdPatientId);
-  //
-  //     // Try to sync with invalid key
-  //     const participants = [{ userId: "user1", userName: "Test User 1" }];
-  //
-  //     const result = await VideoServices.syncParticipants(
-  //       createdPatientId,
-  //       "invalid_key",
-  //       participants,
-  //     );
-  //
-  //     expect(result.success).toBe(false);
-  //     expect(result.error).toContain("session key");
-  //   });
-  //
-  //   it("should fail to sync for non-existent session", async () => {
-  //     const participants = [{ userId: "user1", userName: "Test User 1" }];
-  //
-  //     const result = await VideoServices.syncParticipants(
-  //       createdPatientId,
-  //       "any_key",
-  //       participants,
-  //     );
-  //
-  //     expect(result.success).toBe(false);
-  //     expect(result.error).toContain("not found");
-  //   });
+    const participants = ["user1", "user2"];
+    const result = await VideoServices.syncParticipants(
+      createdPatientId,
+      passcode,
+      participants,
+    );
+
+    expect(result.success).toBe(true);
+    expect(result.data).toBeDefined();
+  });
+
+  it("should clear session when syncing empty participant list", async () => {
+    const createResult =
+      await VideoServices.internalJoinVideo(createdPatientId);
+    const passcode = createResult.data.sessionPasscode;
+
+    // First sync with participants
+    await VideoServices.syncParticipants(createdPatientId, passcode, ["user1"]);
+
+    // Then sync with empty list
+    const result = await VideoServices.syncParticipants(
+      createdPatientId,
+      passcode,
+      [],
+    );
+
+    expect(result.success).toBe(true);
+    expect(result.data?.status).toBe("Session deleted.");
+  });
+
+  it("should fail with invalid passcode", async () => {
+    const result = await VideoServices.syncParticipants(
+      createdPatientId,
+      "invalid_passcode",
+      ["user1"],
+    );
+
+    expect(result.success).toBe(false);
+    expect(result.message).toContain("Invalid passcode");
+  });
+
+  it("should sync multiple participants", async () => {
+    const createResult =
+      await VideoServices.internalJoinVideo(createdPatientId);
+    const passcode = createResult.data.sessionPasscode;
+
+    const participants = ["user1", "user2", "user3", "user4"];
+    const result = await VideoServices.syncParticipants(
+      createdPatientId,
+      passcode,
+      participants,
+    );
+
+    expect(result.success).toBe(true);
+    expect(result.data).toBeDefined();
+  });
+
+  it("should clear session with lock", async () => {
+    const createResult =
+      await VideoServices.internalJoinVideo(createdPatientId);
+    const passcode = createResult.data.sessionPasscode;
+
+    // Lock session
+    await VideoServices.lockSession(createdPatientId);
+
+    // Sync with empty list should clear lock
+    const result = await VideoServices.syncParticipants(
+      createdPatientId,
+      passcode,
+      [],
+    );
+
+    expect(result.success).toBe(true);
+    expect(result.data?.status).toBe("Session deleted.");
+  });
+
+  it("should fail when syncing already deleted session", async () => {
+    const createResult =
+      await VideoServices.internalJoinVideo(createdPatientId);
+    const passcode = createResult.data.sessionPasscode;
+
+    // Delete session
+    await VideoServices.syncParticipants(createdPatientId, passcode, []);
+
+    // Try to sync again
+    const result = await VideoServices.syncParticipants(
+      createdPatientId,
+      passcode,
+      [],
+    );
+
+    expect(result.success).toBe(false);
+    expect(result.message).toContain("Invalid passcode");
+  });
+
+  it("should fail when no session exists", async () => {
+    const nonExistentId = 999999;
+    const result = await VideoServices.syncParticipants(
+      nonExistentId,
+      "fake_passcode",
+      ["user1"],
+    );
+
+    expect(result.success).toBe(false);
+    expect(result.message).toContain("Invalid passcode");
+  });
+
+  it("should maintain session with single participant", async () => {
+    const createResult =
+      await VideoServices.internalJoinVideo(createdPatientId);
+    const passcode = createResult.data.sessionPasscode;
+
+    const result = await VideoServices.syncParticipants(
+      createdPatientId,
+      passcode,
+      ["user1"],
+    );
+
+    expect(result.success).toBe(true);
+
+    // Verify session still exists by syncing again
+    const result2 = await VideoServices.syncParticipants(
+      createdPatientId,
+      passcode,
+      ["user1", "user2"],
+    );
+
+    expect(result2.success).toBe(true);
+  });
 });
