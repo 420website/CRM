@@ -3,6 +3,8 @@ import { compressImageToBlob } from "../../utils/compressImage";
 import toast from "react-hot-toast";
 import { Trash } from "lucide-react";
 import { Image } from "lucide-react";
+import { Upload } from "lucide-react";
+import { Video } from "lucide-react";
 import { ImageOff } from "lucide-react";
 import { ObjectServices } from "../../services/objectService";
 import ConfirmModal from "./ConfirmModal";
@@ -12,7 +14,7 @@ import { useZoom } from "../../context/ZoomContext";
 
 export default function EditPhoto({ registrationId, formData }) {
   const navigate = useNavigate();
-  const { setReturnUrl, setPatientSessionId } = useZoom();
+  const { setReturnUrl } = useZoom();
 
   const { getDashboardRegistrations, getDashboardActivities } = useDashboard();
   const [showingPhoto, setShowingPhoto] = useState(false);
@@ -125,7 +127,6 @@ export default function EditPhoto({ registrationId, formData }) {
 
   const handleClickVideo = async () => {
     setReturnUrl(`/admin-edit/${registrationId}`);
-    setPatientSessionId(registrationId);
     navigate(`/preview/${registrationId}`);
   };
 
@@ -149,95 +150,65 @@ export default function EditPhoto({ registrationId, formData }) {
         />
       )}
       {/* Photo Upload Section */}
-      <div className="border-b border-gray-200 pb-2">
-        <h2 className="text-lg font-medium text-gray-900 mb-4">
-          Client Profile
-        </h2>
-        <div className="space-y-4">
-          <div className="p-0 mb-0">
-            {/* Upload Option */}
-            <div className="mb-2">
-              <div className="flex gap-4">
-                <div className="flex items-center gap-3">
-                  <button
-                    type="button"
-                    className="bg-black text-white text-sm font-semibold py-2 px-4 rounded-md hover:bg-gray-800"
-                    onClick={() => {
-                      photoPreview
-                        ? setShowConfirm("upload")
-                        : document.getElementById("photo-upload").click();
-                    }}
-                  >
-                    Upload Photo
+      <div className="border-b border-gray-200 pb-2 flex flex-col">
+        <div className="flex gap-4 items-center">
+          <h2 className="text-lg font-medium text-gray-900">Client Profile</h2>
+          <div className="flex items-center gap-4">
+            <div className="flex gap-2 items-center">
+              <input
+                type="file"
+                id="photo-upload"
+                accept="image/*"
+                onChange={uploadPhoto}
+                className="hidden"
+              />
+              {photoPreview ? (
+                showingPhoto ? (
+                  <button type="button" onClick={() => setShowingPhoto(false)}>
+                    <ImageOff className="w-3 h-4" />
                   </button>
-
-                  <input
-                    type="file"
-                    id="photo-upload"
-                    accept="image/*"
-                    onChange={(e) => uploadPhoto(e)}
-                    className="hidden"
-                  />
-                </div>
-                <div className="flex items-center gap-3">
-                  <button
-                    type="button"
-                    className="bg-black text-white text-sm font-semibold py-2 px-4 rounded-md hover:bg-gray-800"
-                    onClick={handleClickVideo}
-                  >
-                    Video
+                ) : (
+                  <button type="button" onClick={() => setShowingPhoto(true)}>
+                    <Image className="w-3 h-4" />
                   </button>
-                </div>
-              </div>
-            </div>
-            <p className="mt-0 text-sm text-gray-500">
-              Photos are optimized to ~800KB while maintaining high quality.
-              Supported formats: JPG, PNG, GIF.
-            </p>
-          </div>
-
-          {photoPreview && (
-            <>
-              <div className="flex items-center gap-4 mt-2 mb-0">
-                <h3 className="text-sm font-medium text-gray-900">
-                  Photo Preview
-                </h3>
-
-                <div className="flex gap-2">
-                  {showingPhoto ? (
-                    <button
-                      type="button"
-                      onClick={() => setShowingPhoto(false)}
-                    >
-                      <ImageOff className="w-3 h-4" />
-                    </button>
-                  ) : (
-                    <button type="button" onClick={() => setShowingPhoto(true)}>
-                      <Image className="w-3 h-4" />
-                    </button>
-                  )}
-                  <button
-                    type="button"
-                    onClick={() => setShowConfirm("delete")}
-                  >
-                    <Trash className="w-3 h-4" />
-                  </button>
-                </div>
-              </div>
-              {showingPhoto && (
-                <div className="mt-2 mb-0">
-                  <div className="w-48 h-48 border-2 border-gray-300 rounded-lg overflow-hidden">
-                    <img
-                      src={photoPreview}
-                      alt="Client photo preview"
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
-                </div>
+                )
+              ) : (
+                <button
+                  type="button"
+                  onClick={() =>
+                    document.getElementById("photo-upload").click()
+                  }
+                >
+                  <Image className="w-3 h-4" />
+                </button>
               )}
-            </>
-          )}
+              <button
+                type="button"
+                onClick={() => photoPreview && setShowConfirm("delete")}
+              >
+                <Trash className="w-3 h-4" />
+              </button>
+              <button type="button" onClick={handleClickVideo}>
+                <Video className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+        </div>
 
+        {photoPreview && showingPhoto && (
+          <div className="mt-2 mb-0">
+            <button type="button" onClick={() => setShowConfirm("upload")}>
+              <div className="w-48 h-48 border-2 border-gray-300 rounded-lg overflow-hidden">
+                <img
+                  src={photoPreview}
+                  alt="Client photo preview"
+                  className="w-full h-full object-cover"
+                />
+              </div>
+            </button>
+          </div>
+        )}
+        <div className="space-y-4">
           <p className="mt-2 text-sm text-gray-500">
             File: {formData.file_id || "NA"} ID: {formData.id || "Unknown"}
           </p>

@@ -25,7 +25,7 @@ import Assessments from "../tabs/Assessments";
 
 const AdminEdit = () => {
   const navigate = useNavigate();
-  const { registrationId } = useParams();
+  const { patientId } = useParams();
   const { userRole, userPermissions, userProvince } = useAuth();
   const { setLastItem } = useDashboard();
   const { getClientAssociatedData } = useRegistration();
@@ -160,7 +160,7 @@ const AdminEdit = () => {
   };
 
   const getClientData = async () => {
-    const result = await PatientServices.get_patient_by_id(registrationId);
+    const result = await PatientServices.get_patient_by_id(patientId);
 
     if (result.success) {
       const merged = { ...DEFAULT_FORM, ...result.data };
@@ -183,14 +183,14 @@ const AdminEdit = () => {
       }
     }
 
-    getClientAssociatedData(registrationId);
+    getClientAssociatedData(patientId);
   };
 
   useEffect(() => {
-    if (registrationId) {
+    if (patientId) {
       getRegistration();
     }
-  }, [registrationId]);
+  }, [patientId]);
 
   const tabComponents = {
     client: (
@@ -207,43 +207,40 @@ const AdminEdit = () => {
     assessments: (
       <Assessments
         setActiveTab={setActiveTab}
-        currentRegistrationId={registrationId}
+        currentRegistrationId={patientId}
       />
     ),
     medication: (
       <Medications
         setActiveTab={setActiveTab}
-        currentRegistrationId={registrationId}
+        currentRegistrationId={patientId}
       />
     ),
     dispensing: (
       <Dispensing
         setActiveTab={setActiveTab}
-        currentRegistrationId={registrationId}
+        currentRegistrationId={patientId}
       />
     ),
     notes: (
-      <Notes
-        setActiveTab={setActiveTab}
-        currentRegistrationId={registrationId}
-      />
+      <Notes setActiveTab={setActiveTab} currentRegistrationId={patientId} />
     ),
     activities: (
       <Activities
         setActiveTab={setActiveTab}
-        currentRegistrationId={registrationId}
+        currentRegistrationId={patientId}
       />
     ),
     interactions: (
       <Interactions
         setActiveTab={setActiveTab}
-        currentRegistrationId={registrationId}
+        currentRegistrationId={patientId}
       />
     ),
     attachments: (
       <Attachments
         setActiveTab={setActiveTab}
-        currentRegistrationId={registrationId}
+        currentRegistrationId={patientId}
         fileId={formData.file_id}
       />
     ),
@@ -419,7 +416,7 @@ const AdminEdit = () => {
     cleanedFormData.force_update = forceSave;
     const data = normalizeFormData(cleanedFormData);
 
-    const result = await PatientServices.update_patient(registrationId, data);
+    const result = await PatientServices.update_patient(patientId, data);
 
     if (result.success) {
       getDashboardRegistrations();
@@ -444,7 +441,7 @@ const AdminEdit = () => {
       first_name: firstName,
       last_name: lastName,
       dob: dob,
-      id: registrationId,
+      id: patientId,
     };
 
     const result = await PatientServices.check_identity_exists(data);
@@ -492,7 +489,7 @@ const AdminEdit = () => {
   const checkIfHealthcardExists = async (healthCard) => {
     const data = {
       health_card: healthCard,
-      id: registrationId,
+      id: patientId,
     };
 
     const result = await PatientServices.check_healthcard_exists(data);
@@ -651,7 +648,7 @@ const AdminEdit = () => {
             </div>
           ) : (
             <form onSubmit={handleSubmit} className="space-y-6">
-              <EditPhoto registrationId={registrationId} formData={formData} />
+              <EditPhoto registrationId={patientId} formData={formData} />
 
               {/* Tabs Navigation */}
               <div
@@ -695,7 +692,7 @@ const AdminEdit = () => {
                   {/* Copy Button */}
                   <button
                     type="button"
-                    onClick={() => copyFormData(registrationId, formData)}
+                    onClick={() => copyFormData(patientId, formData)}
                     className="w-full bg-black text-white py-3 px-6 rounded-md hover:bg-gray-800 transition-colors text-lg font-semibold"
                   >
                     Copy
