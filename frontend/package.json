@@ -14,7 +14,8 @@
     "test:unit:watch": "vitest tests/unit",
     "test:integration": "vitest run tests/integration",
     "test:integration:watch": "vitest ${npm_config_file:-tests/integration}",
-    "test:e2e": "playwright test --reporter=list"
+    "test:e2e": "playwright test --reporter=list",
+    "test:zoom": "playwright test"
   },
   "dependencies": {
     "@googlemaps/js-api-loader": "^1.16.10",
@@ -24,6 +25,7 @@
     "axios": "^1.12.2",
     "axios-cookiejar-support": "^6.0.4",
     "date-fns": "^4.1.0",
+    "jsonwebtoken": "^9.0.3",
     "lucide-react": "^0.544.0",
     "otplib": "^12.0.1",
     "pdf-lib": "^1.17.1",

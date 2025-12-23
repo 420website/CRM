@@ -24,7 +24,7 @@ export default defineConfig({
   ],
   server: {
     host: "0.0.0.0",
-    allowedHosts: ["frontend", "localhost", "bs-local.com"],
+    allowedHosts: ["frontend", "localhost", "bs-local.com", "zoom-client"],
   },
   test: {
     include: [
