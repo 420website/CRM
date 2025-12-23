@@ -166,6 +166,9 @@ export function ZoomProvider({ children }) {
     try {
       const response = await VideoServices.internalJoinVideo(patientId);
 
+      if (!response.success && response.status === 423)
+        throw new Error(response.message);
+
       if (!response.success || !response.data)
         throw new Error("Failed to get session token");
 
@@ -197,6 +200,16 @@ export function ZoomProvider({ children }) {
       if (err.errorCode === 5012) {
         return;
       }
+
+      if (err.message === "Session is locked.") {
+        toast.error("Session is locked. Please try again later.");
+        setIsInSession(false);
+        setLoading(false);
+        isJoiningRef.current = false;
+        navigate(returnUrl);
+        return;
+      }
+
       toast.error(`Failed to join session.`);
       setIsInSession(false);
     } finally {
