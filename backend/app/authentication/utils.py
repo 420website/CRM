@@ -132,10 +132,11 @@ class SecurityService:
         expiry = datetime.now(dt.timezone.utc) + timedelta(minutes=30)
         exp = int(expiry.timestamp())
         iat = int(datetime.now(dt.timezone.utc).timestamp())
+        is_host = user_id == str(config["host_id"])
 
         payload: Dict[str, Any] = {
             "app_key": settings.sdk_key,
-            "role_type": (1 if user_id == str(config["host_id"]) else 0),
+            "role_type": (1 if is_host else 0),
             "tpc": config["session_name"],
             "version": 1,
             "exp": exp,

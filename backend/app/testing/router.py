@@ -20,9 +20,11 @@ from app.config import settings
 from app.dependencies import get_current_user
 import datetime as dt
 from app.database import database
-
+from datetime import timezone
+from app.database import redis_client
 from app.webpage.schema import ContactMessageCreate, RegistrationMessageCreate
 from app.webpage.services import ContactService, RegisterService
+from app.zoom.services import ZoomService
 
 router = APIRouter(prefix="/testing", tags=["Testing"])
 
@@ -240,3 +242,17 @@ async def delete_user(user_data: RegisterRequest):
 @router.get("/me", response_model=UserResponse)
 def get_current_user_info(current_user: UserRead = Depends(get_current_user)):
     return current_user
+
+
+@router.post("/expire-zoom-session/{patient_id}")
+async def expire_session(patient_id: int):
+    past_time = datetime.now(timezone.utc) - timedelta(days=1)
+
+    redis = redis_client.get_client()
+    await redis.hset(
+        f"session:metadata:{patient_id}",
+        "host_last_seen_at",
+        past_time.isoformat(),
+    )
+
+    return {"message": "Expired session successfully"}

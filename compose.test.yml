@@ -341,7 +341,7 @@ services:
     entrypoint: ["/scripts/wait-for-backend.sh"]
     command: > 
        sh -c "while true; do
-                npm run test:integration:watch; 
+                npm run test:integration:watch;  
                 inotifywait -e modify,create,delete -r /frontend/src /frontend/tests;
               done"
     # npm run test:integration:watch --file=tests/integration/analytics.test.js; 

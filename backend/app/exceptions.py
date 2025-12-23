@@ -35,6 +35,11 @@ class SessionLockedError(APIError):
     status_code = 423
 
 
+class SessionExpiredError(APIError):
+    status_code = 410
+    message = "Session has expired."
+
+
 # Analytics related
 class ContextRetrievalError(APIError):
     """Bad query for the error"""

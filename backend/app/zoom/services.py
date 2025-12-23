@@ -1,334 +1,337 @@
-from typing import List
-from asyncpg.connection import Connection
 from app.authentication.utils import SecurityService
-from app.logger import logger
-from app.database import database
+from datetime import datetime, timezone
 from app.exceptions import (
-    APIError,
     ForbiddenError,
     NotFoundError,
+    SessionExpiredError,
     SessionLockedError,
-    UnauthorizedError,
 )
 from app.zoom.schema import SessionConfig
 from app.database import redis_client
+import jwt
+import time
+import httpx
+from app.config import settings
+
+
+class ZoomVideoSDKService:
+    BASE_URL = "https://api.zoom.us/v2/videosdk"
+
+    @staticmethod
+    def _generate_api_jwt() -> str:
+        """Generate JWT for API authentication (server-to-server)."""
+        payload = {
+            "iss": settings.api_key,
+            "iat": int(time.time()),
+            "exp": int(time.time()) + 3600,  # 1 hour
+        }
+        return jwt.encode(
+            payload, settings.api_secret, algorithm=settings.jwt_algorithm
+        )
+
+    @staticmethod
+    def _generate_client_jwt(
+        user_id: str,
+        session_name: str,
+        role: int = 0,
+    ) -> str:
+        payload = {
+            "app_key": settings.sdk_key,
+            "role_type": role,
+            "tpc": session_name,
+            "version": 1,
+            "iat": int(time.time()),
+            "exp": int(time.time()) + 3600,  # 1 hour
+            "video_webrtc_mode": 1,
+            "user_identity": user_id,
+            # "telemetry_tracking_id": "telemetryTrackingId",
+        }
+
+        return jwt.encode(
+            payload,
+            settings.sdk_secret,
+            algorithm=settings.jwt_algorithm,
+        )
+
+    @staticmethod
+    async def _request(method: str, endpoint: str, **kwargs):
+        token = ZoomVideoSDKService._generate_api_jwt()
+
+        async with httpx.AsyncClient() as client:
+            return await client.request(
+                method,
+                f"{ZoomVideoSDKService.BASE_URL}{endpoint}",
+                headers={
+                    "Authorization": f"Bearer {token}",
+                    "Content-Type": "application/json",
+                },
+                timeout=10.0,
+                **kwargs,
+            )
+
+    @staticmethod
+    async def get_zoom_session_id(session_name: str) -> str | None:
+        sessions = await ZoomVideoSDKService.list_sessions()
+        for s in sessions:
+            if s["session_name"].lower() == session_name.lower():
+                return s["id"]
+        return None
+
+    @staticmethod
+    async def get_session(session_name: str) -> dict | None:
+        """Get Zoom session by session_name."""
+        session_id = await ZoomVideoSDKService.get_zoom_session_id(
+            session_name
+        )
+        if not session_id:
+            return None
+
+        response = await ZoomVideoSDKService._request(
+            "GET", f"/sessions/{session_id}"
+        )
+        return response.json() if response.status_code == 200 else None
+
+    @staticmethod
+    async def get_session_users(session_name: str) -> list:
+        """Get participants by session_name."""
+        session_id = await ZoomVideoSDKService.get_zoom_session_id(
+            session_name
+        )
+        if not session_id:
+            return []
+
+        response = await ZoomVideoSDKService._request(
+            "GET", f"/sessions/{session_id}/users"
+        )
+        return (
+            response.json().get("participants", [])
+            if response.status_code == 200
+            else []
+        )
+
+    @staticmethod
+    async def list_sessions(page_size: int = 30) -> list:
+        """List all active sessions (Zoom REST)."""
+        response = await ZoomVideoSDKService._request(
+            "GET", "/sessions", params={"page_size": page_size}
+        )
+        if response.status_code == 200:
+            return response.json().get("sessions", [])
+        return []
 
 
 class ZoomService:
     @staticmethod
-    async def _get_session(conn: Connection, patient_id: int) -> dict | None:
-        """Internal: Get session from DB using provided connection."""
-        query = "SELECT * FROM zoom_session WHERE patient_id=$1 AND deleted_at IS NULL"
-        row = await conn.fetchrow(query, patient_id)
-        return dict(row) if row else None
+    async def _create_zoom_session(
+        patient_id: int, user_id: int
+    ) -> SessionConfig:
 
-    @staticmethod
-    async def _soft_delete_session(conn: Connection, patient_id: int):
-        """Internal: Soft delete session."""
-        query = """
-            UPDATE zoom_session
-            SET is_deleted = TRUE, deleted_at = NOW()
-            WHERE patient_id = $1
-            RETURNING is_deleted
-        """
-        result = await conn.fetchval(query, patient_id)
-        return result is not None
+        now = datetime.now(timezone.utc).isoformat()
 
-    @staticmethod
-    async def _valid_passcode(
-        conn: Connection, patient_id: int, session_key: str
-    ) -> bool:
-        query = """
-        SELECT EXISTS (
-            SELECT 1 
-            FROM zoom_session 
-            WHERE patient_id=$1 
-            AND session_key=$2
-            AND deleted_at IS NULL
-        );
-        """
-        result = await conn.fetchval(query, patient_id, session_key)
-        return result
-
-    @staticmethod
-    async def _check_session_exists(conn: Connection, patient_id: int) -> bool:
-        """Internal: Check if session exists and is not deleted."""
-        query = """
-            SELECT patient_id 
-            FROM zoom_session 
-            WHERE patient_id=$1 AND deleted_at IS NULL
-        """
-        result = await conn.fetchval(query, patient_id)
-        return result is not None
-
-    @staticmethod
-    async def _check_is_host(
-        conn: Connection, patient_id: int, user_id: int
-    ) -> bool:
-        """Internal: Check if user is the host of the session."""
-        query = """
-            SELECT host_id 
-            FROM zoom_session 
-            WHERE patient_id=$1 AND deleted_at IS NULL
-        """
-        host_id = await conn.fetchval(query, patient_id)
-        return host_id == user_id if host_id is not None else False
-
-    @staticmethod
-    async def _check_lock(conn: Connection, patient_id: int) -> bool:
-        """Internal: Check lock status from DB using provided connection."""
-        query = """
-            SELECT is_locked 
-            FROM zoom_session 
-            WHERE patient_id=$1 AND deleted_at IS NULL
-        """
-        return await conn.fetchval(query, patient_id) or False
-
-    @staticmethod
-    async def _lock_session(
-        conn: Connection, patient_id: int, user_id: int
-    ) -> bool:
-        """Internal: Lock session in DB using provided connection."""
-        query = """
-            UPDATE zoom_session
-            SET is_locked=TRUE, locked_at=NOW()
-            WHERE patient_id=$1 AND host_id=$2 AND deleted_at IS NULL
-            RETURNING is_locked
-        """
-        result = await conn.fetchval(query, patient_id, user_id)
-        return result is not None
-
-    @staticmethod
-    async def _unlock_session(
-        conn: Connection,
-        patient_id: int,
-        user_id: int,
-    ) -> bool:
-        """Internal: Unlock session in DB using provided connection."""
-        query = """
-            UPDATE zoom_session
-            SET is_locked=FALSE, locked_at=NULL
-            WHERE patient_id=$1 AND host_id=$2 AND deleted_at IS NULL
-            RETURNING is_locked
-        """
-        result = await conn.fetchval(query, patient_id, user_id)
-        return result is not None and not result  # result false
-
-    @staticmethod
-    async def _upsert_session(
-        conn: Connection, config: SessionConfig
-    ) -> dict | None:
-        """Internal: Update or insert session config in DB with provided connection"""
-        query = """
-        INSERT INTO zoom_session(patient_id, session_name, session_key, host_id, is_locked, locked_at, is_deleted, deleted_at, created_at) 
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
-        ON CONFLICT (patient_id) 
-        DO UPDATE SET 
-            session_name=EXCLUDED.session_name, 
-            session_key=EXCLUDED.session_key,
-            host_id=EXCLUDED.host_id,
-            is_locked=EXCLUDED.is_locked, 
-            locked_at=EXCLUDED.locked_at, 
-            is_deleted=EXCLUDED.is_deleted, 
-            deleted_at=EXCLUDED.deleted_at,
-            created_at=EXCLUDED.created_at
-        RETURNING *
-        """
-        row = await conn.fetchrow(
-            query,
-            config.patient_id,
-            config.session_name,
-            config.session_key,
-            config.host_id,
-            config.is_locked,
-            config.locked_at,
-            config.is_deleted,
-            config.deleted_at,
-            config.created_at,
+        config = SessionConfig(
+            session_name=f"{patient_id}-{SecurityService.generate_secure_token(4)}",
+            session_key=SecurityService.generate_secure_token(6),
+            host_id=user_id,
+            is_locked=False,  # host owns session
+            host_last_seen_at=now,  # 👈 important
         )
-        return dict(row) if row else None
+
+        redis = redis_client.get_client()
+        await redis.hset(
+            f"session:metadata:{patient_id}", mapping=config.encode()
+        )
+
+        return config
 
     @staticmethod
-    async def delete_session(patient_id: int, user_id: int):
-        """Soft deletes the session by toggling flag."""
-        async with database.get_transaction() as conn:
-            if not await ZoomService._check_session_exists(conn, patient_id):
-                raise NotFoundError("Session not found")
+    async def _get_session_metadata(patient_id: int) -> SessionConfig | None:
+        """Fetch session metadata from Redis and decode types."""
+        redis = redis_client.get_client()
+        data = await redis.hgetall(f"session:metadata:{patient_id}")
+        if not data:
+            return None
 
-            if not await ZoomService._check_is_host(conn, patient_id, user_id):
-                raise ForbiddenError("User is not the session host")
+        # Convert Redis hash (all strings) to typed SessionConfig
+        return SessionConfig.decode(data)
 
-            await ZoomService._soft_delete_session(conn, patient_id)
+    @staticmethod
+    async def _delete_session_cache(patient_id: int):
+        # Cleanup Redis
+        redis = redis_client.get_client()
+        await redis.delete(f"session:metadata:{patient_id}")
 
-        # DB committed, now clean cache
-        try:
-            redis = redis_client.get_client()
-            await redis.delete(f"session:config:{patient_id}")
-            await redis.delete(f"session:{patient_id}:is_locked")
-        except Exception as e:
-            logger.warning(
-                f"Failed to clear Redis cache for session {patient_id}: {e}"
-            )
+    @staticmethod
+    async def _refresh_host_lease(patient_id: int):
+        redis = redis_client.get_client()
+
+        await redis.hset(
+            f"session:metadata:{patient_id}",
+            "host_last_seen_at",
+            datetime.now(timezone.utc).isoformat(),
+        )
+
+    @staticmethod
+    async def _is_session_alive(patient_id: int) -> bool:
+        metadata = await ZoomService._get_session_metadata(patient_id)
+
+        if not metadata:
+            return False  # no record → explicitly ended
+
+        # last_seen_raw = metadata.get("host_last_seen_at")
+        if not metadata.host_last_seen_at:
+            return False
+
+        last_seen = datetime.fromisoformat(metadata.host_last_seen_at)
+        now = datetime.now(timezone.utc)
+
+        return (now - last_seen).total_seconds() <= settings.host_grace_seconds
+
+    @staticmethod
+    async def _check_is_host(patient_id: int, user_id: int) -> bool:
+        """Internal: Check if user is the host of the session."""
+        metadata = await ZoomService._get_session_metadata(patient_id)
+
+        if not metadata:
+            raise NotFoundError("Session not found")
+
+        return metadata.host_id != user_id
+
+    @staticmethod
+    async def _check_lock(patient_id: int) -> bool:
+        """Check if session is locked."""
+        redis = redis_client.get_client()
+        locked = await redis.hget(
+            f"session:metadata:{patient_id}", "is_locked"
+        )
+        return locked == "true" if locked else False
+
+    @staticmethod
+    async def _valid_passcode(patient_id: int, session_key: str) -> bool:
+        redis = redis_client.get_client()
+        key = await redis.hget(f"session:metadata:{patient_id}", "session_key")
+
+        return key == session_key
 
     @staticmethod
     async def lock_session(patient_id: int, user_id: int):
-        """Lock the session disabling particapant joins."""
-        async with database.get_transaction() as conn:
-            if not await ZoomService._check_session_exists(conn, patient_id):
-                raise NotFoundError("Session not found")
+        """Lock session - prevents new participants from joining."""
+        metadata = await ZoomService._get_session_metadata(patient_id)
 
-            if not await ZoomService._check_is_host(conn, patient_id, user_id):
-                raise ForbiddenError("User is not the session host")
+        if not metadata:
+            raise NotFoundError("Session not found")
 
-            is_locked = await ZoomService._lock_session(
-                conn, patient_id, user_id
-            )
+        if metadata.host_id != user_id:
+            raise ForbiddenError("User is not the session host")
 
-            if not is_locked:
-                raise APIError("Failed to lock session.")
-
-        try:
-            redis = redis_client.get_client()
-            await redis.set(f"session:{patient_id}:is_locked", "true")
-        except Exception as e:
-            logger.warning(
-                f"Failed to update Redis cache for session {patient_id}: {e}"
-            )
+        # Set lock flag in Redis
+        redis = redis_client.get_client()
+        await redis.hset(f"session:metadata:{patient_id}", "is_locked", "true")
 
     @staticmethod
     async def unlock_session(patient_id: int, user_id: int):
-        """Unlock the session disabling particapant joins."""
-        async with database.get_transaction() as conn:
-            if not await ZoomService._check_session_exists(conn, patient_id):
-                raise NotFoundError("Session not found")
+        """Unlock session - allows participants to join."""
+        metadata = await ZoomService._get_session_metadata(patient_id)
 
-            if not await ZoomService._check_is_host(conn, patient_id, user_id):
-                raise ForbiddenError("User is not the session host")
+        if not metadata:
+            raise NotFoundError("Session not found")
 
-            is_unlocked = await ZoomService._unlock_session(
-                conn, patient_id, user_id
-            )
+        if metadata.host_id != user_id:
+            raise ForbiddenError("User is not the session host")
 
-            if not is_unlocked:
-                raise APIError("Failed to unlock session.")
-
-        try:
-            redis = redis_client.get_client()
-            await redis.set(f"session:{patient_id}:is_locked", "false")
-        except Exception as e:
-            logger.warning(
-                f"Failed to update Redis cache for session {patient_id}: {e}"
-            )
+        # Remove lock flag
+        redis = redis_client.get_client()
+        await redis.hset(
+            f"session:metadata:{patient_id}", "is_locked", "false"
+        )
 
     @staticmethod
     async def join_internal(patient_id: int, user_id: int) -> dict:
         """Internal user joins - can create session and become host."""
-        redis = redis_client.get_client()
 
-        # Quick cache check for lock
-        cached_lock = await redis.get(f"session:{patient_id}:is_locked")
-        if cached_lock == "true":
-            raise SessionLockedError("Session is locked.")
+        session_config = await ZoomService._get_session_metadata(patient_id)
 
-        async with database.get_transaction() as conn:
-            # Double-check lock in DB
-            if await ZoomService._check_lock(conn, patient_id):
-                await redis.set(f"session:{patient_id}:is_locked", "true")
+        # If session exists after verification
+        if session_config:
+            alive = await ZoomService._is_session_alive(patient_id)
+
+            if not alive:
+                await ZoomService._delete_session_cache(patient_id)
+                config = await ZoomService._create_zoom_session(
+                    patient_id, user_id
+                )
+                return config.model_dump()
+
+            is_locked = await ZoomService._check_lock(patient_id)
+            host_id = session_config.host_id
+
+            # Host rejoining → refresh lease
+            if is_locked and host_id != user_id:
                 raise SessionLockedError("Session is locked.")
 
-            # Get or create session
-            session_dict = await ZoomService._get_session(conn, patient_id)
+            if host_id == user_id:
+                await ZoomService._refresh_host_lease(patient_id)
 
-            if session_dict:
-                return session_dict
+            return session_config.model_dump()
 
-            # Create new session with user as host
-            config = SessionConfig(
-                patient_id=patient_id,
-                session_name=f"{patient_id}-{SecurityService.generate_secure_token(4)}",
-                session_key=SecurityService.generate_secure_token(6),
-                host_id=user_id,
-                is_locked=False,
-                locked_at=None,
-                is_deleted=False,
-                deleted_at=None,
-                created_at=None,
-            )
-            session_dict = await ZoomService._upsert_session(conn, config)
-
-        # Cache result
-        try:
-            await redis.hset(
-                f"session:config:{patient_id}", mapping=config.encode()
-            )
-        except Exception as e:
-            logger.warning(f"Failed to cache session {patient_id}: {e}")
-
-        return session_dict
+        # Session doesn't exist → create new
+        config = await ZoomService._create_zoom_session(patient_id, user_id)
+        return config.model_dump()
 
     @staticmethod
-    async def join_external(patient_id: int, session_key: str):
-        """External user joins - must have valid passcode, cannot be host."""
-        redis = redis_client.get_client()
-
-        # Check cache for passcode
-        passcode = await redis.hget(
-            f"session:config:{patient_id}", "session_key"
-        )
-        if passcode != session_key:
-            raise ForbiddenError("Invalid passcode.")
-
-        # Quick cache check for lock
-        cached_lock = await redis.get(f"session:{patient_id}:is_locked")
-        if cached_lock == "true":
-            raise SessionLockedError("Session is locked.")
-
-        async with database.get_transaction() as conn:
-            if not await ZoomService._valid_passcode(
-                conn, patient_id, session_key
-            ):
-                raise ForbiddenError("Invalid passcode.")
-
-            # Double-check lock in DB
-            if await ZoomService._check_lock(conn, patient_id):
-                await redis.set(f"session:{patient_id}:is_locked", "true")
-                raise SessionLockedError("Session is locked.")
-
-            # Get session (must exist for external users)
-            session_dict = await ZoomService._get_session(conn, patient_id)
-
-            if not session_dict:
-                raise APIError("Session not found.")
-
-            return session_dict
-
-    @staticmethod
-    async def sync_participants(
+    async def join_external(
         patient_id: int,
         session_key: str,
-        zoom_participants: List[str],
-    ):
-        """Sync participant list - idempotent, safe to call multiple times."""
-        async with database.get_transaction() as conn:
-            # Validate passcode
-            if not await ZoomService._valid_passcode(
-                conn, patient_id, session_key
-            ):
-                raise ForbiddenError("Invalid passcode")
+    ) -> dict:
+        """External user joins - must have valid passcode, cannot be host."""
 
-            redis = redis_client.get_client()
+        # Get session metadata from our cache/db
+        local_session = await ZoomService._get_session_metadata(patient_id)
 
-            # Handle empty session
-            if len(zoom_participants) == 0:
-                await ZoomService._soft_delete_session(conn, patient_id)
-                await redis.delete(f"session:config:{patient_id}")
-                await redis.delete(f"session:{patient_id}:is_locked")
-                await redis.delete(f"session:participants:{patient_id}")
-                return {"status": "Session deleted."}
+        if not local_session:
+            raise NotFoundError("Session is not active")
 
-            # Replace participant list (idempotent)
-            await redis.delete(f"session:participants:{patient_id}")
-            for uid in zoom_participants:
-                await redis.sadd(f"session:participants:{patient_id}", uid)
+        # Verify Zoom session exists
+        if not await ZoomService._is_session_alive(patient_id):
+            raise NotFoundError("Session is not active")
 
-        return {"status": "synced", "count": len(zoom_participants)}
+        # Validate passcode
+        if local_session.session_key != session_key:
+            raise ForbiddenError("Invalid passcode.")
+
+        # Check lock
+        is_locked = await ZoomService._check_lock(patient_id)
+        if is_locked:
+            raise SessionLockedError("Session is locked.")
+
+        return local_session.model_dump()
+
+    @staticmethod
+    async def delete_session(patient_id: int, user_id: int):
+        """Delete session from Zoom and cleanup Redis."""
+        metadata = await ZoomService._get_session_metadata(patient_id)
+
+        if not metadata:
+            raise NotFoundError("Session not found")
+
+        if metadata.host_id != user_id:
+            raise ForbiddenError("User is not the session host")
+
+        # Cleanup Redis
+        redis = redis_client.get_client()
+        await redis.delete(f"session:metadata:{patient_id}")
+
+    @staticmethod
+    async def refresh_host_lease(patient_id: int, user_id: int):
+        metadata = await ZoomService._get_session_metadata(patient_id)
+
+        if not metadata:
+            raise NotFoundError("Session not found")
+
+        if metadata.host_id != user_id:
+            raise ForbiddenError("User is not the session host")
+
+        alive = await ZoomService._is_session_alive(patient_id)
+        if not alive:
+            raise SessionExpiredError("Host session has expired")
+
+        await ZoomService._refresh_host_lease(patient_id)

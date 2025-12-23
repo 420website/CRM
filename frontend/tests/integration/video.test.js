@@ -108,7 +108,6 @@ describe("VideoServices.tests", () => {
     expect(result.success).toBe(false);
     expect(result.message).toContain("locked");
   });
-
   // External Join Tests
   it("should join session with valid passcode", async () => {
     // Create session first
@@ -128,7 +127,6 @@ describe("VideoServices.tests", () => {
     expect(result.data.sessionName).toBeDefined();
     expect(result.data.sessionPasscode).toBe(passcode);
   });
-
   it("should fail to join with invalid passcode", async () => {
     // Create session first
     await VideoServices.internalJoinVideo(createdPatientId);
@@ -143,7 +141,6 @@ describe("VideoServices.tests", () => {
     expect(result.success).toBe(false);
     expect(result.message).toContain("passcode");
   });
-
   it("should fail to join locked session", async () => {
     // Create and lock session
     const createResult =
@@ -177,7 +174,7 @@ describe("VideoServices.tests", () => {
     );
 
     expect(result.success).toBe(false);
-    expect(result.message).toContain("passcode");
+    expect(result.message).toContain("Session is not active");
   });
 
   // Delete Session Tests
@@ -275,6 +272,56 @@ describe("VideoServices.tests", () => {
     expect(result.message).toContain("not found");
   });
 
+  // Refresh Lease
+  it("should allow host to refresh lease successfully", async () => {
+    await VideoServices.internalJoinVideo(createdPatientId);
+    const result = await VideoServices.refresh_lease(createdPatientId);
+
+    expect(result.data).toBeDefined();
+    expect(result.data.message).toContain("Host lease renewed");
+  });
+
+  it("should prevent non-host from refreshing lease", async () => {
+    // User 1 creates and locks session
+    await VideoServices.internalJoinVideo(createdPatientId);
+
+    // User 2 tries to unlock
+    tokenManager.setAccessToken(token2);
+
+    const result = await VideoServices.refresh_lease(createdPatientId).catch(
+      (err) => err.response,
+    );
+
+    expect(result.status).toBe(403);
+    expect(result.message.toLowerCase()).toContain("not the session host");
+  });
+
+  it("should return 410 if session is expired", async () => {
+    await VideoServices.internalJoinVideo(createdPatientId);
+
+    // Simulate host session expired (e.g., by manipulating backend test hook)
+    await TestServices.expire_session(createdPatientId);
+
+    const result = await VideoServices.refresh_lease(createdPatientId).catch(
+      (err) => err.response,
+    );
+
+    expect(result.status).toBe(410);
+    expect(result.message.toLowerCase()).toContain("expired");
+  });
+
+  it("should return 404 if session does not exist", async () => {
+    await VideoServices.internalJoinVideo(createdPatientId);
+    await VideoServices.deleteSession(createdPatientId);
+
+    const result = await VideoServices.refresh_lease(createdPatientId).catch(
+      (err) => err.response,
+    );
+
+    expect(result.status).toBe(404);
+    expect(result.message.toLowerCase()).toContain("not found");
+  });
+
   // Integration Tests
   it("should handle full session lifecycle", async () => {
     // Create session
@@ -312,140 +359,5 @@ describe("VideoServices.tests", () => {
     );
     expect(joinResult.success).toBe(false);
     expect(joinResult.message).toContain("locked");
-  });
-  // Sync participants
-  it("should sync participants successfully", async () => {
-    const createResult =
-      await VideoServices.internalJoinVideo(createdPatientId);
-    const passcode = createResult.data.sessionPasscode;
-
-    const participants = ["user1", "user2"];
-    const result = await VideoServices.syncParticipants(
-      createdPatientId,
-      passcode,
-      participants,
-    );
-
-    expect(result.success).toBe(true);
-    expect(result.data).toBeDefined();
-  });
-
-  it("should clear session when syncing empty participant list", async () => {
-    const createResult =
-      await VideoServices.internalJoinVideo(createdPatientId);
-    const passcode = createResult.data.sessionPasscode;
-
-    // First sync with participants
-    await VideoServices.syncParticipants(createdPatientId, passcode, ["user1"]);
-
-    // Then sync with empty list
-    const result = await VideoServices.syncParticipants(
-      createdPatientId,
-      passcode,
-      [],
-    );
-
-    expect(result.success).toBe(true);
-    expect(result.data?.status).toBe("Session deleted.");
-  });
-
-  it("should fail with invalid passcode", async () => {
-    const result = await VideoServices.syncParticipants(
-      createdPatientId,
-      "invalid_passcode",
-      ["user1"],
-    );
-
-    expect(result.success).toBe(false);
-    expect(result.message).toContain("Invalid passcode");
-  });
-
-  it("should sync multiple participants", async () => {
-    const createResult =
-      await VideoServices.internalJoinVideo(createdPatientId);
-    const passcode = createResult.data.sessionPasscode;
-
-    const participants = ["user1", "user2", "user3", "user4"];
-    const result = await VideoServices.syncParticipants(
-      createdPatientId,
-      passcode,
-      participants,
-    );
-
-    expect(result.success).toBe(true);
-    expect(result.data).toBeDefined();
-  });
-
-  it("should clear session with lock", async () => {
-    const createResult =
-      await VideoServices.internalJoinVideo(createdPatientId);
-    const passcode = createResult.data.sessionPasscode;
-
-    // Lock session
-    await VideoServices.lockSession(createdPatientId);
-
-    // Sync with empty list should clear lock
-    const result = await VideoServices.syncParticipants(
-      createdPatientId,
-      passcode,
-      [],
-    );
-
-    expect(result.success).toBe(true);
-    expect(result.data?.status).toBe("Session deleted.");
-  });
-
-  it("should fail when syncing already deleted session", async () => {
-    const createResult =
-      await VideoServices.internalJoinVideo(createdPatientId);
-    const passcode = createResult.data.sessionPasscode;
-
-    // Delete session
-    await VideoServices.syncParticipants(createdPatientId, passcode, []);
-
-    // Try to sync again
-    const result = await VideoServices.syncParticipants(
-      createdPatientId,
-      passcode,
-      [],
-    );
-
-    expect(result.success).toBe(false);
-    expect(result.message).toContain("Invalid passcode");
-  });
-
-  it("should fail when no session exists", async () => {
-    const nonExistentId = 999999;
-    const result = await VideoServices.syncParticipants(
-      nonExistentId,
-      "fake_passcode",
-      ["user1"],
-    );
-
-    expect(result.success).toBe(false);
-    expect(result.message).toContain("Invalid passcode");
-  });
-
-  it("should maintain session with single participant", async () => {
-    const createResult =
-      await VideoServices.internalJoinVideo(createdPatientId);
-    const passcode = createResult.data.sessionPasscode;
-
-    const result = await VideoServices.syncParticipants(
-      createdPatientId,
-      passcode,
-      ["user1"],
-    );
-
-    expect(result.success).toBe(true);
-
-    // Verify session still exists by syncing again
-    const result2 = await VideoServices.syncParticipants(
-      createdPatientId,
-      passcode,
-      ["user1", "user2"],
-    );
-
-    expect(result2.success).toBe(true);
   });
 });

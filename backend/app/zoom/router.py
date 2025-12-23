@@ -8,27 +8,22 @@ from app.authentication.schemas import UserRead
 from app.authentication.utils import SecurityService
 from app.dependencies import get_current_user
 from app.exceptions import APIError
-from app.zoom.schema import (
-    GuestValidateRequest,
-    JoinResponse,
-    SyncParticipantsRequest,
-)
+from app.zoom.schema import GuestValidateRequest, JoinResponse
 from app.zoom.services import ZoomService
 
 router = APIRouter(prefix="/video", tags=["References"])
 
 
-@router.post("/sync/{patient_id}")
-async def sync_session_participants(
+@router.post("/host/poll/{patient_id}")
+async def refresh_host_lease(
     patient_id: int,
-    request: SyncParticipantsRequest,
+    user: UserRead = Depends(get_current_user),
 ):
     """Sync participants from Zoom - any participant can call with passcode."""
     try:
-        result = await ZoomService.sync_participants(
-            patient_id, request.session_key, request.zoom_participants
-        )
-        return result
+
+        await ZoomService.refresh_host_lease(patient_id, user.id)
+        return {"message": "Host lease renewed."}
     except APIError as e:
         raise HTTPException(status_code=e.status_code, detail=e.message)
     except Exception as e:
