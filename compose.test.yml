@@ -33,6 +33,10 @@ x-backend-base: &backend_base
     - REDIS_PASSWORD=password
     - MONGODB_URL=mongodb://root:example@mongodb:27017
     - MONGODB_NAME=my420_ca_db
+    - ZOOM_VIDEO_SDK_KEY=a_key 
+    - ZOOM_VIDEO_SDK_SECRET=a_key
+    - ZOOM_API_KEY=a_key
+    - ZOOM_API_SECRET=a_key
   networks:
       - frontend-net 
       - backend-net 
@@ -202,6 +206,10 @@ services:
       - REDIS_HOST=redis
       - REDIS_PORT=6379
       - REDIS_PASSWORD=password
+      - ZOOM_VIDEO_SDK_KEY=a_key 
+      - ZOOM_VIDEO_SDK_SECRET=a_key
+      - ZOOM_API_KEY=a_key
+      - ZOOM_API_SECRET=a_key
     volumes:
       - ./scripts/wait-for-db.sh:/scripts/wait-for-db.sh
       - ./backend:/backend 
