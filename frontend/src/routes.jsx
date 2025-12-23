@@ -1,5 +1,12 @@
 import "./App.css";
-import { Navigate, Routes, Route, useLocation, Outlet } from "react-router-dom";
+import {
+  Navigate,
+  Routes,
+  Route,
+  useLocation,
+  Outlet,
+  useParams,
+} from "react-router-dom";
 import Header from "./components/Header";
 import Footer from "./components/Footer";
 import Home from "./my420/pages/Home";
@@ -23,12 +30,14 @@ import ShareViewer from "./crm/components/ShareViewer";
 import ScrollToTop from "./scroll.jsx";
 import { RegistrationProvider } from "./context/RegistrationContext.jsx";
 import { UsersProvider } from "./context/UserContext.jsx";
-import MobileOnlyWrapper from "./mobileOnlyWrapper.jsx";
 import { DashboardProvider } from "./context/DashboardContext.jsx";
 import { ReferenceProvider } from "./context/ReferenceContext.jsx";
 import { ZoomProvider } from "./context/ZoomContext.jsx";
-import PreviewContainer from "./crm/pages/Preview.jsx";
 import VideoSession from "./crm/pages/VideoSession.jsx";
+import GuestVideoAccess from "./crm/pages/GuestVideoAccess.jsx";
+import VideoPreview from "./crm/pages/Preview.jsx";
+import { useGuestAuth } from "./context/GuestAuthContext.jsx";
+import GuestVideoSession from "./crm/pages/GuestVideoSession.jsx";
 
 function AuthenticatedRoute() {
   const { isAuthenticated, isCheckingAuth } = useAuth();
@@ -53,10 +62,36 @@ function AuthenticatedRoute() {
     <ReferenceProvider>
       <DashboardProvider>
         <RegistrationProvider>
-          <Outlet />
+          <ZoomProvider>
+            <Outlet />
+          </ZoomProvider>
         </RegistrationProvider>
       </DashboardProvider>
     </ReferenceProvider>
+  );
+}
+
+function GuestAuthenticatedRoute() {
+  const { isAuthenticated } = useGuestAuth();
+  const { token } = useParams();
+  const location = useLocation();
+
+  if (!isAuthenticated) {
+    // Redirect back to guest login with the token
+    return (
+      <Navigate
+        to={`/guest-video/${token}`}
+        state={{ from: location }}
+        replace
+      />
+    );
+  }
+
+  // Wrap authenticated guest routes with ZoomProvider
+  return (
+    <ZoomProvider>
+      <Outlet />
+    </ZoomProvider>
   );
 }
 
@@ -76,11 +111,7 @@ function LimitedRoute() {
   if (!["limited", "standard", "admin"].includes(userRole)) {
     return <Navigate to="/admin-menu" state={{ from: location }} replace />;
   }
-  return (
-    <ZoomProvider>
-      <Outlet />
-    </ZoomProvider>
-  );
+  return <Outlet />;
 }
 
 function StandardRoute() {
@@ -111,7 +142,6 @@ function AdminRoute() {
 
 function AppRoutes() {
   return (
-    // <MobileOnlyWrapper>
     <div className="App min-h-screen flex flex-col bg-gray-50">
       <ScrollToTop />
       <Header />
@@ -132,6 +162,22 @@ function AppRoutes() {
           <Route path="/verify-email" element={<VerifyEmail />} />
           <Route path="/share-links" element={<ShareViewer />} />
 
+          {/* Guest Video */}
+          <Route
+            path="/guest-video/:patientId"
+            element={<GuestVideoAccess />}
+          />
+          <Route element={<GuestAuthenticatedRoute />}>
+            <Route
+              path="/guest-preview/:patientId"
+              element={<VideoPreview />}
+            />
+            <Route
+              path="/guest-session/:patientId"
+              element={<GuestVideoSession />}
+            />
+          </Route>
+
           {/* Authenticate Routes */}
           <Route element={<AuthenticatedRoute />}>
             <Route path="/admin-menu" element={<AdminMenu />} />
@@ -139,17 +185,11 @@ function AppRoutes() {
             {/* Authenticate Routes */}
             <Route element={<LimitedRoute />}>
               <Route path="/admin-dashboard" element={<AdminDashboard />} />
-              <Route
-                path="/admin-edit/:registrationId"
-                element={<AdminEdit />}
-              />
+              <Route path="/admin-edit/:patientId" element={<AdminEdit />} />
 
               {/* Zoom Routes */}
-              <Route
-                path="/preview/:registrationId"
-                element={<PreviewContainer />}
-              />
-              <Route path="/video/:registrationId" element={<VideoSession />} />
+              <Route path="/preview/:patientId" element={<VideoPreview />} />
+              <Route path="/video/:patientId" element={<VideoSession />} />
             </Route>
 
             {/* Authenticate Routes */}
@@ -171,7 +211,6 @@ function AppRoutes() {
       </main>
       <Footer />
     </div>
-    // </MobileOnlyWrapper>
   );
 }
 

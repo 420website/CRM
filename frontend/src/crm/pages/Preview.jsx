@@ -44,9 +44,33 @@ const mountDevices = async () => {
   };
 };
 
-const PreviewContainer = () => {
+const VideoPreview = () => {
   const navigate = useNavigate();
-  const { registrationId } = useParams();
+  const { patientId } = useParams();
+  const isGuestSession = location.pathname.startsWith("/guest-preview/");
+  const [loading, setLoading] = useState(false);
+
+  // Media
+  const previewVideoRef = useRef(null);
+  const previewAudioRef = useRef(null);
+  const previewMicRef = useRef(null);
+  const previewMicFeedbackIntervalRef = useRef(null);
+  const microphoneTesterRef = useRef(null);
+  const speakerTesterRef = useRef(null);
+
+  // Testing
+  const [isStartedVideo, setIsStartedVideo] = useState(false);
+  const [isStartedAudio, setIsStartedAudio] = useState(false);
+  const [isPlayingAudio, setIsPlayingAudio] = useState(false);
+  const [isMuted, setIsMuted] = useState(true);
+  const [outputLevel, setOutputLevel] = useState(0);
+  const [inputLevel, setInputLevel] = useState(0);
+
+  // Devices
+  const [micList, setMicList] = useState([]);
+  const [speakerList, setSpeakerList] = useState([]);
+  const [cameraList, setCameraList] = useState([]);
+
   const {
     displayName,
     setDisplayName,
@@ -56,29 +80,8 @@ const PreviewContainer = () => {
     activeCamera,
     activeMicrophone,
     activeSpeaker,
-    previewVideoRef,
-    previewAudioRef,
-    stopPreview,
-    previewMicFeedbackIntervalRef,
+    isMobile,
   } = useZoom();
-
-  const microphoneTesterRef = useRef(null);
-  const speakerTesterRef = useRef(null);
-
-  const [isStartedVideo, setIsStartedVideo] = useState(false);
-  const [isStartedAudio, setIsStartedAudio] = useState(false);
-  const [isPlayingAudio, setIsPlayingAudio] = useState(false);
-  const [isMuted, setIsMuted] = useState(true);
-
-  const [loading, setLoading] = useState(false);
-  const [micList, setMicList] = useState([]);
-  const [speakerList, setSpeakerList] = useState([]);
-  const [cameraList, setCameraList] = useState([]);
-
-  const [outputLevel, setOutputLevel] = useState(0);
-  const [inputLevel, setInputLevel] = useState(0);
-
-  const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
 
   useEffect(() => {
     const getDevices = async () => {
@@ -89,32 +92,51 @@ const PreviewContainer = () => {
       setCameraList(devices.cameras);
       setSpeakerList(devices.speakers);
 
-      if (devices.speakers.length > 0) {
-        setActiveSpeaker(devices.speakers[0]);
-      }
-      if (devices.mics.length > 0) {
-        setActiveMicrophone(devices.mics[0]);
-        previewAudioRef.current = ZoomVideo.createLocalAudioTrack(
-          devices.mics[0].deviceId,
-        );
-      }
-      if (devices.cameras.length > 0) {
-        setActiveCamera(devices.cameras[0]);
-        previewVideoRef.current = ZoomVideo.createLocalVideoTrack(
-          devices.cameras[0].deviceId,
-        );
-      }
+      if (devices.speakers.length > 0) setActiveSpeaker(devices.speakers[0]);
+      if (devices.mics.length > 0) setActiveMicrophone(devices.mics[0]);
+      if (devices.cameras.length > 0) setActiveCamera(devices.cameras[0]);
+
       setLoading(false);
     };
 
     getDevices();
   }, []);
 
+  // Local media
+  const stopPreview = async () => {
+    if (previewVideoRef.current && previewVideoRef.current.isVideoStarted) {
+      await previewVideoRef.current.stop();
+      previewVideoRef.current = null;
+    }
+    if (previewAudioRef.current && previewAudioRef.current.isAudioStarted) {
+      await previewAudioRef.current.stop();
+      previewAudioRef.current = null;
+    }
+
+    if (previewMicFeedbackIntervalRef.current) {
+      clearInterval(previewMicFeedbackIntervalRef.current);
+      previewMicFeedbackIntervalRef.current = null;
+    }
+
+    if (microphoneTesterRef.current) {
+      microphoneTesterRef.current.destroy();
+      microphoneTesterRef.current = null;
+    }
+  };
+
+  // Camera
   const onCameraClick = async () => {
     if (isStartedVideo) {
       await previewVideoRef.current?.stop();
       setIsStartedVideo(false);
     } else {
+      // Start local video on first click
+      if (!previewVideoRef.current) {
+        previewVideoRef.current = ZoomVideo.createLocalVideoTrack(
+          activeCamera.deviceId,
+        );
+      }
+
       const videoPlayer = document.querySelector(
         `video-player[id=preview-player]`,
       );
@@ -142,7 +164,14 @@ const PreviewContainer = () => {
     }
   };
 
+  // Microphone
   const onMicrophoneClick = async () => {
+    if (!previewAudioRef.current) {
+      previewAudioRef.current = ZoomVideo.createLocalAudioTrack(
+        activeMicrophone.deviceId,
+      );
+    }
+
     if (isStartedAudio) {
       if (isMuted) {
         await previewAudioRef.current?.unmute();
@@ -179,30 +208,40 @@ const PreviewContainer = () => {
 
   const onSwitchMicrophone = async (e) => {
     const deviceId = e.target.value;
-    if (previewAudioRef.current) {
-      if (activeMicrophone !== deviceId) {
-        // Stop monitoring
-        if (previewMicFeedbackIntervalRef.current) {
-          clearInterval(previewMicFeedbackIntervalRef.current);
-        }
 
-        previewAudioRef.current.stop();
-        previewAudioRef.current = ZoomVideo.createLocalAudioTrack(deviceId);
+    // Create track if doesn't exist yet
+    if (!previewAudioRef.current) {
+      previewAudioRef.current = ZoomVideo.createLocalAudioTrack(deviceId);
+      setActiveMicrophone(deviceId);
+      return;
+    }
+
+    if (activeMicrophone !== deviceId) {
+      // Stop monitoring
+      if (previewMicFeedbackIntervalRef.current) {
+        clearInterval(previewMicFeedbackIntervalRef.current);
+      }
+
+      await previewAudioRef.current.stop();
+      previewAudioRef.current = ZoomVideo.createLocalAudioTrack(deviceId);
+
+      // If was started, restart with new device
+      if (isStartedAudio) {
         await previewAudioRef.current?.start();
-
-        // Restart monitoring if not muted
         if (!isMuted) {
+          await previewAudioRef.current?.unmute();
           previewMicFeedbackIntervalRef.current = setInterval(() => {
             const level = previewAudioRef.current?.getCurrentVolume() || 0;
             setInputLevel(Math.min(100, level * 100));
           }, 100);
         }
-
-        setActiveMicrophone(deviceId);
       }
+
+      setActiveMicrophone(deviceId);
     }
   };
 
+  // Speaker
   const onSpeakerClick = async () => {
     if (microphoneTesterRef.current) {
       microphoneTesterRef.current.destroy();
@@ -248,33 +287,29 @@ const PreviewContainer = () => {
     }
   };
 
-  const handleJoin = () => {
+  // Actions
+  const handleJoin = async () => {
     if (!displayName.trim().length > 0) {
       toast.error("Display name required");
       return;
     }
 
-    if (microphoneTesterRef.current) {
-      microphoneTesterRef.current.destroy();
-      microphoneTesterRef.current = null;
-    }
+    await stopPreview();
 
-    stopPreview();
-    navigate(`/video/${registrationId}`);
+    if (isGuestSession) {
+      navigate(`/guest-session/${patientId}`);
+    } else {
+      navigate(`/video/${patientId}`);
+    }
   };
 
   const handleReturn = async () => {
     try {
-      stopPreview();
-
-      if (microphoneTesterRef.current) {
-        microphoneTesterRef.current.destroy();
-        microphoneTesterRef.current = null;
-      }
+      await stopPreview();
     } catch (error) {
       console.error("Error cleaning up tracks:", error);
     } finally {
-      navigate(`/admin-edit/${registrationId}`);
+      navigate(`/admin-edit/${patientId}`);
     }
   };
 
@@ -291,25 +326,27 @@ const PreviewContainer = () => {
             Video Preview
           </h1>
           <div className="flex gap-2">
-            <button
-              onClick={handleReturn}
-              className="inline-flex items-center gap-1 px-2 py-1 bg-black text-white rounded-md hover:bg-gray-800 transition-colors text-xs font-medium"
-            >
-              <svg
-                className="w-3 h-3"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
+            {!isGuestSession && (
+              <button
+                onClick={handleReturn}
+                className="inline-flex items-center gap-1 px-2 py-1 bg-black text-white rounded-md hover:bg-gray-800 transition-colors text-xs font-medium"
               >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M15 19l-7-7 7-7"
-                />
-              </svg>
-              File
-            </button>
+                <svg
+                  className="w-3 h-3"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M15 19l-7-7 7-7"
+                  />
+                </svg>
+                File
+              </button>
+            )}
             <button
               onClick={handleJoin}
               className="inline-flex items-center gap-1 px-2 py-1 bg-black text-white rounded-md hover:bg-gray-800 transition-colors text-xs font-medium"
@@ -461,4 +498,4 @@ const PreviewContainer = () => {
   );
 };
 
-export default PreviewContainer;
+export default VideoPreview;

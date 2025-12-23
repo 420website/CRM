@@ -4,16 +4,11 @@ import { useZoom } from "../../context/ZoomContext";
 import { HiMiniUsers } from "react-icons/hi2";
 import { Mic, MicOff, Video, VideoOff } from "lucide-react";
 import ParticipantVideoGrid from "../components/VideoGrid";
-import { FiShare2, FiCheck } from "react-icons/fi";
-import ConfirmModal from "../components/ConfirmModal";
 import LoadingScreen from "/src/components/Loading.jsx";
 import { PictureInPicture, PictureInPicture2 } from "lucide-react";
-import { Lock, Unlock, Settings } from "lucide-react";
-
-export default function VideoSession() {
+import { Settings } from "lucide-react";
+export default function GuestVideoSession() {
   const { patientId } = useParams();
-  const [copied, setCopied] = useState(false);
-  const [showConfirm, setShowConfirm] = useState("");
   const [showUsers, setShowUsers] = useState(false);
 
   const {
@@ -23,15 +18,9 @@ export default function VideoSession() {
     isMuted,
     isVideoOn,
     participants,
-    sessionPatientId,
-    sessionKey,
-    currentUser,
-    isSessionLocked,
-    lockSession,
-    unlockSession,
+    guestJoinSession,
     loading,
     isJoiningRef,
-    joinSession,
     setShowSelfView,
     showSelfView,
   } = useZoom();
@@ -39,67 +28,20 @@ export default function VideoSession() {
   useEffect(() => {
     if (isJoiningRef.current) return;
 
-    joinSession(patientId);
+    guestJoinSession(patientId);
   }, []);
-
-  const copyMeetingInfo = () => {
-    const guestUrl = `${window.location.origin}/guest-video/${sessionPatientId}`;
-    const text = `Join the video session:
-
-URL: ${guestUrl}
-Passcode: ${sessionKey}`;
-
-    navigator.clipboard.writeText(text);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
-
-  const handleExit = () => {
-    if (currentUser?.isHost) {
-      const confirmed = window.confirm("End session for all participants?");
-      if (!confirmed) return;
-      leaveSession(true);
-    } else {
-      leaveSession();
-    }
-  };
 
   if (loading) {
     return <LoadingScreen />;
   }
-
   return (
     <div className="flex-grow flex flex-col bg-gray-50">
       <div className="flex-grow flex flex-col bg-white rounded-lg shadow-md">
-        {showConfirm === "delete" && (
-          <ConfirmModal
-            message={"Confirm to delete registration"}
-            subMessage={"This action cannot be undone"}
-            confirm={() => deleteRegistration(deleteRegistrationId)}
-            setShowConfirm={setShowConfirm}
-          />
-        )}
-
         {/* Participants Sidebar */}
         <div className="bg-white flex flex-col rounded-lg shadow-md p-4 m-4">
           <div className="flex w-full mb-1">
-            <div className="flex justify-between items-center w-full">
-              <div className="flex gap-2 items-center">
-                <h3 className="text-black font-semibold">
-                  Patient: {sessionPatientId}
-                </h3>
-                {currentUser?.isHost &&
-                  (isSessionLocked ? (
-                    <button onClick={unlockSession} title="Unlock session">
-                      <Lock className="w-4 h-4 text-black font-bold" />
-                    </button>
-                  ) : (
-                    <button onClick={lockSession} title="Lock session">
-                      <Unlock className="w-4 h-4" />
-                    </button>
-                  ))}
-              </div>
-
+            <div className="flex w-full justify-between items-center gap-2">
+              <h3 className="text-black font-semibold">Patient: {patientId}</h3>
               <button onClick={() => setShowUsers(!showUsers)} title="Settings">
                 <Settings className="w-4 h-4" />
               </button>
@@ -112,21 +54,8 @@ Passcode: ${sessionKey}`;
                     <div className="border-b border-gray-200 px-3 py-2">
                       <div className="flex justify-between items-center">
                         <h3 className="font-bold text-gray-900">Settings</h3>
-                        <button
-                          onClick={copyMeetingInfo}
-                          className="flex items-center gap-1 text-gray-600 hover:text-blue-600 hover:bg-gray-50 rounded text-xs px-2 py-1"
-                        >
-                          {copied ? (
-                            <FiCheck className="w-3 h-3 text-green-600" />
-                          ) : (
-                            <FiShare2 className="w-3 h-3 " />
-                          )}
-                          Share
-                        </button>
                       </div>
                     </div>
-
-                    {/* Action Buttons */}
 
                     {/* Participants Section */}
                     <div className="px-3 py-2">
@@ -202,7 +131,7 @@ Passcode: ${sessionKey}`;
             </div>
           </div>
           <div className="h-[80vh]">
-            <ParticipantVideoGrid />
+            <ParticipantVideoGrid registrationId={patientId} />
           </div>
           {/* Control Bar */}
           <div className="flex justify-center items-center gap-4 pt-4">
@@ -279,7 +208,7 @@ Passcode: ${sessionKey}`;
 
             {/* Leave Button */}
             <button
-              onClick={handleExit}
+              onClick={() => leaveSession()}
               className="p-3 rounded-full bg-red-500 hover:bg-red-600 text-white transition-colors"
             >
               <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">

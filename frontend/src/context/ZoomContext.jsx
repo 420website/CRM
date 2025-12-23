@@ -3,45 +3,47 @@ import { createContext, useContext, useRef, useState, useEffect } from "react";
 import ZoomVideo from "@zoom/videosdk";
 import { useNavigate } from "react-router-dom";
 import { VideoServices } from "../services/videoService";
+import toast from "react-hot-toast";
+import { useGuestAuth } from "./GuestAuthContext";
 
 const ZoomContext = createContext(null);
 
 export function ZoomProvider({ children }) {
   const navigate = useNavigate();
+  const guestAuth = useGuestAuth();
+
+  //Refs
   const clientRef = useRef(null);
   const streamRef = useRef(null);
-  const videoCanvasRef = useRef(null);
-  const [error, setError] = useState(null);
+  const isJoiningRef = useRef(false);
+  const sessionAudioStartedRef = useRef(false);
+
+  // UI States
   const [loading, setLoading] = useState(false);
   const [displayName, setDisplayName] = useState("");
   const [returnUrl, setReturnUrl] = useState("admin-menu");
-  const [patientSessionId, setPatientSessionId] = useState(null);
-
-  // Local
-  const [systemRequirements, setSystemRequirements] = useState(false);
-  const [isMuted, setIsMuted] = useState(false);
-  const [isVideoOn, setIsVideoOn] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
-  const previewVideoRef = useRef(null);
-  const previewAudioRef = useRef(null);
-  const previewMicRef = useRef(null);
-  const previewMicFeedbackIntervalRef = useRef(null);
-  const sessionAudioRef = useRef(null);
-  const sessionVideoRef = useRef(null);
+  const [showSelfView, setShowSelfView] = useState(true);
+
+  // Media
+  const [systemRequirements, setSystemRequirements] = useState(false);
+  const [isMuted, setIsMuted] = useState(true);
+  const [isVideoOn, setIsVideoOn] = useState(false);
   const [activeMicrophone, setActiveMicrophone] = useState("");
   const [activeSpeaker, setActiveSpeaker] = useState("");
   const [activeCamera, setActiveCamera] = useState("");
-  const startLocalMediaRef = useRef();
-  useEffect(() => {
-    startLocalMediaRef.current = startLocalMedia;
-  });
+
   // Session
-  const [sessionConfig, setSessionConfig] = useState(null);
-  const [sessionName, setSessionName] = useState(null);
   const [isInSession, setIsInSession] = useState(false);
+  const [sessionName, setSessionName] = useState(null);
+  const [sessionKey, setSessionKey] = useState(null);
+  const [currentUser, setCurrentUser] = useState({});
   const [participants, setParticipants] = useState([]);
-  const inSessionRef = useRef(false);
-  const heartbeatTimerRef = useRef(null);
+  const [isSessionLocked, setIsSessionLocked] = useState(false);
+  const [sessionPatientId, setSessionPatientId] = useState(null);
+
+  //host
+  const leaseIntervalRef = useRef(null);
 
   const client = ZoomVideo.createClient();
 
@@ -56,10 +58,27 @@ export function ZoomProvider({ children }) {
     setSystemRequirements(allClear);
   };
 
-  const updateParticipants = (client) => {
-    const participants = client.getAllUser();
-    setParticipants(participants);
+  const syncParticipants = async () => {
+    const users = clientRef.current.getAllUser();
+    setParticipants(users);
   };
+
+  const startLeasePolling = async (patientId) => {
+    if (leaseIntervalRef.current) clearInterval(leaseIntervalRef.current);
+
+    leaseIntervalRef.current = setInterval(async () => {
+      try {
+        await VideoServices.refresh_lease(patientId);
+      } catch (err) {
+        console.error("Failed to refresh host lease:", err);
+      }
+    }, 60_000);
+  };
+
+  useEffect(() => {
+    if (currentUser.isHost && sessionPatientId)
+      startLeasePolling(sessionPatientId);
+  }, [sessionPatientId]);
 
   // Initialize Zoom client once
   useEffect(() => {
@@ -68,237 +87,230 @@ export function ZoomProvider({ children }) {
         await client.init("en-US", "Global", {
           patchJsMedia: true,
           stayAwake: true,
+          leaveOnPageUnload: true,
         });
         clientRef.current = client;
         streamRef.current = client.getMediaStream();
 
+        // Local audio changes
+        client.on("current-audio-change", (payload) => {
+          const { action } = payload;
+
+          if (action === "muted") setIsMuted(true);
+          if (action === "unmute") setIsMuted(false);
+        });
+
         // Set up event listeners
         client.on("user-added", async (payload) => {
-          setParticipants(client.getAllUser());
-
-          // Start media when YOU join
           const currentUser = client.getCurrentUserInfo();
           if (payload.some((user) => user.userId === currentUser.userId)) {
-            await startLocalMediaRef.current();
+            setCurrentUser(payload[0]);
           }
+
+          await syncParticipants();
         });
 
-        client.on("user-removed", (payload) => {
-          // Detach video for removed users
-          payload.forEach((user) => {
-            try {
-              stream.detachVideo(user.userId);
-            } catch (err) {
-              console.error(
-                `Failed to detach video for user ${user.userId}:`,
-                err,
-              );
-            }
-          });
-
-          updateParticipants(client);
+        client.on("user-removed", async (payload) => {
+          await syncParticipants();
         });
 
-        client.on("user-updated", (payload) => {
-          console.log("User updated:", payload);
-          updateParticipants(client);
+        client.on("user-updated", async (payload) => {
+          await syncParticipants();
         });
 
         // Handle peer video state changes - following SDK docs pattern
         client.on("peer-video-state-change", async (payload) => {
-          console.log("Peer video state changed:", payload);
-          // const stream = client.getMediaStream();
-
-          const stream = streamRef.current;
-
-          if (payload.action === "Start") {
-            console.log("Video started for user:", payload.userId);
-
-            // Wait a bit for the video to be ready
-            setTimeout(async () => {
-              const container = document.querySelector(
-                `video-player[data-user-id="${payload.userId}"]`,
-              );
-
-              if (container) {
-                try {
-                  await stream.attachVideo(payload.userId, 3, container);
-                } catch (err) {
-                  console.error(
-                    `Failed to attach video for ${payload.userId}:`,
-                    err,
-                  );
-                }
-              } else {
-                console.warn(`Container not found for user ${payload.userId}`);
-              }
-
-              // Update participants list
-              setParticipants(client.getAllUser());
-            }, 300);
-          } else if (payload.action === "Stop") {
-            try {
-              await stream.detachVideo(payload.userId);
-            } catch (err) {
-              console.error(
-                `Failed to detach video for ${payload.userId}:`,
-                err,
-              );
-            }
-
-            setParticipants(client.getAllUser());
-          }
+          await syncParticipants();
         });
 
         client.on("connection-change", (payload) => {
-          console.log("Connection changed:", payload);
           if (payload.state === "Connected") {
-            inSessionRef.current = true;
             setIsInSession(true);
           } else if (payload.state === "Closed") {
-            inSessionRef.current = false;
             setIsInSession(false);
           }
         });
       } catch (err) {
-        console.error("Failed to initialize Zoom client:", err);
-        setError("Failed to initialize video client");
+        toast.error("Failed to initialize video client");
       }
     };
 
     initClient();
 
     return () => {
-      if (!inSessionRef.current) return;
+      if (!isInSession) return;
+
       if (clientRef.current) {
         leaveSession();
       }
     };
   }, []);
 
-  // Preview
-  const startPreview = async () => {
-    if (!activeCamera || !activeMicrophone) return;
-    console.log("hello");
-
-    // Stop previous tracks
-    if (previewVideoRef.current) await previewVideoRef.current.stop();
-    if (previewAudioRef.current) await previewAudioRef.current.stop();
-
-    // Create local tracks for preview
-    previewVideoRef.current = ZoomVideo.createLocalVideoTrack(
-      activeCamera.deviceId,
-    );
-    previewAudioRef.current = ZoomVideo.createLocalAudioTrack(
-      activeMicrophone.deviceId,
-    );
-  };
-
-  const stopPreview = async () => {
-    if (previewVideoRef.current) {
-      await previewVideoRef.current.stop();
-      previewVideoRef.current = null;
-    }
-    if (previewAudioRef.current) {
-      await previewAudioRef.current.stop();
-      previewAudioRef.current = null;
-    }
-
-    if (previewMicFeedbackIntervalRef.current) {
-      clearInterval(previewMicFeedbackIntervalRef.current);
-      previewMicFeedbackIntervalRef.current = null;
-    }
-  };
-
   // Session
-  const startHeartbeat = (patientId) => {
-    sendHeartbeat(patientId);
-
-    // then schedule periodic heartbeat
-    heartbeatTimerRef.current = setInterval(() => {
-      sendHeartbeat(patientId);
-    }, 30000);
-  };
-
-  const stopHeartbeat = () => {
-    console.log("kill heartbeat");
-    console.log(heartbeatTimerRef.current);
-    if (heartbeatTimerRef.current) {
-      console.log("kill heartbeat2");
-
-      clearInterval(heartbeatTimerRef.current);
-      heartbeatTimerRef.current = null;
-    }
-  };
-
-  const sendHeartbeat = async (patientId) => {
-    try {
-      await VideoServices.heartbeat(patientId);
-    } catch (err) {
-      console.error("Heartbeat failed:", err);
-    }
-  };
-
   const joinSession = async (patientId) => {
+    if (isJoiningRef.current) return;
+
     setLoading(true);
+    isJoiningRef.current = true;
 
     const client = clientRef.current;
-    if (!client || !streamRef.current) {
-      setError("Video client not initialized");
+    const stream = streamRef.current;
+
+    if (!client || !stream) {
+      toast.error("Video client not initialized");
       setLoading(false);
+      isJoiningRef.current = false;
       return;
     }
 
     try {
-      // Fetch session token from backend
-      const response = await VideoServices.internal_join_session(patientId);
+      const response = await VideoServices.internalJoinVideo(patientId);
+
       if (!response.success || !response.data)
         throw new Error("Failed to get session token");
 
       const { access_token, sessionName, sessionPasscode } = response.data;
 
-      // console.log(activeMicrophone);
-      // console.log(activeCamera);
-      // console.log(activeSpeaker);
-      // Join the session
       await client.join(
         sessionName,
         access_token,
         displayName,
         sessionPasscode,
       );
-      // setIsInSession(true);
-      setPatientSessionId(patientId);
+
+      setSessionPatientId(patientId);
+      setSessionKey(sessionPasscode);
       setSessionName(sessionName);
+      setIsInSession(true);
 
-      // Update participants immediately
-      // setParticipants(client.getAllUser());
+      await stream.startAudio({
+        microphoneId: activeMicrophone.deviceId,
+        speakerId: activeSpeaker.deviceId,
+        muted: true, // Start muted
+      });
+      sessionAudioStartedRef.current = true;
 
-      // Start local media
-      // await startLocalMedia();
-
-      // START HEARTBEAT
-      startHeartbeat(patientId);
-      // inSessionRef.current = true;
+      await stream.muteAudio();
+      setIsMuted(true);
     } catch (err) {
-      console.error("Failed to join session:", err);
-      setError(`Failed to join session: ${err.message || err}`);
+      // Ignore duplicate operation errors
+      if (err.errorCode === 5012) {
+        return;
+      }
+      toast.error(`Failed to join session.`);
       setIsInSession(false);
     } finally {
-      // Refresh participant list
-      setParticipants(client.getAllUser());
       setLoading(false);
+      isJoiningRef.current = false;
     }
   };
 
-  const leaveSession = async () => {
-    inSessionRef.current = false;
-    console.log("Leaving session...");
-    stopHeartbeat();
+  const guestJoinSession = async (patientId) => {
+    if (isJoiningRef.current) return;
 
-    // const stream = streamRef.current;
+    setLoading(true);
+    isJoiningRef.current = true;
+
+    const client = clientRef.current;
+    const stream = streamRef.current;
+
+    if (!client || !stream) {
+      toast.error("Video client not initialized");
+      setLoading(false);
+      isJoiningRef.current = false;
+      return;
+    }
 
     try {
+      const { sessionJWT, sessionPasscode, sessionName } = guestAuth;
+
+      await client.join(sessionName, sessionJWT, displayName, sessionPasscode);
+      setSessionPatientId(patientId);
+      setSessionKey(sessionPasscode);
+      setSessionName(sessionName);
+      setIsInSession(true);
+
+      await stream.startAudio({
+        microphoneId: activeMicrophone.deviceId,
+        speakerId: activeSpeaker.deviceId,
+        muted: true,
+      });
+      sessionAudioStartedRef.current = true;
+
+      await stream.muteAudio();
+      setIsMuted(true);
+    } catch (err) {
+      // Ignore duplicate operation errors
+      if (err.errorCode === 5012) {
+        return;
+      }
+      toast.error(`Failed to join session.`);
+      setIsInSession(false);
+    } finally {
+      setLoading(false);
+      isJoiningRef.current = false;
+    }
+  };
+
+  const lockSession = async () => {
+    const result = await VideoServices.lockSession(sessionPatientId);
+
+    if (result.success) {
+      setIsSessionLocked(true);
+    } else {
+      toast.error(result.message);
+    }
+  };
+
+  const unlockSession = async () => {
+    const result = await VideoServices.unlockSession(sessionPatientId);
+
+    if (result.success) {
+      setIsSessionLocked(false);
+    } else {
+      toast.error(result.message);
+    }
+  };
+  const clearSession = () => {
+    // Clear polling
+    if (leaseIntervalRef.current) {
+      clearInterval(leaseIntervalRef.current);
+      leaseIntervalRef.current = null;
+    }
+
+    isJoiningRef.current = false;
+    sessionAudioStartedRef.current = false;
+
+    // UI States
+    setLoading(false);
+    setDisplayName("");
+    setReturnUrl("admin-menu");
+    setShowSelfView(true);
+
+    // Media
+    setSystemRequirements(false);
+    setIsMuted(true);
+    setIsVideoOn(false);
+    setActiveMicrophone("");
+    setActiveSpeaker("");
+    setActiveCamera("");
+
+    // Session
+    setIsInSession(false);
+    setSessionName(null);
+    setSessionKey(null);
+    setCurrentUser({});
+    setParticipants([]);
+    setIsSessionLocked(false);
+    setSessionPatientId(null);
+  };
+
+  const leaveSession = async (delete_session = false) => {
+    setIsInSession(false);
+
+    try {
+      if (delete_session) await VideoServices.deleteSession(sessionPatientId);
+
       await stopLocalMedia();
 
       const client = clientRef.current;
@@ -307,218 +319,38 @@ export function ZoomProvider({ children }) {
         try {
           await client.leave();
         } catch (zoomErr) {
-          // Ignore improper meeting state errors
-          if (zoomErr?.errorCode === 5002) {
-            console.warn("Zoom session already closed, skipping leave.");
-          } else {
+          if (zoomErr?.errorCode !== 5002) {
             console.error("Error leaving Zoom session:", zoomErr);
           }
         }
       }
-
-      if (patientSessionId) {
-        try {
-          await VideoServices.leave_session(patientSessionId);
-        } catch (apiErr) {
-          console.warn("Failed to notify backend of leave:", apiErr);
-        }
-      }
     } finally {
-      setIsInSession(false);
-      setIsMuted(false);
-      setIsVideoOn(false);
-      setParticipants([]);
+      clearSession();
       navigate(returnUrl);
     }
   };
 
-  // Local audio/video
-  // Session audio/video refs
-  // const sessionAudioRef = useRef(null);
-  // const sessionVideoRef = useRef(null);
-  //
-  // const startLocalMedia = async () => {
-  //   try {
-  //     const client = clientRef.current;
-  //     if (!client) return;
-  //
-  //     // AUDIO
-  //     if (activeMicrophone) {
-  //       if (sessionAudioRef.current) await sessionAudioRef.current.stop();
-  //       sessionAudioRef.current = ZoomVideo.createLocalAudioTrack(
-  //         activeMicrophone.deviceId,
-  //       );
-  //       await sessionAudioRef.current.start();
-  //       await sessionAudioRef.current.unmute();
-  //       setIsMuted(false);
-  //     }
-  //
-  //     // VIDEO - use dedicated local video container
-  //     if (activeCamera) {
-  //       if (sessionVideoRef.current) await sessionVideoRef.current.stop();
-  //       sessionVideoRef.current = ZoomVideo.createLocalVideoTrack(
-  //         activeCamera.deviceId,
-  //         { hd: true, fullHd: true },
-  //       );
-  //       const container = document.querySelector(".local-video-container");
-  //       if (container) {
-  //         await sessionVideoRef.current.start(container, {
-  //           hd: true,
-  //           fullHd: true,
-  //           mirrored: true,
-  //         });
-  //         setIsVideoOn(true);
-  //       } else {
-  //         console.warn("Local video container not found");
-  //       }
-  //     }
-  //   } catch (err) {
-  //     console.error("Failed to start local media:", err);
-  //     setError("Failed to start video/audio");
-  //   }
-  // };
-  //
-  // const stopLocalMedia = async () => {
-  //   try {
-  //     if (sessionVideoRef.current) {
-  //       await sessionVideoRef.current.stop();
-  //       sessionVideoRef.current = null;
-  //       setIsVideoOn(false);
-  //     }
-  //     if (sessionAudioRef.current) {
-  //       await sessionAudioRef.current.stop();
-  //       sessionAudioRef.current = null;
-  //       setIsMuted(true);
-  //     }
-  //   } catch (err) {
-  //     console.error("Failed to stop local media:", err);
-  //   }
-  // };
-  //
-  // const toggleMute = async () => {
-  //   try {
-  //     const audio = sessionAudioRef.current;
-  //     if (!audio) return;
-  //     if (isMuted) {
-  //       await audio.unmute();
-  //       setIsMuted(false);
-  //     } else {
-  //       await audio.mute();
-  //       setIsMuted(true);
-  //     }
-  //   } catch (err) {
-  //     if (err?.message?.includes("Already")) return;
-  //     console.error("Error toggling session mute:", err);
-  //   }
-  // };
-  //
-  // const toggleVideo = async () => {
-  //   try {
-  //     if (!activeCamera) return;
-  //     if (isVideoOn) {
-  //       if (sessionVideoRef.current) {
-  //         await sessionVideoRef.current.stop();
-  //         sessionVideoRef.current = null;
-  //       }
-  //       setIsVideoOn(false);
-  //       return;
-  //     }
-  //
-  //     // START VIDEO
-  //     const container = document.querySelector("video-player-container");
-  //     if (!container) {
-  //       console.warn("Video container not found");
-  //       return;
-  //     }
-  //     sessionVideoRef.current = ZoomVideo.createLocalVideoTrack(
-  //       activeCamera.deviceId,
-  //       { hd: true, fullHd: true },
-  //     );
-  //     await sessionVideoRef.current.start(container, {
-  //       hd: true,
-  //       fullHd: true,
-  //       mirrored: true,
-  //     });
-  //     setIsVideoOn(true);
-  //   } catch (err) {
-  //     console.error("Error toggling session video:", err);
-  //   }
-  // };
+  // Local controls
+  const stopLocalMedia = async () => {
+    const stream = streamRef.current;
+    if (!stream) return;
 
-  const startLocalMedia = async () => {
+    // Stop video
     try {
-      const stream = streamRef.current;
-      const client = clientRef.current;
-      if (!client || !stream) return;
-
-      if (activeMicrophone) {
-        await stream.startAudio({
-          microphoneId: activeMicrophone.deviceId,
-          speakerId: activeSpeaker.deviceId,
-        });
-        setIsMuted(false);
-      }
-
-      if (activeCamera) {
-        await stream.startVideo({
-          cameraId: activeCamera.deviceId,
-          hd: true,
-          fullHd: true,
-          mirrored: true,
-        });
-
-        console.log("Video started");
-        const currentUser = client.getCurrentUserInfo();
-        console.log("Current user ID:", currentUser.userId);
-
-        // Retry finding the video-player element
-        const attachWithRetry = async (attempts = 0, maxAttempts = 10) => {
-          const videoPlayer = document.querySelector(
-            `video-player[data-user-id="${currentUser.userId}"]`,
-          );
-
-          if (videoPlayer) {
-            try {
-              console.log("Attaching self video");
-              await stream.attachVideo(currentUser.userId, 3, videoPlayer);
-              console.log("✅ Self video attached");
-            } catch (err) {
-              console.error("❌ Failed to attach video:", err);
-            }
-          } else if (attempts < maxAttempts) {
-            const delay = Math.min(100 * Math.pow(2, attempts), 1000);
-            console.log(
-              `video-player not found, retrying in ${delay}ms... (attempt ${attempts + 1}/${maxAttempts})`,
-            );
-            setTimeout(() => attachWithRetry(attempts + 1, maxAttempts), delay);
-          } else {
-            console.error(
-              `⚠️ video-player not found after ${maxAttempts} attempts`,
-            );
-          }
-        };
-
-        attachWithRetry();
-        setIsVideoOn(true);
+      if (isVideoOn) {
+        await stream.stopVideo();
+        setIsVideoOn(false);
       }
     } catch (err) {
-      console.error("Failed to start local media:", err);
-      setError("Failed to start video/audio");
+      console.error("Failed to stop video:", err);
     }
-  };
 
-  const stopLocalMedia = async () => {
+    // Stop audio
     try {
-      const stream = streamRef.current;
-      if (!stream) return;
-
-      await stream.stopVideo();
-      setIsVideoOn(false);
-
       await stream.stopAudio();
       setIsMuted(true);
     } catch (err) {
-      console.error("Failed to stop local media:", err);
+      console.error("Failed to stop audio:", err);
     }
   };
 
@@ -526,6 +358,18 @@ export function ZoomProvider({ children }) {
     try {
       const stream = streamRef.current;
       if (!stream) return;
+
+      if (!sessionAudioStartedRef.current) {
+        await stream.startAudio({
+          microphoneId: activeMicrophone.deviceId,
+          speakerId: activeSpeaker.deviceId,
+        });
+        sessionAudioStartedRef.current = true;
+
+        await stream.muteAudio();
+        setIsMuted(true);
+        return;
+      }
 
       if (isMuted) {
         await stream.unmuteAudio();
@@ -535,7 +379,7 @@ export function ZoomProvider({ children }) {
         setIsMuted(true);
       }
     } catch (err) {
-      console.error("Error toggling mute:", err);
+      toast.error("Error toggling audio");
     }
   };
 
@@ -550,11 +394,19 @@ export function ZoomProvider({ children }) {
         await stream.stopVideo();
         setIsVideoOn(false);
       } else {
-        await stream.startVideo();
+        await stream.startVideo({
+          cameraId: activeCamera.deviceId,
+          hd: true,
+          fullHd: true,
+          mirrored: true,
+        });
         setIsVideoOn(true);
       }
     } catch (err) {
-      console.error("Error toggling video:", err);
+      if (err.errorCode === 6105) {
+        return;
+      }
+      toast.error("Error toggling video");
     }
   };
 
@@ -563,40 +415,36 @@ export function ZoomProvider({ children }) {
       value={{
         joinSession,
         leaveSession,
+        unlockSession,
+        lockSession,
         toggleMute,
         toggleVideo,
-        videoCanvasRef,
+        guestJoinSession,
+        sessionName,
         isMuted,
         isVideoOn,
+        isSessionLocked,
+        isMobile,
         participants,
-        error,
-        setSessionConfig,
-        sessionConfig,
-        client: clientRef.current,
-        stream: streamRef.current,
-        zmClient: client,
         loading,
         displayName,
         setDisplayName,
         setReturnUrl,
-        setPatientSessionId,
-        isMobile,
-        previewVideoRef,
-        previewAudioRef,
-        previewMicRef,
         setActiveCamera,
         activeCamera,
         setActiveSpeaker,
         activeSpeaker,
         setActiveMicrophone,
         activeMicrophone,
-        startPreview,
-        stopPreview,
-        previewMicFeedbackIntervalRef,
-        sessionVideoRef,
         isInSession,
-        sessionName,
-        patientSessionId,
+        currentUser,
+        isJoiningRef,
+        sessionKey,
+        sessionPatientId,
+        clientRef,
+        streamRef,
+        setShowSelfView,
+        showSelfView,
       }}
     >
       {children}

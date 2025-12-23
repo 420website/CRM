@@ -6,6 +6,7 @@ on:
       - main
       - nightly
       - dev 
+      - zoom
   pull_request:
     branches:
       - main
