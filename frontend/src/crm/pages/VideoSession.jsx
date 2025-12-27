@@ -188,11 +188,16 @@ Passcode: ${sessionKey}`;
                           }`}
                         >
                           {showSelfView ? (
-                            <PictureInPicture className="w-3 h-3" />
+                            <>
+                              <PictureInPicture className="w-3 h-3" />
+                              Hide Me
+                            </>
                           ) : (
-                            <PictureInPicture2 className="w-3 h-3" />
+                            <>
+                              <PictureInPicture2 className="w-3 h-3" />
+                              View Me
+                            </>
                           )}
-                          View Me
                         </button>
                       </div>
                     </div>

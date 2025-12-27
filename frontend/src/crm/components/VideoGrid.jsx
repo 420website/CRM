@@ -113,6 +113,14 @@ const ParticipantVideoGrid = () => {
                     />
                   </video-player-container>
                 )}
+                <div
+                  className="absolute inset-0 z-10"
+                  style={{
+                    pointerEvents: "auto",
+                    touchAction: "pan-y",
+                    background: "transparent",
+                  }}
+                />
                 <div className="absolute top-0 left-0 right-0 bg-gradient-to-b from-black/70 to-transparent p-3 pointer-events-none z-9">
                   <div className="flex items-center gap-1">
                     <p className="text-white text-sm font-medium">
