@@ -7,6 +7,7 @@ export default function ProvinceDropdown({
   required = false,
   all_provinces = true,
   formatting = "",
+  fixedHeight = false,
 }) {
   const { userLocationPermissions } = useAuth();
   let provinces = PROVINCES;
@@ -14,6 +15,14 @@ export default function ProvinceDropdown({
   if (!all_provinces && !userLocationPermissions.includes("All")) {
     provinces = userLocationPermissions;
   }
+
+  const heightStyle = fixedHeight
+    ? {
+        height: "40px",
+        minHeight: "40px",
+        maxHeight: "40px",
+      }
+    : {};
 
   return (
     <div id="province" className="scroll-mt-[60px]">
@@ -29,6 +38,7 @@ export default function ProvinceDropdown({
         value={value}
         onChange={handleChange}
         className={`w-full px-3 py-2 border border-gray-300 rounded-md  focus:outline-none focus:ring-2 focus:ring-black ${formatting}`}
+        style={heightStyle}
       >
         <option value="">Select</option>
         {/* Most Frequently Used */}

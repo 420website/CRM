@@ -653,7 +653,8 @@ const AdminDashboard = () => {
                     value={searchProvince}
                     handleChange={handleProvinceSearch}
                     all_provinces={false}
-                    formatting={"text-sm"}
+                    formatting={"text-sm focus:ring-blue-500"}
+                    fixedHeight={true}
                   />
                 </div>
 

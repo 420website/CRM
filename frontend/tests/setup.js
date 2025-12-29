@@ -1,6 +1,12 @@
 import api, { apiCall } from "../src/services/api";
 
 export const TestServices = {
+  expire_session: async (patient_id) => {
+    return apiCall(
+      () => api.post(`/testing/expire-zoom-session/${patient_id}`),
+      "Error expiring sesion",
+    );
+  },
   createVerifiedUser: async (email, password) => {
     return apiCall(
       () =>
