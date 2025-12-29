@@ -1,46 +1,3 @@
-# Backend
-x-backend-base: &backend_base 
-  build: 
-    context: ./backend
-    dockerfile: Dockerfile.test
-  env_file: 
-    - path: .env
-      required: false
-  environment:
-    - JWT_ALGORITHM=HS256
-    - JWT_ACCESS_SECRET=STUFRZH-MKLFj4j-6c9Z50WNWkvd9uqiWQJOpeCtI9Q
-    - MFA_ENCRYPTION_KEY=7CrUl1rG4NBNk4bSV2uU7RW79Z_dRdvrrZn3Eqgytqg=
-    - ALLOWED_ORIGINS=http://localhost:8000,http://localhost:3000
-    - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-sk-ant-dummy-key-for-testing}
-    - APP_NAME=testing
-    - APP_URL=http://localhost:8001 
-    - SMTP_EMAIL=email@exmaple.com
-    - SMTP_PASSWORD=password
-    - SMTP_SERVER=mail.privateemail.com
-    - SUPPORT_EMAIL=example@email.com
-    - ENVIRONMENT=Testing
-    - POSTGRES_HOST=postgres_test
-    - POSTGRES_PORT=5432
-    - POSTGRES_DB=appdb 
-    - POSTGRES_USER=root 
-    - POSTGRES_PASSWORD=example
-    - POSTGRES_URL=postgres://root:example@postgres_test:5432/appdb
-    - MINIO_SERVER_URL=http://minio:9000
-    - MINIO_ROOT_USER=testuser
-    - MINIO_ROOT_PASSWORD=password
-    - REDIS_HOST=redis
-    - REDIS_PORT=6379
-    - REDIS_PASSWORD=password
-    - MONGODB_URL=mongodb://root:example@mongodb:27017
-    - MONGODB_NAME=my420_ca_db
-    - ZOOM_VIDEO_SDK_KEY=a_key 
-    - ZOOM_VIDEO_SDK_SECRET=a_key
-    - ZOOM_API_KEY=a_key
-    - ZOOM_API_SECRET=a_key
-  networks:
-      - frontend-net 
-      - backend-net 
-
 # Frontend
 x-frontend-base: &frontend_base 
     build: 
@@ -206,10 +163,6 @@ services:
       - REDIS_HOST=redis
       - REDIS_PORT=6379
       - REDIS_PASSWORD=password
-      - ZOOM_VIDEO_SDK_KEY=a_key 
-      - ZOOM_VIDEO_SDK_SECRET=a_key
-      - ZOOM_API_KEY=a_key
-      - ZOOM_API_SECRET=a_key
     volumes:
       - ./scripts/wait-for-db.sh:/scripts/wait-for-db.sh
       - ./backend:/backend 
@@ -225,103 +178,59 @@ services:
     entrypoint: ["/scripts/wait-for-db.sh"]
     command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
 
-  # Unit tests
-  backend_unit_tests: 
-    <<: *backend_base
-    profiles:
-      - test
-      - test_unit 
-      - test_backend 
-      - test_backend_unit
-    volumes:
-      - ./backend/app:/backend/app 
-      - ./backend/tests:/backend/tests
-    command: "python -m unittest discover tests.unit"
-
-  backend_unit_tests_watch: 
-    <<: *backend_base
-    profiles:
-      - test_backend_unit_watch
-    volumes:
-      - ./backend/app:/backend/app 
-      - ./backend/tests:/backend/tests
-    command: >
-      sh -c "while true; do
-               python -m unittest discover tests.unit;
-               inotifywait -e modify,create,delete -r /backend/app /backend/tests;
-             done"
-
-  frontend_unit_tests: 
-    <<: *frontend_base
-    profiles:
-      - test
-      - test_unit 
-      - test_frontend
-      - test_frontend_unit
-    volumes:
-      - ./frontend:/frontend
-      - node_modules:/frontend/node_modules
-    command: sh -c  "npm run test:unit"
-
-  frontend_unit_tests_watch: 
-    <<: *frontend_base
-    profiles:
-      - test_frontend_unit_watch
-    volumes:
-      - ./frontend:/frontend
-      - node_modules:/frontend/node_modules
-    command: >
-      sh -c "while true; do
-              npm run test:unit:watch; 
-              inotifywait -e modify,create,delete -r /frontend/src /frontend/tests;
-             done"
-
-  # Integration tests 
-  backend_integration_tests: 
-    <<: *backend_base
-    volumes:
-      - ./scripts/wait-for-db.sh:/scripts/wait-for-db.sh
-      - ./backend/app:/backend/app 
-      - ./backend/tests:/backend/tests
-      - backend-logs:/logs
-    profiles:
-      - test
-      - test_integration 
-      - test_backend 
-      - test_backend_integration
-    ports:
-      - 8001:8000
-    entrypoint: ["/scripts/wait-for-db.sh"]
-    command: "python -m unittest discover tests.integration"
-
-  backend_integration_tests_watch: 
-    <<: *backend_base
-    volumes:
-      - ./scripts/wait-for-db.sh:/scripts/wait-for-db.sh
-      - ./backend/app:/backend/app 
-      - ./backend/tests:/backend/tests 
-      - backend-logs:/logs
-    profiles:
-      - test_backend_integration_watch
-    ports:
-      - 8001:8000
-    entrypoint: ["/scripts/wait-for-db.sh"]
-    command: >
-      sh -c "while true; do
-               python -m unittest discover tests.integration;
-               inotifywait -e modify,create,delete -r /backend/app /backend/tests;
-             done"
-
+  # caddy:
+  #   image: caddy:2-alpine
+  #   ports:
+  #     - "443:443"
+  #     - "80:80"
+  #   volumes:
+  #     - ./Caddyfile:/etc/caddy/Caddyfile
+  #     - caddy_data:/data
+  #   networks:
+  #     - frontend-net
+  #   profiles:
+  #     - test
+  #     - test_integration
+  #     - test_frontend
+  #     - test_frontend_integration
+  #     - test_frontend_integration_watch
+  #
+  # zoom-client:
+  #   image: node:23-slim
+  #   working_dir: /zoom
+  #   volumes:
+  #     - ./frontend/tests/fixtures/zoom:/zoom
+  #   ports:
+  #     - "5111:5111"
+  #   env_file: 
+  #     - path: .env
+  #       required: false
+  #   profiles:
+  #     - test
+  #     - test_integration
+  #     - test_frontend
+  #     - test_frontend_integration
+  #     - test_frontend_integration_watch
+  #   networks:
+  #     - frontend-net 
+  #     - backend-net 
+  #   command: sh -c "npm install && npm run dev -- --host 0.0.0.0 --port 5111"
+  #
+  # tests
   frontend_integration_tests: 
     <<: *frontend_base
     environment:
       - BACKEND_URL=http://backend_dummy:8000
       - VITE_API_BASE_URL=http://backend_dummy:8000
+      - ZOOM_CLIENT_URL=http://zoom-client:5173
     profiles:
       - test
       - test_integration 
       - test_frontend
       - test_frontend_integration
+    env_file: 
+      - path: .env
+        required: false
     ports:
       - 5174:5173
     volumes:
@@ -329,15 +238,22 @@ services:
       - ./frontend:/frontend
       - node_modules:/frontend/node_modules
     entrypoint: ["/scripts/wait-for-backend.sh"]
-    command: sh -c  "npm run test:integration"
-
-
+    command: sh -c  "npm run test:zoom"
+  
+ 
   frontend_integration_tests_watch: 
     <<: *frontend_base
+    extra_hosts:
+      - "host.docker.internal:172.17.0.1"  # Default Docker bridge gateway
+      - "caddy:172.17.0.1"
     environment:
       - BACKEND_URL=http://backend_dummy:8000
       - VITE_API_BASE_URL=http://backend_dummy:8000
+      - ZOOM_CLIENT_URL=https://host.docker.internal:5173
       - TZ=America/Toronto
+    env_file: 
+      - path: .env
+        required: false
     profiles:
       - test_frontend_integration_watch
     ports:
@@ -348,11 +264,11 @@ services:
       - node_modules:/frontend/node_modules
     entrypoint: ["/scripts/wait-for-backend.sh"]
     command: > 
-       sh -c "while true; do
-                npm run test:integration:watch;  
+       sh -c "npx playwright install chromium --with-deps &&
+              while true; do
+                npm run test:zoom
                 inotifywait -e modify,create,delete -r /frontend/src /frontend/tests;
               done"
-    # npm run test:integration:watch --file=tests/integration/analytics.test.js; 
 
 volumes:
   mongo_data:
@@ -362,6 +278,7 @@ volumes:
   redis_data:
   backend-logs:
   dummy-logs:
+  caddy_data:
 
 networks:
   frontend-net:

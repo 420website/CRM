@@ -9,6 +9,9 @@ ca.cert
 role_id 
 secret_id
 /logs
+frontend/test-results/
+/test-results/
+/old/
 
 # database 
 db/migrations/*_seed_admin.sql

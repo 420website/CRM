@@ -9,6 +9,7 @@ from app.registration.router import router as patient_router
 from app.analytics.router import router as analytics_router
 from app.webpage.router import router as contact_router
 from app.share_links.router import router as share_link_router
+from app.zoom.router import router as video_router
 from app.objects.router import router as object_router
 from app.config import settings
 from app.database import database, minio_client
@@ -59,7 +60,7 @@ app.include_router(reference_router)
 app.include_router(patient_router)
 app.include_router(share_link_router)
 app.include_router(object_router)
-
+app.include_router(video_router)
 
 if settings.debug:
     from app.testing.router import router as testing_router

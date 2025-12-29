@@ -11,7 +11,6 @@ security = HTTPBearer()
 async def get_current_user(
     credentials: HTTPAuthorizationCredentials = Depends(security),
 ) -> UserRead:
-
     token = credentials.credentials
     payload = SecurityService.decode_jwt(token)
 

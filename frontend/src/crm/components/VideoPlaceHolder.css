@@ -1,0 +1,35 @@
+/* dekstop */
+/* Desktop - show full 16:9 video */
+@media (min-width: 768px) {
+  #preview-container {
+    position: relative !important;
+    width: 100% !important;
+    height: 100% !important;
+  }
+  #preview-player,
+  #preview-player canvas {
+    width: 100% !important;
+    height: 100% !important;
+    object-fit: contain !important;
+  }
+}
+
+/* Mobile - crop to center of 16:9 video */
+@media (max-width: 767px) {
+  #preview-container {
+    position: absolute !important;
+    top: 0 !important;
+    left: 50% !important;
+    transform: translateX(-50%) !important;
+    height: 100% !important;
+    width: 177.78% !important;
+    aspect-ratio: 16/9 !important;
+  }
+  #preview-player,
+  #preview-player canvas {
+    height: 100% !important;
+    width: 100% !important;
+    object-fit: cover !important;
+    aspect-ratio: 3/4 !important;
+  }
+}

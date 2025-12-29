@@ -2,19 +2,42 @@
 class APIError(Exception):
     """Base exception for system"""
 
-    pass
+    status_code = 500
+
+    def __init__(self, message: str, status_code: int = None):
+        self.message = message
+        if status_code:
+            self.status_code = status_code
+        super().__init__(self.message)
 
 
 class DuplicateError(APIError):
-    """Raised when trying to create/update to a duplicate option"""
-
-    pass
+    status_code = 409
 
 
 class NotFoundError(APIError):
-    """Raised when option doesn't exist"""
+    status_code = 404
 
-    pass
+
+class UnauthorizedError(APIError):
+    """Identity is unauthenticated."""
+
+    status_code = 401
+
+
+class ForbiddenError(APIError):
+    """Indentity is known but doesn't have access."""
+
+    status_code = 403
+
+
+class SessionLockedError(APIError):
+    status_code = 423
+
+
+class SessionExpiredError(APIError):
+    status_code = 410
+    message = "Session has expired."
 
 
 # Analytics related

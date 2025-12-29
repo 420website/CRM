@@ -126,10 +126,51 @@ class SecurityService:
         except JWTError:
             return None
 
+    # JWT Handling
     @staticmethod
-    def generate_secure_token() -> str:
+    def generate_zoom_jwt(user_id: str, config: dict) -> Tuple[str, datetime]:
+        expiry = datetime.now(dt.timezone.utc) + timedelta(minutes=30)
+        exp = int(expiry.timestamp())
+        iat = int(datetime.now(dt.timezone.utc).timestamp())
+        is_host = user_id == str(config["host_id"])
+
+        payload: Dict[str, Any] = {
+            "app_key": settings.sdk_key,
+            "role_type": (1 if is_host else 0),
+            "tpc": config["session_name"],
+            "version": 1,
+            "exp": exp,
+            "iat": iat,
+            "video_webrtc_mode": 1,
+            "user_identity": user_id,
+            # "telemetry_tracking_id": "telemetryTrackingId",
+        }
+
+        return (
+            jwt.encode(
+                payload,
+                settings.sdk_secret,
+                algorithm=settings.jwt_algorithm,
+            ),
+            expiry,
+        )
+
+    @staticmethod
+    def decode_zoom_jwt(token: str) -> Optional[dict]:
+        try:
+            payload = jwt.decode(
+                token,
+                settings.sdk_secret,
+                algorithms=settings.jwt_algorithm,
+            )
+            return payload
+        except JWTError:
+            return None
+
+    @staticmethod
+    def generate_secure_token(length: int = 32) -> str:
         """Generate a 256-bit cryptographically secure random token"""
-        return secrets.token_urlsafe(32)
+        return secrets.token_urlsafe(length)
 
     @staticmethod
     def hash_token(token: str) -> str:
