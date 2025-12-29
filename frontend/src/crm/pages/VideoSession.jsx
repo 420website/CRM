@@ -64,7 +64,7 @@ Passcode: ${sessionKey}`;
     }
   };
 
-  if (loading) {
+  if (loading || !currentUser) {
     return <LoadingScreen />;
   }
 

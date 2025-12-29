@@ -37,7 +37,7 @@ export function ZoomProvider({ children }) {
   const [isInSession, setIsInSession] = useState(false);
   const [sessionName, setSessionName] = useState(null);
   const [sessionKey, setSessionKey] = useState(null);
-  const [currentUser, setCurrentUser] = useState({});
+  const [currentUser, setCurrentUser] = useState(null);
   const [participants, setParticipants] = useState([]);
   const [isSessionLocked, setIsSessionLocked] = useState(false);
   const [sessionPatientId, setSessionPatientId] = useState(null);
@@ -76,9 +76,9 @@ export function ZoomProvider({ children }) {
   };
 
   useEffect(() => {
-    if (currentUser.isHost && sessionPatientId)
+    if (currentUser?.isHost && sessionPatientId)
       startLeasePolling(sessionPatientId);
-  }, [sessionPatientId]);
+  }, [sessionPatientId, currentUser]);
 
   // Initialize Zoom client once
   useEffect(() => {
@@ -312,7 +312,7 @@ export function ZoomProvider({ children }) {
     setIsInSession(false);
     setSessionName(null);
     setSessionKey(null);
-    setCurrentUser({});
+    setCurrentUser(null);
     setParticipants([]);
     setIsSessionLocked(false);
     setSessionPatientId(null);
