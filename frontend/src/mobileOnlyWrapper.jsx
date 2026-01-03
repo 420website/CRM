@@ -79,7 +79,7 @@ export default function MobileOnlyWrapper({ children }) {
   const handleAdminBypass = () => {
     setIsAdmin(true);
     // Navigate to admin PIN page for authentication
-    window.location.href = "/admin-pin";
+    window.location.href = "/crm/login";
   };
 
   // Show loading state briefly

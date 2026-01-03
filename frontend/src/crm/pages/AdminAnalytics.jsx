@@ -302,7 +302,7 @@ const AdminAnalytics = () => {
   };
 
   const goBack = () => {
-    navigate("/admin-menu");
+    navigate("/crm/menu");
   };
 
   return (

@@ -649,7 +649,7 @@ const UserManagement = () => {
   };
 
   const goBack = () => {
-    navigate("/admin-menu");
+    navigate("/crm/menu");
   };
 
   return (

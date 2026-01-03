@@ -1,5 +1,5 @@
 # app/config.py
-import logging
+# import logging
 from typing import Any, List
 import os
 from dotenv import load_dotenv
@@ -47,6 +47,7 @@ class Settings:
     debug: bool = os.getenv("DEBUG") == "True"
     environment: str = os.getenv("ENVIRONMENT", "Production")
     support_email = get_env("SUPPORT_EMAIL")
+    isMy420: bool = get_env("isMy420") == "True"
 
     # smtp
     email: str = get_env("SMTP_EMAIL")

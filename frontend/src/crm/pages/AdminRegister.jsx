@@ -337,7 +337,7 @@ const AdminRegister = () => {
   const handleNavigateToRegistration = (id) => {
     setShowNavigateModal(false);
     setShowNavigateIdentityModal(false);
-    navigate(`/admin-edit/${id}`);
+    navigate(`/crm/file/${id}`);
   };
 
   const handleSubmit = async (e, dataOverride = formData) => {
@@ -552,7 +552,7 @@ const AdminRegister = () => {
           <h1 className="text-2xl font-bold text-gray-900 mb-4">Intake</h1>
           <div className="flex gap-2">
             <button
-              onClick={() => navigate("/admin-menu")}
+              onClick={() => navigate("/crm/menu")}
               className="inline-flex items-center gap-1 px-3 py-1 bg-black text-white rounded-md hover:bg-gray-800 transition-colors text-xs font-medium"
               type="button"
             >
@@ -572,7 +572,7 @@ const AdminRegister = () => {
               Admin Menu
             </button>
             <button
-              onClick={() => navigate("/admin-dashboard")}
+              onClick={() => navigate("/crm/dashboard")}
               className="inline-flex items-center gap-1 px-3 py-1 bg-black text-white rounded-md hover:bg-gray-800 transition-colors text-xs font-medium"
               type="button"
             >
@@ -624,7 +624,7 @@ const AdminRegister = () => {
               </p>
               <button
                 type="button"
-                onClick={() => navigate("/admin-menu")}
+                onClick={() => navigate("/crm/menu")}
                 className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
               >
                 Back to Menu
@@ -665,7 +665,7 @@ const AdminRegister = () => {
                       You don't have permission to access any registration tabs.
                     </p>
                     <button
-                      onClick={() => navigate("/admin-menu")}
+                      onClick={() => navigate("/crm/menu")}
                       className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
                     >
                       Back to Menu

@@ -43,7 +43,7 @@ function GuestVideoAccess() {
   };
 
   return (
-    <div className="flex items-center justify-center bg-gray-100 p-4">
+    <div className="flex-grow flex items-center justify-center bg-gray-100 p-4">
       <div className="bg-white rounded-lg shadow-lg p-8 max-w-md w-full">
         <h2 className="text-2xl font-bold mb-6 text-center">
           Join Video Session

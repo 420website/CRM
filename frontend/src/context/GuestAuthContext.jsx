@@ -65,7 +65,7 @@ export function GuestAuthProvider({ children }) {
       sessionStorage.setItem(`guest_auth_${patientId}`, guestId);
 
       // Navigate to preview page
-      navigate(`/guest-preview/${patientId}`);
+      navigate(`/crm/guest-preview/${patientId}`);
 
       return true;
     } catch (err) {
@@ -82,7 +82,7 @@ export function GuestAuthProvider({ children }) {
     }
     setIsAuthenticated(false);
     setGuestData(null);
-    navigate(`/guest-video/${token}`);
+    navigate(`/crm/guest-video/${token}`);
   };
 
   // Get stored guest data for rejoining Zoom

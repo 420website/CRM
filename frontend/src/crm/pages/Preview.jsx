@@ -47,7 +47,7 @@ const mountDevices = async () => {
 const VideoPreview = () => {
   const navigate = useNavigate();
   const { patientId } = useParams();
-  const isGuestSession = location.pathname.startsWith("/guest-preview/");
+  const isGuestSession = location.pathname.startsWith("/crm/guest-preview/");
   const [loading, setLoading] = useState(false);
 
   // Media
@@ -297,9 +297,9 @@ const VideoPreview = () => {
     await stopPreview();
 
     if (isGuestSession) {
-      navigate(`/guest-session/${patientId}`);
+      navigate(`/crm/guest-session/${patientId}`);
     } else {
-      navigate(`/video/${patientId}`);
+      navigate(`/crm/video/${patientId}`);
     }
   };
 
@@ -309,7 +309,7 @@ const VideoPreview = () => {
     } catch (error) {
       console.error("Error cleaning up tracks:", error);
     } finally {
-      navigate(`/admin-edit/${patientId}`);
+      navigate(`/crm/file/${patientId}`);
     }
   };
 

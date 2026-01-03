@@ -37,6 +37,7 @@ x-backend-base: &backend_base
     - ZOOM_VIDEO_SDK_SECRET=a_key
     - ZOOM_API_KEY=a_key
     - ZOOM_API_SECRET=a_key
+    - isMy420=True
   networks:
       - frontend-net 
       - backend-net 
@@ -210,6 +211,7 @@ services:
       - ZOOM_VIDEO_SDK_SECRET=a_key
       - ZOOM_API_KEY=a_key
       - ZOOM_API_SECRET=a_key
+      - isMy420=True
     volumes:
       - ./scripts/wait-for-db.sh:/scripts/wait-for-db.sh
       - ./backend:/backend 

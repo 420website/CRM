@@ -1,8 +1,3 @@
-import os
-from typing import List
-from app.config import logging
-from datetime import datetime
-
 from app.email.messages import (
     ContactEmailMessage,
     RegistrationEmailMessage,

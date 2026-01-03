@@ -378,7 +378,7 @@ const AdminEdit = () => {
   const handleNavigateToRegistration = (id) => {
     setShowNavigateModal(false);
     setShowNavigateIdentityModal(false);
-    navigate(`/admin-edit/${id}`);
+    navigate(`/crm/file/${id}`);
   };
 
   const handleSubmit = async (e, dataOverride = formData) => {
@@ -568,7 +568,7 @@ const AdminEdit = () => {
               type="button"
               onClick={() => {
                 setLastItem(null);
-                navigate("/admin-menu");
+                navigate("/menu");
               }}
               className="inline-flex items-center gap-1 px-3 py-1 bg-black text-white rounded-md hover:bg-gray-800 transition-colors text-xs font-medium"
             >
@@ -589,7 +589,7 @@ const AdminEdit = () => {
             </button>
             <button
               type="button"
-              onClick={() => navigate("/admin-dashboard")}
+              onClick={() => navigate("/crm/dashboard")}
               className="inline-flex items-center gap-1 px-3 py-1 bg-black text-white rounded-md hover:bg-gray-800 transition-colors text-xs font-medium"
             >
               <svg
@@ -640,7 +640,7 @@ const AdminEdit = () => {
               </p>
               <button
                 type="button"
-                onClick={() => navigate("/admin-menu")}
+                onClick={() => navigate("/crm/menu")}
                 className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
               >
                 Back to Menu

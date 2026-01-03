@@ -6,12 +6,13 @@ import { useAuth } from "../../context/AuthContext";
 import { Link, Navigate, useLocation, useNavigate } from "react-router-dom";
 import { Eye, EyeOff } from "lucide-react";
 
+// <div className="lg:h-[calc(100vh-400px)] bg-gray-50 flex flex-col justify-center m-4">
 function InsertPin({ handleSubmit, formData, handleChange, error, loading }) {
   const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
 
   return (
-    <div className="lg:h-[calc(100vh-400px)] bg-gray-50 flex flex-col justify-center m-4">
+    <div className="flex-grow lg:h-[calc(100vh-400px)] bg-gray-50 flex flex-col justify-center m-4">
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
         <div className="bg-white py-8 px-4 shadow rounded-lg sm:px-10">
           <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
@@ -80,7 +81,7 @@ function InsertPin({ handleSubmit, formData, handleChange, error, loading }) {
                   If you did not receive a verification email, please check your
                   spam folder or{" "}
                   <Link
-                    to="/verify-email"
+                    to="/crm/verify-email"
                     className="text-blue-600 hover:underline font-medium"
                   >
                     resend it here
@@ -162,7 +163,7 @@ const AdminPIN = () => {
   };
 
   if (isAuthenticated) {
-    return <Navigate to="/admin-menu" state={{ from: location }} replace />;
+    return <Navigate to="/crm/menu" state={{ from: location }} replace />;
   }
 
   if (showTwoFactor) {
