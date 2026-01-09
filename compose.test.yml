@@ -55,7 +55,7 @@ services:
     image: postgres:16
     restart: unless-stopped
     volumes:
-      - postgres_test_data:/var/lib/postgresql/data
+      - postgres_data_test:/var/lib/postgresql/data
     environment:
       POSTGRES_USER: root
       POSTGRES_PASSWORD: example
@@ -92,7 +92,7 @@ services:
     image: redis:7
     restart: unless-stopped
     volumes: 
-      - redis_data:/data
+      - redis_data_test:/data
     networks: 
       - backend-net
     environment: 
@@ -118,7 +118,7 @@ services:
       MINIO_ROOT_PASSWORD: password
       MINIO_SERVER_URL: http://minio-test:9000
     volumes:
-      - minio_data:/data
+      - minio_data_test:/data
     networks:
       - backend-net
       - db-net
@@ -155,7 +155,7 @@ services:
     ports:
       - "27017:27017"
     volumes:
-      - mongo_data:/data/db
+      - mongo_data_test:/data/db
     profiles:
       - test
       - database
@@ -212,7 +212,7 @@ services:
     volumes:
       - ./scripts/wait-for-db.sh:/scripts/wait-for-db.sh
       - ./backend:/backend 
-      - dummy-logs:/logs
+      - dummy_logs_test:/logs
     profiles:
       - backend
       - test_frontend_integration_watch
@@ -259,7 +259,7 @@ services:
       - test_frontend_unit
     volumes:
       - ./frontend:/frontend
-      - node_modules:/frontend/node_modules
+      - node_modules_test:/frontend/node_modules
     command: sh -c  "npm run test:unit"
 
   frontend_unit_tests_watch: 
@@ -268,7 +268,7 @@ services:
       - test_frontend_unit_watch
     volumes:
       - ./frontend:/frontend
-      - node_modules:/frontend/node_modules
+      - node_modules_test:/frontend/node_modules
     command: >
       sh -c "while true; do
               npm run test:unit:watch; 
@@ -282,7 +282,7 @@ services:
       - ./scripts/wait-for-db.sh:/scripts/wait-for-db.sh
       - ./backend/app:/backend/app 
       - ./backend/tests:/backend/tests
-      - backend-logs:/logs
+      - backend_logs_test:/logs
     profiles:
       - test
       - test_integration 
@@ -299,7 +299,7 @@ services:
       - ./scripts/wait-for-db.sh:/scripts/wait-for-db.sh
       - ./backend/app:/backend/app 
       - ./backend/tests:/backend/tests 
-      - backend-logs:/logs
+      - backend_logs_test:/logs
     profiles:
       - test_backend_integration_watch
     ports:
@@ -326,7 +326,7 @@ services:
     volumes:
       - ./scripts/wait-for-backend.sh:/scripts/wait-for-backend.sh
       - ./frontend:/frontend
-      - node_modules:/frontend/node_modules
+      - node_modules_test:/frontend/node_modules
     entrypoint: ["/scripts/wait-for-backend.sh"]
     command: sh -c  "npm run test:integration"
 
@@ -344,7 +344,7 @@ services:
     volumes:
       - ./scripts/wait-for-backend.sh:/scripts/wait-for-backend.sh
       - ./frontend:/frontend
-      - node_modules:/frontend/node_modules
+      - node_modules_test:/frontend/node_modules
     entrypoint: ["/scripts/wait-for-backend.sh"]
     command: > 
        sh -c "while true; do
@@ -354,13 +354,13 @@ services:
     # npm run test:integration:watch --file=tests/integration/analytics.test.js; 
 
 volumes:
-  mongo_data:
-  postgres_test_data:
-  node_modules:
-  minio_data:
-  redis_data:
-  backend-logs:
-  dummy-logs:
+  mongo_data_test:
+  postgres_data_test:
+  node_modules_test:
+  minio_data_test:
+  redis_data_test:
+  backend_logs_test:
+  dummy_logs_test:
 
 networks:
   frontend-net:

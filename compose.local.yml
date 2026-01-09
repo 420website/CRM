@@ -3,7 +3,7 @@ services:
     image: postgres:16
     restart: unless-stopped
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - postgres_data_dev:/var/lib/postgresql/data
       - ./certs:/certs:ro
     environment:
       - POSTGRES_INITDB_ARGS="--auth-host=md5"
@@ -48,7 +48,7 @@ services:
     image: redis:7
     restart: unless-stopped
     volumes: 
-      - redis_data:/data
+      - redis_data_dev:/data
     env_file:
       - .env
     networks: 
@@ -64,7 +64,7 @@ services:
     env_file: 
       - .env
     volumes:
-      - minio_data:/data
+      - minio_data_dev:/data
       - ./certs/server.crt:/root/.minio/certs/public.crt 
       - ./certs/server.key:/root/.minio/certs/private.key 
     networks:
@@ -103,7 +103,7 @@ services:
     ports:
       - "27017:27017"
     volumes:
-      - mongo_data:/data/db
+      - mongo_data_dev:/data/db
     profiles:
       - dev 
       - backend 
@@ -150,7 +150,7 @@ services:
       - ./backend/app:/backend/app
       - ./backend/scripts:/backend/scripts 
       - ./certs:/certs:ro
-      - logs:/logs  
+      - logs_dev:/logs  
     entrypoint: ["/scripts/create_admin.sh"]
     command: 'python -m app.main'
 
@@ -167,7 +167,7 @@ services:
       - frontend
     volumes:
       - ./frontend:/frontend
-      - node_modules:/frontend/node_modules
+      - node_modules_dev:/frontend/node_modules
     command: > 
       sh -c " 
         npm install;
@@ -175,13 +175,13 @@ services:
       "
 
 volumes:
-  node_modules:
-  postgres_data:
-  redis_data:
-  mongo_data:
-  minio_data:
+  node_modules_dev:
+  postgres_data_dev:
+  redis_data_dev:
+  mongo_data_dev:
+  minio_data_dev:
 
-  logs:
+  logs_dev:
     driver: local
     driver_opts:
       o: bind
