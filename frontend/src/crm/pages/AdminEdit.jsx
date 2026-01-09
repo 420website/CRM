@@ -568,7 +568,7 @@ const AdminEdit = () => {
               type="button"
               onClick={() => {
                 setLastItem(null);
-                navigate("/menu");
+                navigate("/crm/menu");
               }}
               className="inline-flex items-center gap-1 px-3 py-1 bg-black text-white rounded-md hover:bg-gray-800 transition-colors text-xs font-medium"
             >
