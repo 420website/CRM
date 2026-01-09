@@ -19,25 +19,25 @@ x-backend-base: &backend_base
     - SMTP_SERVER=mail.privateemail.com
     - SUPPORT_EMAIL=example@email.com
     - ENVIRONMENT=Testing
-    - POSTGRES_HOST=postgres_test
+    - POSTGRES_HOST=postgres-test
     - POSTGRES_PORT=5432
     - POSTGRES_DB=appdb 
     - POSTGRES_USER=root 
     - POSTGRES_PASSWORD=example
-    - POSTGRES_URL=postgres://root:example@postgres_test:5432/appdb
-    - MINIO_SERVER_URL=http://minio:9000
+    - POSTGRES_URL=postgres://root:example@postgres-test:5432/appdb
+    - MINIO_SERVER_URL=http://minio-test:9000
     - MINIO_ROOT_USER=testuser
     - MINIO_ROOT_PASSWORD=password
-    - REDIS_HOST=redis
+    - REDIS_HOST=redis-test
     - REDIS_PORT=6379
     - REDIS_PASSWORD=password
-    - MONGODB_URL=mongodb://root:example@mongodb:27017
+    - MONGODB_URL=mongodb://root:example@mongodb-test:27017
     - MONGODB_NAME=my420_ca_db
     - ZOOM_VIDEO_SDK_KEY=a_key 
     - ZOOM_VIDEO_SDK_SECRET=a_key
     - ZOOM_API_KEY=a_key
     - ZOOM_API_SECRET=a_key
-    - isMy420=True
+    - IS_MY420=True
   networks:
       - frontend-net 
       - backend-net 
@@ -51,7 +51,7 @@ x-frontend-base: &frontend_base
       - frontend-net
 
 services:
-  postgres_test:
+  postgres-test:
     image: postgres:16
     restart: unless-stopped
     volumes:
@@ -70,12 +70,12 @@ services:
       - test_frontend_integration_watch
       - test_e2e_watch
 
-  dbmate_dev:
+  dbmate-test:
     image: amacneil/dbmate
     depends_on:
-      - postgres_test
+      - postgres-test
     environment:
-      - DATABASE_URL=postgres://root:example@postgres_test:5432/appdb?sslmode=disable
+      - DATABASE_URL=postgres://root:example@postgres-test:5432/appdb?sslmode=disable
     volumes:
       - ./db/migrations:/db/migrations
     networks:
@@ -88,16 +88,15 @@ services:
       - test_e2e_watch
     command: ["--wait","up"]
 
-  redis:
+  redis-test:
     image: redis:7
-    container_name: redis-test
     restart: unless-stopped
     volumes: 
       - redis_data:/data
     networks: 
       - backend-net
     environment: 
-      REDIS_HOST: redis
+      REDIS_HOST: redis-test
       REDIS_PORT: 6379
       REDIS_PASSWORD: password
     command: sh -c 'redis-server --requirepass password'
@@ -108,9 +107,8 @@ services:
       - test_frontend_integration_watch
       - test_e2e_watch
 
-  minio:
+  minio-test:
     image: minio/minio:latest
-    container_name: minio
     restart: unless-stopped
     ports:
       - "9000:9000"   # API & SDK access
@@ -118,7 +116,7 @@ services:
     environment:
       MINIO_ROOT_USER: testuser
       MINIO_ROOT_PASSWORD: password
-      MINIO_SERVER_URL: http://minio:9000
+      MINIO_SERVER_URL: http://minio-test:9000
     volumes:
       - minio_data:/data
     networks:
@@ -132,14 +130,14 @@ services:
       - test_e2e_watch
     command: server /data --console-address ":9001" --address ":9000"
 
-  minio_init:
+  minio-init-test:
     image: minio/mc:latest
     depends_on:
-      - minio
+      - minio-test
     entrypoint: >
       /bin/sh -c "
       sleep 5 &&
-      mc alias set local http://minio:9000 testuser password --api S3v4 
+      mc alias set local http://minio-test:9000 testuser password --api S3v4 
       "
     networks:
       - backend-net
@@ -151,9 +149,8 @@ services:
       - test_frontend_integration_watch
       - test_e2e_watch
 
-  mongodb:
+  mongodb-test:
     image: mongodb/mongodb-community-server:latest
-    container_name: mongodb
     restart: unless-stopped
     ports:
       - "27017:27017"
@@ -171,7 +168,7 @@ services:
     networks:
       - backend-net
 
-  backend_dummy: 
+  backend-dummy: 
     build: 
       context: ./backend
       dockerfile : Dockerfile.test
@@ -193,25 +190,25 @@ services:
       - SMTP_EMAIL=email@exmaple.com
       - SMTP_PASSWORD=password
       - SMTP_SERVER=mail.privateemail.com
-      - POSTGRES_HOST=postgres_test
+      - POSTGRES_HOST=postgres-test
       - POSTGRES_PORT=5432
       - POSTGRES_DB=appdb 
       - POSTGRES_USER=root 
       - POSTGRES_PASSWORD=example
-      - POSTGRES_URL=postgres://root:example@postgres_test:5432/appdb
-      - MONGODB_URL=mongodb://root:example@mongodb:27017
+      - POSTGRES_URL=postgres://root:example@postgres-test:5432/appdb
+      - MONGODB_URL=mongodb://root:example@mongodb-test:27017
       - MONGODB_NAME=my420_ca_db
-      - MINIO_SERVER_URL=http://minio:9000
+      - MINIO_SERVER_URL=http://minio-test:9000
       - MINIO_ROOT_USER=testuser
       - MINIO_ROOT_PASSWORD=password
-      - REDIS_HOST=redis
+      - REDIS_HOST=redis-test
       - REDIS_PORT=6379
       - REDIS_PASSWORD=password
       - ZOOM_VIDEO_SDK_KEY=a_key 
       - ZOOM_VIDEO_SDK_SECRET=a_key
       - ZOOM_API_KEY=a_key
       - ZOOM_API_SECRET=a_key
-      - isMy420=True
+      - IS_MY420=True
     volumes:
       - ./scripts/wait-for-db.sh:/scripts/wait-for-db.sh
       - ./backend:/backend 
@@ -317,8 +314,8 @@ services:
   frontend_integration_tests: 
     <<: *frontend_base
     environment:
-      - BACKEND_URL=http://backend_dummy:8000
-      - VITE_API_BASE_URL=http://backend_dummy:8000
+      - BACKEND_URL=http://backend-dummy:8000
+      - VITE_API_BASE_URL=http://backend-dummy:8000
     profiles:
       - test
       - test_integration 
@@ -337,8 +334,8 @@ services:
   frontend_integration_tests_watch: 
     <<: *frontend_base
     environment:
-      - BACKEND_URL=http://backend_dummy:8000
-      - VITE_API_BASE_URL=http://backend_dummy:8000
+      - BACKEND_URL=http://backend-dummy:8000
+      - VITE_API_BASE_URL=http://backend-dummy:8000
       - TZ=America/Toronto
     profiles:
       - test_frontend_integration_watch
