@@ -37,7 +37,7 @@ x-backend-base: &backend_base
     - ZOOM_VIDEO_SDK_SECRET=a_key
     - ZOOM_API_KEY=a_key
     - ZOOM_API_SECRET=a_key
-    - IS_MY420=True
+    - IS_MY420=true
   networks:
       - frontend-net 
       - backend-net 
@@ -182,7 +182,7 @@ services:
       - ALLOWED_ORIGINS=http://localhost:3000
       - APP_NAME=dummy
       - APP_URL=http://localhost:5174 
-      - DEBUG=True
+      - DEBUG=true
       - ENVIRONMENT=dev
       - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-sk-ant-dummy-key-for-testing}
       - SUPPORT_EMAIL=email@exmaple.com
@@ -208,7 +208,7 @@ services:
       - ZOOM_VIDEO_SDK_SECRET=a_key
       - ZOOM_API_KEY=a_key
       - ZOOM_API_SECRET=a_key
-      - IS_MY420=True
+      - IS_MY420=true
     volumes:
       - ./scripts/wait-for-db.sh:/scripts/wait-for-db.sh
       - ./backend:/backend 
