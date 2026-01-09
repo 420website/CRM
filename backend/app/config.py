@@ -44,10 +44,10 @@ class Settings:
     # app
     app_url: str = get_env("APP_URL")
     app_name: str = get_env("APP_NAME")
-    debug: bool = os.getenv("DEBUG") == "True"
+    debug: bool = os.getenv("DEBUG") == "true"
     environment: str = os.getenv("ENVIRONMENT", "Production")
     support_email = get_env("SUPPORT_EMAIL")
-    isMy420: bool = get_env("isMy420") == "True"
+    is_my420: bool = get_env("IS_MY420") == "true"
 
     # smtp
     email: str = get_env("SMTP_EMAIL")

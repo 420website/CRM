@@ -19,4 +19,5 @@ exec docker-entrypoint.sh postgres \
   -c log_min_messages=info \
   -c log_rotation_age=0 \
   -c log_rotation_size=0 \
-  -c log_truncate_on_rotation=off
+  -c log_truncate_on_rotation=off \
+  -c app.legacy_instance=${IS_MY420:-false}

@@ -60,7 +60,7 @@ app.include_router(share_link_router)
 app.include_router(object_router)
 app.include_router(video_router)
 
-if settings.isMy420:
+if settings.is_my420:
     from app.webpage.router import router as contact_router
 
     app.include_router(contact_router)
