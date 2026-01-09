@@ -21,8 +21,8 @@ export default function Assessments({ setActiveTab, currentRegistrationId }) {
   const [formData, setFormData] = useState({
     type: "",
     date: new Date().toLocaleDateString("en-CA"),
-    result: "Negative",
-    tester: "CM",
+    result: "",
+    tester: "",
     data: null,
   });
 
@@ -30,8 +30,8 @@ export default function Assessments({ setActiveTab, currentRegistrationId }) {
     setFormData({
       type: "",
       date: new Date().toLocaleDateString("en-CA"),
-      result: "Negative",
-      tester: "CM",
+      result: "",
+      tester: "",
       data: {},
     });
   }
@@ -187,8 +187,8 @@ export default function Assessments({ setActiveTab, currentRegistrationId }) {
     const form = {
       type: item.type,
       date: item.date,
-      result: item.result || "Negative",
-      tester: item.tester || "CM",
+      result: item.result,
+      tester: item.tester,
       data: item.data || null,
     };
 

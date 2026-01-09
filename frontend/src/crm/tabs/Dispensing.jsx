@@ -21,9 +21,9 @@ export default function Dispensing({ setActiveTab, currentRegistrationId }) {
   const [dispensingData, setDispensingData] = useState({
     medication: "",
     rx: "",
-    quantity: "28",
+    quantity: "",
     lot: "",
-    product_type: "Commercial",
+    product_type: "",
     expiry_date: "",
   });
 
@@ -184,9 +184,9 @@ export default function Dispensing({ setActiveTab, currentRegistrationId }) {
     setDispensingData({
       medication: dispensing.medication || "",
       rx: dispensing.rx || "",
-      quantity: dispensing.quantity || "28",
+      quantity: dispensing.quantity || "",
       lot: dispensing.lot || "",
-      product_type: dispensing.product_type || "Commercial",
+      product_type: dispensing.product_type || "",
       expiry_date: dispensing.expiry_date || "",
     });
     setEditingDispensingId(dispensing.id);
@@ -200,9 +200,9 @@ export default function Dispensing({ setActiveTab, currentRegistrationId }) {
     setDispensingData({
       medication: "",
       rx: "",
-      quantity: "28",
+      quantity: "",
       lot: "",
-      product_type: "Commercial",
+      product_type: "",
       expiry_date: "",
     });
     setEditingDispensingId(null);

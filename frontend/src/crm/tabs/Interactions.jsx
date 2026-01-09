@@ -43,9 +43,14 @@ export default function Interactions({ setActiveTab, currentRegistrationId }) {
       toast.error("Please select a date");
       return false;
     }
-
-    if (!interactionData.description || interactionData.description === "") {
-      toast.error("Please select a description");
+    if (
+      !interactionData.description ||
+      interactionData.description === "" ||
+      !options["interaction"].some(
+        (d) => d.name === interactionData.description,
+      )
+    ) {
+      toast.error("Please select a valid description");
       return false;
     }
 
@@ -398,6 +403,18 @@ export default function Interactions({ setActiveTab, currentRegistrationId }) {
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black"
               >
                 <option value="">Select</option>
+                {interactionData.description &&
+                  !options["interaction"].some(
+                    (d) => d.name === interactionData.description,
+                  ) && (
+                    <option
+                      value={interactionData.description}
+                      disabled
+                      className="text-red-600"
+                    >
+                      {interactionData.description} (No longer available)
+                    </option>
+                  )}
                 {/* Most Frequently Used */}
                 {options["interaction"]
                   .filter((i) => i.is_frequent)
@@ -419,6 +436,15 @@ export default function Interactions({ setActiveTab, currentRegistrationId }) {
                     </option>
                   ))}
               </select>
+              {interactionData.description &&
+                !options["interaction"].some(
+                  (d) => d.name === interactionData.description,
+                ) && (
+                  <div className="mt-1 text-sm text-red-600">
+                    ⚠️ This option is no longer available. Please select a new
+                    option before saving.
+                  </div>
+                )}
             </div>
 
             {/* Conditional Referral ID field - only shows when Referral is selected */}

@@ -22,11 +22,13 @@ import toast from "react-hot-toast";
 import DuplicateModal from "../components/DuplicateModal";
 import { useDashboard } from "../../context/DashboardContext";
 import Assessments from "../tabs/Assessments";
+import { useReferences } from "../../context/ReferenceContext";
 
 const AdminEdit = () => {
   const navigate = useNavigate();
   const { patientId } = useParams();
   const { userRole, userPermissions, userProvince } = useAuth();
+  const { templates, options, selectedProvince } = useReferences();
   const { setLastItem } = useDashboard();
   const { getClientAssociatedData } = useRegistration();
   const { getDashboardRegistrations, getDashboardActivities } = useDashboard();
@@ -49,6 +51,19 @@ const AdminEdit = () => {
   const [showNavigateIdentityModal, setShowNavigateIdentityModal] =
     useState(false);
   const [forceSave, setForceSave] = useState(true);
+
+  const filterReferralSites = () => {
+    if (!selectedProvince) {
+      return [];
+    }
+
+    const filteredSites = options["referral_site"].filter((s) => {
+      const siteProvince = s?.custom_fields?.province;
+      return siteProvince === selectedProvince;
+    });
+
+    return filteredSites;
+  };
 
   const getDefaultForm = () => ({
     ...DEFAULT_FORM,
@@ -328,6 +343,17 @@ const AdminEdit = () => {
       return false;
     }
 
+    if (!options["disposition"].some((d) => d.name === formData.disposition)) {
+      setIsSubmitting(false);
+      setMissingFields(true);
+
+      toast.error("Select valid Disposition");
+      document
+        .querySelector("#disposition")
+        ?.scrollIntoView({ behavior: "smooth" });
+      return false;
+    }
+
     if (formData.health_card && formData.health_card.length != 10) {
       setIsSubmitting(false);
       setMissingFields(true);
@@ -361,6 +387,17 @@ const AdminEdit = () => {
       return false;
     }
 
+    if (!filterReferralSites().some((d) => d.name === formData.referral_site)) {
+      setIsSubmitting(false);
+      setMissingFields(true);
+
+      toast.error("Select valid Referral Site");
+      document
+        .querySelector("#referral_site")
+        ?.scrollIntoView({ behavior: "smooth" });
+      return false;
+    }
+
     if (!formData.province) {
       setIsSubmitting(false);
       setMissingFields(true);
@@ -368,6 +405,35 @@ const AdminEdit = () => {
       toast.error("Province required");
       document
         .querySelector("#province")
+        ?.scrollIntoView({ behavior: "smooth" });
+      return false;
+    }
+
+    if (
+      formData.selected_template &&
+      !templates["clinical"].some((d) => d.name === formData.selected_template)
+    ) {
+      setIsSubmitting(false);
+      setMissingFields(true);
+
+      toast.error("Select valid clinical template");
+      document
+        .querySelector("#selected_template")
+        ?.scrollIntoView({ behavior: "smooth" });
+      return false;
+    }
+
+    if (
+      formData.physician &&
+      formData.physician !== "None" &&
+      !options["physician"].some((d) => d.name === formData.physician)
+    ) {
+      setIsSubmitting(false);
+      setMissingFields(true);
+
+      toast.error("Select valid physician");
+      document
+        .querySelector("#physician")
         ?.scrollIntoView({ behavior: "smooth" });
       return false;
     }
