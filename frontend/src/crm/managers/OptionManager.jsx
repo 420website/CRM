@@ -16,7 +16,6 @@ export default function OptionManager({ type }) {
   const [data, setData] = useState({
     name: "",
     is_frequent: false,
-    is_default: false,
     custom_fields:
       type === "referral_site" ? { province: selectedProvince } : {},
   });
@@ -25,7 +24,6 @@ export default function OptionManager({ type }) {
     setData({
       name: "",
       is_frequent: false,
-      is_default: false,
       custom_fields:
         type === "referral_site" ? { province: selectedProvince } : {},
     });
@@ -349,11 +347,6 @@ export default function OptionManager({ type }) {
                       <span className="text-xs font-medium text-gray-900 truncate">
                         {site.name}
                       </span>
-                      {site.is_default && (
-                        <span className="inline-flex items-center px-1 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                          D
-                        </span>
-                      )}
                     </div>
                   </div>
                 ))}
@@ -382,11 +375,6 @@ export default function OptionManager({ type }) {
                       <span className="text-xs font-medium text-gray-900 truncate">
                         {site.name}
                       </span>
-                      {site.is_default && (
-                        <span className="inline-flex items-center px-1 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                          D
-                        </span>
-                      )}
                     </div>
                   </div>
                 ))}

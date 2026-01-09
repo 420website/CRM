@@ -56,7 +56,6 @@ class TestReferenceOptionService(IsolatedAsyncioTestCase):
             name="default_option",
             type="coverage",
             is_frequent=True,
-            is_default=True,
             custom_fields={"province": "Ontario"},
         )
 
@@ -74,7 +73,6 @@ class TestReferenceOptionService(IsolatedAsyncioTestCase):
             name="default_option",
             type="coverage",
             is_frequent=True,
-            is_default=True,
             custom_fields={},
         )
         await ReferenceOptionService.create_option(option)
@@ -90,7 +88,6 @@ class TestReferenceOptionService(IsolatedAsyncioTestCase):
             name="default_option",
             type="coverage",
             is_frequent=True,
-            is_default=True,
             custom_fields={"province": "Ontario"},
         )
 
@@ -108,7 +105,6 @@ class TestReferenceOptionService(IsolatedAsyncioTestCase):
             name="default_option",
             type="coverage",
             is_frequent=True,
-            is_default=True,
             custom_fields={"province": "Ontario"},
         )
 
@@ -127,7 +123,6 @@ class TestReferenceOptionService(IsolatedAsyncioTestCase):
             name="test_option",
             type="interaction",
             is_frequent=False,
-            is_default=False,
             custom_fields={"province": "Ontario"},
         )
 
@@ -140,7 +135,6 @@ class TestReferenceOptionService(IsolatedAsyncioTestCase):
         option = [t for t in options if t.name == "test_option"]
 
         self.assertEqual(option[0].name, "test_option")
-        self.assertFalse(option[0].is_default)
         self.assertFalse(option[0].is_frequent)
         self.assertEqual(option[0].custom_fields, data.custom_fields)
 
@@ -150,7 +144,6 @@ class TestReferenceOptionService(IsolatedAsyncioTestCase):
             name="default_general_site",
             type="coverage",
             is_frequent=True,
-            is_default=True,
             custom_fields={"province": "Ontario"},
         )
 
@@ -163,7 +156,6 @@ class TestReferenceOptionService(IsolatedAsyncioTestCase):
         option = [t for t in options if t.name == "default_general_site"]
 
         self.assertEqual(option[0].name, "default_general_site")
-        self.assertTrue(option[0].is_default)
         self.assertTrue(option[0].is_frequent)
         self.assertEqual(option[0].custom_fields, data.custom_fields)
 
@@ -173,7 +165,6 @@ class TestReferenceOptionService(IsolatedAsyncioTestCase):
             name="test_option",
             type="interaction",
             is_frequent=False,
-            is_default=False,
             custom_fields={"province": "Ontario"},
         )
 
@@ -196,7 +187,6 @@ class TestReferenceOptionService(IsolatedAsyncioTestCase):
             name="default_general_site",
             type="coverage",
             is_frequent=True,
-            is_default=True,
             custom_fields={"province": "Ontario"},
         )
 
@@ -213,7 +203,6 @@ class TestReferenceOptionService(IsolatedAsyncioTestCase):
             name="default_general_site",
             type="coverage",
             is_frequent=True,
-            is_default=True,
             custom_fields={"province": "Ontario"},
         )
 
@@ -230,7 +219,6 @@ class TestReferenceOptionService(IsolatedAsyncioTestCase):
             name="test_general_site",
             type="interaction",
             is_frequent=False,
-            is_default=False,
             custom_fields={"province": "Ontario"},
         )
 
@@ -254,14 +242,12 @@ class TestReferenceOptionService(IsolatedAsyncioTestCase):
             name="test_general_site",
             type="interaction",
             is_frequent=False,
-            is_default=False,
             custom_fields={"province": "Ontario"},
         )
         option2 = ReferenceOption(
             name="test_general_site_2",
             type="interaction",
             is_frequent=True,
-            is_default=True,
             custom_fields={"province": "Ontario"},
         )
 
@@ -282,7 +268,6 @@ class TestReferenceOptionService(IsolatedAsyncioTestCase):
             self.assertIsInstance(option, ReferenceOption)
             self.assertIsInstance(option.name, str)
             self.assertIsInstance(option.is_frequent, bool)
-            self.assertIsInstance(option.is_default, bool)
             self.assertIsInstance(option.custom_fields, dict)
 
     ## Delete
@@ -293,7 +278,6 @@ class TestReferenceOptionService(IsolatedAsyncioTestCase):
             name="test_general_site",
             type="coverage",
             is_frequent=False,
-            is_default=False,
             custom_fields={"province": "Ontario"},
         )
 
@@ -325,7 +309,6 @@ class TestReferenceOptionService(IsolatedAsyncioTestCase):
             name="test_general_site",
             type="interaction",
             is_frequent=False,
-            is_default=False,
             custom_fields={"province": "Ontario"},
         )
 
@@ -337,7 +320,6 @@ class TestReferenceOptionService(IsolatedAsyncioTestCase):
         update_data = ReferenceOptionUpdate(
             name="test_general_site",
             is_frequent=True,
-            is_default=True,
             custom_fields={"province": "Alberta"},
         )
 
@@ -351,7 +333,6 @@ class TestReferenceOptionService(IsolatedAsyncioTestCase):
         option = [t for t in options if t.name == "test_general_site"]
         self.assertIsNotNone(option[0])
         self.assertTrue(option[0].is_frequent)
-        self.assertTrue(option[0].is_default)
         self.assertEqual(option[0].custom_fields, {"province": "Alberta"})
 
     async def test_update_option_partial(self):
@@ -361,7 +342,6 @@ class TestReferenceOptionService(IsolatedAsyncioTestCase):
             name="test_general_site",
             type="coverage",
             is_frequent=False,
-            is_default=False,
             custom_fields={"province": "Ontario"},
         )
 
@@ -385,7 +365,6 @@ class TestReferenceOptionService(IsolatedAsyncioTestCase):
         option = [t for t in options if t.name == "test_general_site"]
         self.assertIsNotNone(option[0])
         self.assertTrue(option[0].is_frequent)
-        self.assertFalse(option[0].is_default)
         self.assertEqual(option[0].custom_fields, data.custom_fields)
 
     async def test_update_option_empty_updates(self):
@@ -395,7 +374,6 @@ class TestReferenceOptionService(IsolatedAsyncioTestCase):
             name="test_general_site",
             type="interaction",
             is_frequent=False,
-            is_default=False,
             custom_fields={"province": "Ontario"},
         )
 
@@ -437,7 +415,6 @@ class TestReferenceOptionService(IsolatedAsyncioTestCase):
             name="test_general_site",
             type="coverage",
             is_frequent=False,
-            is_default=False,
             custom_fields={"province": "Ontario"},
         )
 
@@ -445,7 +422,6 @@ class TestReferenceOptionService(IsolatedAsyncioTestCase):
             name="other_site",
             type="coverage",
             is_frequent=False,
-            is_default=False,
             custom_fields={"province": "Ontario"},
         )
 
@@ -495,7 +471,6 @@ class TestReferenceTemplateService(IsolatedAsyncioTestCase):
             name="test_general_site",
             type="interaction",
             content="This is a test template content",
-            is_default=False,
         )
 
         # Test
@@ -517,7 +492,6 @@ class TestReferenceTemplateService(IsolatedAsyncioTestCase):
             name="default_general_site",
             type="coverage",
             content="This is a test template content",
-            is_default=True,
         )
 
         await ReferenceTemplateService.create_template(template)
@@ -539,7 +513,6 @@ class TestReferenceTemplateService(IsolatedAsyncioTestCase):
             name="default_general_site",
             type="coverage",
             content="This is a test template content",
-            is_default=True,
         )
 
         await ReferenceTemplateService.create_template(template)
@@ -555,7 +528,6 @@ class TestReferenceTemplateService(IsolatedAsyncioTestCase):
             name="default_general_site",
             type="coverage",
             content="This is a test template content",
-            is_default=True,
         )
 
         # Test
@@ -567,7 +539,6 @@ class TestReferenceTemplateService(IsolatedAsyncioTestCase):
         template = [t for t in templates if t.name == "default_general_site"]
 
         self.assertEqual(template[0].name, "default_general_site")
-        self.assertTrue(template[0].is_default)
         await ReferenceTemplateService.delete_template(
             "default_general_site", "coverage"
         )
@@ -578,7 +549,6 @@ class TestReferenceTemplateService(IsolatedAsyncioTestCase):
             name="test_general_site",
             type="interaction",
             content="This is a test template content",
-            is_default=False,
         )
 
         # Create first general site
@@ -606,13 +576,11 @@ class TestReferenceTemplateService(IsolatedAsyncioTestCase):
             name="test_general_site",
             type="interaction",
             content="This is a test template content",
-            is_default=False,
         )
         template2 = ReferenceTemplate(
             name="test_general_site_2",
             type="interaction",
             content="This is a test template content",
-            is_default=True,
         )
 
         await ReferenceTemplateService.create_template(template1)
@@ -632,7 +600,6 @@ class TestReferenceTemplateService(IsolatedAsyncioTestCase):
             self.assertIsInstance(template, ReferenceTemplate)
             self.assertIsInstance(template.name, str)
             self.assertIsInstance(template.content, str)
-            self.assertIsInstance(template.is_default, bool)
 
         await ReferenceTemplateService.delete_template(
             "test_general_site", "interaction"
@@ -648,7 +615,6 @@ class TestReferenceTemplateService(IsolatedAsyncioTestCase):
             name="test_general_site",
             type="coverage",
             content="This is a test template content",
-            is_default=False,
         )
 
         await ReferenceTemplateService.create_template(template)
@@ -678,7 +644,6 @@ class TestReferenceTemplateService(IsolatedAsyncioTestCase):
             name="test_general_site",
             type="interaction",
             content="This is a test template content",
-            is_default=False,
         )
 
         id = await ReferenceTemplateService.create_template(template)
@@ -686,7 +651,6 @@ class TestReferenceTemplateService(IsolatedAsyncioTestCase):
         # Update the general site
         update_data = ReferenceTemplateUpdate(
             name="test_general_site",
-            is_default=True,
         )
 
         result = await ReferenceTemplateService.update_template(
@@ -700,7 +664,6 @@ class TestReferenceTemplateService(IsolatedAsyncioTestCase):
 
         self.assertIsNotNone(template[0])
         self.assertIsNotNone(template[0].content)
-        self.assertTrue(template[0].is_default)
 
         await ReferenceTemplateService.delete_template(
             "test_general_site", "interaction"
@@ -713,7 +676,6 @@ class TestReferenceTemplateService(IsolatedAsyncioTestCase):
             name="test_general_site",
             type="coverage",
             content="This is a test template content",
-            is_default=False,
         )
 
         id = await ReferenceTemplateService.create_template(template)
@@ -735,7 +697,6 @@ class TestReferenceTemplateService(IsolatedAsyncioTestCase):
 
         self.assertIsNotNone(template[0])
         self.assertEqual(template[0].content, "new content")
-        self.assertFalse(template[0].is_default)
 
         await ReferenceTemplateService.delete_template(
             "test_general_site", "coverage"
@@ -748,7 +709,6 @@ class TestReferenceTemplateService(IsolatedAsyncioTestCase):
             name="test_general_site",
             type="interaction",
             content="This is a test template content",
-            is_default=False,
         )
 
         id = await ReferenceTemplateService.create_template(template)

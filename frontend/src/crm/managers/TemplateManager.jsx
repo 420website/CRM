@@ -24,7 +24,6 @@ export default function TemplateManager({ type }) {
     const data = {
       name: newTemplateName.trim(),
       content: newTemplateContent.trim(),
-      is_default: false,
     };
 
     const result = await ReferenceServices.create_template(type, data);
@@ -206,8 +205,8 @@ export default function TemplateManager({ type }) {
             </h4>
             <div className="space-y-3">
               {templates[type].length === 0 ? (
-                <div className="text-center py-8 text-gray-500">
-                  <p>Loading templates...</p>
+                <div className="text-left text-gray-500">
+                  <p>None</p>
                 </div>
               ) : (
                 templates[type].map((template) => (
@@ -267,13 +266,7 @@ export default function TemplateManager({ type }) {
                     ) : (
                       <div className="">
                         <div className="flex justify-between">
-                          {template.is_default ? (
-                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                              Default
-                            </span>
-                          ) : (
-                            <span>{""}</span>
-                          )}
+                          <span>{""}</span>
                           <div className="flex justify-end gap-2">
                             <button
                               type="button"

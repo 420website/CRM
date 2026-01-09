@@ -57,8 +57,8 @@ TABLE_DESCRIPTIONS = {
     "reference_options": (
         "Stores user-configurable dropdown options used throughout the system. "
         "Supports different option types (e.g., 'disposition', 'document_type') that populate "
-        "dropdowns and selection fields. Each option can be marked as frequently used (is_frequent) "
-        "or default (is_default). Not directly linked to other tables via foreign keys, but "
+        "dropdowns and selection fields. Each option can be marked as frequently used (is_frequent). "
+        "Not directly linked to other tables via foreign keys, but "
         "values are referenced in fields like attachments.document_type, interactions disposition, etc."
     ),
     "reference_templates": (
@@ -66,8 +66,7 @@ TABLE_DESCRIPTIONS = {
         "Supports different template types (e.g., 'note', 'clinical', 'medication') with "
         "pre-written content that can be used as starting points. For example, note templates "
         "provide pre-filled text when clinicians add notes to patients, saving time and ensuring "
-        "consistency. Templates can be marked as default (is_default). Not directly linked via "
-        "foreign keys, but referenced when users select templates during data entry."
+        "consistency.Not directly linked via foreign keys, but referenced when users select templates during data entry."
     ),
 }
 
@@ -202,7 +201,6 @@ FIELD_DESCRIPTIONS = {
         "name": "The display name/value of the option that appears in dropdown menus or selection fields (e.g., 'Insurance Card', 'Follow-up Visit', 'Reactive')",
         "type": "Category that groups related options together - determines where the option appears (e.g., 'document_type' for attachment categories, 'disposition' for patient status, 'test' for test types, 'medication' for drug names, 'dispensing_quantity' for dosage amounts)",
         "is_frequent": "Boolean flag that marks this option as frequently used - tenant-configurable to highlight commonly selected options in the UI",
-        "is_default": "Boolean flag indicating this is a system-provided default option (created during initial setup) rather than a user-added custom option",
         "created_at": "Timestamp when the option was created",
         "updated_at": "Timestamp when the option was last modified",
     },
@@ -211,7 +209,6 @@ FIELD_DESCRIPTIONS = {
         "name": "The display name of the template that appears in dropdown/selection menus when users choose a template to apply (e.g., 'Initial Assessment', 'Follow-up Note', 'Medication Plan')",
         "type": "Category that groups related templates together - determines the context where templates are used (e.g., 'note' for clinical notes, 'clinical' for clinical assessments, 'medication' for prescription templates)",
         "content": "The pre-written text body of the template that gets inserted when a user selects this template - serves as a starting point that can be edited",
-        "is_default": "Boolean flag indicating this is a system-provided default template (created during initial setup) rather than a user-created custom template",
         "created_at": "Timestamp when the template was created",
         "updated_at": "Timestamp when the template was last modified",
     },

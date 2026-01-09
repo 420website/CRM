@@ -33,8 +33,8 @@ class ReferenceOptionService:
     @staticmethod
     async def create_option(data: ReferenceOption) -> Optional[int]:
         query = """
-        INSERT INTO reference_options (name, type, custom_fields,is_frequent, is_default)
-        VALUES ($1, $2, $3, $4, $5)
+        INSERT INTO reference_options (name, type, custom_fields, is_frequent)
+        VALUES ($1, $2, $3, $4)
         RETURNING id;
         """
 
@@ -47,7 +47,6 @@ class ReferenceOptionService:
                     data.type,
                     data.custom_fields,
                     data.is_frequent,
-                    data.is_default,
                 )
                 if not row or "id" not in row:
                     raise NotFoundError("Option not created.")
@@ -156,19 +155,15 @@ class ReferenceTemplateService:
     @staticmethod
     async def create_template(data: ReferenceTemplate) -> Optional[int]:
         query = """
-        INSERT INTO reference_templates (name, type, content, is_default)
-        VALUES ($1, $2, $3, $4)
+        INSERT INTO reference_templates (name, type, content)
+        VALUES ($1, $2, $3)
         RETURNING id;
         """
 
         # Insert referral site and get the generated ID
         async with database.get_transaction() as conn:
             row = await conn.fetchrow(
-                query,
-                data.name,
-                data.type,
-                data.content,
-                data.is_default,
+                query, data.name, data.type, data.content
             )
             if row and "id" in row:
                 return row["id"]

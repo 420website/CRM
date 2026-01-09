@@ -81,19 +81,10 @@ export default function EditModal({
             <div className="flex gap-3 pt-4">
               <button
                 type="button"
-                onClick={() => {
-                  if (editingTemplate.is_default) {
-                    alert("Cannot delete default item");
-                  } else {
-                    deleteTemplate(editingTemplate.id, editingTemplate.name);
-                  }
-                }}
-                className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors ${
-                  editingTemplate.is_default
-                    ? "bg-gray-400 text-gray-600 cursor-not-allowed"
-                    : "bg-black text-white hover:bg-gray-800"
-                }`}
-                disabled={editingTemplate.is_default}
+                onClick={() =>
+                  deleteTemplate(editingTemplate.id, editingTemplate.name)
+                }
+                className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors bg-black text-white hover:bg-gray-800`}
               >
                 Delete
               </button>

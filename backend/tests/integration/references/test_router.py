@@ -79,7 +79,6 @@ class TestReferecenceOptionAPI(IsolatedAsyncioTestCase):
             name="test_general",
             type="interaction",
             is_frequent=False,
-            is_default=False,
             custom_fields={"province": "Ontario"},
         )
 
@@ -102,7 +101,6 @@ class TestReferecenceOptionAPI(IsolatedAsyncioTestCase):
             name="default_general",
             type="coverage",
             is_frequent=True,
-            is_default=True,
             custom_fields={"province": "Ontario"},
         )
 
@@ -120,7 +118,6 @@ class TestReferecenceOptionAPI(IsolatedAsyncioTestCase):
             None,
         )
         self.assertIsNotNone(default)
-        self.assertTrue(default.is_default)
         self.assertTrue(default.is_frequent)
         self.assertEqual(default.type, "coverage")
         self.assertEqual(default.custom_fields, data.custom_fields)
@@ -131,7 +128,6 @@ class TestReferecenceOptionAPI(IsolatedAsyncioTestCase):
             name="test_general",
             type="coverage",
             is_frequent=False,
-            is_default=False,
             custom_fields={"province": "Ontario"},
         )
 
@@ -160,7 +156,6 @@ class TestReferecenceOptionAPI(IsolatedAsyncioTestCase):
             name="test_general",
             type="coverage",
             is_frequent=False,
-            is_default=False,
             custom_fields={"province": "Ontario"},
         )
 
@@ -191,14 +186,12 @@ class TestReferecenceOptionAPI(IsolatedAsyncioTestCase):
             name="test_general",
             type="coverage",
             is_frequent=False,
-            is_default=False,
             custom_fields={"province": "Ontario"},
         )
         option2 = ReferenceOption(
             name="test_general_2",
             type="coverage",
             is_frequent=True,
-            is_default=True,
             custom_fields={"province": "Ontario"},
         )
         await create_option_type(option1, self.user)
@@ -219,7 +212,6 @@ class TestReferecenceOptionAPI(IsolatedAsyncioTestCase):
             self.assertIsInstance(o, ReferenceOption)
             self.assertIsInstance(o.name, str)
             self.assertIsInstance(o.is_frequent, bool)
-            self.assertIsInstance(o.is_default, bool)
             self.assertIsInstance(o.type, str)
             self.assertIsNotNone(o.id)
             self.assertIsInstance(o.custom_fields, dict)
@@ -232,7 +224,6 @@ class TestReferecenceOptionAPI(IsolatedAsyncioTestCase):
             name="test_general",
             type="interaction",
             is_frequent=True,
-            is_default=False,
             custom_fields={"province": "Ontario"},
         )
         await create_option_type(option, self.user)
@@ -268,7 +259,6 @@ class TestReferecenceOptionAPI(IsolatedAsyncioTestCase):
             name="test_general",
             type="coverage",
             is_frequent=False,
-            is_default=False,
             custom_fields={"province": "Ontario"},
         )
         await create_option_type(option, self.user)
@@ -282,7 +272,6 @@ class TestReferecenceOptionAPI(IsolatedAsyncioTestCase):
         update_data = ReferenceOptionUpdate(
             name="test_general",
             is_frequent=True,
-            is_default=True,
             custom_fields={"province": "Alberta"},
         )
 
@@ -302,7 +291,6 @@ class TestReferecenceOptionAPI(IsolatedAsyncioTestCase):
 
         self.assertIsNotNone(updated)
         self.assertTrue(updated.is_frequent)
-        self.assertTrue(updated.is_default)
         self.assertEqual(updated.custom_fields, {"province": "Alberta"})
 
     async def test_update_option_partial(self):
@@ -312,7 +300,6 @@ class TestReferecenceOptionAPI(IsolatedAsyncioTestCase):
             name="test_general",
             type="interaction",
             is_frequent=False,
-            is_default=False,
             custom_fields={"province": "Ontario"},
         )
 
@@ -343,7 +330,6 @@ class TestReferecenceOptionAPI(IsolatedAsyncioTestCase):
 
         self.assertIsNotNone(updated)
         self.assertTrue(updated.is_frequent)
-        self.assertFalse(updated.is_default)
 
     async def test_update_option_not_found(self):
         """Test update of non-existent general via API"""
@@ -368,7 +354,6 @@ class TestReferecenceOptionAPI(IsolatedAsyncioTestCase):
             name="test_general",
             type="interaction",
             is_frequent=False,
-            is_default=False,
             custom_fields={"province": "Ontario"},
         )
 
@@ -395,7 +380,6 @@ class TestReferecenceOptionAPI(IsolatedAsyncioTestCase):
             name="test_general",
             type="interaction",
             is_frequent=False,
-            is_default=False,
             custom_fields={"province": "Ontario"},
         )
 
@@ -403,7 +387,6 @@ class TestReferecenceOptionAPI(IsolatedAsyncioTestCase):
             name="test_general_2",
             type="interaction",
             is_frequent=False,
-            is_default=False,
             custom_fields={"province": "Ontario"},
         )
 
@@ -469,7 +452,6 @@ class TestReferenceTemplateAPI(IsolatedAsyncioTestCase):
             name="test_general",
             type="interaction",
             content="This is the content",
-            is_default=False,
         )
 
         # Test
@@ -491,7 +473,6 @@ class TestReferenceTemplateAPI(IsolatedAsyncioTestCase):
             name="default_general",
             type="coverage",
             content="This is the content",
-            is_default=True,
         )
 
         # Test
@@ -508,7 +489,6 @@ class TestReferenceTemplateAPI(IsolatedAsyncioTestCase):
             None,
         )
         self.assertIsNotNone(default)
-        self.assertTrue(default.is_default)
         self.assertEqual(default.content, "This is the content")
         self.assertEqual(default.type, "coverage")
 
@@ -518,7 +498,6 @@ class TestReferenceTemplateAPI(IsolatedAsyncioTestCase):
             name="test_general",
             type="coverage",
             content="This is the content",
-            is_default=False,
         )
 
         # Create first general
@@ -549,13 +528,11 @@ class TestReferenceTemplateAPI(IsolatedAsyncioTestCase):
             name="test_general",
             type="coverage",
             content="This is the content",
-            is_default=False,
         )
         option2 = ReferenceTemplate(
             name="test_general_2",
             type="coverage",
             content="This is the content",
-            is_default=True,
         )
         await create_template(option1, self.user)
         await create_template(option2, self.user)
@@ -575,7 +552,6 @@ class TestReferenceTemplateAPI(IsolatedAsyncioTestCase):
             self.assertIsInstance(o, ReferenceTemplate)
             self.assertIsInstance(o.name, str)
             self.assertIsInstance(o.content, str)
-            self.assertIsInstance(o.is_default, bool)
             self.assertIsInstance(o.type, str)
             self.assertIsNotNone(o.id)
 
@@ -587,7 +563,6 @@ class TestReferenceTemplateAPI(IsolatedAsyncioTestCase):
             name="test_general",
             type="coverage",
             content="This is the content",
-            is_default=False,
         )
 
         await create_template(data, self.user)
@@ -611,7 +586,6 @@ class TestReferenceTemplateAPI(IsolatedAsyncioTestCase):
             name="test_general",
             type="interaction",
             content="This is the content",
-            is_default=False,
         )
 
         await create_template(data, self.user)
@@ -657,7 +631,6 @@ class TestReferenceTemplateAPI(IsolatedAsyncioTestCase):
             name="test_general",
             type="coverage",
             content="This is the content",
-            is_default=False,
         )
 
         await create_template(data, self.user)
@@ -671,7 +644,6 @@ class TestReferenceTemplateAPI(IsolatedAsyncioTestCase):
         update_data = ReferenceTemplateUpdate(
             name="test_general",
             content="new content",
-            is_default=True,
         )
 
         result = await update_template(
@@ -691,7 +663,6 @@ class TestReferenceTemplateAPI(IsolatedAsyncioTestCase):
 
         self.assertIsNotNone(updated)
         self.assertEqual(updated.content, "new content")
-        self.assertTrue(updated.is_default)
 
     async def test_update_template_partial(self):
         """Test partial update of a general via API"""
@@ -700,7 +671,6 @@ class TestReferenceTemplateAPI(IsolatedAsyncioTestCase):
             name="test_general",
             type="interaction",
             content="This is the content",
-            is_default=False,
         )
 
         await create_template(data, self.user)
@@ -732,7 +702,6 @@ class TestReferenceTemplateAPI(IsolatedAsyncioTestCase):
 
         self.assertIsNotNone(updated)
         self.assertEqual(updated.content, "content")
-        self.assertFalse(updated.is_default)
 
     async def test_update_templates_empty_updates(self):
         """Test update with no actual changes via API"""
@@ -741,7 +710,6 @@ class TestReferenceTemplateAPI(IsolatedAsyncioTestCase):
             name="test_general",
             type="interaction",
             content="This is the content",
-            is_default=False,
         )
 
         await create_template(data, self.user)

@@ -11,7 +11,6 @@ describe("ReferenceServices.option", () => {
   const general = {
     name: "test_general",
     is_frequent: true,
-    is_default: true,
     custom_fields: {},
   };
 
@@ -126,7 +125,6 @@ describe("ReferenceServices.templates", () => {
   let general = {
     name: "test_template",
     content: "This is the content",
-    is_default: true,
   };
 
   beforeEach(async () => {
