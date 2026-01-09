@@ -232,17 +232,17 @@ services:
         cp -r dist/. /dist
       "
 
-  nginx-dev:
-    image: nginx:stable-alpine
-    ports:
-      - 8000:80
-    profiles:
-      - dev
-    networks:
-      - frontend-net
-    volumes:
-      - frontend_dist:/usr/share/nginx/html:ro
-      - ./nginx/nginx.dev.conf:/etc/nginx/conf.d/default.conf:ro
+  # nginx-dev:
+  #   image: nginx:stable-alpine
+  #   ports:
+  #     - 8000:80
+  #   profiles:
+  #     - dev
+  #   networks:
+  #     - frontend-net
+  #   volumes:
+  #     - frontend_dist:/usr/share/nginx/html:ro
+  #     - ./nginx/nginx.dev.conf:/etc/nginx/conf.d/default.conf:ro
 
   nginx-setup:
     image: nginx:alpine
@@ -277,7 +277,7 @@ services:
     entrypoint: ["sh"]
     command: ["/scripts/cert_check.sh"]
 
-  nginx-prod:
+  nginx:
     image: nginx:alpine
     restart: unless-stopped
     ports:
