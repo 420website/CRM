@@ -338,9 +338,12 @@ export default function Notes({ setActiveTab, currentRegistrationId }) {
                   (d) => d.name === notesData.template_type,
                 ) &&
                 notesData.template_type !== "General Note" && (
-                  <div className="mt-1 text-sm text-red-600">
-                    ⚠️ This option is no longer available. Please select a new
-                    option before saving.
+                  <div className="mt-1 flex gap-2 text-sm text-red-600">
+                    ⚠️
+                    <div>
+                      This option is no longer available. Please select a new
+                      option before saving.
+                    </div>
                   </div>
                 )}
             </div>

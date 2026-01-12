@@ -566,9 +566,12 @@ export default function Client({
                   !options["disposition"].some(
                     (d) => d.name === formData.disposition,
                   ) && (
-                    <div className="mt-1 text-sm text-red-600">
-                      ⚠️ This option is no longer available. Please select a new
-                      option before saving.
+                    <div className="mt-1 flex gap-2 text-sm text-red-600">
+                      ⚠️
+                      <div>
+                        This option is no longer available. Please select a new
+                        option before saving.
+                      </div>
                     </div>
                   )}
               </div>
@@ -693,9 +696,12 @@ export default function Client({
                   !filterReferralSites().some(
                     (d) => d.name === formData.referral_site,
                   ) && (
-                    <div className="mt-1 text-sm text-red-600">
-                      ⚠️ This option is no longer available. Please select a new
-                      option before saving.
+                    <div className="mt-1 flex gap-2 text-sm text-red-600">
+                      ⚠️
+                      <div>
+                        This option is no longer available. Please select a new
+                        option before saving.
+                      </div>
                     </div>
                   )}
               </div>
@@ -1062,9 +1068,12 @@ export default function Client({
                   !templates["clinical"].some(
                     (d) => d.name === selectedTemplate,
                   ) && (
-                    <div className="mt-1 text-sm text-red-600">
-                      ⚠️ This option is no longer available. Please select a new
-                      option before saving.
+                    <div className="mt-1 flex gap-2 text-sm text-red-600">
+                      ⚠️
+                      <div>
+                        This option is no longer available. Please select a new
+                        option before saving.
+                      </div>
                     </div>
                   )}
               </div>
@@ -1323,9 +1332,12 @@ export default function Client({
                   !options["physician"].some(
                     (d) => d.name === formData.physician,
                   ) && (
-                    <div className="mt-1 text-sm text-red-600">
-                      ⚠️ This option is no longer available. Please select a new
-                      option before saving.
+                    <div className="mt-1 flex gap-2 text-sm text-red-600">
+                      ⚠️
+                      <div>
+                        This option is no longer available. Please select a new
+                        option before saving.
+                      </div>
                     </div>
                   )}
                 <p className="mt-1 text-sm text-gray-500">

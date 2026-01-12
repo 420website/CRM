@@ -324,9 +324,12 @@ export default function Medications({ setActiveTab, currentRegistrationId }) {
                 !options["medication"].some(
                   (d) => d.name === medicationData.medication,
                 ) && (
-                  <div className="mt-1 text-sm text-red-600">
-                    ⚠️ This option is no longer available. Please select a new
-                    option before saving.
+                  <div className="mt-1 flex gap-2 text-sm text-red-600">
+                    ⚠️
+                    <div>
+                      This option is no longer available. Please select a new
+                      option before saving.
+                    </div>
                   </div>
                 )}
             </div>
@@ -394,9 +397,12 @@ export default function Medications({ setActiveTab, currentRegistrationId }) {
                 !options["medication_outcome"].some(
                   (d) => d.name === medicationData.outcome,
                 ) && (
-                  <div className="mt-1 text-sm text-red-600">
-                    ⚠️ This option is no longer available. Please select a new
-                    option before saving.
+                  <div className="mt-1 flex gap-2 text-sm text-red-600">
+                    ⚠️
+                    <div>
+                      This option is no longer available. Please select a new
+                      option before saving.
+                    </div>
                   </div>
                 )}
             </div>
