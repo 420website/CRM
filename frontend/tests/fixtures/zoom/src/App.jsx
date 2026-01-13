@@ -17,7 +17,6 @@ export default function App() {
       clientRef.current = zoomClient;
       setClient(zoomClient);
 
-      console.log("hell");
       await zoomClient.init("en-US", "Global", {
         patchJsMedia: true,
         leaveOnPageUnload: false,

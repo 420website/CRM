@@ -12,7 +12,6 @@ pdfjs.GlobalWorkerOptions.workerSrc = new URL(
 export default function ShareViewer() {
   const [searchParams] = useSearchParams();
   const token = searchParams.get("token");
-  console.log(token);
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
