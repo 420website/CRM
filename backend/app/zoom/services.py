@@ -129,11 +129,11 @@ class ZoomService:
         now = datetime.now(timezone.utc).isoformat()
 
         config = SessionConfig(
-            session_name=f"{patient_id}-{SecurityService.generate_secure_token(4)}",
+            session_name=f"{patient_id}-{settings.app_name}-{SecurityService.generate_secure_token(4)}",
             session_key=SecurityService.generate_secure_token(6),
             host_id=user_id,
             is_locked=False,  # host owns session
-            host_last_seen_at=now,  # 👈 important
+            host_last_seen_at=now,  # host presences controls session
         )
 
         redis = redis_client.get_client()

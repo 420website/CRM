@@ -8,7 +8,6 @@ class ReferenceOption(BaseModel):
     id: Optional[int] = None
     name: str
     type: str
-    is_default: bool
     is_frequent: bool
     custom_fields: dict
     created_at: Optional[datetime] = None
@@ -21,7 +20,6 @@ class ReferenceOption(BaseModel):
 class ReferenceOptionUpdate(BaseModel):
     name: Optional[str] = None
     type: Optional[str] = None
-    is_default: Optional[bool] = None
     is_frequent: Optional[bool] = None
     custom_fields: Optional[dict] = None
     updated_at: Optional[datetime] = None
@@ -32,7 +30,6 @@ class ReferenceTemplate(BaseModel):
     id: Optional[int] = None
     name: str
     type: str
-    is_default: bool
     content: str
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
@@ -44,7 +41,6 @@ class ReferenceTemplate(BaseModel):
 class ReferenceTemplateUpdate(BaseModel):
     name: Optional[str] = None
     type: Optional[str] = None
-    is_default: Optional[bool] = None
     content: Optional[str] = None
     is_frequent: Optional[bool] = None
     updated_at: Optional[datetime] = None

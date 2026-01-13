@@ -1,3 +1,4 @@
+from app.config import settings
 from app.email.service import HtmlMessage
 from datetime import datetime
 
@@ -11,7 +12,7 @@ class ResetPasswordMessage(HtmlMessage):
     def __init__(self, reset_url: str) -> None:
         super().__init__()
         html_template = load_email_template(
-            "app/email/templates/reset_password.html"
+            "app/email/templates/crm/reset_password.html"
         )
         body = html_template.replace("{{RESET_URL}}", reset_url)
         self.msg = body
@@ -21,7 +22,7 @@ class VerifyEmailMessage(HtmlMessage):
     def __init__(self, verification_url: str) -> None:
         super().__init__()
         html_template = load_email_template(
-            "app/email/templates/verify_email.html"
+            "app/email/templates/crm/verify_email.html"
         )
         body = html_template.replace("{{VERIFICATION_URL}}", verification_url)
         self.msg = body
@@ -31,7 +32,7 @@ class MfaEmailMessage(HtmlMessage):
     def __init__(self, verification_code: str) -> None:
         super().__init__()
         html_template = load_email_template(
-            "app/email/templates/mfa_code.html"
+            "app/email/templates/crm/mfa_code.html"
         )
         body = html_template.replace(
             "{{VERIFICATION_CODE}}", verification_code
@@ -43,7 +44,7 @@ class ContactEmailMessage(HtmlMessage):
     def __init__(self, contact_data: dict) -> None:
         super().__init__()
         html_template = load_email_template(
-            "app/email/templates/contact_email.html"
+            "app/email/templates/my420/contact_email.html"
         )
 
         body = html_template
@@ -68,7 +69,7 @@ class RegistrationEmailMessage(HtmlMessage):
     def __init__(self, contact_data: dict) -> None:
         super().__init__()
         html_template = load_email_template(
-            "app/email/templates/registration_email.html"
+            "app/email/templates/my420/registration_email.html"
         )
 
         body = html_template
@@ -98,7 +99,7 @@ class FinalizedEmailMessage(HtmlMessage):
     def __init__(self, registration_data: dict) -> None:
         super().__init__()
         html_template = load_email_template(
-            "app/email/templates/finalized_email.html"
+            "app/email/templates/crm/finalized_email.html"
         )
 
         placeholders = {
@@ -142,6 +143,7 @@ class FinalizedEmailMessage(HtmlMessage):
             "SUMMARY_TEMPLATE": registration_data.get(
                 "summary_template", "None provided"
             ),
+            "SUPPORT_EMAIL": settings.email,
         }
 
         body = html_template

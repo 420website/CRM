@@ -69,7 +69,7 @@ async def send_verify_email_msg(user_id: int, email: str):
     await TokenService.create_verification_token(verification_token)
 
     # Send verification email
-    verification_url = f"{settings.app_url}/verify-email?token={token}"
+    verification_url = f"{settings.app_url}/crm/verify-email?token={token}"
     (
         EmailService()
         .recipient(email)
@@ -110,7 +110,7 @@ async def send_reset_password_msg(user_id: int, email: str):
     await TokenService.create_verification_token(reset_token)
 
     # Send verification email
-    reset_url = f"{settings.app_url}/reset-password?token={token}"
+    reset_url = f"{settings.app_url}/crm/reset-password?token={token}"
     (
         EmailService()
         .recipient(email)

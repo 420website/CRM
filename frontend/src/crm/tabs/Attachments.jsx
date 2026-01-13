@@ -57,8 +57,11 @@ export default function Attachments({
       return;
     }
 
-    if (!documentType) {
-      toast.error("Please select a document type");
+    if (
+      !documentType ||
+      !options["document_type"].some((d) => d.name === documentType)
+    ) {
+      toast.error("Please select a valid document type");
       return;
     }
 
@@ -384,6 +387,19 @@ export default function Attachments({
               size="1"
             >
               <option value="">Select Document Type</option>
+              {/* Show legacy value if it doesn't exist in current options */}
+              {documentType &&
+                !options["document_type"].some(
+                  (d) => d.name === documentType,
+                ) && (
+                  <option
+                    value={documentType}
+                    disabled
+                    className="text-red-600"
+                  >
+                    {documentType} (No longer available)
+                  </option>
+                )}
               {/* Most Frequently Used */}
               {options["document_type"]
                 .filter((d) => d.is_frequent)
@@ -405,6 +421,18 @@ export default function Attachments({
                   </option>
                 ))}
             </select>
+            {documentType &&
+              !options["document_type"].some(
+                (d) => d.name === documentType,
+              ) && (
+                <div className="mt-1 flex gap-2 text-sm text-red-600">
+                  ⚠️
+                  <div>
+                    This option is no longer available. Please select a new
+                    option before saving.
+                  </div>
+                </div>
+              )}
           </div>
 
           {/* File Upload Options */}

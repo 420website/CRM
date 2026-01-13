@@ -7,6 +7,7 @@ on:
       - nightly
       - dev 
       - zoom
+      - seperate-crm
   pull_request:
     branches:
       - main

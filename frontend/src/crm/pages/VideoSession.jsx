@@ -43,7 +43,7 @@ export default function VideoSession() {
   }, []);
 
   const copyMeetingInfo = () => {
-    const guestUrl = `${window.location.origin}/guest-video/${sessionPatientId}`;
+    const guestUrl = `${window.location.origin}/crm/guest-video/${sessionPatientId}`;
     const text = `Join the video session:
 
 URL: ${guestUrl}

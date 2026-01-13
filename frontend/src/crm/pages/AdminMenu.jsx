@@ -33,7 +33,7 @@ const AdminMenu = () => {
           <div className="space-y-6">
             {userRole !== "guest" && (
               <button
-                onClick={() => navigate("/admin-dashboard")}
+                onClick={() => navigate("/crm/dashboard")}
                 className="w-full py-4 px-6 rounded-lg text-lg font-medium flex items-center justify-center gap-3 text-white transition-colors"
                 style={{ backgroundColor: "#000000" }}
                 onMouseEnter={(e) =>
@@ -52,7 +52,7 @@ const AdminMenu = () => {
               userRole !== "guest" &&
               userRole !== "limited" && (
                 <button
-                  onClick={() => navigate("/admin-register")}
+                  onClick={() => navigate("/crm/register")}
                   className="w-full py-4 px-6 rounded-lg text-lg font-medium flex items-center justify-center gap-3 text-white transition-colors"
                   style={{ backgroundColor: "#000000" }}
                   onMouseEnter={(e) =>
@@ -69,7 +69,7 @@ const AdminMenu = () => {
             {/* Analytics  */}
             {userRole !== "standard" && userRole != "limited" && (
               <button
-                onClick={() => navigate("/admin-analytics")}
+                onClick={() => navigate("/crm/analytics")}
                 className="w-full py-4 px-6 rounded-lg text-lg font-medium flex items-center justify-center gap-3 text-white transition-colors"
                 style={{ backgroundColor: "#000000" }}
                 onMouseEnter={(e) =>
@@ -87,7 +87,7 @@ const AdminMenu = () => {
             {/* Users */}
             {userRole === "admin" && (
               <button
-                onClick={() => navigate("/admin-users")}
+                onClick={() => navigate("/crm/users")}
                 className="w-full py-4 px-6 rounded-lg text-lg font-medium flex items-center justify-center gap-3 text-white transition-colors"
                 style={{ backgroundColor: "#000000" }}
                 onMouseEnter={(e) =>

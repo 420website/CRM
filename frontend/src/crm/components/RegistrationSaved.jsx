@@ -51,7 +51,7 @@ export default function RegistrationSaved({ submitStatus, setSubmitStatus }) {
         <div className="flex flex-col gap-3">
           <button
             onClick={() => {
-              navigate("/admin-dashboard");
+              navigate("/crm/dashboard");
             }}
             className="w-full bg-black text-white py-3 px-4 rounded-md hover:bg-gray-800 transition-colors font-semibold"
           >
@@ -60,7 +60,7 @@ export default function RegistrationSaved({ submitStatus, setSubmitStatus }) {
           {submitStatus.id && (
             <button
               onClick={() => {
-                navigate(`/admin-edit/${submitStatus.id}`);
+                navigate(`/crm/file/${submitStatus.id}`);
               }}
               className="w-full bg-black text-white py-3 px-4 rounded-md hover:bg-gray-800 transition-colors font-semibold"
             >

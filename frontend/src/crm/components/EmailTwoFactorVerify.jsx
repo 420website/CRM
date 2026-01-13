@@ -17,7 +17,7 @@ function InputScreen({
   formatTime,
 }) {
   return (
-    <div className="lg:h-[calc(100vh-400px)] bg-gray-50 flex flex-col justify-center m-4">
+    <div className="flex-grow lg:h-[calc(100vh-400px)] bg-gray-50 flex flex-col justify-center m-4">
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
         <div className="bg-white py-8 px-4 shadow rounded-lg sm:px-10">
           <h2 className="mt-6 text-center text-2xl font-extrabold text-gray-900">
@@ -128,7 +128,7 @@ function LandingScreen({
   formatTime,
 }) {
   return (
-    <div className="lg:h-[calc(100vh-400px)] bg-gray-50 flex flex-col justify-center m-4">
+    <div className="flex-grow lg:h-[calc(100vh-400px)] bg-gray-50 flex flex-col justify-center m-4">
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
         <div className="bg-white py-8 px-4 shadow rounded-lg sm:px-10">
           <div className="text-center mb-6">
@@ -282,7 +282,7 @@ const EmailTwoFactorVerify = ({ email, onCancel }) => {
         result.data?.access_token,
         result.data?.expires_at,
       );
-      navigate("/admin-menu");
+      navigate("/crm/menu");
     } else {
       if (result.status === 400 || result.status === 409) {
         setError(result.message || "Invalid code.");

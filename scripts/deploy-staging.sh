@@ -3,10 +3,10 @@ set -e
 
 echo "Stoppping services..."
 # docker stop $(docker ps -aq)
-docker compose -f compose.dev.yml --profile "*" stop
+docker compose -f compose.staging.yml --profile "*" stop
 
 echo "Starting vault agent..."
-docker compose -f compose.dev.yml --profile vault-agent up -d --build
+docker compose -f compose.staging.yml --profile vault-agent up -d --build
 
 echo "Waiting for vault agent to complete current cycle..."
 timeout=60
@@ -43,7 +43,7 @@ source /etc/vault/secrets/.env
 set +a
 
 echo "Starting staging services..."
-docker compose -f compose.dev.yml --profile staging up -d --build
+docker compose -f compose.staging.yml --profile staging up -d --build
 
 echo "Waiting for certbot container to finish..."
 
@@ -85,10 +85,10 @@ else
 fi
 
 echo "Stopping staging services..."
-docker compose -f compose.dev.yml --profile staging stop
+docker compose -f compose.staging.yml --profile staging stop
 
 echo "Starting production services..."
-docker compose -f compose.dev.yml --profile prod up -d --build
+docker compose -f compose.staging.yml --profile prod up -d --build
 
 echo "Enabling cert and secert watch services..."
 sudo systemctl daemon-reload

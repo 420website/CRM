@@ -22,12 +22,14 @@ import { DEFAULT_FORM } from "../forms/Registration";
 import { useAuth } from "../../context/AuthContext";
 import { useDashboard } from "../../context/DashboardContext";
 import Assessments from "../tabs/Assessments";
+import { useReferences } from "../../context/ReferenceContext";
 
 const AdminRegister = () => {
   const navigate = useNavigate();
   const { userRole, userPermissions, userProvince } = useAuth();
   const { getDashboardRegistrations } = useDashboard();
   const [missingFields, setMissingFields] = useState(false);
+  const { templates, options, selectedProvince } = useReferences();
 
   const [loading, setLoading] = useState(false);
   const [voiceInputText, setVoiceInputText] = useState("");
@@ -35,7 +37,6 @@ const AdminRegister = () => {
   const [activeTab, setActiveTab] = useState("client");
   const [showVoiceDateModal, setShowVoiceDateModal] = useState(false);
   const [showVoiceFillModal, setShowVoiceFillModal] = useState(false);
-  const [templates, setTemplates] = useState({});
   const [selectedTemplate, setSelectedTemplate] = useState("Select");
   const [voiceDateInput, setVoiceDateInput] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -49,6 +50,19 @@ const AdminRegister = () => {
   const [forceSave, setForceSave] = useState(false);
   const [showNavigateIdentityModal, setShowNavigateIdentityModal] =
     useState(false);
+
+  const filterReferralSites = () => {
+    if (!selectedProvince) {
+      return [];
+    }
+
+    const filteredSites = options["referral_site"].filter((s) => {
+      const siteProvince = s?.custom_fields?.province;
+      return siteProvince === selectedProvince;
+    });
+
+    return filteredSites;
+  };
 
   const getDefaultForm = () => ({
     ...DEFAULT_FORM,
@@ -287,6 +301,17 @@ const AdminRegister = () => {
       return false;
     }
 
+    if (!options["disposition"].some((d) => d.name === formData.disposition)) {
+      setIsSubmitting(false);
+      setMissingFields(true);
+
+      toast.error("Select valid Disposition");
+      document
+        .querySelector("#disposition")
+        ?.scrollIntoView({ behavior: "smooth" });
+      return false;
+    }
+
     if (formData.health_card && formData.health_card.length != 10) {
       setIsSubmitting(false);
       setMissingFields(true);
@@ -320,6 +345,17 @@ const AdminRegister = () => {
       return false;
     }
 
+    if (!filterReferralSites().some((d) => d.name === formData.referral_site)) {
+      setIsSubmitting(false);
+      setMissingFields(true);
+
+      toast.error("Select valid Referral Site");
+      document
+        .querySelector("#referral_site")
+        ?.scrollIntoView({ behavior: "smooth" });
+      return false;
+    }
+
     if (!formData.province) {
       setIsSubmitting(false);
       setMissingFields(true);
@@ -331,13 +367,42 @@ const AdminRegister = () => {
       return false;
     }
 
+    if (
+      formData.selected_template &&
+      !templates["clinical"].some((d) => d.name === formData.selected_template)
+    ) {
+      setIsSubmitting(false);
+      setMissingFields(true);
+
+      toast.error("Select valid clinical template");
+      document
+        .querySelector("#selected_template")
+        ?.scrollIntoView({ behavior: "smooth" });
+      return false;
+    }
+
+    if (
+      formData.physician &&
+      formData.physician !== "None" &&
+      !options["physician"].some((d) => d.name === formData.physician)
+    ) {
+      setIsSubmitting(false);
+      setMissingFields(true);
+
+      toast.error("Select valid physician");
+      document
+        .querySelector("#physician")
+        ?.scrollIntoView({ behavior: "smooth" });
+      return false;
+    }
+
     return true;
   }
 
   const handleNavigateToRegistration = (id) => {
     setShowNavigateModal(false);
     setShowNavigateIdentityModal(false);
-    navigate(`/admin-edit/${id}`);
+    navigate(`/crm/file/${id}`);
   };
 
   const handleSubmit = async (e, dataOverride = formData) => {
@@ -552,7 +617,7 @@ const AdminRegister = () => {
           <h1 className="text-2xl font-bold text-gray-900 mb-4">Intake</h1>
           <div className="flex gap-2">
             <button
-              onClick={() => navigate("/admin-menu")}
+              onClick={() => navigate("/crm/menu")}
               className="inline-flex items-center gap-1 px-3 py-1 bg-black text-white rounded-md hover:bg-gray-800 transition-colors text-xs font-medium"
               type="button"
             >
@@ -572,7 +637,7 @@ const AdminRegister = () => {
               Admin Menu
             </button>
             <button
-              onClick={() => navigate("/admin-dashboard")}
+              onClick={() => navigate("/crm/dashboard")}
               className="inline-flex items-center gap-1 px-3 py-1 bg-black text-white rounded-md hover:bg-gray-800 transition-colors text-xs font-medium"
               type="button"
             >
@@ -624,7 +689,7 @@ const AdminRegister = () => {
               </p>
               <button
                 type="button"
-                onClick={() => navigate("/admin-menu")}
+                onClick={() => navigate("/crm/menu")}
                 className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
               >
                 Back to Menu
@@ -665,7 +730,7 @@ const AdminRegister = () => {
                       You don't have permission to access any registration tabs.
                     </p>
                     <button
-                      onClick={() => navigate("/admin-menu")}
+                      onClick={() => navigate("/crm/menu")}
                       className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
                     >
                       Back to Menu

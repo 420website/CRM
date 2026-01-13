@@ -162,7 +162,7 @@ export default function ShareViewer() {
         const metadata = await ShareLinkServices.get_metadata(token);
         const result = await ShareLinkServices.access_link(token);
 
-        if (result.ok) {
+        if (result.success) {
           const file = new File([result.data], metadata.data?.file_name, {
             type: metadata.data?.mime_type,
           });

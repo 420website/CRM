@@ -21,9 +21,9 @@ export default function Dispensing({ setActiveTab, currentRegistrationId }) {
   const [dispensingData, setDispensingData] = useState({
     medication: "",
     rx: "",
-    quantity: "28",
+    quantity: "",
     lot: "",
-    product_type: "Commercial",
+    product_type: "",
     expiry_date: "",
   });
 
@@ -184,9 +184,9 @@ export default function Dispensing({ setActiveTab, currentRegistrationId }) {
     setDispensingData({
       medication: dispensing.medication || "",
       rx: dispensing.rx || "",
-      quantity: dispensing.quantity || "28",
+      quantity: dispensing.quantity || "",
       lot: dispensing.lot || "",
-      product_type: dispensing.product_type || "Commercial",
+      product_type: dispensing.product_type || "",
       expiry_date: dispensing.expiry_date || "",
     });
     setEditingDispensingId(dispensing.id);
@@ -200,9 +200,9 @@ export default function Dispensing({ setActiveTab, currentRegistrationId }) {
     setDispensingData({
       medication: "",
       rx: "",
-      quantity: "28",
+      quantity: "",
       lot: "",
-      product_type: "Commercial",
+      product_type: "",
       expiry_date: "",
     });
     setEditingDispensingId(null);
@@ -330,9 +330,12 @@ export default function Dispensing({ setActiveTab, currentRegistrationId }) {
                   !options["medication"].some(
                     (d) => d.name === dispensingData.medication,
                   ) && (
-                    <div className="mt-1 text-sm text-red-600">
-                      ⚠️ This option is no longer available. Please select a new
-                      option before saving.
+                    <div className="mt-1 flex gap-2 text-sm text-red-600">
+                      ⚠️
+                      <div>
+                        This option is no longer available. Please select a new
+                        option before saving.
+                      </div>
                     </div>
                   )}
               </div>
@@ -418,9 +421,12 @@ export default function Dispensing({ setActiveTab, currentRegistrationId }) {
                   !options["dispensing_quantity"].some(
                     (d) => d.name === dispensingData.quantity.toString(),
                   ) && (
-                    <div className="mt-1 text-sm text-red-600">
-                      ⚠️ This option is no longer available. Please select a new
-                      option before saving.
+                    <div className="mt-1 flex gap-2 text-sm text-red-600">
+                      ⚠️
+                      <div>
+                        This option is no longer available. Please select a new
+                        option before saving.
+                      </div>
                     </div>
                   )}
               </div>
@@ -506,9 +512,12 @@ export default function Dispensing({ setActiveTab, currentRegistrationId }) {
                   !options["dispensing_type"].some(
                     (d) => d.name === dispensingData.product_type,
                   ) && (
-                    <div className="mt-1 text-sm text-red-600">
-                      ⚠️ This option is no longer available. Please select a new
-                      option before saving.
+                    <div className="mt-1 flex gap-2 text-sm text-red-600">
+                      ⚠️
+                      <div>
+                        This option is no longer available. Please select a new
+                        option before saving.
+                      </div>
                     </div>
                   )}
               </div>

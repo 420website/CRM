@@ -263,7 +263,7 @@ export default function RegistrationItem({
               <button
                 onClick={() => {
                   setLastItem(item.id);
-                  navigate(`/admin-edit/${item.id}`);
+                  navigate(`/crm/file/${item.id}`);
                 }}
                 className={`bg-black hover:bg-gray-800 text-white ${isShowing ? "py-1 px-2" : "py-2 px-3"} rounded-md transition-colors text-xs font-medium flex-1 min-w-[60px]`}
               >

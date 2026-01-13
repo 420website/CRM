@@ -21,7 +21,7 @@ export function ZoomProvider({ children }) {
   // UI States
   const [loading, setLoading] = useState(false);
   const [displayName, setDisplayName] = useState("");
-  const [returnUrl, setReturnUrl] = useState("admin-menu");
+  const [returnUrl, setReturnUrl] = useState("/crm/menu");
   const [isMobile, setIsMobile] = useState(false);
   const [showSelfView, setShowSelfView] = useState(true);
 
@@ -297,7 +297,7 @@ export function ZoomProvider({ children }) {
     // UI States
     setLoading(false);
     setDisplayName("");
-    setReturnUrl("admin-menu");
+    setReturnUrl("/crm/menu");
     setShowSelfView(true);
 
     // Media

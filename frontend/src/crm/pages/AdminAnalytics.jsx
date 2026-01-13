@@ -53,7 +53,7 @@ const AdminAnalytics = () => {
   const [showUploadSection, setShowUploadSection] = useState(false);
 
   const welcomeMessage =
-    "Welcome to the Analytics dashboard powered by 420 AI. I can help you analyze enrollment statistics, dispositions, trends, and other data insights about the program's performance.";
+    "Welcome to the AI Analytics dashboard. I can help you analyze enrollment statistics, dispositions, trends, and other data insights about the program's performance.";
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -302,7 +302,7 @@ const AdminAnalytics = () => {
   };
 
   const goBack = () => {
-    navigate("/admin-menu");
+    navigate("/crm/menu");
   };
 
   return (

@@ -7,7 +7,6 @@ from app.authentication.router import router as auth_router
 from app.references.router import router as reference_router
 from app.registration.router import router as patient_router
 from app.analytics.router import router as analytics_router
-from app.webpage.router import router as contact_router
 from app.share_links.router import router as share_link_router
 from app.zoom.router import router as video_router
 from app.objects.router import router as object_router
@@ -54,13 +53,17 @@ def health_check():
 
 # Include routers
 app.include_router(auth_router)
-app.include_router(contact_router)
 app.include_router(analytics_router)
 app.include_router(reference_router)
 app.include_router(patient_router)
 app.include_router(share_link_router)
 app.include_router(object_router)
 app.include_router(video_router)
+
+if settings.is_my420:
+    from app.webpage.router import router as contact_router
+
+    app.include_router(contact_router)
 
 if settings.debug:
     from app.testing.router import router as testing_router

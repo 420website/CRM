@@ -239,7 +239,7 @@ const AdminDashboard = () => {
           </h1>
           <div className="flex gap-2">
             <button
-              onClick={() => navigate("/admin-menu")}
+              onClick={() => navigate("/crm/menu")}
               className="inline-flex items-center gap-1 px-2 py-1 bg-black text-white rounded-md hover:bg-gray-800 transition-colors text-xs font-medium"
             >
               <svg
@@ -258,7 +258,7 @@ const AdminDashboard = () => {
               Admin Menu
             </button>
             <button
-              onClick={() => navigate("/admin-register")}
+              onClick={() => navigate("/crm/register")}
               className="inline-flex items-center gap-1 px-2 py-1 bg-black text-white rounded-md hover:bg-gray-800 transition-colors text-xs font-medium"
             >
               <svg
@@ -375,7 +375,7 @@ const AdminDashboard = () => {
                         }`}
                         style={{ width: "33.333%" }}
                       >
-                        Pending (
+                        Pending <br></br> (
                         {activeTab === "pending"
                           ? filteredPending.length
                           : dashboardStats.pending_registrations}

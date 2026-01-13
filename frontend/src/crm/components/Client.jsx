@@ -529,6 +529,18 @@ export default function Client({
                   className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 ${missingFields && !formData.disposition ? "border-red-700" : "border-gray-300 focus:ring-black"}`}
                 >
                   <option value="">Select Disposition</option>
+                  {formData.disposition &&
+                    !options["disposition"].some(
+                      (d) => d.name === formData.disposition,
+                    ) && (
+                      <option
+                        value={formData.disposition}
+                        disabled
+                        className="text-red-600"
+                      >
+                        {formData.disposition} (No longer available)
+                      </option>
+                    )}
                   {/* Most Frequently Used */}
                   {options["disposition"]
                     .filter((d) => d.is_frequent)
@@ -550,6 +562,18 @@ export default function Client({
                       </option>
                     ))}
                 </select>
+                {formData.disposition &&
+                  !options["disposition"].some(
+                    (d) => d.name === formData.disposition,
+                  ) && (
+                    <div className="mt-1 flex gap-2 text-sm text-red-600">
+                      ⚠️
+                      <div>
+                        This option is no longer available. Please select a new
+                        option before saving.
+                      </div>
+                    </div>
+                  )}
               </div>
 
               <div>
@@ -635,6 +659,18 @@ export default function Client({
                   className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 ${missingFields && !formData.referral_site?.trim() ? "border-red-700" : "border-gray-300 focus:ring-black"}`}
                 >
                   <option value="">Select Referral Site</option>
+                  {formData.referral_site &&
+                    !filterReferralSites().some(
+                      (d) => d.name === formData.referral_site,
+                    ) && (
+                      <option
+                        value={formData.referral_site}
+                        disabled
+                        className="text-red-600"
+                      >
+                        {formData.referral_site} (No longer available)
+                      </option>
+                    )}
                   {/* Most Frequently Used */}
                   {filterReferralSites()
                     .filter((s) => s.is_frequent)
@@ -656,6 +692,18 @@ export default function Client({
                       </option>
                     ))}
                 </select>
+                {formData.referral_site &&
+                  !filterReferralSites().some(
+                    (d) => d.name === formData.referral_site,
+                  ) && (
+                    <div className="mt-1 flex gap-2 text-sm text-red-600">
+                      ⚠️
+                      <div>
+                        This option is no longer available. Please select a new
+                        option before saving.
+                      </div>
+                    </div>
+                  )}
               </div>
             </div>
           </div>
@@ -993,15 +1041,41 @@ export default function Client({
                   id="selected_template"
                   value={selectedTemplate}
                   onChange={(e) => handleTemplateChange(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black scroll-mt-[100px]"
                 >
                   <option value="Select">Select</option>
+                  {/* Show legacy value if it doesn't exist in current options */}
+                  {selectedTemplate &&
+                    !templates["clinical"].some(
+                      (d) => d.name === selectedTemplate,
+                    ) && (
+                      <option
+                        value={selectedTemplate}
+                        disabled
+                        className="text-red-600"
+                      >
+                        {selectedTemplate} (No longer available)
+                      </option>
+                    )}
                   {templates["clinical"].map((template) => (
                     <option key={template.id} value={template.name}>
                       {template.name}
                     </option>
                   ))}
                 </select>
+                {selectedTemplate &&
+                  selectedTemplate !== "Select" &&
+                  !templates["clinical"].some(
+                    (d) => d.name === selectedTemplate,
+                  ) && (
+                    <div className="mt-1 flex gap-2 text-sm text-red-600">
+                      ⚠️
+                      <div>
+                        This option is no longer available. Please select a new
+                        option before saving.
+                      </div>
+                    </div>
+                  )}
               </div>
 
               {selectedTemplate === "Positive" && (
@@ -1219,6 +1293,19 @@ export default function Client({
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black"
                 >
                   <option value="None">None</option>
+                  {formData.physician &&
+                    formData.physician !== "None" &&
+                    !options["physician"].some(
+                      (d) => d.name === formData.physician,
+                    ) && (
+                      <option
+                        value={formData.physician}
+                        disabled
+                        className="text-red-600"
+                      >
+                        {formData.physician} (No longer available)
+                      </option>
+                    )}
                   {/* Most Frequently Used */}
                   {options["physician"]
                     .filter((c) => c.is_frequent)
@@ -1240,6 +1327,19 @@ export default function Client({
                       </option>
                     ))}
                 </select>
+                {formData.physician &&
+                  formData.physician !== "None" &&
+                  !options["physician"].some(
+                    (d) => d.name === formData.physician,
+                  ) && (
+                    <div className="mt-1 flex gap-2 text-sm text-red-600">
+                      ⚠️
+                      <div>
+                        This option is no longer available. Please select a new
+                        option before saving.
+                      </div>
+                    </div>
+                  )}
                 <p className="mt-1 text-sm text-gray-500">
                   Automatically set to "None" when disposition is "POCT NEG"
                 </p>

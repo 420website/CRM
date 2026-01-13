@@ -70,7 +70,6 @@ ON CONFLICT (name) DO NOTHING;
 
 
 -- migrate:down
--- migrate:down
 DELETE FROM dispositions
 WHERE name IN (
   'ACTIVE',

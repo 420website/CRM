@@ -32,13 +32,23 @@ export default function Medications({ setActiveTab, currentRegistrationId }) {
       return false;
     }
 
-    if (!medicationData.medication || medicationData.medication === "") {
-      toast.error("Please select a medication");
+    if (
+      !medicationData.medication ||
+      medicationData.medication === "" ||
+      !options["medication"].some((d) => d.name === medicationData.medication)
+    ) {
+      toast.error("Please select a valid medication");
       return false;
     }
 
-    if (!medicationData.outcome || medicationData.outcome === "") {
-      toast.error("Please select an outcome");
+    if (
+      !medicationData.outcome ||
+      medicationData.outcome === "" ||
+      !options["medication_outcome"].some(
+        (d) => d.name === medicationData.outcome,
+      )
+    ) {
+      toast.error("Please select a valid outcome");
       return false;
     }
 
@@ -277,6 +287,18 @@ export default function Medications({ setActiveTab, currentRegistrationId }) {
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black"
               >
                 <option value="">Select</option>
+                {medicationData.medication &&
+                  !options["medication"].some(
+                    (d) => d.name === medicationData.medication,
+                  ) && (
+                    <option
+                      value={medicationData.medication}
+                      disabled
+                      className="text-red-600"
+                    >
+                      {medicationData.medication} (No longer available)
+                    </option>
+                  )}
                 {/* Most Frequently Used */}
                 {options["medication"]
                   .filter((d) => d.is_frequent)
@@ -298,6 +320,18 @@ export default function Medications({ setActiveTab, currentRegistrationId }) {
                     </option>
                   ))}
               </select>
+              {medicationData.medication &&
+                !options["medication"].some(
+                  (d) => d.name === medicationData.medication,
+                ) && (
+                  <div className="mt-1 flex gap-2 text-sm text-red-600">
+                    ⚠️
+                    <div>
+                      This option is no longer available. Please select a new
+                      option before saving.
+                    </div>
+                  </div>
+                )}
             </div>
 
             <div>
@@ -326,6 +360,18 @@ export default function Medications({ setActiveTab, currentRegistrationId }) {
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black"
               >
                 <option value="">Select</option>
+                {medicationData.outcome &&
+                  !options["medication_outcome"].some(
+                    (d) => d.name === medicationData.outcome,
+                  ) && (
+                    <option
+                      value={medicationData.outcome}
+                      disabled
+                      className="text-red-600"
+                    >
+                      {medicationData.outcome} (No longer available)
+                    </option>
+                  )}
                 {/* Most Frequently Used */}
                 {options["medication_outcome"]
                   .filter((d) => d.is_frequent)
@@ -347,6 +393,18 @@ export default function Medications({ setActiveTab, currentRegistrationId }) {
                     </option>
                   ))}
               </select>
+              {medicationData.outcome &&
+                !options["medication_outcome"].some(
+                  (d) => d.name === medicationData.outcome,
+                ) && (
+                  <div className="mt-1 flex gap-2 text-sm text-red-600">
+                    ⚠️
+                    <div>
+                      This option is no longer available. Please select a new
+                      option before saving.
+                    </div>
+                  </div>
+                )}
             </div>
 
             <div className="grid grid-cols-2 gap-4">

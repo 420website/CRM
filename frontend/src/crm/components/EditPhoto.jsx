@@ -126,8 +126,8 @@ export default function EditPhoto({ registrationId, formData }) {
   };
 
   const handleClickVideo = async () => {
-    setReturnUrl(`/admin-edit/${registrationId}`);
-    navigate(`/preview/${registrationId}`);
+    setReturnUrl(`/crm/file/${registrationId}`);
+    navigate(`/crm/preview/${registrationId}`);
   };
 
   return (

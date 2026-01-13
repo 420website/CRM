@@ -7,7 +7,6 @@ import { tokenManager } from "../../src/tokenManager";
 
 const email = "test@example.com";
 const password = "password123";
-const BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 describe("AuthServices.register", () => {
   it("register_successful", async () => {
