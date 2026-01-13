@@ -7,7 +7,7 @@ on:
       - nightly
       - dev 
       - zoom
-      - seperate-crm
+      - ai-analytcs-use-tools
   pull_request:
     branches:
       - main

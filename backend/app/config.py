@@ -59,6 +59,7 @@ class Settings:
     anthropic_client = AsyncAnthropic(api_key=anthropic_key)
     anthropic_max_tokens = int(os.getenv("MAX_TOKENS", 1024))
     anthropic_model = os.getenv("ANTHROPIC_MODEL", "claude-sonnet-4-20250514")
+    system_prompt: list | None = None
 
     # postgres
     pg_url: str = get_env("POSTGRES_URL")

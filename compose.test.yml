@@ -235,6 +235,7 @@ services:
     volumes:
       - ./backend/app:/backend/app 
       - ./backend/tests:/backend/tests
+      - backend_logs_test:/logs
     command: "python -m unittest discover tests.unit"
 
   backend_unit_tests_watch: 
@@ -244,6 +245,7 @@ services:
     volumes:
       - ./backend/app:/backend/app 
       - ./backend/tests:/backend/tests
+      - backend_logs_test:/logs
     command: >
       sh -c "while true; do
                python -m unittest discover tests.unit;
