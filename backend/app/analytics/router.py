@@ -36,7 +36,7 @@ async def clear_legacy_data_summary(
     user: UserRead = Depends(get_current_user),
 ):
     try:
-        await RagService.clear_chat_history(user.id)
+        await RagService.clear_chat(user.id)
 
         result = await LegacyDataService.delete_all_legacy_data(user.id)
         return result
@@ -107,7 +107,7 @@ async def upload_legacy_data(
 
     try:
         await LegacyDataService.upload_legacy_data(data, user.id)
-        await RagService.clear_chat_history(user.id)
+        await RagService.clear_chat(user.id)
 
         preview = data.data[:5] if len(data.data) > 5 else data.data
 
@@ -132,10 +132,7 @@ async def claude_chat(
 ):
     """Claude AI chat endpoint for admin analytics with legacy data access and chart generation"""
     try:
-        if request.legacy_data:
-            result = await RagService.claude_chat_file(request, user.id)
-        else:
-            result = await RagService.claude_chat_internal(request, user.id)
+        result = await RagService.prompt_claude(str(user.id), request.message, request.datetime, request.legacy_data)
         return result
     except AnthropicRequestError as e:
         raise HTTPException(

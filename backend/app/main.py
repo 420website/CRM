@@ -2,6 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 
+from app.analytics.utils import get_database_schema, get_system_prompt
 from app.logger import logger
 from app.authentication.router import router as auth_router
 from app.references.router import router as reference_router
@@ -12,7 +13,7 @@ from app.zoom.router import router as video_router
 from app.objects.router import router as object_router
 from app.config import settings
 from app.database import database, minio_client
-from app.database import redis_client
+from app.database import redis_client, mongo_client
 
 
 @asynccontextmanager
@@ -20,10 +21,15 @@ async def lifespan(app: FastAPI):
     await database.connect()
     await minio_client.connect()
     await redis_client.connect()
+    await mongo_client.connect()
+    schema= await get_database_schema()
+    settings.system_prompt= get_system_prompt(schema)
+
     logger.info("Application startup complete")
     yield
 
     logger.info("Application shutdown initiated")
+    await mongo_client.disconnect()
     await redis_client.disconnect()
     await minio_client.disconnect()
     await database.disconnect()

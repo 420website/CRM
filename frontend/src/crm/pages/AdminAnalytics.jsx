@@ -188,7 +188,7 @@ const AdminAnalytics = () => {
         // Add message to chat
         const uploadMessage = {
           role: "assistant",
-          content: `📊 Legacy data uploaded successfully! I now have access to ${result.records_count} historical records from ${file.name}. You can ask me questions about trends, dispositions, and patterns in your historical data.`,
+          content: `📊 Legacy data uploaded successfully! I now have access to ${result.data?.records_count} historical records from ${file.name}. You can ask me questions about trends, dispositions, and patterns in your historical data.`,
           utc_timestamp: currentTimestamp(),
           local_timestamp: localTimestamp(),
         };
