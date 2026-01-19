@@ -14,7 +14,7 @@ import ProvinceDropdown from "../components/ProvinceDropdown";
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
-  const { logout, userRole } = useAuth();
+  const { logout, userRole, userPermissions } = useAuth();
   const {
     filtering,
     clearAllFilters,
@@ -351,21 +351,23 @@ const AdminDashboard = () => {
                 <div className="flex  mb-6 w-full">
                   {userRole !== "limited" && (
                     <>
-                      <button
-                        onClick={() => setActiveTab("activities")}
-                        className={`py-2 px-4 font-medium border-b-2 flex-shrink-0 transition-colors ${
-                          activeTab === "activities"
-                            ? "border-blue-600 text-blue-600"
-                            : "border-gray-500 text-gray-500 hover:text-gray-700"
-                        }`}
-                        style={{ width: "33.333%" }}
-                      >
-                        Activities (
-                        {activeTab === "activities"
-                          ? filteredActivity.length
-                          : dashboardStats.total_activities}
-                        )
-                      </button>
+                      {userPermissions.includes("activities") && (
+                        <button
+                          onClick={() => setActiveTab("activities")}
+                          className={`py-2 px-4 font-medium border-b-2 flex-shrink-0 transition-colors ${
+                            activeTab === "activities"
+                              ? "border-blue-600 text-blue-600"
+                              : "border-gray-500 text-gray-500 hover:text-gray-700"
+                          }`}
+                          style={{ width: "33.333%" }}
+                        >
+                          Activities (
+                          {activeTab === "activities"
+                            ? filteredActivity.length
+                            : dashboardStats.total_activities}
+                          )
+                        </button>
+                      )}
                       <button
                         onClick={() => setActiveTab("pending")}
                         className={`py-2 px-4 font-medium border-b-2 flex-shrink-0 transition-colors ${
