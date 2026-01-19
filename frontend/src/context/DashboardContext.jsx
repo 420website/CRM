@@ -8,12 +8,16 @@ const DashboardContext = createContext();
 export const useDashboard = () => useContext(DashboardContext);
 
 export function DashboardProvider({ children }) {
-  const { userRole } = useAuth();
+  const { userRole, userPermissions } = useAuth();
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [lastItem, setLastItem] = useState(null);
   const [activeTab, setActiveTab] = useState(
-    userRole !== "limited" ? "activities" : "submitted",
+    userRole === "limited"
+      ? "submitted"
+      : !userPermissions.includes("activities")
+        ? "pending"
+        : "activities",
   );
 
   // Search and filter state
@@ -43,7 +47,13 @@ export function DashboardProvider({ children }) {
   const [totalRegistrations, setTotalRegistrations] = useState(0);
 
   const resetActiveTab = () => {
-    setActiveTab(userRole !== "limited" ? "activities" : "submitted");
+    setActiveTab(
+      userRole === "limited"
+        ? "submitted"
+        : !userPermissions.includes("activities")
+          ? "pending"
+          : "activities",
+    );
   };
 
   // -- Filters
