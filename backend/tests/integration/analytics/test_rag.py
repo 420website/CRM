@@ -13,16 +13,22 @@ from unittest.mock import MagicMock, patch
 import time
 from fastapi import Response, UploadFile
 from fastapi.security import HTTPAuthorizationCredentials
-from app.analytics.rag import RagService
-from app.analytics.schema import LegacyData
-from app.analytics.services import LegacyDataService
-from app.authentication.schemas import LoginRequest, MFAVerifiactionCode, RegisterRequest
-from app.authentication.services import UserService
-from app.database import database, minio_client, redis_client
-from app.dependencies import get_current_user, get_user_pending_mfa
-from app.objects.schemas import AttachmentCreate
-from app.objects.services import AttachmentService, ObjectService
-from app.registration.schemas import (
+from app.core.analytics.rag import RagService
+from app.core.analytics.schema import LegacyData
+from app.core.analytics.services import LegacyDataService
+from app.core.authentication.schemas import (
+    LoginRequest,
+    MFAVerifiactionCode,
+    RegisterRequest,
+)
+from app.core.authentication.services import UserService
+from app.common.storage.postgres import database
+from app.common.storage.redis import redis_client
+from app.common.storage.minio import minio_client
+from app.common.dependencies import get_current_user, get_user_pending_mfa
+from app.core.objects.schemas import AttachmentCreate
+from app.core.objects.services import AttachmentService, ObjectService
+from app.core.registration.schemas import (
     ActivityCreate,
     AssessmentCreate,
     DispensingCreate,
@@ -31,7 +37,7 @@ from app.registration.schemas import (
     NoteCreate,
     PatientCreate,
 )
-from app.registration.services import (
+from app.core.registration.services import (
     ActivityService,
     AssessmentService,
     DispensingService,
@@ -40,25 +46,27 @@ from app.registration.services import (
     NoteService,
     PatientService,
 )
-from app.database import mongo_client
-from app.config import settings
+from app.common.storage.mongodb import mongo_client
+from app.common.config import settings
 from datetime import date, datetime
 import datetime as dt
-from app.authentication.router import (
+from app.core.authentication.router import (
     login,
     register,
     setup_authenticator_mfa,
     verify_authenticator_mfa,
     verify_email,
 )
-from app.analytics.utils import read_legacy_data_file
+from app.core.analytics.utils import read_legacy_data_file
+
 
 def read_file(path: str) -> bytes:
     with open(path, "rb") as file:
         file_bytes = file.read()
         return file_bytes
 
-def read_csv(path, filename): 
+
+def read_csv(path, filename):
     file_bytes = read_file(path)
     return UploadFile(
         filename=filename,
@@ -66,10 +74,13 @@ def read_csv(path, filename):
         # content_type="text/csv",
     )
 
+
 async def upload_legacy_data(user_id):
-    file = read_csv("tests/integration/analytics/test_data.csv","test_data.csv")
+    file = read_csv(
+        "tests/integration/analytics/test_data.csv", "test_data.csv"
+    )
     df = await read_legacy_data_file(file)
-    
+
     data = LegacyData(
         user_id=user_id,
         upload_id=str(uuid.uuid4()),
@@ -109,14 +120,15 @@ async def upload_attachment(patient_id: int, file_name: str, path: str):
     await ObjectService.upload_object(bucket=bucket, key=key, data=file)
     await AttachmentService.upload_attachment(patient_id, metadata)
 
-    
+
 email = "test4@example.com"
 password = "securepassword123"
 
 user_create = RegisterRequest(email=email, password=password)
 login_request = LoginRequest(email=email, password=password)
 
-@patch("app.authentication.services.EmailService", new_callable=MagicMock)
+
+@patch("app.core.authentication.services.EmailService", new_callable=MagicMock)
 async def mock_register(mock_email_service_class) -> str:
     # Prepare a mock instance to replace EmailService()
     mock_email_service = MagicMock()
@@ -343,109 +355,114 @@ class TestRagService(IsolatedAsyncioTestCase):
         check = await RagService.get_chat(self.user.id)
         self.assertFalse(check)
 
-        # Updated 
+        # Updated
         await RagService.update_chat(self.user.id, "user", "User message1")
 
-        # Validate 
+        # Validate
         result = await RagService.get_chat(self.user.id)
         self.assertTrue(len(result) == 1)
-        self.assertEqual(result[0]['role'], "user")
-        self.assertEqual(result[0]['content'], "User message1")
+        self.assertEqual(result[0]["role"], "user")
+        self.assertEqual(result[0]["content"], "User message1")
 
     async def test_update_chat_existing(self):
         await RagService.update_chat(self.user.id, "user", "User message1")
-            
+
         # Add new message
-        await RagService.update_chat(self.user.id, "assistant", "Assistant message1")
+        await RagService.update_chat(
+            self.user.id, "assistant", "Assistant message1"
+        )
 
-
-        # Validate 
+        # Validate
         result = await RagService.get_chat(self.user.id)
         self.assertTrue(len(result) == 2)
-        self.assertEqual(result[0]['role'], "user")
-        self.assertEqual(result[0]['content'], "User message1")
-        self.assertEqual(result[1]['role'], "assistant")
-        self.assertEqual(result[1]['content'], "Assistant message1")
+        self.assertEqual(result[0]["role"], "user")
+        self.assertEqual(result[0]["content"], "User message1")
+        self.assertEqual(result[1]["role"], "assistant")
+        self.assertEqual(result[1]["content"], "Assistant message1")
 
-    async def test_tty_clears_chat(self): 
-        settings.chat_history_ttl=1
+    async def test_tty_clears_chat(self):
+        settings.chat_history_ttl = 1
         await RagService.update_chat(self.user.id, "user", "User message1")
 
-        # Check 
+        # Check
         time.sleep(3)
         result = await RagService.get_chat(self.user.id)
         self.assertTrue(len(result) == 0)
 
-        settings.chat_history_ttl=20*60
+        settings.chat_history_ttl = 20 * 60
 
-    async def test_max_length_enforced(self): 
-        settings.max_chat_length=2
+    async def test_max_length_enforced(self):
+        settings.max_chat_length = 2
         await RagService.update_chat(self.user.id, "user", "User message1")
-        await RagService.update_chat(self.user.id, "assistant", "Assistant message1")
+        await RagService.update_chat(
+            self.user.id, "assistant", "Assistant message1"
+        )
         await RagService.update_chat(self.user.id, "user", "User message2")
 
-        # Check 
+        # Check
         result = await RagService.get_chat(self.user.id)
         self.assertTrue(len(result) == 2)
-        self.assertEqual(result[0]['role'], "assistant")
-        self.assertEqual(result[0]['content'], "Assistant message1")
-        self.assertEqual(result[1]['role'], "user")
-        self.assertEqual(result[1]['content'], "User message2")
+        self.assertEqual(result[0]["role"], "assistant")
+        self.assertEqual(result[0]["content"], "Assistant message1")
+        self.assertEqual(result[1]["role"], "user")
+        self.assertEqual(result[1]["content"], "User message2")
 
-        settings.max_chat_length=20
+        settings.max_chat_length = 20
 
-    async def test_get_chat_no_chat(self): 
+    async def test_get_chat_no_chat(self):
         result = await RagService.get_chat(self.user.id)
         self.assertEqual(result, [])
 
-    async def test_clear_chat(self): 
+    async def test_clear_chat(self):
         await RagService.update_chat(self.user.id, "user", "User message1")
         result = await RagService.get_chat(self.user.id)
-        self.assertEqual(len(result),1)
+        self.assertEqual(len(result), 1)
 
-        # Test 
+        # Test
         await RagService.clear_chat(self.user.id)
-        
-        # Check 
+
+        # Check
         result = await RagService.get_chat(self.user.id)
-        self.assertEqual(result,[])
+        self.assertEqual(result, [])
 
-    async def test_handle_query_postgres(self): 
-        query="SELECT * FROM patients"
-        result= await RagService.handle_query_postgres(query)
+    async def test_handle_query_postgres(self):
+        query = "SELECT * FROM patients"
+        result = await RagService.handle_query_postgres(query)
 
-        # Check 
+        # Check
         self.assertEqual(type(result), str)
 
         parsed = json.loads(result)
         self.assertEqual(len(parsed), 1)
         self.assertEqual(parsed[0]["id"], self.patient_id)
 
-    async def test_handle_query_postgres_non_select(self): 
-        query="DELETE * FROM patients"
+    async def test_handle_query_postgres_non_select(self):
+        query = "DELETE * FROM patients"
         result = await RagService.handle_query_postgres(query)
 
         parsed = json.loads(result)
         self.assertIn("Only SELECT", parsed["error"])
 
-    async def test_handle_query_postgres_invalid_query(self): 
-        query="not event sql"
+    async def test_handle_query_postgres_invalid_query(self):
+        query = "not event sql"
         result = await RagService.handle_query_postgres(query)
 
         parsed = json.loads(result)
         self.assertIn("Only SELECT", parsed["error"])
 
-    async def test_handle_query_postgres_error_on_query(self): 
-        query="SELECT * FROM not_table"
+    async def test_handle_query_postgres_error_on_query(self):
+        query = "SELECT * FROM not_table"
         result = await RagService.handle_query_postgres(query)
 
         parsed = json.loads(result)
-        self.assertIn("relation \"not_table\" does not exist", parsed["error"])
+        self.assertIn('relation "not_table" does not exist', parsed["error"])
 
     async def test_handle_query_mongodb(self):
-        file = read_csv("tests/integration/analytics/test_data.csv","test_data.csv")
+        file = read_csv(
+            "tests/integration/analytics/test_data.csv", "test_data.csv"
+        )
         df = await read_legacy_data_file(file)
-        
+
         data = LegacyData(
             user_id=self.user.id,
             upload_id=str(uuid.uuid4()),
@@ -456,59 +473,69 @@ class TestRagService(IsolatedAsyncioTestCase):
             data=df.to_dict("records"),
         )
         await LegacyDataService.insert_legacy_data(data)
-        
-        # Test 
+
+        # Test
         pipeline = [
             {"$unwind": "$data"},  # Required to access nested fields
             {"$match": {"data.City": "Toronto"}},  # Example filter
-            {"$project": {  # Only return these fields
-                "_id": 0,
-                "PatientID": "$data.PatientID",
-                "Phone": "$data.Phone",
-                "DOB": "$data.DOB",
-                "Amount": "$data.Amount"
-            }},
-            {"$group": {  
-                "_id": "$data.City",
-                "total_patients": {"$sum": 1},
-                "total_amount": {"$sum": "$data.Amount"}
-            }}
+            {
+                "$project": {  # Only return these fields
+                    "_id": 0,
+                    "PatientID": "$data.PatientID",
+                    "Phone": "$data.Phone",
+                    "DOB": "$data.DOB",
+                    "Amount": "$data.Amount",
+                }
+            },
+            {
+                "$group": {
+                    "_id": "$data.City",
+                    "total_patients": {"$sum": 1},
+                    "total_amount": {"$sum": "$data.Amount"},
+                }
+            },
         ]
 
-        result = await RagService.handle_query_mongodb(self.user.id,pipeline)
+        result = await RagService.handle_query_mongodb(self.user.id, pipeline)
         self.assertEqual(type(result), str)
 
         data = json.loads(result)
-        self.assertEqual(data[0]['total_patients'], 1)
+        self.assertEqual(data[0]["total_patients"], 1)
 
     async def test_handle_query_mongodb_no_records(self):
-        # Test 
+        # Test
         pipeline = [
             {"$unwind": "$data"},  # Required to access nested fields
             {"$match": {"data.City": "Toronto"}},  # Example filter
-            {"$project": {  # Only return these fields
-                "_id": 0,
-                "PatientID": "$data.PatientID",
-                "Phone": "$data.Phone",
-                "DOB": "$data.DOB",
-                "Amount": "$data.Amount"
-            }},
-            {"$group": {  
-                "_id": "$data.City",
-                "total_patients": {"$sum": 1},
-                "total_amount": {"$sum": "$data.Amount"}
-            }}
+            {
+                "$project": {  # Only return these fields
+                    "_id": 0,
+                    "PatientID": "$data.PatientID",
+                    "Phone": "$data.Phone",
+                    "DOB": "$data.DOB",
+                    "Amount": "$data.Amount",
+                }
+            },
+            {
+                "$group": {
+                    "_id": "$data.City",
+                    "total_patients": {"$sum": 1},
+                    "total_amount": {"$sum": "$data.Amount"},
+                }
+            },
         ]
 
-        result = await RagService.handle_query_mongodb(self.user.id,pipeline)
-        
+        result = await RagService.handle_query_mongodb(self.user.id, pipeline)
+
         data = json.loads(result)
         self.assertIn("No legacy data found", data["error"])
 
     async def test_handle_query_mongodb_invalid(self):
-        file = read_csv("tests/integration/analytics/test_data.csv","test_data.csv")
+        file = read_csv(
+            "tests/integration/analytics/test_data.csv", "test_data.csv"
+        )
         df = await read_legacy_data_file(file)
-        
+
         data = LegacyData(
             user_id=self.user.id,
             upload_id=str(uuid.uuid4()),
@@ -519,12 +546,14 @@ class TestRagService(IsolatedAsyncioTestCase):
             data=df.to_dict("records"),
         )
         await LegacyDataService.insert_legacy_data(data)
-        
-        # Test 
+
+        # Test
         pipeline = {"data.City": "Toronto"}
-        result = await RagService.handle_query_mongodb(self.user.id,pipeline)
+        result = await RagService.handle_query_mongodb(self.user.id, pipeline)
 
         data = json.loads(result)
-        self.assertIn("can only concatenate list (not \"dict\") to list", data["error"])
+        self.assertIn(
+            'can only concatenate list (not "dict") to list', data["error"]
+        )
 
     # TODO: Write the tests for prompt claude  with claude mocked

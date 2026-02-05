@@ -12,16 +12,23 @@ from unittest import IsolatedAsyncioTestCase
 from unittest.mock import MagicMock, patch
 from fastapi import HTTPException, Response, UploadFile
 from fastapi.security import HTTPAuthorizationCredentials
-from app.analytics.rag import RagService
-from app.analytics.schema import LegacyData
-from app.analytics.services import LegacyDataService
-from app.authentication.schemas import LoginRequest, MFAVerifiactionCode, RegisterRequest
-from app.authentication.services import UserService
-from app.database import database, minio_client, redis_client
-from app.dependencies import get_current_user, get_user_pending_mfa
-from app.objects.schemas import AttachmentCreate
-from app.objects.services import AttachmentService, ObjectService
-from app.registration.schemas import (
+from app.common.storage.postgres import database
+from app.common.storage.minio import minio_client
+from app.common.storage.redis import redis_client
+from app.common.storage.mongodb import mongo_client
+from app.core.analytics.rag import RagService
+from app.core.analytics.schema import LegacyData
+from app.core.analytics.services import LegacyDataService
+from app.core.authentication.schemas import (
+    LoginRequest,
+    MFAVerifiactionCode,
+    RegisterRequest,
+)
+from app.core.authentication.services import UserService
+from app.common.dependencies import get_current_user, get_user_pending_mfa
+from app.core.objects.schemas import AttachmentCreate
+from app.core.objects.services import AttachmentService, ObjectService
+from app.core.registration.schemas import (
     ActivityCreate,
     AssessmentCreate,
     DispensingCreate,
@@ -30,7 +37,7 @@ from app.registration.schemas import (
     NoteCreate,
     PatientCreate,
 )
-from app.registration.services import (
+from app.core.registration.services import (
     ActivityService,
     AssessmentService,
     DispensingService,
@@ -39,26 +46,30 @@ from app.registration.services import (
     NoteService,
     PatientService,
 )
-from app.database import mongo_client
-from app.config import settings
 from datetime import date, datetime
 import datetime as dt
-from app.authentication.router import (
+from app.core.authentication.router import (
     login,
     register,
     setup_authenticator_mfa,
     verify_authenticator_mfa,
     verify_email,
 )
-from app.analytics.router import upload_legacy_data, get_legacy_data_summary, clear_legacy_data_summary
-from app.analytics.utils import read_legacy_data_file
+from app.core.analytics.router import (
+    upload_legacy_data,
+    get_legacy_data_summary,
+    clear_legacy_data_summary,
+)
+from app.core.analytics.utils import read_legacy_data_file
+
 
 def read_file(path: str) -> bytes:
     with open(path, "rb") as file:
         file_bytes = file.read()
         return file_bytes
 
-def read_csv(path, filename): 
+
+def read_csv(path, filename):
     file_bytes = read_file(path)
     return UploadFile(
         filename=filename,
@@ -66,10 +77,13 @@ def read_csv(path, filename):
         # content_type="text/csv",
     )
 
+
 async def upload_legacy(user_id):
-    file = read_csv("tests/integration/analytics/test_data.csv","test_data.csv")
+    file = read_csv(
+        "tests/integration/analytics/test_data.csv", "test_data.csv"
+    )
     df = await read_legacy_data_file(file)
-    
+
     data = LegacyData(
         user_id=user_id,
         upload_id=str(uuid.uuid4()),
@@ -109,14 +123,15 @@ async def upload_attachment(patient_id: int, file_name: str, path: str):
     await ObjectService.upload_object(bucket=bucket, key=key, data=file)
     await AttachmentService.upload_attachment(patient_id, metadata)
 
-    
+
 email = "test4@example.com"
 password = "securepassword123"
 
 user_create = RegisterRequest(email=email, password=password)
 login_request = LoginRequest(email=email, password=password)
 
-@patch("app.authentication.services.EmailService", new_callable=MagicMock)
+
+@patch("app.core.authentication.services.EmailService", new_callable=MagicMock)
 async def mock_register(mock_email_service_class) -> str:
     # Prepare a mock instance to replace EmailService()
     mock_email_service = MagicMock()
@@ -340,12 +355,11 @@ class TestAnalyticsRouter(IsolatedAsyncioTestCase):
     async def test_upload_legacy_data_success(self):
         """Test successful upload of legacy data CSV file"""
         file = read_csv(
-            "tests/integration/analytics/test_data.csv",
-            "test_data.csv"
+            "tests/integration/analytics/test_data.csv", "test_data.csv"
         )
-        
+
         response = await upload_legacy_data(file=file, user=self.user)
-        
+
         # Verify response structure
         self.assertIsNotNone(response.message)
         self.assertIn("Successfully uploaded", response.message)
@@ -353,7 +367,7 @@ class TestAnalyticsRouter(IsolatedAsyncioTestCase):
         self.assertIsNotNone(response.preview)
         self.assertIsNotNone(response.upload_id)
         self.assertLessEqual(len(response.preview), 5)
-        
+
         # Verify data was stored
         summary = await LegacyDataService.get_legacy_data_summary(self.user.id)
         self.assertIsNotNone(summary)
@@ -366,10 +380,10 @@ class TestAnalyticsRouter(IsolatedAsyncioTestCase):
             filename=None,  # No filename
             file=BytesIO(file_bytes),
         )
-        
+
         with self.assertRaises(Exception) as context:
             await upload_legacy_data(file=file, user=self.user)
-        
+
         self.assertIn("Please provide file", str(context.exception))
 
     async def test_upload_legacy_data_invalid_file_type(self):
@@ -380,64 +394,79 @@ class TestAnalyticsRouter(IsolatedAsyncioTestCase):
             filename="test.txt",
             file=BytesIO(file_content),
         )
-        
+
         with self.assertRaises(Exception) as context:
             await upload_legacy_data(file=file, user=self.user)
-        
-        self.assertIn("Excel (.xlsx, .xls) or CSV (.csv)", str(context.exception))
+
+        self.assertIn(
+            "Excel (.xlsx, .xls) or CSV (.csv)", str(context.exception)
+        )
 
     async def test_upload_legacy_data_missing_columns(self):
         """Test upload fails when required columns are missing"""
         # Create CSV with missing columns
-        df = pd.DataFrame({
-            "PatientID": [1, 2],
-            "DOB": ["1990-01-01", "1985-05-15"],
-            # Missing many required columns
-        })
-        
+        df = pd.DataFrame(
+            {
+                "PatientID": [1, 2],
+                "DOB": ["1990-01-01", "1985-05-15"],
+                # Missing many required columns
+            }
+        )
+
         csv_buffer = BytesIO()
         df.to_csv(csv_buffer, index=False)
         csv_buffer.seek(0)
-        
+
         file = UploadFile(
             filename="incomplete.csv",
             file=csv_buffer,
         )
-        
+
         with self.assertRaises(Exception) as context:
             await upload_legacy_data(file=file, user=self.user)
-        
+
         self.assertIn("Columns not as expected", str(context.exception))
 
     async def test_upload_legacy_data_empty_file(self):
         """Test upload fails with empty CSV file"""
         # Create empty DataFrame with correct columns
         expected_columns = [
-            "PatientID", "DOB", "Gender", "Address", "City", "Province",
-            "PostalCode", "Phone", "HealthCard", "Disposition", "RegDate",
-            "ReferralSite", "InteractionType", "Amount"
+            "PatientID",
+            "DOB",
+            "Gender",
+            "Address",
+            "City",
+            "Province",
+            "PostalCode",
+            "Phone",
+            "HealthCard",
+            "Disposition",
+            "RegDate",
+            "ReferralSite",
+            "InteractionType",
+            "Amount",
         ]
         df = pd.DataFrame(columns=expected_columns)
-        
+
         csv_buffer = BytesIO()
         df.to_csv(csv_buffer, index=False)
         csv_buffer.seek(0)
-        
+
         file = UploadFile(
             filename="empty.csv",
             file=csv_buffer,
         )
-        
+
         with self.assertRaises(Exception) as context:
             await upload_legacy_data(file=file, user=self.user)
-        
+
         self.assertIn("File is empty", str(context.exception))
 
     async def test_get_legacy_data_summary_success(self):
         """Test retrieving legacy data summary successfully"""
         # First upload some data
         await upload_legacy(self.user.id)
-        
+
         # Get summary
         result = await get_legacy_data_summary(user=self.user)
 
@@ -450,20 +479,20 @@ class TestAnalyticsRouter(IsolatedAsyncioTestCase):
         """Test getting summary when no data exists"""
         # Ensure no data exists
         await LegacyDataService.delete_all_legacy_data(self.user.id)
-        
+
         # This might return empty result or raise exception depending on implementation
         with self.assertRaises(HTTPException) as err:
             await get_legacy_data_summary(user=self.user)
 
         self.assertIn("No legacy data found", str(err.exception))
-        
+
     async def test_get_legacy_data_summary_error_handling(self):
         """Test error handling in get_legacy_data_summary"""
         # Mock service to raise exception
         with patch.object(
             LegacyDataService,
-            'get_legacy_data_summary',
-            side_effect=Exception("Database error")
+            "get_legacy_data_summary",
+            side_effect=Exception("Database error"),
         ):
             with self.assertRaises(Exception) as context:
                 await get_legacy_data_summary(user=self.user)
@@ -474,35 +503,34 @@ class TestAnalyticsRouter(IsolatedAsyncioTestCase):
         """Test clearing legacy data successfully"""
         # First upload some data
         await upload_legacy(self.user.id)
-        
+
         # Verify data exists
         summary_before = await LegacyDataService.get_legacy_data_summary(
             self.user.id
         )
         self.assertIsNotNone(summary_before)
-        
+
         # Clear the data
         result = await clear_legacy_data_summary(user=self.user)
-        
+
         # Verify deletion was successful
         self.assertIsNotNone(result)
-        
+
         # Verify data is gone
         with self.assertRaises(HTTPException) as err:
             await get_legacy_data_summary(user=self.user)
 
         self.assertIn("No legacy data found", str(err.exception))
 
-
     async def test_clear_legacy_data_summary_clears_rag_chat(self):
         """Test that clearing legacy data also clears RAG chat"""
         # Upload data first
         await upload_legacy(self.user.id)
-        
+
         # Mock RagService.clear_chat to verify it's called
-        with patch.object(RagService, 'clear_chat') as mock_clear_chat:
+        with patch.object(RagService, "clear_chat") as mock_clear_chat:
             await clear_legacy_data_summary(user=self.user)
-            
+
             # Verify clear_chat was called with correct user_id
             mock_clear_chat.assert_called_once_with(self.user.id)
 
@@ -511,19 +539,21 @@ class TestAnalyticsRouter(IsolatedAsyncioTestCase):
         # Mock service to raise exception
         with patch.object(
             LegacyDataService,
-            'delete_all_legacy_data',
-            side_effect=Exception("Delete failed")
+            "delete_all_legacy_data",
+            side_effect=Exception("Delete failed"),
         ):
             with self.assertRaises(Exception) as context:
                 await clear_legacy_data_summary(user=self.user)
-            
-            self.assertIn("Failed to delete summary data", str(context.exception))
+
+            self.assertIn(
+                "Failed to delete summary data", str(context.exception)
+            )
 
     async def test_clear_legacy_data_summary_when_no_data(self):
         """Test clearing when no data exists (should not fail)"""
         # Ensure no data exists
         await LegacyDataService.delete_all_legacy_data(self.user.id)
-        
+
         # Should complete without error
         result = await clear_legacy_data_summary(user=self.user)
         self.assertIsNotNone(result)
@@ -532,14 +562,13 @@ class TestAnalyticsRouter(IsolatedAsyncioTestCase):
         """Integration test: upload data then retrieve summary"""
         # Upload data
         file = read_csv(
-            "tests/integration/analytics/test_data.csv",
-            "test_data.csv"
+            "tests/integration/analytics/test_data.csv", "test_data.csv"
         )
         await upload_legacy_data(file=file, user=self.user)
-        
+
         # Get summary
         summary = await get_legacy_data_summary(user=self.user)
-        
+
         # Verify consistency between upload and summary
         self.assertIsNotNone(summary)
 
@@ -547,23 +576,21 @@ class TestAnalyticsRouter(IsolatedAsyncioTestCase):
         """Test that uploading a new file handles previous data correctly"""
         # Upload first file
         file1 = read_csv(
-            "tests/integration/analytics/test_data.csv",
-            "test_data_1.csv"
+            "tests/integration/analytics/test_data.csv", "test_data_1.csv"
         )
         response1 = await upload_legacy_data(file=file1, user=self.user)
         upload_id_1 = response1.upload_id
-        
+
         # Upload second file
         file2 = read_csv(
-            "tests/integration/analytics/test_data.csv",
-            "test_data_2.csv"
+            "tests/integration/analytics/test_data.csv", "test_data_2.csv"
         )
         response2 = await upload_legacy_data(file=file2, user=self.user)
         upload_id_2 = response2.upload_id
-        
+
         # Verify different upload IDs
         self.assertNotEqual(upload_id_1, upload_id_2)
-        
+
         # Verify summary reflects latest upload
         summary = await get_legacy_data_summary(user=self.user)
         self.assertIsNotNone(summary)
@@ -571,46 +598,47 @@ class TestAnalyticsRouter(IsolatedAsyncioTestCase):
     async def test_upload_excel_file(self):
         """Test uploading an Excel file (.xlsx)"""
         # Create a simple Excel file
-        df = pd.DataFrame({
-            "PatientID": [1, 2, 3],
-            "DOB": ["1990-01-01", "1985-05-15", "1992-08-20"],
-            "Gender": ["M", "F", "M"],
-            "Address": ["123 Main", "456 Oak", "789 Pine"],
-            "City": ["Toronto", "Ottawa", "Montreal"],
-            "Province": ["ON", "ON", "QC"],
-            "PostalCode": ["M1A1A1", "K1A1A1", "H1A1A1"],
-            "Phone": ["1111111111", "2222222222", "3333333333"],
-            "HealthCard": ["1234567890", "0987654321", "1122334455"],
-            "Disposition": ["Active", "Inactive", "Active"],
-            "RegDate": ["2024-01-01", "2024-01-02", "2024-01-03"],
-            "ReferralSite": ["Site A", "Site B", "Site C"],
-            "InteractionType": ["Type1", "Type2", "Type1"],
-            "Amount": [100.00, 200.00, 150.00],
-        })
-        
+        df = pd.DataFrame(
+            {
+                "PatientID": [1, 2, 3],
+                "DOB": ["1990-01-01", "1985-05-15", "1992-08-20"],
+                "Gender": ["M", "F", "M"],
+                "Address": ["123 Main", "456 Oak", "789 Pine"],
+                "City": ["Toronto", "Ottawa", "Montreal"],
+                "Province": ["ON", "ON", "QC"],
+                "PostalCode": ["M1A1A1", "K1A1A1", "H1A1A1"],
+                "Phone": ["1111111111", "2222222222", "3333333333"],
+                "HealthCard": ["1234567890", "0987654321", "1122334455"],
+                "Disposition": ["Active", "Inactive", "Active"],
+                "RegDate": ["2024-01-01", "2024-01-02", "2024-01-03"],
+                "ReferralSite": ["Site A", "Site B", "Site C"],
+                "InteractionType": ["Type1", "Type2", "Type1"],
+                "Amount": [100.00, 200.00, 150.00],
+            }
+        )
+
         excel_buffer = BytesIO()
-        df.to_excel(excel_buffer, index=False, engine='openpyxl')
+        df.to_excel(excel_buffer, index=False, engine="openpyxl")
         excel_buffer.seek(0)
-        
+
         file = UploadFile(
             filename="test_data.xlsx",
             file=excel_buffer,
         )
-        
+
         response = await upload_legacy_data(file=file, user=self.user)
-        
+
         self.assertIsNotNone(response)
         self.assertEqual(response.records_count, 3)
         self.assertIn("Successfully uploaded", response.message)
 
     async def test_rag_chat_cleared_on_upload(self):
         """Test that RAG chat is cleared when uploading new data"""
-        with patch.object(RagService, 'clear_chat') as mock_clear_chat:
+        with patch.object(RagService, "clear_chat") as mock_clear_chat:
             file = read_csv(
-                "tests/integration/analytics/test_data.csv",
-                "test_data.csv"
+                "tests/integration/analytics/test_data.csv", "test_data.csv"
             )
             await upload_legacy_data(file, self.user)
-            
+
             # Verify clear_chat was called during upload
             mock_clear_chat.assert_called_once_with(self.user.id)

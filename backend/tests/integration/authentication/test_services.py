@@ -3,16 +3,16 @@ import asyncio
 import time
 import unittest
 from fastapi import HTTPException
-from app.authentication.schemas import (
+from app.core.authentication.schemas import (
     RefreshToken,
     RegisterRequest,
     UserCreate,
     UserUpdate,
     VerificationToken,
 )
-from app.authentication.utils import SecurityService
-from app.database import database
-from app.authentication.services import (
+from app.common.crypt import SecurityService
+from app.common.storage.postgres import database
+from app.core.authentication.services import (
     EmailMfaCodeService,
     RecoveryCodeService,
     UserService,
@@ -20,7 +20,6 @@ from app.authentication.services import (
 )
 import datetime as dt
 from datetime import datetime, timedelta
-
 
 email = "test@gmail.com"
 password = "test_password"

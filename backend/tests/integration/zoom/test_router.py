@@ -1,18 +1,18 @@
-# pyright: reportOptionalMemberAccess=none, reportArgumentType=none, reportAttributeAccessIssue=none
+# pyright: reportOptionalMemberAccess=none, reportArgumentType=none, reportAttributeAccessIssue=none, reportGeneralTypeIssues=none
 import asyncio
 from unittest import IsolatedAsyncioTestCase
 from unittest.mock import patch
-from app.authentication.schemas import UserRead
-from app.authentication.utils import SecurityService
-from app.database import database
-from app.registration.schemas import PatientCreate
-from app.registration.services import PatientService
+from app.core.authentication.schemas import UserRead
+from app.common.crypt import SecurityService
+from app.common.storage.postgres import database
+from app.core.registration.schemas import PatientCreate
+from app.core.registration.services import PatientService
 from datetime import date, timedelta
-from app.database import redis_client
-from app.zoom.services import ZoomService
+from app.common.storage.redis import redis_client
+from app.core.zoom.services import ZoomService
 from httpx import ASGITransport, AsyncClient
 from app.main import app
-from app.dependencies import get_current_user
+from app.common.dependencies import get_current_user
 from datetime import datetime, timezone
 
 
@@ -85,7 +85,7 @@ class TestZoomRoutes(IsolatedAsyncioTestCase):
 
     async def _get_auth_token(self, user_id: int) -> str:
         """Helper to create a valid JWT token for testing"""
-        (token, _) = SecurityService.generate_jwt(
+        token, _ = SecurityService.generate_jwt(
             user_id, timedelta(hours=2), auth=True
         )
         return token
@@ -209,7 +209,7 @@ class TestZoomRoutes(IsolatedAsyncioTestCase):
     async def test_lock_session_not_host_error(self):
         """Non-host user fails to lock the session."""
         # Create session with another host
-        config = await ZoomService._create_zoom_session(self.patient_id, 999)
+        await ZoomService._create_zoom_session(self.patient_id, 999)
         redis = redis_client.get_client()
         session_dict = await redis.hgetall(
             f"session:metadata:{self.patient_id}"
@@ -228,9 +228,7 @@ class TestZoomRoutes(IsolatedAsyncioTestCase):
     # POST /video/unlock/{patient_id}
     async def test_unlock_session_successful(self):
         """Host user successfully unlocks the session."""
-        config = await ZoomService._create_zoom_session(
-            self.patient_id, self.user_id
-        )
+        await ZoomService._create_zoom_session(self.patient_id, self.user_id)
         redis = redis_client.get_client()
         await ZoomService.lock_session(self.patient_id, self.user_id)
 
@@ -255,7 +253,7 @@ class TestZoomRoutes(IsolatedAsyncioTestCase):
 
     async def test_unlock_session_not_host_error(self):
         """Non-host user fails to unlock the session."""
-        config = await ZoomService._create_zoom_session(self.patient_id, 999)
+        await ZoomService._create_zoom_session(self.patient_id, 999)
         redis = redis_client.get_client()
         await ZoomService.lock_session(self.patient_id, 999)
 
@@ -307,9 +305,7 @@ class TestZoomRoutes(IsolatedAsyncioTestCase):
         """Internal user joins existing session (not as host)."""
         # Create session with different host
         host_id = 999
-        config = await ZoomService._create_zoom_session(
-            self.patient_id, host_id
-        )
+        await ZoomService._create_zoom_session(self.patient_id, host_id)
 
         redis = redis_client.get_client()
         session_dict = await redis.hgetall(
@@ -320,7 +316,7 @@ class TestZoomRoutes(IsolatedAsyncioTestCase):
 
         # Internal user joins
         with patch(
-            "app.zoom.services.ZoomVideoSDKService.get_session",
+            "app.core.zoom.services.ZoomVideoSDKService.get_session",
             return_value=True,
         ):
             response = await self.client.post(
@@ -348,7 +344,7 @@ class TestZoomRoutes(IsolatedAsyncioTestCase):
 
         # Attempt join as non-host
         with patch(
-            "app.zoom.services.ZoomVideoSDKService.get_session",
+            "app.core.zoom.services.ZoomVideoSDKService.get_session",
             return_value=True,
         ):
             response = await self.client.post(
@@ -368,7 +364,7 @@ class TestZoomRoutes(IsolatedAsyncioTestCase):
         )
 
         with patch(
-            "app.zoom.services.ZoomVideoSDKService.get_session",
+            "app.core.zoom.services.ZoomVideoSDKService.get_session",
             return_value=True,
         ):
             response = await self.client.post(
@@ -387,7 +383,7 @@ class TestZoomRoutes(IsolatedAsyncioTestCase):
         await ZoomService._create_zoom_session(self.patient_id, self.user_id)
 
         with patch(
-            "app.zoom.services.ZoomVideoSDKService.get_session",
+            "app.core.zoom.services.ZoomVideoSDKService.get_session",
             return_value=True,
         ):
             response = await self.client.post(
@@ -409,7 +405,7 @@ class TestZoomRoutes(IsolatedAsyncioTestCase):
         )
 
         with patch(
-            "app.zoom.services.ZoomVideoSDKService.get_session",
+            "app.core.zoom.services.ZoomVideoSDKService.get_session",
             return_value=True,
         ):
             response = await self.client.post(

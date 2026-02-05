@@ -9,7 +9,7 @@ import pyotp
 import datetime as dt
 from starlette.types import Scope
 
-from app.authentication.schemas import (
+from app.core.authentication.schemas import (
     Email,
     ForgotPassword,
     LoginRequest,
@@ -19,17 +19,17 @@ from app.authentication.schemas import (
     UserCreate,
     UserUpdate,
 )
-from app.authentication.utils import SecurityService
-from app.database import database
-from app.authentication.services import (
+from app.common.crypt import SecurityService
+from app.common.storage.postgres import database
+from app.core.authentication.services import (
     RecoveryCodeService,
     TokenService,
     UserService,
 )
 from datetime import datetime
-from app.config import settings
-from app.dependencies import get_current_user, get_user_pending_mfa
-from app.authentication.router import (
+from app.common.config import settings
+from app.common.dependencies import get_current_user, get_user_pending_mfa
+from app.core.authentication.router import (
     create_user,
     delete_user,
     disable_authenticator_mfa,
@@ -63,7 +63,7 @@ login_request = LoginRequest(email=email, password=password)
 mfa_req = "123456"
 
 
-@patch("app.authentication.services.EmailService", new_callable=MagicMock)
+@patch("app.core.authentication.services.EmailService", new_callable=MagicMock)
 async def mock_send_verification_email(mock_email_service_class) -> str:
     # Prepare a mock instance to replace EmailService()
     mock_email_service = MagicMock()
@@ -94,7 +94,7 @@ async def mock_send_verification_email(mock_email_service_class) -> str:
     return captured_token["token"]
 
 
-@patch("app.authentication.services.EmailService", new_callable=MagicMock)
+@patch("app.core.authentication.services.EmailService", new_callable=MagicMock)
 async def mock_forgot_password(mock_email_service_class) -> str:
     # Prepare a mock instance to replace EmailService()
     mock_email_service = MagicMock()
@@ -125,7 +125,7 @@ async def mock_forgot_password(mock_email_service_class) -> str:
     return captured_token["token"]
 
 
-@patch("app.authentication.services.EmailService", new_callable=MagicMock)
+@patch("app.core.authentication.services.EmailService", new_callable=MagicMock)
 async def mock_mfa_email(user, mock_email_service_class) -> str:
     # Prepare a mock instance to replace EmailService()
     mock_email_service = MagicMock()
@@ -158,7 +158,7 @@ async def mock_mfa_email(user, mock_email_service_class) -> str:
     return captured_token["code"]
 
 
-@patch("app.authentication.services.EmailService", new_callable=MagicMock)
+@patch("app.core.authentication.services.EmailService", new_callable=MagicMock)
 async def mock_register(mock_email_service_class) -> str:
     # Prepare a mock instance to replace EmailService()
     mock_email_service = MagicMock()
@@ -232,7 +232,8 @@ class TestAuthRouter(unittest.IsolatedAsyncioTestCase):
 
     # register
     @patch(
-        "app.authentication.services.EmailService.send", new_callable=MagicMock
+        "app.core.authentication.services.EmailService.send",
+        new_callable=MagicMock,
     )
     async def test_register_success(self, _):
         await register(user_create)
@@ -250,7 +251,8 @@ class TestAuthRouter(unittest.IsolatedAsyncioTestCase):
         await UserService.delete_user(email, password)
 
     @patch(
-        "app.authentication.services.EmailService.send", new_callable=MagicMock
+        "app.core.authentication.services.EmailService.send",
+        new_callable=MagicMock,
     )
     async def test_register_duplicate(self, _):
         await register(user_create)
@@ -515,7 +517,8 @@ class TestAuthRouter(unittest.IsolatedAsyncioTestCase):
 
     # send mfa code email
     @patch(
-        "app.authentication.services.EmailService.send", new_callable=MagicMock
+        "app.core.authentication.services.EmailService.send",
+        new_callable=MagicMock,
     )
     async def test_send_mfa_email(self, _):
         await mock_register()
@@ -950,7 +953,8 @@ class TestAuthRouter(unittest.IsolatedAsyncioTestCase):
         await UserService.delete_user(email, password)
 
     @patch(
-        "app.authentication.services.EmailService.send", new_callable=MagicMock
+        "app.core.authentication.services.EmailService.send",
+        new_callable=MagicMock,
     )
     async def test_create_users_success(self, _):
         user = await get_validated_user()
@@ -979,7 +983,8 @@ class TestAuthRouter(unittest.IsolatedAsyncioTestCase):
         await UserService.delete_user(new_user.email, new_user.password)
 
     @patch(
-        "app.authentication.services.EmailService.send", new_callable=MagicMock
+        "app.core.authentication.services.EmailService.send",
+        new_callable=MagicMock,
     )
     async def test_update_users_success(self, _):
         user = await get_validated_user()
@@ -1015,7 +1020,8 @@ class TestAuthRouter(unittest.IsolatedAsyncioTestCase):
         await UserService.delete_user(new_user.email, new_user.password)
 
     @patch(
-        "app.authentication.services.EmailService.send", new_callable=MagicMock
+        "app.core.authentication.services.EmailService.send",
+        new_callable=MagicMock,
     )
     async def test_delete_users_success(self, _):
         user = await get_validated_user()

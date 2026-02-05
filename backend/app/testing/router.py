@@ -1,10 +1,10 @@
 from asyncpg.exceptions import UniqueViolationError
-from app.authentication.services import (
+from app.core.authentication.services import (
     EmailMfaCodeService,
     TokenService,
     UserService,
 )
-from app.authentication.schemas import (
+from app.core.authentication.schemas import (
     Email,
     ForgotPassword,
     RegisterRequest,
@@ -15,16 +15,17 @@ from app.authentication.schemas import (
 )
 from fastapi import APIRouter, Depends, HTTPException, status
 from datetime import datetime, timedelta
-from app.authentication.utils import SecurityService
-from app.config import settings
-from app.dependencies import get_current_user
+from app.common.crypt import SecurityService
+from app.common.config import settings
+from app.common.dependencies import get_current_user
 import datetime as dt
-from app.database import database
+from app.common.storage.postgres import database
 from datetime import timezone
-from app.database import redis_client
+from app.common.storage.redis import redis_client
 from app.webpage.schema import ContactMessageCreate, RegistrationMessageCreate
 from app.webpage.services import ContactService, RegisterService
-from app.zoom.services import ZoomService
+
+# from app.core.zoom.services import ZoomService
 
 router = APIRouter(prefix="/testing", tags=["Testing"])
 

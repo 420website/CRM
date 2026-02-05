@@ -3,8 +3,8 @@ import asyncio
 from decimal import Decimal
 from unittest import IsolatedAsyncioTestCase
 from asyncpg import UniqueViolationError
-from app.database import database
-from app.registration.schemas import (
+from app.common.storage.postgres import database
+from app.core.registration.schemas import (
     ActivityCreate,
     ActivityUpdate,
     AssessementUpdate,
@@ -23,7 +23,7 @@ from app.registration.schemas import (
     PatientRead,
     PatientUpdate,
 )
-from app.registration.services import (
+from app.core.registration.services import (
     ActivityService,
     AssessmentService,
     DispensingService,

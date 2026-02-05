@@ -8,28 +8,29 @@ from datetime import date
 from fastapi import HTTPException, Response, UploadFile
 from fastapi.security import HTTPAuthorizationCredentials
 from jose import jwt
-from app.authentication.services import UserService
-from app.database import minio_client, database
-from app.dependencies import get_current_user, get_user_pending_mfa
+from app.core.authentication.services import UserService
+from app.common.storage.postgres import database
+from app.common.storage.minio import minio_client
+from app.common.dependencies import get_current_user, get_user_pending_mfa
 import pyotp
-from app.objects.router import upload_attachment
-from app.objects.services import AttachmentService, ObjectService
-from app.registration.router import create_patient
-from app.registration.schemas import PatientCreate
-from app.registration.services import PatientService
-from app.config import settings
+from app.core.objects.router import upload_attachment
+from app.core.objects.services import AttachmentService, ObjectService
+from app.core.registration.router import create_patient
+from app.core.registration.schemas import PatientCreate
+from app.core.registration.services import PatientService
+from app.common.config import settings
 from app.testing.router import register_user
-from app.authentication.router import (
+from app.core.authentication.router import (
     login,
     setup_authenticator_mfa,
     verify_authenticator_mfa,
 )
-from app.authentication.schemas import (
+from app.core.authentication.schemas import (
     LoginRequest,
     MFAVerifiactionCode,
     RegisterRequest,
 )
-from app.share_links.router import (
+from app.core.share_links.router import (
     AttachmentId,
     access_share_link,
     create_share_link,
@@ -94,7 +95,7 @@ class TestShareLinkRouter(IsolatedAsyncioTestCase):
             file_size=len(data),
             mime_type="application/pdf",
             document_type="Consultation Report",
-            user=self.user,
+            _=self.user,
         )
 
         # Get the created attachment to return its ID

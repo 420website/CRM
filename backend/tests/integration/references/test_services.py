@@ -1,15 +1,15 @@
 # pyright: reportOptionalMemberAccess=none, reportArgumentType=none
 import asyncio
 from unittest import IsolatedAsyncioTestCase
-from app.database import database
-from app.exceptions import APIError, DuplicateError, NotFoundError
-from app.references.schemas import (
+from app.common.storage.postgres import database
+from app.common.exceptions import APIError, DuplicateError, NotFoundError
+from app.core.references.schemas import (
     ReferenceOption,
     ReferenceOptionUpdate,
     ReferenceTemplate,
     ReferenceTemplateUpdate,
 )
-from app.references.services import (
+from app.core.references.services import (
     ReferenceOptionService,
     ReferenceTemplateService,
 )

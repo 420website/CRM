@@ -8,22 +8,27 @@ from datetime import date
 from unittest.mock import MagicMock, patch
 from fastapi import HTTPException, Response, UploadFile
 from fastapi.security import HTTPAuthorizationCredentials
-from app.authentication.services import UserService
-from app.database import minio_client, database
-from app.dependencies import get_current_user, get_user_pending_mfa
-from app.objects.schemas import AttachmentCreate
-from app.registration.router import create_patient
-from app.registration.schemas import PatientCreate
-from app.objects.services import AttachmentService, ObjectService, PhotoService
-from app.registration.services import PatientService
-from app.authentication.router import (
+from app.core.authentication.services import UserService
+from app.common.storage.postgres import database
+from app.common.storage.minio import minio_client
+from app.common.dependencies import get_current_user, get_user_pending_mfa
+from app.core.objects.schemas import AttachmentCreate
+from app.core.registration.router import create_patient
+from app.core.registration.schemas import PatientCreate
+from app.core.objects.services import (
+    AttachmentService,
+    ObjectService,
+    PhotoService,
+)
+from app.core.registration.services import PatientService
+from app.core.authentication.router import (
     login,
     register,
     setup_authenticator_mfa,
     verify_authenticator_mfa,
     verify_email,
 )
-from app.objects.router import (
+from app.core.objects.router import (
     delete_attachment,
     delete_photo,
     get_attachment,
@@ -32,7 +37,7 @@ from app.objects.router import (
     upload_attachment,
     upload_photo,
 )
-from app.authentication.schemas import (
+from app.core.authentication.schemas import (
     LoginRequest,
     MFAVerifiactionCode,
     RegisterRequest,
@@ -52,7 +57,7 @@ user_create = RegisterRequest(email=email, password=password)
 login_request = LoginRequest(email=email, password=password)
 
 
-@patch("app.authentication.services.EmailService", new_callable=MagicMock)
+@patch("app.core.authentication.services.EmailService", new_callable=MagicMock)
 async def mock_register(mock_email_service_class) -> str:
     # Prepare a mock instance to replace EmailService()
     mock_email_service = MagicMock()
@@ -436,7 +441,7 @@ class TestPatientAttachmentsRouter(IsolatedAsyncioTestCase):
             file_size=len(data),
             mime_type="application/pdf",
             document_type="Consultation Report",
-            user=self.user,
+            _=self.user,
         )
 
         # Get the created attachment to return its ID
@@ -498,7 +503,7 @@ class TestPatientAttachmentsRouter(IsolatedAsyncioTestCase):
             file_size=len(data),
             mime_type="application/pdf",
             document_type="Consultation Report",
-            user=self.user,
+            _=self.user,
         )
 
         self.assertEqual(

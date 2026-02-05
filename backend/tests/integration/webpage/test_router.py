@@ -6,7 +6,7 @@ from unittest.mock import patch
 from fastapi import HTTPException
 from app.webpage.router import register_for_testing, submit_contact_message
 from app.webpage.schema import ContactMessageCreate, RegistrationMessageCreate
-from app.database import database
+from app.common.storage.postgres import database
 
 
 class TestMy420RouterEndpoints(IsolatedAsyncioTestCase):
@@ -71,6 +71,7 @@ class TestMy420RouterEndpoints(IsolatedAsyncioTestCase):
                 "SELECT * FROM contact_messages WHERE id = $1",
                 response["contact_id"],
             )
+            assert row
             self.assertIsNotNone(row)
             self.assertEqual(row["email"], "test_endpoint_contact@example.com")
             self.assertEqual(row["subject"], "Test Endpoint Subject")
@@ -205,6 +206,7 @@ class TestMy420RouterEndpoints(IsolatedAsyncioTestCase):
                 "SELECT * FROM register_messages WHERE id = $1",
                 response["registration_id"],
             )
+            assert row
             self.assertIsNotNone(row)
             self.assertEqual(
                 row["email"], "test_endpoint_register@example.com"

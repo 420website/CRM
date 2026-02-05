@@ -2,18 +2,20 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 
-from app.analytics.utils import get_database_schema, get_system_prompt
-from app.logger import logger
-from app.authentication.router import router as auth_router
-from app.references.router import router as reference_router
-from app.registration.router import router as patient_router
-from app.analytics.router import router as analytics_router
-from app.share_links.router import router as share_link_router
-from app.zoom.router import router as video_router
-from app.objects.router import router as object_router
-from app.config import settings
-from app.database import database, minio_client
-from app.database import redis_client, mongo_client
+from app.core.analytics.utils import get_database_schema, get_system_prompt
+from app.common.logger import logger
+from app.core.authentication.router import router as auth_router
+from app.core.references.router import router as reference_router
+from app.core.registration.router import router as patient_router
+from app.core.analytics.router import router as analytics_router
+from app.core.share_links.router import router as share_link_router
+from app.core.zoom.router import router as video_router
+from app.core.objects.router import router as object_router
+from app.common.config import settings
+from app.common.storage.postgres import database
+from app.common.storage.minio import minio_client
+from app.common.storage.redis import redis_client
+from app.common.storage.mongodb import mongo_client
 
 
 @asynccontextmanager
@@ -22,8 +24,8 @@ async def lifespan(app: FastAPI):
     await minio_client.connect()
     await redis_client.connect()
     await mongo_client.connect()
-    schema= await get_database_schema()
-    settings.system_prompt= get_system_prompt(schema)
+    schema = await get_database_schema()
+    settings.system_prompt = get_system_prompt(schema)
 
     logger.info("Application startup complete")
     yield

@@ -1,9 +1,9 @@
-from app.email.messages import (
+from app.common.email.messages import (
     ContactEmailMessage,
     RegistrationEmailMessage,
 )
-from app.email.service import EmailService
-from app.config import settings
+from app.common.email.service import EmailService
+from app.common.config import settings
 
 
 def send_contact_email(contact_data):

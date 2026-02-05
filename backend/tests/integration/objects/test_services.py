@@ -2,11 +2,16 @@
 import asyncio
 from datetime import date
 from unittest import IsolatedAsyncioTestCase
-from app.database import minio_client, database
-from app.objects.schemas import AttachmentCreate, PhotoCreate
-from app.registration.schemas import PatientCreate
-from app.registration.services import PatientService
-from app.objects.services import AttachmentService, ObjectService, PhotoService
+from app.common.storage.postgres import database
+from app.common.storage.minio import minio_client
+from app.core.objects.schemas import AttachmentCreate, PhotoCreate
+from app.core.registration.schemas import PatientCreate
+from app.core.registration.services import PatientService
+from app.core.objects.services import (
+    AttachmentService,
+    ObjectService,
+    PhotoService,
+)
 
 
 def read_file(path: str) -> bytes:
