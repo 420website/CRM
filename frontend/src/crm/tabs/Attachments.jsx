@@ -90,17 +90,14 @@ export default function Attachments({
     setLoading(false);
   };
 
-  const deleteAttachment = async (attachmentName) => {
+  const deleteAttachment = async (attachmentKey) => {
     if (!window.confirm(`Are you sure you want to remove this attachment?`)) {
       return;
     }
 
     setLoading(true);
 
-    const result = await ObjectServices.delete_attachment(
-      currentRegistrationId,
-      attachmentName,
-    );
+    const result = await ObjectServices.delete_attachment(attachmentKey);
 
     if (result.success) {
       await getAttachments(currentRegistrationId);
@@ -116,10 +113,7 @@ export default function Attachments({
   };
 
   const downloadAttachment = async (attachment) => {
-    const result = await ObjectServices.get_attachment_raw(
-      currentRegistrationId,
-      attachment.file_name,
-    );
+    const result = await ObjectServices.get_attachment_raw(attachment.file_key);
 
     if (result.success) {
       const type =
@@ -153,10 +147,7 @@ export default function Attachments({
     const fileInput = document.getElementById("documentFile");
     if (fileInput) fileInput.value = "";
 
-    const result = await ObjectServices.get_attachment_raw(
-      currentRegistrationId,
-      attachment.file_name,
-    );
+    const result = await ObjectServices.get_attachment_raw(attachment.file_key);
 
     const file = new File([result.data], attachment.file_name, {
       type: attachment.mime_type,
@@ -684,7 +675,7 @@ export default function Attachments({
                         </button>
                         <button
                           type="button"
-                          onClick={() => deleteAttachment(attachment.file_name)}
+                          onClick={() => deleteAttachment(attachment.file_key)}
                           className="bg-red-600 text-white px-2 py-1 rounded text-xs hover:bg-red-700 transition-colors"
                         >
                           Remove

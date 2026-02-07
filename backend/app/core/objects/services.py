@@ -1,199 +1,15 @@
-from typing import List, Union
+from typing import List, Tuple
+from fastapi import HTTPException, status
 from app.common.storage.postgres import database
-from app.common.storage.minio import minio_client
 from app.common.logger import logger
-from botocore.exceptions import ClientError
+from app.core.objects.attachment_queries import AttachmentQueries
 from app.core.objects.schemas import (
     AttachmentCreate,
     AttachmentRead,
     PhotoCreate,
     PhotoRead,
 )
-
-
-class ObjectService:
-    @staticmethod
-    async def create_bucket(bucket: str):
-        async with minio_client.get_client() as client:
-            try:
-                response = await client.create_bucket(Bucket=bucket)
-                metadata = response.get("ResponseMetadata")
-
-                if metadata.get("HTTPStatusCode") != 200:
-                    raise Exception(f"Error creating bucket: {bucket}")
-            except Exception as e:
-                raise e
-
-    @staticmethod
-    async def delete_bucket(bucket: str):
-        async with minio_client.get_client() as client:
-            try:
-                response = await client.delete_bucket(Bucket=bucket)
-                metadata = response.get("ResponseMetadata")
-
-                if metadata.get("HTTPStatusCode") != 204:
-                    raise Exception(f"Error deleting bucket: {bucket}")
-            except ClientError as e:
-                if e.response.get("Error", {}).get("Code") == "NoSuchBucket":
-                    return
-                raise e
-            except Exception as e:
-                raise e
-
-    @staticmethod
-    async def list_buckets() -> List[str]:
-        async with minio_client.get_client() as client:
-            try:
-                resp = await client.list_buckets()
-                metadata = resp.get("ResponseMetadata")
-
-                if metadata.get("HTTPStatusCode") != 200:
-                    raise Exception("Error uploading object")
-
-                buckets = [
-                    name
-                    for b in resp["Buckets"]
-                    if (name := b.get("Name")) is not None
-                ]
-                return buckets
-            except Exception as e:
-                raise e
-
-    @staticmethod
-    async def upload_object(bucket: str, key: str, data: bytes):
-        async with minio_client.get_client() as client:
-            try:
-                await client.head_bucket(Bucket=bucket)
-            except ClientError:
-                await ObjectService.create_bucket(bucket)
-            except Exception as e:
-                raise e
-
-            try:
-                logger.debug(
-                    f"Starting upload object - Bucket: {bucket}, Key: {key}"
-                )
-                result = await client.put_object(
-                    Bucket=bucket,
-                    Key=key,
-                    Body=data,
-                )
-                metadata = result.get("ResponseMetadata")
-                status_code = metadata.get("HTTPStatusCode")
-
-                if metadata.get("HTTPStatusCode") != 200:
-                    logger.error(
-                        f"Upload failed - Bucket: {bucket}, Key: {key}, Status: {status_code}"
-                    )
-                    raise Exception("Error uploading object")
-
-                logger.info(
-                    f"Upload successful - Bucket: {bucket}, Key: {key}"
-                )
-            except Exception as e:
-                raise e
-
-    @staticmethod
-    async def upload_object_streaming(
-        bucket: str,
-        key: str,
-        file_obj,  # File-like object from UploadFile
-        content_type: str = "application/octet-stream",
-        _: int = 1024 * 1024,  # 1MB chunk size
-    ):
-        async with minio_client.get_client() as client:
-            try:
-                await client.head_bucket(Bucket=bucket)
-            except ClientError:
-                await ObjectService.create_bucket(bucket)
-            except Exception as e:
-                raise e
-
-            try:
-                logger.debug(
-                    f"Starting streaming put_object - Bucket: {bucket}, Key: {key}"
-                )
-                result = await client.put_object(
-                    Bucket=bucket,
-                    Key=key,
-                    Body=file_obj,  # Pass file object directly
-                    ContentType=content_type,
-                )
-                metadata = result.get("ResponseMetadata")
-                status_code = metadata.get("HTTPStatusCode")
-
-                if metadata.get("HTTPStatusCode") != 200:
-                    logger.error(
-                        f"Streaming upload failed - Bucket: {bucket}, Key: {key}, Status: {status_code}"
-                    )
-                    raise Exception("Error uploading object")
-
-                logger.info(
-                    f"Streaming upload successful - Bucket: {bucket}, Key: {key}"
-                )
-            except Exception as e:
-                raise e
-
-    @staticmethod
-    async def get_object(bucket: str, key: str) -> bytes:
-        async with minio_client.get_client() as client:
-            if not await client.head_bucket(Bucket=bucket):
-                raise Exception("Bucket doesn't exist.")
-            try:
-                response = await client.get_object(Bucket=bucket, Key=key)
-                metadata = response.get("ResponseMetadata")
-
-                if metadata.get("HTTPStatusCode") != 200:
-                    raise Exception("Error getting object")
-
-                return await response["Body"].read()
-            except Exception as e:
-                raise e
-
-    @staticmethod
-    async def delete_object(bucket: str, key: str):
-        async with minio_client.get_client() as client:
-            try:
-                response = await client.delete_object(Bucket=bucket, Key=key)
-                metadata = response.get("ResponseMetadata")
-
-                if metadata.get("HTTPStatusCode") != 204:
-                    raise Exception(f"Error deleting object : {key}")
-            except ClientError as e:
-                if e.response.get("Error", {}).get("Code") == "NoSuchBucket":
-                    return
-                raise e
-            except Exception as e:
-                raise e
-
-    @staticmethod
-    async def list_objects(bucket: str, prefix: str = ""):
-        async with minio_client.get_client() as client:
-            try:
-                response = await client.list_objects_v2(
-                    Bucket=bucket,
-                    Prefix=prefix,
-                )
-                metadata = response.get("ResponseMetadata")
-
-                if metadata.get("HTTPStatusCode") != 200:
-                    raise Exception("Error uploading object")
-
-                return [obj.get("Key") for obj in response.get("Contents", [])]
-            except Exception as e:
-                raise e
-
-    @staticmethod
-    async def delete_objects(bucket: str, prefix: str):
-        try:
-            keys = await ObjectService.list_objects(bucket, prefix)
-
-            if keys and len(keys) > 0:
-                for k in keys:
-                    if k:
-                        await ObjectService.delete_object(bucket, k)
-        except Exception as e:
-            raise e
+from app.core.objects.object_queries import ObjectService
 
 
 class PhotoService:
@@ -291,133 +107,89 @@ class PhotoService:
 
 
 class AttachmentService:
-    # Attachments
     @staticmethod
     async def upload_attachment(
         patient_id: int,
+        data: bytes,
         attachment: AttachmentCreate,
-    ) -> int | None:
-        """
-        Could also jsut have not duplciate so users have to remove old one
-        before creating with same name.
-        """
-        logger.info(
-            f"AttachmentService.upload_attachment - Patient: {patient_id}, File: {attachment.file_name}, Size: {attachment.file_size}, Type: {attachment.document_type}"
-        )
-
-        query = """
-        INSERT INTO attachments (
-            patient_id, file_name, file_key, file_size,
-            mime_type, document_type
-        )
-        VALUES ($1, $2, $3, $4, $5, $6)
-        ON CONFLICT (patient_id, file_name)
-        DO UPDATE SET 
-            file_name = EXCLUDED.file_name,
-            file_key = EXCLUDED.file_key,
-            file_size = EXCLUDED.file_size, 
-            mime_type = EXCLUDED.mime_type,
-            document_type = EXCLUDED.document_type
-        RETURNING id;
-        """
+    ) -> str:
         async with database.get_transaction() as conn:
-            try:
-                row = await conn.fetchrow(
-                    query,
-                    patient_id,
-                    attachment.file_name,
-                    attachment.file_key,
-                    attachment.file_size,
-                    attachment.mime_type,
-                    attachment.document_type,
-                )
-            except Exception as e:
-                logger.error(
-                    f"Database error in upload_attachment - Patient: {patient_id}, File: {attachment.file_name}, Error: {str(e)}",
-                    exc_info=True,
-                )
-                raise
+            attachment_id = await AttachmentQueries.create_attachment_record(
+                conn, patient_id, attachment
+            )
+            key = f"{patient_id}/{attachment_id}/{attachment.file_name}"
 
-        if row and "id" in row:
-            logger.info(
-                f"Attachment record saved - Patient: {patient_id}, ID: {row['id']}, File: {attachment.file_name}"
+            await AttachmentQueries.update_attachment_key(
+                conn, attachment_id, key
             )
-            return row["id"]
-        else:
-            logger.error(
-                f"Attachment record not saved - Patient: {patient_id}, File: {attachment.file_name}"
-            )
-            return None
+
+            await ObjectService.upload_object("attachments", key, data)
+
+        return key
 
     @staticmethod
     async def get_patient_attachments(patient_id: int) -> List[AttachmentRead]:
-        query = """
-        SELECT * 
-        FROM attachments 
-        WHERE patient_id = $1 
-        ORDER BY uploaded_at DESC;
-        """
         async with database.get_connection() as conn:
-            rows = await conn.fetch(query, patient_id)
+            attachments = await AttachmentQueries.get_patient_attachments(
+                conn, patient_id
+            )
 
-        result = []
-        if rows:
-            for row in rows:
-                result.append(AttachmentRead(**dict(row)))
-        return result
+        return attachments
 
     @staticmethod
-    async def get_attachment(
-        patient_id: int, name: str
-    ) -> Union[AttachmentRead, None]:
-        query = """
-        SELECT * 
-        FROM attachments  
-        WHERE patient_id = $1 
-            AND file_name = $2;
-        """
+    async def get_attachment(file_key: str) -> Tuple[bytes, str]:
         async with database.get_connection() as conn:
-            row = await conn.fetchrow(query, patient_id, name)
+            metadata = await AttachmentQueries.get_attachment(conn, file_key)
 
-        if row:
-            return AttachmentRead(**dict(row)) if row else None
+            if not metadata:
+                logger.warning(f"Attachment not found - File Key: {file_key}")
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail="Attachment not found",
+                )
+
+        data = await ObjectService.get_object("attachments", metadata.file_key)
+        return (data, metadata.file_name)
 
     @staticmethod
-    async def get_attachment_by_id(id: int) -> Union[AttachmentRead, None]:
-        query = """
-        SELECT * 
-        FROM attachments  
-        WHERE id = $1; 
-        """
+    async def get_attachment_by_id(id: int) -> bytes:
         async with database.get_connection() as conn:
-            row = await conn.fetchrow(query, id)
+            metadata = await AttachmentQueries.get_attachment_by_id(conn, id)
 
-        if row:
-            return AttachmentRead(**dict(row)) if row else None
+            if not metadata:
+                logger.warning(f"Attachment not found - File ID: {id}")
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail="Attachment not found",
+                )
+
+        return await ObjectService.get_object("attachments", metadata.file_key)
 
     @staticmethod
-    async def delete_attachment(patient_id: int, name: str) -> bool:
-        logger.info(
-            f"AttachmentService.delete_attachment - Patient: {patient_id}, File: {name}"
-        )
-
-        query = """
-            DELETE FROM attachments 
-            WHERE patient_id=$1 
-                AND file_name=$2
-            RETURNING id;
-        """
-
+    async def delete_attachment(file_key: str) -> None:
         async with database.get_transaction() as conn:
-            row = await conn.fetchrow(query, patient_id, name)
-            return bool(row)
+            deleted = await AttachmentQueries.delete_attachment(conn, file_key)
 
-    @staticmethod
-    async def delete_attachment_by_id(id: int) -> bool:
-        logger.info(f"AttachmentService.delete_attachment - ID {id}")
+            if not deleted:
+                logger.warning(f"Attachment not found - Key: {file_key}")
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail="Attachment not found",
+                )
+        await ObjectService.delete_object("attachments", file_key)
 
-        query = """DELETE FROM attachments WHERE id=$1 RETURNING id;"""
 
-        async with database.get_transaction() as conn:
-            row = await conn.fetchrow(query, id)
-            return bool(row)
+# --- Delete below --
+
+# @staticmethod
+# async def delete_attachment_by_id(id: int) -> None:
+#     async with database.get_transaction() as conn:
+#         deleted = await AttachmentQueries.delete_attachment_by_id(conn, id)
+#
+#         if not deleted:
+#             logger.warning(f"Attachment not found - File ID: {id}")
+#             raise HTTPException(
+#                 status_code=status.HTTP_404_NOT_FOUND,
+#                 detail="Attachment not found",
+#             )
+#         await ObjectService.delete_object("attachments", file_key)

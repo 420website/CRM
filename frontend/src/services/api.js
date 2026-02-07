@@ -41,7 +41,7 @@ api.interceptors.request.use(
     // 2. Share link GET endpoints
     const isAuthEndpoint = config.url?.includes("/auth");
     const isShareLinkGet =
-      config.url?.includes("/share-links/") &&
+      config.url?.includes("/share-link/") &&
       config.method?.toLowerCase() === "get";
 
     const shouldSkipRefresh = isAuthEndpoint || isShareLinkGet;
@@ -112,7 +112,7 @@ api.interceptors.response.use(
     // 2. Share link GET endpoints (use their own token)
     const isAuthEndpoint = originalRequest.url?.includes("/auth");
     const isShareLinkGet =
-      originalRequest.url?.includes("/share-links/") &&
+      originalRequest.url?.includes("/share-link/") &&
       originalRequest.method?.toLowerCase() === "get";
 
     const shouldSkipRefresh = isAuthEndpoint || isShareLinkGet;

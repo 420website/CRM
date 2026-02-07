@@ -5,16 +5,13 @@ from app.common.config import settings
 from typing import Optional
 
 
-# JWT Handling
-def generate_jwt(mime_type: str, patient_id: int, file_name: str) -> str:
-    # attachment_id: int) -> str:
-
+def generate_jwt(mime_type: str, file_key: str, file_name: str) -> str:
     expiry = datetime.now(dt.timezone.utc) + timedelta(
         minutes=settings.share_link_expire_minutes
     )
 
     payload = {
-        "patient_id": patient_id,
+        "file_key": file_key,
         "file_name": file_name,
         "mime_type": mime_type,
         "exp": int(expiry.timestamp()),

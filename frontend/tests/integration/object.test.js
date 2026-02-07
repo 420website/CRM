@@ -1,4 +1,3 @@
-import axios from "axios";
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import { AuthServices } from "../../src/services/authService";
 import { TestServices } from "../setup";
@@ -255,10 +254,11 @@ describe("PatientServices.patient attachments", () => {
       "Consultation Report",
     );
 
-    const result = await ObjectServices.get_attachment_raw(
-      createdPatientId,
-      fileName,
-    );
+    const listRes =
+      await ObjectServices.get_attachments_by_patient(createdPatientId);
+
+    const fileKey = listRes.data[0].file_key;
+    const result = await ObjectServices.get_attachment_raw(fileKey);
 
     // Convert to buffer
     const downloadedBuffer = Buffer.from(
@@ -279,10 +279,12 @@ describe("PatientServices.patient attachments", () => {
       "Consultation Report",
     );
 
-    const deleteRes = await ObjectServices.delete_attachment(
-      createdPatientId,
-      fileName,
-    );
+    const listRes =
+      await ObjectServices.get_attachments_by_patient(createdPatientId);
+
+    const fileKey = listRes.data[0].file_key;
+
+    const deleteRes = await ObjectServices.delete_attachment(fileKey);
     expect(deleteRes.success).toBe(true);
 
     const getRes =

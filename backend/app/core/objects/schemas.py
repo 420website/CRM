@@ -2,6 +2,10 @@ from pydantic import BaseModel
 from datetime import datetime
 
 
+class AttachmentId(BaseModel):
+    attachment_id: int
+
+
 class AttachmentCreate(BaseModel):
     file_name: str
     file_key: str
