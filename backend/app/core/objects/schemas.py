@@ -31,6 +31,7 @@ class AttachmentRead(BaseModel):
 class PhotoCreate(BaseModel):
     photo_name: str
     photo_key: str
+    mime_type: str
 
 
 class PhotoRead(BaseModel):

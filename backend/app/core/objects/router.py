@@ -6,18 +6,15 @@ from app.common.storage.postgres import database
 from app.core.authentication.schemas import UserRead
 from app.common.dependencies import get_current_user
 from app.core.objects.attachment_queries import AttachmentQueries
+from app.core.objects.attachment_service import AttachmentService
+from app.core.objects.object_queries import ObjectService
+from app.core.objects.photo_services import PhotoService
 from app.core.objects.schemas import (
     AttachmentCreate,
     AttachmentId,
     AttachmentRead,
     PhotoCreate,
 )
-from app.core.objects.services import (
-    AttachmentService,
-    ObjectService,
-    PhotoService,
-)
-from app.common.utils import compress_image
 from app.common.logger import logger
 from app.core.objects.utils import decode_jwt, generate_jwt
 from app.common.config import settings
@@ -35,93 +32,62 @@ async def upload_photo(
     file: UploadFile = File(...),
     _: UserRead = Depends(get_current_user),
 ):
-    """
-    Creates the object first, making the postgres insertion the point of committment,
-    in the event it fails there will be an orphaned object.
-    """
-    bucket = "photos"
-    key = f"{patient_id}/{name}"
-
-    logger.info(
-        f"Photo upload started - Patient: {patient_id}, Name: {name}, Key: {key}"
-    )
-    logger.info(
-        f"File details - Filename: {file.filename}, ContentType: {file.content_type}, Size: {file.size if hasattr(file, 'size') else 'unknown'}"
-    )
+    logger.info(f"Photo upload started - Patient: {patient_id}, Name: {name}")
 
     try:
-        await ObjectService.upload_object_streaming(
-            bucket=bucket,
-            key=key,
-            file_obj=file.file,
-            content_type=file.content_type or "image/jpeg",
+        metadata = PhotoCreate(
+            photo_name=name,
+            photo_key=f"{patient_id}/{name}",
+            mime_type=file.content_type or "image/jpeg",
         )
 
-        logger.info(f"MinIO upload SUCCESS - Key: {key}")
-
-        await PhotoService.upload_photo(
-            patient_id, PhotoCreate(photo_name=name, photo_key=key)
-        )
-        logger.info(f"Database insert SUCCESS -  Key: {key}")
-        logger.info(f"Photo Upload SUCCESS -  Key: {key}")
-
+        await PhotoService.upload_photo(patient_id, metadata, file.file)
+        logger.info(f"Photo upload successful - Patient: {patient_id}")
         return {"message": "Successfully uploaded file."}
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(
-            f"Photo upload FAILED - Patient: {patient_id}, Key: {key}, Error: {str(e)}",
+            f"Photo upload FAILED - Patient: {patient_id}, Name: {name}, Error: {str(e)}",
             exc_info=True,
         )
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Unexpected error: {str(e)}",
+            detail="Failed to upload photo.",
         )
 
 
 @router.get("/photos/{patient_id}")
 async def get_photo(
     patient_id: int,
-    version: str = "raw",  # "base64"
     _: UserRead = Depends(get_current_user),
 ):
-    bucket = "photos"
-
     try:
-        key = await PhotoService.get_patient_photo_key(patient_id)
+        data, name = await PhotoService.get_photo(patient_id)
 
-        if not key:
+        if not data:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Photo key not found for patient.",
             )
 
-        data = await ObjectService.get_object(bucket, key)
+        response = Response(
+            content=data,
+            media_type="application/octet-stream",
+        )
 
-        if version == "base64":
-            file, file_type = compress_image(data)
-            return {
-                "file": file,
-                "type": file_type,
-                "name": key.split("/")[-1],
-            }
-        elif version == "raw":
-            response = Response(
-                content=data,
-                media_type="application/octet-stream",
-            )
-
-            response.headers["file-name"] = key.split("/")[-1]
-            return response
-        else:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Invalid version.",
-            )
+        response.headers["file-name"] = name
+        return response
     except HTTPException:
         raise
     except Exception as e:
+        logger.error(
+            f"Photo get FAILED - Patient: {patient_id}, Error: {str(e)}",
+            exc_info=True,
+        )
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Unexpected error: {str(e)}",
+            detail="Failed to retrieve photo.",
         )
 
 
@@ -131,25 +97,9 @@ async def delete_photo(
     _: UserRead = Depends(get_current_user),
 ):
     logger.info(f"Photo Delete started - Patient: {patient_id}")
-
-    bucket = "photos"
     try:
-        key = await PhotoService.delete_photo(patient_id)
-
-        if not key:
-            logger.info(
-                f"Database Photo Delete Failed - Patient: {patient_id} - Key not found"
-            )
-
-            raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="Error deleting photo metadata.",
-            )
-        logger.info(f"Database Delete Success - Patient: {patient_id}")
-
-        await ObjectService.delete_object(bucket, key)
-        logger.info(f"Minio Delete Success - Patient: {patient_id}")
-
+        await PhotoService.delete_photo(patient_id)
+        logger.info(f"Photo Delete SUCCESS - patient {patient_id}")
         return {"message": "Successfully deleted photo."}
     except HTTPException:
         raise
@@ -235,7 +185,7 @@ async def list_attachment_objects(
 @router.get("/attachments/{file_key:path}")
 async def get_attachment(
     file_key: str,
-    _: UserRead = Depends(get_current_user),
+    _user: UserRead = Depends(get_current_user),
 ):
     try:
         data, name = await AttachmentService.get_attachment(file_key)
@@ -244,7 +194,7 @@ async def get_attachment(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Attachment not found for patient.",
             )
-        mime_type, _encoding = mimetypes.guess_type(name)
+        mime_type, _ = mimetypes.guess_type(name)
         return Response(
             content=data,
             media_type=mime_type or "application/octet-stream",
@@ -298,7 +248,6 @@ async def create_share_link(
     body: AttachmentId,
     _: UserRead = Depends(get_current_user),
 ):
-    # metadata = await AttachmentService.get_attachment_by_id(body.attachment_id)
     async with database.get_connection() as conn:
         metadata = await AttachmentQueries.get_attachment_by_id(
             conn, body.attachment_id

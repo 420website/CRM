@@ -14,10 +14,8 @@ from app.common.storage.minio import minio_client
 from app.common.dependencies import get_current_user, get_user_pending_mfa
 from app.core.registration.router import create_patient
 from app.core.registration.schemas import PatientCreate
-from app.core.objects.services import (
-    AttachmentService,
-    ObjectService,
-)
+from app.core.objects.object_queries import ObjectService
+from app.core.objects.attachment_service import AttachmentService
 from app.core.registration.services import PatientService
 from app.core.authentication.router import (
     login,

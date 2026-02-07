@@ -26,8 +26,9 @@ from app.core.authentication.schemas import (
 )
 from app.core.authentication.services import UserService
 from app.common.dependencies import get_current_user, get_user_pending_mfa
+from app.core.objects.attachment_service import AttachmentService
+from app.core.objects.object_queries import ObjectService
 from app.core.objects.schemas import AttachmentCreate
-from app.core.objects.services import AttachmentService, ObjectService
 from app.core.registration.schemas import (
     ActivityCreate,
     AssessmentCreate,

@@ -4,7 +4,7 @@ import smtplib
 from email.message import EmailMessage
 from typing import Self, overload
 from app.common.config import settings
-from app.core.objects.services import ObjectService
+from app.core.objects.object_queries import ObjectService
 
 
 class Message:

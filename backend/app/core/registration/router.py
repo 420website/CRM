@@ -13,7 +13,8 @@ from app.core.authentication.schemas import UserRead
 from app.common.email.messages import FinalizedEmailMessage
 from app.common.email.service import EmailService
 from app.common.config import settings
-from app.core.objects.services import ObjectService, PhotoService
+from app.core.objects.object_queries import ObjectService
+from app.core.objects.photo_services import PhotoService
 from app.core.registration.schemas import (
     ActivityCreate,
     ActivityRead,

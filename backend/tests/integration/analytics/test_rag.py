@@ -27,7 +27,8 @@ from app.common.storage.redis import redis_client
 from app.common.storage.minio import minio_client
 from app.common.dependencies import get_current_user, get_user_pending_mfa
 from app.core.objects.schemas import AttachmentCreate
-from app.core.objects.services import AttachmentService, ObjectService
+from app.core.objects.object_queries import ObjectService
+from app.core.objects.attachment_service import AttachmentService
 from app.core.registration.schemas import (
     ActivityCreate,
     AssessmentCreate,
@@ -94,7 +95,7 @@ async def upload_legacy_data(user_id):
 
 
 async def upload_attachment(patient_id: int, file_name: str, path: str):
-    bucket = "testing"
+    # bucket = "testing"
     key = f"{patient_id}/{file_name}"
 
     file = read_file(path)
@@ -117,8 +118,7 @@ async def upload_attachment(patient_id: int, file_name: str, path: str):
         document_type=document_type,
     )
 
-    await ObjectService.upload_object(bucket=bucket, key=key, data=file)
-    await AttachmentService.upload_attachment(patient_id, metadata)
+    await AttachmentService.upload_attachment(patient_id, file, metadata)
 
 
 email = "test4@example.com"

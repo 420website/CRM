@@ -19,13 +19,6 @@ export const ObjectServices = {
     );
   },
 
-  get_photo_base64: async (patient_id) => {
-    return apiCall(
-      () => api.get(`/objects/photos/${patient_id}?version=base64`),
-      "Fetching patient photo failed.",
-    );
-  },
-
   get_photo_raw: async (patient_id) => {
     return apiCall(
       () =>
@@ -70,14 +63,6 @@ export const ObjectServices = {
       "Fetching attachments by patient failed.",
     );
   },
-
-  // get_attachment_base64: async (patient_id, name) => {
-  //   return apiCall(
-  //     () =>
-  //       api.get(`/objects/attachments/${patient_id}/${name}?version=base64`),
-  //     "Fetching attachment  failed.",
-  //   );
-  // },
 
   get_attachment_raw: async (file_type) => {
     return apiCall(

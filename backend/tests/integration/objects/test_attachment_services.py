@@ -10,10 +10,8 @@ from app.core.objects.attachment_queries import AttachmentQueries
 from app.core.objects.schemas import AttachmentCreate
 from app.core.registration.schemas import PatientCreate
 from app.core.registration.services import PatientService
-from app.core.objects.services import (
-    AttachmentService,
-    ObjectService,
-)
+from app.core.objects.object_queries import ObjectService
+from app.core.objects.attachment_service import AttachmentService
 
 
 def read_file(path: str) -> bytes:

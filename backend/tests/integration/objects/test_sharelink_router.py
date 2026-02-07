@@ -13,8 +13,9 @@ from app.common.storage.postgres import database
 from app.common.storage.minio import minio_client
 from app.common.dependencies import get_current_user, get_user_pending_mfa
 import pyotp
+from app.core.objects.attachment_service import AttachmentService
 from app.core.objects.router import upload_attachment
-from app.core.objects.services import AttachmentService, ObjectService
+from app.core.objects.object_queries import ObjectService
 from app.core.registration.router import create_patient
 from app.core.registration.schemas import PatientCreate
 from app.core.registration.services import PatientService
@@ -342,7 +343,7 @@ class TestShareLinkRouter(IsolatedAsyncioTestCase):
         await ObjectService.delete_object("attachments", file_key)
 
         # Test - should fail to find attachment
-        with self.assertRaises(HTTPException) as context:
+        with self.assertRaises(HTTPException):
             await access_share_link(token)
 
         # self.assertEqual(context.exception.status_code, 404)
@@ -397,6 +398,7 @@ class TestShareLinkRouter(IsolatedAsyncioTestCase):
         decoded = decode_jwt(token)
 
         # Verify the token contains the actual file_key from database
+        assert decoded
         self.assertEqual(decoded["file_key"], file_key)
 
         # Verify file_key has correct format: {patient_id}/{attachment_id}/{file_name}
@@ -465,6 +467,7 @@ class TestShareLinkRouter(IsolatedAsyncioTestCase):
         self.assertEqual(decoded2["file_key"], key2)
 
 
+# -- delete --
 #
 # class TestShareLinkRouter(IsolatedAsyncioTestCase):
 #     @classmethod

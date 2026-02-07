@@ -84,18 +84,6 @@ describe("PatientServices.patient photos", () => {
     expect(result.data?.message).toBe("Successfully uploaded file.");
   });
 
-  it("should fetch photo in base64 form for a patient", async () => {
-    await ObjectServices.upload_photo(createdPatientId, fileName, file);
-
-    const result = await ObjectServices.get_photo_base64(createdPatientId);
-
-    // Compare
-    expect(result.success).toBeTruthy();
-    expect(result.data?.file.length > 0).toBeTruthy();
-    expect(result.data?.type).toBe("JPEG");
-    expect(result.data?.name).toBe("test-img.jpeg");
-  });
-
   it("should fetch photo in raw form for a patient", async () => {
     await ObjectServices.upload_photo(createdPatientId, fileName, file);
 
