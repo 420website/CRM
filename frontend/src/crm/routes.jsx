@@ -136,7 +136,7 @@ function CrmRoutes() {
       <Route path="/" element={<Navigate to="/crm/login" replace />} />
       <Route path="/login" element={<AdminPIN />} />
       <Route path="/verify-email" element={<VerifyEmail />} />
-      <Route path="/share-links" element={<ShareViewer />} />
+      <Route path="/share-link" element={<ShareViewer />} />
 
       {/* Guest Video */}
       <Route path="/guest-video/:patientId" element={<GuestVideoAccess />} />

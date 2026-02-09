@@ -262,7 +262,7 @@ async def create_share_link(
     token = generate_jwt(
         metadata.mime_type, metadata.file_key, metadata.file_name
     )
-    share_url = f"{settings.app_url}/crm/share-links?token={token}"
+    share_url = f"{settings.app_url}/crm/share-link?token={token}"
     return {"share_url": share_url}
 
 

@@ -221,7 +221,7 @@ class TestShareLinkRouter(IsolatedAsyncioTestCase):
         )
 
         # Validate URL format
-        expected_prefix = f"{settings.app_url}/crm/share-links?token="
+        expected_prefix = f"{settings.app_url}/crm/share-link?token="
         self.assertTrue(result["share_url"].startswith(expected_prefix))
 
         # Ensure token is present
