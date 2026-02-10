@@ -6,18 +6,24 @@ import uuid
 import pyotp
 from unittest import IsolatedAsyncioTestCase
 from unittest.mock import MagicMock, patch
-from app.database import mongo_client
+from app.common.storage.mongodb import mongo_client
 from fastapi import Response, UploadFile
 from fastapi.security import HTTPAuthorizationCredentials
-from app.analytics.schema import  DataSummaryResponse, LegacyData
-from app.analytics.services import LegacyDataService
-from app.analytics.utils import read_legacy_data_file
-from app.authentication.schemas import LoginRequest, MFAVerifiactionCode, RegisterRequest
-from app.authentication.services import UserService
-from app.database import database, minio_client, redis_client
-from app.dependencies import get_current_user, get_user_pending_mfa
-from datetime import  datetime
-from app.authentication.router import (
+from app.core.analytics.schema import DataSummaryResponse, LegacyData
+from app.core.analytics.services import LegacyDataService
+from app.core.analytics.utils import read_legacy_data_file
+from app.core.authentication.schemas import (
+    LoginRequest,
+    MFAVerifiactionCode,
+    RegisterRequest,
+)
+from app.core.authentication.services import UserService
+from app.common.storage.postgres import database
+from app.common.storage.minio import minio_client
+from app.common.storage.redis import redis_client
+from app.common.dependencies import get_current_user, get_user_pending_mfa
+from datetime import datetime
+from app.core.authentication.router import (
     login,
     register,
     setup_authenticator_mfa,
@@ -25,18 +31,21 @@ from app.authentication.router import (
     verify_email,
 )
 
+
 def read_file(path: str) -> bytes:
     with open(path, "rb") as file:
         file_bytes = file.read()
         return file_bytes
-    
+
+
 email = "test4@example.com"
 password = "securepassword123"
 
 user_create = RegisterRequest(email=email, password=password)
 login_request = LoginRequest(email=email, password=password)
 
-@patch("app.authentication.services.EmailService", new_callable=MagicMock)
+
+@patch("app.core.authentication.services.EmailService", new_callable=MagicMock)
 async def mock_register(mock_email_service_class) -> str:
     # Prepare a mock instance to replace EmailService()
     mock_email_service = MagicMock()
@@ -64,8 +73,7 @@ async def mock_register(mock_email_service_class) -> str:
     return captured_token["token"]
 
 
-
-def read_csv(path, filename): 
+def read_csv(path, filename):
     file_bytes = read_file(path)
     return UploadFile(
         filename=filename,
@@ -128,9 +136,11 @@ class TestRagService(IsolatedAsyncioTestCase):
 
     # @skip
     async def test_upload_legacy_data(self):
-        file = read_csv("tests/integration/analytics/test_data.csv","test_data.csv")
+        file = read_csv(
+            "tests/integration/analytics/test_data.csv", "test_data.csv"
+        )
         df = await read_legacy_data_file(file)
-        
+
         data = LegacyData(
             user_id=self.user.id,
             upload_id=str(uuid.uuid4()),
@@ -147,12 +157,14 @@ class TestRagService(IsolatedAsyncioTestCase):
 
         db = mongo_client.get_db()
         result = await db.legacy_data.find_one({"user_id": self.user.id})
-        self.assertTrue(result['records_count'], 5)
+        self.assertTrue(result["records_count"], 5)
 
     async def test_get_legacy_data(self):
-        file = read_csv("tests/integration/analytics/test_data.csv","test_data.csv")
+        file = read_csv(
+            "tests/integration/analytics/test_data.csv", "test_data.csv"
+        )
         df = await read_legacy_data_file(file)
-        
+
         data = LegacyData(
             user_id=self.user.id,
             upload_id=str(uuid.uuid4()),
@@ -169,11 +181,12 @@ class TestRagService(IsolatedAsyncioTestCase):
         self.assertIsInstance(result, DataSummaryResponse)
         self.assertEqual(result.total_records, 5)
 
-
     async def test_insert_legacy_data(self):
-        file = read_csv("tests/integration/analytics/test_data.csv","test_data.csv")
+        file = read_csv(
+            "tests/integration/analytics/test_data.csv", "test_data.csv"
+        )
         df = await read_legacy_data_file(file)
-        
+
         data = LegacyData(
             user_id=self.user.id,
             upload_id=str(uuid.uuid4()),
@@ -191,9 +204,11 @@ class TestRagService(IsolatedAsyncioTestCase):
         self.assertEqual(result.total_records, 5)
 
     async def test_delete_legacy_data(self):
-        file = read_csv("tests/integration/analytics/test_data.csv","test_data.csv")
+        file = read_csv(
+            "tests/integration/analytics/test_data.csv", "test_data.csv"
+        )
         df = await read_legacy_data_file(file)
-        
+
         data = LegacyData(
             user_id=self.user.id,
             upload_id=str(uuid.uuid4()),
@@ -204,13 +219,12 @@ class TestRagService(IsolatedAsyncioTestCase):
             data=df.to_dict("records"),
         )
         await LegacyDataService.insert_legacy_data(data)
-        
+
         # Test
         await LegacyDataService.delete_all_legacy_data(self.user.id)
 
         # check
-        with self.assertRaises(Exception) as e: 
+        with self.assertRaises(Exception) as e:
             await LegacyDataService.get_legacy_data_summary(self.user.id)
 
         self.assertIn("No legacy data found.", str(e.exception))
-

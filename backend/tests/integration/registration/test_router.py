@@ -6,24 +6,25 @@ from datetime import date, datetime, timedelta
 from unittest.mock import MagicMock, patch
 from fastapi import HTTPException, Response
 from fastapi.security import HTTPAuthorizationCredentials
-from app.authentication.router import (
+from app.core.authentication.router import (
     login,
     register,
     setup_authenticator_mfa,
     verify_authenticator_mfa,
     verify_email,
 )
-from app.database import minio_client, database
-from app.authentication.schemas import (
+from app.common.storage.postgres import database
+from app.common.storage.minio import minio_client
+from app.core.authentication.schemas import (
     LoginRequest,
     MFAVerifiactionCode,
     RegisterRequest,
     UserUpdate,
 )
-from app.authentication.services import UserService
-from app.dependencies import get_current_user, get_user_pending_mfa
+from app.core.authentication.services import UserService
+from app.common.dependencies import get_current_user, get_user_pending_mfa
 import pyotp
-from app.registration.router import (
+from app.core.registration.router import (
     check_healthcard,
     check_name_dob,
     create_activity,
@@ -66,7 +67,7 @@ from app.registration.router import (
     update_patient,
     update_patient_status,
 )
-from app.registration.schemas import (
+from app.core.registration.schemas import (
     ActivityCreate,
     ActivityUpdate,
     AssessementUpdate,
@@ -86,7 +87,7 @@ from app.registration.schemas import (
     PatientStatus,
     PatientUpdate,
 )
-from app.registration.services import (
+from app.core.registration.services import (
     AssessmentService,
     MedicationService,
     PatientService,
@@ -99,7 +100,7 @@ user_create = RegisterRequest(email=email, password=password)
 login_request = LoginRequest(email=email, password=password)
 
 
-@patch("app.authentication.services.EmailService", new_callable=MagicMock)
+@patch("app.core.authentication.services.EmailService", new_callable=MagicMock)
 async def mock_register(mock_email_service_class) -> str:
     # Prepare a mock instance to replace EmailService()
     mock_email_service = MagicMock()
@@ -777,7 +778,10 @@ class TestPatientRouter(IsolatedAsyncioTestCase):
         )
 
     # update patient status
-    @patch("app.registration.router.EmailService.send", new_callable=MagicMock)
+    @patch(
+        "app.core.registration.router.EmailService.send",
+        new_callable=MagicMock,
+    )
     async def test_update_patient_status_to_finalized(self, _):
         result = await create_patient(self.patient_data, self.user)
         patient_id = result["patient_id"]
@@ -1572,7 +1576,7 @@ class TestPatientInteractionsRouter(IsolatedAsyncioTestCase):
     async def mock_create_patient(self, name: str):
         """Helper to create a test patient using class user"""
         patient_data = PatientCreate(
-            first_name="Jim",
+            first_name=name,
             last_name="Doe",
             dob=date(1990, 1, 1),
             age=33,

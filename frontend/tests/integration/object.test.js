@@ -1,4 +1,3 @@
-import axios from "axios";
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import { AuthServices } from "../../src/services/authService";
 import { TestServices } from "../setup";
@@ -83,18 +82,6 @@ describe("PatientServices.patient photos", () => {
 
     expect(result.success).toBe(true);
     expect(result.data?.message).toBe("Successfully uploaded file.");
-  });
-
-  it("should fetch photo in base64 form for a patient", async () => {
-    await ObjectServices.upload_photo(createdPatientId, fileName, file);
-
-    const result = await ObjectServices.get_photo_base64(createdPatientId);
-
-    // Compare
-    expect(result.success).toBeTruthy();
-    expect(result.data?.file.length > 0).toBeTruthy();
-    expect(result.data?.type).toBe("JPEG");
-    expect(result.data?.name).toBe("test-img.jpeg");
   });
 
   it("should fetch photo in raw form for a patient", async () => {
@@ -255,10 +242,11 @@ describe("PatientServices.patient attachments", () => {
       "Consultation Report",
     );
 
-    const result = await ObjectServices.get_attachment_raw(
-      createdPatientId,
-      fileName,
-    );
+    const listRes =
+      await ObjectServices.get_attachments_by_patient(createdPatientId);
+
+    const fileKey = listRes.data[0].file_key;
+    const result = await ObjectServices.get_attachment_raw(fileKey);
 
     // Convert to buffer
     const downloadedBuffer = Buffer.from(
@@ -279,10 +267,12 @@ describe("PatientServices.patient attachments", () => {
       "Consultation Report",
     );
 
-    const deleteRes = await ObjectServices.delete_attachment(
-      createdPatientId,
-      fileName,
-    );
+    const listRes =
+      await ObjectServices.get_attachments_by_patient(createdPatientId);
+
+    const fileKey = listRes.data[0].file_key;
+
+    const deleteRes = await ObjectServices.delete_attachment(fileKey);
     expect(deleteRes.success).toBe(true);
 
     const getRes =

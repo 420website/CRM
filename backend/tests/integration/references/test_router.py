@@ -2,9 +2,9 @@
 import asyncio
 from unittest import IsolatedAsyncioTestCase
 from fastapi import HTTPException
-from app.authentication.schemas import UserRead
-from app.database import database
-from app.references.router import (
+from app.core.authentication.schemas import UserRead
+from app.common.storage.postgres import database
+from app.core.references.router import (
     create_option_type,
     create_template,
     delete_option_id,
@@ -15,13 +15,13 @@ from app.references.router import (
     update_option,
     update_template,
 )
-from app.references.schemas import (
+from app.core.references.schemas import (
     ReferenceOption,
     ReferenceOptionUpdate,
     ReferenceTemplate,
     ReferenceTemplateUpdate,
 )
-from app.references.services import (
+from app.core.references.services import (
     ReferenceOptionService,
     ReferenceTemplateService,
 )

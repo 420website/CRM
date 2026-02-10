@@ -19,13 +19,6 @@ export const ObjectServices = {
     );
   },
 
-  get_photo_base64: async (patient_id) => {
-    return apiCall(
-      () => api.get(`/objects/photos/${patient_id}?version=base64`),
-      "Fetching patient photo failed.",
-    );
-  },
-
   get_photo_raw: async (patient_id) => {
     return apiCall(
       () =>
@@ -71,27 +64,19 @@ export const ObjectServices = {
     );
   },
 
-  get_attachment_base64: async (patient_id, name) => {
+  get_attachment_raw: async (file_type) => {
     return apiCall(
       () =>
-        api.get(`/objects/attachments/${patient_id}/${name}?version=base64`),
-      "Fetching attachment  failed.",
-    );
-  },
-
-  get_attachment_raw: async (patient_id, name) => {
-    return apiCall(
-      () =>
-        api.get(`/objects/attachments/${patient_id}/${name}`, {
+        api.get(`/objects/attachments/${file_type}`, {
           responseType: "arraybuffer",
         }),
       "Fetching attachment by ID failed.",
     );
   },
 
-  delete_attachment: async (patient_id, name) => {
+  delete_attachment: async (file_key) => {
     return apiCall(
-      () => api.delete(`/objects/attachments/${patient_id}/${name}`),
+      () => api.delete(`/objects/attachments/${file_key}`),
       "Deleting attachment failed.",
     );
   },

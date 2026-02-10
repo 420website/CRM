@@ -1,18 +1,19 @@
-# pyright: reportOptionalMemberAccess=none, reportArgumentType=none, reportAttributeAccessIssue=none
+# pyright: reportOptionalMemberAccess=none, reportArgumentType=none, reportAttributeAccessIssue=none, reportGeneralTypeIssues=none
 import asyncio
 from datetime import datetime, timedelta, timezone
 from unittest import IsolatedAsyncioTestCase
 from datetime import date
-from app.database import database, redis_client
-from app.registration.schemas import PatientCreate
-from app.registration.services import PatientService
-from app.exceptions import (
+from app.common.storage.postgres import database
+from app.common.storage.redis import redis_client
+from app.core.registration.schemas import PatientCreate
+from app.core.registration.services import PatientService
+from app.common.exceptions import (
     NotFoundError,
     ForbiddenError,
     SessionExpiredError,
     SessionLockedError,
 )
-from app.zoom.services import ZoomService
+from app.core.zoom.services import ZoomService
 
 
 class TestZoomService(IsolatedAsyncioTestCase):

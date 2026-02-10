@@ -4,11 +4,11 @@ from datetime import timedelta
 import unittest
 from fastapi import HTTPException
 from fastapi.security import HTTPAuthorizationCredentials
-from app.authentication.services import UserService
-from app.authentication.utils import SecurityService
-from app.dependencies import get_current_user, get_user_pending_mfa
-from app.authentication.schemas import RegisterRequest
-from app.database import database
+from app.core.authentication.services import UserService
+from app.common.crypt import SecurityService
+from app.common.dependencies import get_current_user, get_user_pending_mfa
+from app.core.authentication.schemas import RegisterRequest
+from app.common.storage.postgres import database
 
 email = "test5@example.com"
 password = "securepassword123"
@@ -26,7 +26,7 @@ class TestGetCurrentUser(unittest.IsolatedAsyncioTestCase):
     async def test_get_current_user_success(self):
         response = await UserService.register_user(email, password)
 
-        (token, _) = SecurityService.generate_jwt(
+        token, _ = SecurityService.generate_jwt(
             response.id, timedelta(30), True
         )
 
@@ -55,7 +55,7 @@ class TestGetCurrentUser(unittest.IsolatedAsyncioTestCase):
         )
 
     async def test_get_current_user_no_user(self):
-        (token, _) = SecurityService.generate_jwt(-1, timedelta(30), True)
+        token, _ = SecurityService.generate_jwt(-1, timedelta(30), True)
         credentials = HTTPAuthorizationCredentials(
             scheme="Bearer", credentials=token
         )
@@ -71,7 +71,7 @@ class TestGetCurrentUser(unittest.IsolatedAsyncioTestCase):
     async def test_get_current_user_temp_token(self):
         response = await UserService.register_user(email, password)
 
-        (token, _) = SecurityService.generate_jwt(
+        token, _ = SecurityService.generate_jwt(
             response.id, timedelta(5), False
         )
         credentials = HTTPAuthorizationCredentials(
@@ -92,7 +92,7 @@ class TestGetCurrentUser(unittest.IsolatedAsyncioTestCase):
     async def test_get_current_expired_token(self):
         response = await UserService.register_user(email, password)
 
-        (token, _) = SecurityService.generate_jwt(
+        token, _ = SecurityService.generate_jwt(
             response.id, timedelta(-30), True
         )
         credentials = HTTPAuthorizationCredentials(
@@ -122,7 +122,7 @@ class TestGetCurrentUserPendingMfA(unittest.IsolatedAsyncioTestCase):
     async def test_get_user_pending_mfa_success(self):
         response = await UserService.register_user(email, password)
 
-        (token, _) = SecurityService.generate_jwt(
+        token, _ = SecurityService.generate_jwt(
             response.id, timedelta(5), False
         )
         credentials = HTTPAuthorizationCredentials(
@@ -139,7 +139,7 @@ class TestGetCurrentUserPendingMfA(unittest.IsolatedAsyncioTestCase):
     async def test_get_user_pending_mfa_already_enabled(self):
         response = await UserService.register_user(email, password)
 
-        (token, _) = SecurityService.generate_jwt(
+        token, _ = SecurityService.generate_jwt(
             response.id, timedelta(30), True
         )
 
@@ -160,7 +160,7 @@ class TestGetCurrentUserPendingMfA(unittest.IsolatedAsyncioTestCase):
         await UserService.delete_user(email, password)
 
     async def test_get_user_pending_mfa_no_user(self):
-        (token, _) = SecurityService.generate_jwt(-1, timedelta(5), False)
+        token, _ = SecurityService.generate_jwt(-1, timedelta(5), False)
         credentials = HTTPAuthorizationCredentials(
             scheme="Bearer", credentials=token
         )
@@ -189,7 +189,7 @@ class TestGetCurrentUserPendingMfA(unittest.IsolatedAsyncioTestCase):
     async def test_get_user_pending_mfa_expired_token(self):
         response = await UserService.register_user(email, password)
 
-        (token, _) = SecurityService.generate_jwt(
+        token, _ = SecurityService.generate_jwt(
             response.id, timedelta(-30), True
         )
         credentials = HTTPAuthorizationCredentials(

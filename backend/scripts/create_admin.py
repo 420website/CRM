@@ -2,10 +2,10 @@
 
 import asyncio
 import sys
-from app.utils import get_env
-from app.database import database
-from app.authentication.services import UserService
-from app.authentication.utils import SecurityService
+from app.common.utils import get_env
+from app.common.storage.postgres import database
+from app.core.authentication.services import UserService
+from app.common.crypt import SecurityService
 
 
 async def register_admin_user(
