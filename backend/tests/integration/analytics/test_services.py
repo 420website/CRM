@@ -1,184 +1,230 @@
 # pyright: reportOptionalMemberAccess=none, reportArgumentType=none, reportAttributeAccessIssue=none
+from io import BytesIO
 import asyncio
-from decimal import Decimal
-from unittest import IsolatedAsyncioTestCase, skip
-from app.analytics.prompts import internal_system_message
-from app.analytics.rag import RagService
-from app.database import database
-from app.registration.schemas import (
-    ActivityCreate,
-    DispensingCreate,
-    InteractionCreate,
-    MedicationCreate,
-    NoteCreate,
-    PatientCreate,
-    TestCreate,
+import re
+import uuid
+import pyotp
+from unittest import IsolatedAsyncioTestCase
+from unittest.mock import MagicMock, patch
+from app.common.storage.mongodb import mongo_client
+from fastapi import Response, UploadFile
+from fastapi.security import HTTPAuthorizationCredentials
+from app.core.analytics.schema import DataSummaryResponse, LegacyData
+from app.core.analytics.services import LegacyDataService
+from app.core.analytics.utils import read_legacy_data_file
+from app.core.authentication.schemas import (
+    LoginRequest,
+    MFAVerifiactionCode,
+    RegisterRequest,
 )
-from app.registration.services import (
-    ActivityService,
-    DispensingService,
-    InteractionService,
-    MedicationService,
-    NoteService,
-    PatientService,
-    TestService,
+from app.core.authentication.services import UserService
+from app.common.storage.postgres import database
+from app.common.storage.minio import minio_client
+from app.common.storage.redis import redis_client
+from app.common.dependencies import get_current_user, get_user_pending_mfa
+from datetime import datetime
+from app.core.authentication.router import (
+    login,
+    register,
+    setup_authenticator_mfa,
+    verify_authenticator_mfa,
+    verify_email,
 )
-from datetime import date
-import datetime as dt
+
+
+def read_file(path: str) -> bytes:
+    with open(path, "rb") as file:
+        file_bytes = file.read()
+        return file_bytes
+
+
+email = "test4@example.com"
+password = "securepassword123"
+
+user_create = RegisterRequest(email=email, password=password)
+login_request = LoginRequest(email=email, password=password)
+
+
+@patch("app.core.authentication.services.EmailService", new_callable=MagicMock)
+async def mock_register(mock_email_service_class) -> str:
+    # Prepare a mock instance to replace EmailService()
+    mock_email_service = MagicMock()
+    mock_email_service.recipient.return_value = mock_email_service
+    mock_email_service.subject.return_value = mock_email_service
+
+    captured_token = {}
+
+    def mock_body(message_obj):
+        # Extract token from the HTML content in message_obj.msg
+        html_content = message_obj.msg
+
+        match = re.search(r'token=([^"&]+)', html_content)
+        if match:
+            captured_token["token"] = match.group(1)
+        return mock_email_service
+
+    mock_email_service.body.side_effect = mock_body
+    mock_email_service.send.return_value = None
+
+    # This makes EmailService() return our mock instance
+    mock_email_service_class.return_value = mock_email_service
+
+    await register(user_create)
+    return captured_token["token"]
+
+
+def read_csv(path, filename):
+    file_bytes = read_file(path)
+    return UploadFile(
+        filename=filename,
+        file=BytesIO(file_bytes),
+        # content_type="text/csv",
+    )
 
 
 class TestRagService(IsolatedAsyncioTestCase):
-    async def _cleanup_test_data(self):
-        """Helper method to clean up test data"""
-        # Clean up test patients
-        test_names = [
-            ("John", "Doe"),
-            ("Bobby", "Doe"),
-            ("Tim", "Tom"),
-            ("Jane", "Smith"),
-        ]
-        for first, last in test_names:
-            try:
-                await PatientService.delete_patient(first, last)
-            except Exception:
-                pass  # Ignore if patient doesn't exist
+    @classmethod
+    async def get_validated_user(cls):
+        token = await mock_register()
+        await verify_email(token)
+        response = await login(login_request)
+
+        credentials = HTTPAuthorizationCredentials(
+            scheme="Bearer",
+            credentials=response.access_token,
+        )
+
+        user = await get_user_pending_mfa(credentials=credentials)
+        response = await setup_authenticator_mfa(user)
+        totp = pyotp.TOTP(response.secret)
+        code = totp.now()
+
+        user = await get_user_pending_mfa(credentials=credentials)
+        response = Response()
+        result = await verify_authenticator_mfa(
+            MFAVerifiactionCode(code=code), response, user
+        )
+
+        credentials = HTTPAuthorizationCredentials(
+            scheme="Bearer",
+            credentials=result.access_token,
+        )
+
+        user = await get_current_user(credentials=credentials)
+        return user
 
     async def asyncSetUp(self) -> None:
         asyncio.get_event_loop().set_debug(False)
 
+        await minio_client.connect()
         await database.connect()
-        await self._cleanup_test_data()
+        await redis_client.connect()
+        await mongo_client.connect()
 
-        self.patient = PatientCreate(
-            # Required fields
-            first_name="John",
-            last_name="Doe",
-            dob=date(1985, 6, 15),
-            # Optional demographic fields
-            age=38,
-            gender="Male",
-            aka="Johnny",
-            address="123 Main Street",
-            unit_number="Apt 4B",
-            city="Toronto",
-            province="Ontario",
-            postal_code="M5V 3A8",
-            phone1="416-555-0123",
-            phone2="647-555-0456",
-            email="john.doe@email.com",
-            # Health info
-            health_card="0000000000",
-            health_card_version="AB",
-            coverage_type="OHIP",
-            disposition="Follow-up required",
-            physician="Dr. Smith",
-            # Consent / communication
-            patient_consent="Verbal consent given",
-            leave_message=True,
-            voicemail=True,
-            text=False,
-            preferred_time="Morning 9-11 AM",
-            # Test results
-            rna_available="Yes",
-            rna_result="Not Detected",
-            rna_sample_date=date(2023, 12, 1),
-            # Referral / registration
-            referral_site="Downtown Health Clinic",
-            referral_person="Nurse Johnson",
-            reg_date=date(2023, 11, 28),
-            # Notes / misc
-            special_attention="Patient has hearing difficulties",
-            instructions="Call before 8 PM",
-            selected_template="Standard HIV Template",
-            summary_template="Brief Summary",
-            # test_type="HIV Screening",
-        )
-
-        await PatientService.create_patient(self.patient)
-        patients = await PatientService.get_patients()
-        self.patient_id = patients[0].id
-
-        self.test_data = TestCreate(
-            test_type="HIV Screening",
-            test_date=date(2025, 10, 10),
-            hiv_result="Negative",
-            hiv_type="Rapid",
-            hiv_tester="Tester A",
-            hcv_result=None,
-            hcv_tester=None,
-            bloodwork_type="CBC",
-            bloodwork_circles="2",
-            bloodwork_result="Normal",
-            bloodwork_date_submitted=date(2025, 10, 10),
-            bloodwork_tester="Lab Tech B",
-        )
-        await TestService.create_test(self.patient_id, self.test_data)
-
-        # A valid note to use
-        self.note_data = NoteCreate(
-            # patient_id=self.patient_id,
-            note_text="Initial consultation notes",
-            note_date=date(2024, 1, 1),
-            template_type="testing",
-        )
-        await NoteService.create_note(self.patient_id, self.note_data)
-
-        self.interaction_data = InteractionCreate(
-            description="Initial payment",
-            date=date(2024, 1, 1),
-            referral_id="REF123",
-            amount=Decimal("100.00"),
-            payment_type="Cash",
-            issued="Admin",
-        )
-        await InteractionService.create_interaction(
-            self.patient_id, self.interaction_data
-        )
-
-        self.medication_data = MedicationCreate(
-            medication="Aspirin",
-            start_date=date(2024, 1, 1),
-            end_date=date(2024, 1, 10),
-            outcome="Recovered",
-        )
-        await MedicationService.create_medication(
-            self.patient_id, self.medication_data
-        )
-
-        self.dispensing_data = DispensingCreate(
-            medication="Aspirin",
-            rx="RX123",
-            quantity=30,
-            lot="LOT456",
-            product_type="Tablet",
-            expiry_date=date(2025, 1, 1),
-        )
-        await DispensingService.create_dispensing(
-            self.patient_id, self.dispensing_data
-        )
-
-        self.activity_data = ActivityCreate(
-            description="Initial activity",
-            date=date(2024, 1, 1),
-            time=dt.time(9, 0),
-        )
-        await ActivityService.create_activity(
-            self.patient_id, self.activity_data
-        )
+        # Clear out old users
+        await UserService.delete_user(email, password)
+        self.user = await self.get_validated_user()
+        await LegacyDataService.delete_all_legacy_data(self.user.id)
 
     async def asyncTearDown(self) -> None:
-        await self._cleanup_test_data()
+        await LegacyDataService.delete_all_legacy_data(self.user.id)
+
+        await mongo_client.disconnect()
+        await redis_client.disconnect()
+        await minio_client.disconnect()
         await database.disconnect()
 
-    # create
-    @skip
-    async def test_prompt_internal(self):
-        question = (
-            "How many HCV,HIV and bloodwork tests were completed this month?"
+    # @skip
+    async def test_upload_legacy_data(self):
+        file = read_csv(
+            "tests/integration/analytics/test_data.csv", "test_data.csv"
         )
-        schema = await RagService.get_schema()
-        query = await RagService.generate_query(schema, question)
-        context = await RagService.retrieve_context(query)
-        system_msg = internal_system_message(context)
-        answer = await RagService.prompt_llm(system_msg, question, "14232")
-        print(answer)
+        df = await read_legacy_data_file(file)
+
+        data = LegacyData(
+            user_id=self.user.id,
+            upload_id=str(uuid.uuid4()),
+            filename=file.filename,
+            upload_date=datetime.now(),
+            records_count=len(df),
+            columns=list(df.columns),
+            data=df.to_dict("records"),
+        )
+
+        # upload
+        result = await LegacyDataService.upload_legacy_data(data, self.user.id)
+        self.assertTrue(result)
+
+        db = mongo_client.get_db()
+        result = await db.legacy_data.find_one({"user_id": self.user.id})
+        self.assertTrue(result["records_count"], 5)
+
+    async def test_get_legacy_data(self):
+        file = read_csv(
+            "tests/integration/analytics/test_data.csv", "test_data.csv"
+        )
+        df = await read_legacy_data_file(file)
+
+        data = LegacyData(
+            user_id=self.user.id,
+            upload_id=str(uuid.uuid4()),
+            filename=file.filename,
+            upload_date=datetime.now(),
+            records_count=len(df),
+            columns=list(df.columns),
+            data=df.to_dict("records"),
+        )
+        await LegacyDataService.upload_legacy_data(data, self.user.id)
+
+        # upload
+        result = await LegacyDataService.get_legacy_data_summary(self.user.id)
+        self.assertIsInstance(result, DataSummaryResponse)
+        self.assertEqual(result.total_records, 5)
+
+    async def test_insert_legacy_data(self):
+        file = read_csv(
+            "tests/integration/analytics/test_data.csv", "test_data.csv"
+        )
+        df = await read_legacy_data_file(file)
+
+        data = LegacyData(
+            user_id=self.user.id,
+            upload_id=str(uuid.uuid4()),
+            filename=file.filename,
+            upload_date=datetime.now(),
+            records_count=len(df),
+            columns=list(df.columns),
+            data=df.to_dict("records"),
+        )
+        await LegacyDataService.insert_legacy_data(data)
+
+        # upload
+        result = await LegacyDataService.get_legacy_data_summary(self.user.id)
+        self.assertIsInstance(result, DataSummaryResponse)
+        self.assertEqual(result.total_records, 5)
+
+    async def test_delete_legacy_data(self):
+        file = read_csv(
+            "tests/integration/analytics/test_data.csv", "test_data.csv"
+        )
+        df = await read_legacy_data_file(file)
+
+        data = LegacyData(
+            user_id=self.user.id,
+            upload_id=str(uuid.uuid4()),
+            filename=file.filename,
+            upload_date=datetime.now(),
+            records_count=len(df),
+            columns=list(df.columns),
+            data=df.to_dict("records"),
+        )
+        await LegacyDataService.insert_legacy_data(data)
+
+        # Test
+        await LegacyDataService.delete_all_legacy_data(self.user.id)
+
+        # check
+        with self.assertRaises(Exception) as e:
+            await LegacyDataService.get_legacy_data_summary(self.user.id)
+
+        self.assertIn("No legacy data found.", str(e.exception))

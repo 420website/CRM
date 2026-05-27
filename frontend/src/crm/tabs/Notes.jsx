@@ -1,35 +1,32 @@
 import { useState, useEffect } from "react";
 import { PatientServices } from "../../services/patientServices";
-import NoteTemplateManager from "../managers/NotesTemplateManager";
 import ConfirmModal from "../components/ConfirmModal";
 import { useRegistration } from "../../context/RegistrationContext";
 import DatePicker from "../ui/DatePicker";
 import toast from "react-hot-toast";
 import { useAuth } from "../../context/AuthContext";
+import { useReferences } from "../../context/ReferenceContext";
+import TemplateManager from "../managers/TemplateManager";
 
 export default function Notes({ setActiveTab, currentRegistrationId }) {
   const { userRole } = useAuth();
-  const {
-    getNotes,
-    notes,
-    showNoteManager,
-    setShowNoteManager,
-    notesTemplates,
-  } = useRegistration();
+  const { getClientNotes, notes } = useRegistration();
+  const { showManager, setShowManager, templates } = useReferences();
 
   const [loading, setLoading] = useState(false);
+  const [editingNoteId, setEditingNoteId] = useState(null);
+  const [isSavingNotes, setIsSavingNotes] = useState(false);
+  const [deleteNoteId, setDeleteNoteId] = useState(null);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [notesData, setNotesData] = useState({
+    note_date: new Date().toLocaleDateString("en-CA"),
+    template_type: "General Note",
+    note_text: "",
+  });
+
   const [notesFilter, setNotesFilter] = useState("all");
   const [notesSearch, setNotesSearch] = useState("");
   const [notesPage, setNotesPage] = useState(1);
-  const [editingNoteId, setEditingNoteId] = useState(null);
-  const [selectedNotesTemplate, setSelectedNotesTemplate] = useState("Select");
-  const [isSavingNotes, setIsSavingNotes] = useState(false);
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const [deleteNoteId, setDeleteNoteId] = useState(null);
-  const [notesData, setNotesData] = useState({
-    note_date: new Date().toLocaleDateString("en-CA"),
-    note_text: "",
-  });
 
   function validateForm() {
     if (!currentRegistrationId) {
@@ -40,6 +37,14 @@ export default function Notes({ setActiveTab, currentRegistrationId }) {
 
     if (!notesData.note_date || notesData.note_date === "") {
       toast.error("Please select a date");
+      return false;
+    }
+
+    if (
+      notesData.template_type !== "General Note" &&
+      !templates["note"].some((d) => d.name === notesData.template_type)
+    ) {
+      toast.error("Please select a valid template");
       return false;
     }
 
@@ -62,22 +67,13 @@ export default function Notes({ setActiveTab, currentRegistrationId }) {
     setLoading(true);
     setIsSavingNotes(true);
 
-    // Include the template type with the note data
-    const noteDataWithTemplate = {
-      ...notesData,
-      template_type:
-        selectedNotesTemplate !== "Select"
-          ? selectedNotesTemplate
-          : "General Note",
-    };
-
     const result = await PatientServices.create_note(
       currentRegistrationId,
-      noteDataWithTemplate,
+      notesData,
     );
 
     if (result.success) {
-      getNotes(currentRegistrationId);
+      getClientNotes(currentRegistrationId);
       clearNotesForm();
       toast.success("Created note successfully");
     } else {
@@ -95,23 +91,14 @@ export default function Notes({ setActiveTab, currentRegistrationId }) {
     setLoading(true);
     setIsSavingNotes(true);
 
-    // Include the template type with the note data
-    const noteDataWithTemplate = {
-      ...notesData,
-      template_type:
-        selectedNotesTemplate !== "Select"
-          ? selectedNotesTemplate
-          : "General Note",
-    };
-
     const result = await PatientServices.update_note(
       currentRegistrationId,
       editingNoteId,
-      noteDataWithTemplate,
+      notesData,
     );
 
     if (result.success) {
-      getNotes(currentRegistrationId);
+      getClientNotes(currentRegistrationId);
       clearNotesForm();
       toast.success("Updated note successfully");
     } else {
@@ -134,7 +121,7 @@ export default function Notes({ setActiveTab, currentRegistrationId }) {
     );
 
     if (result.success) {
-      getNotes(currentRegistrationId);
+      getClientNotes(currentRegistrationId);
       toast.success("Deleted note successfully");
     } else {
       if (result.status === 400 || result.status === 409) {
@@ -152,15 +139,20 @@ export default function Notes({ setActiveTab, currentRegistrationId }) {
   };
 
   const handleNotesTemplateChange = async (templateName) => {
-    setSelectedNotesTemplate(templateName);
-    const template = notesTemplates.find(
+    const template = templates["note"].find(
       (template) => template.name === templateName,
     );
 
-    const content = template ? template.content : "";
+    const content =
+      notesData.note_text !== ""
+        ? notesData.note_text
+        : template
+          ? template.content
+          : "";
 
     setNotesData((prev) => ({
       ...prev,
+      template_type: templateName === "Select" ? "General Note" : templateName,
       note_text: content,
     }));
   };
@@ -176,25 +168,33 @@ export default function Notes({ setActiveTab, currentRegistrationId }) {
   const editNote = (note) => {
     setNotesData({
       note_date: note.note_date || new Date().toLocaleDateString("en-CA"),
-      note_text: note.note_text || "",
       template_type: note.template_type || "General Note",
+      note_text: note.note_text || "",
     });
     setEditingNoteId(note.id);
 
     // Set template to 'Select' when editing individual notes to allow free editing
-    setSelectedNotesTemplate(note.template_type || "Select");
+    // setSelectedNotesTemplate(note.template_type || "Select");
 
     // Scroll to top of notes form
-    document.querySelector("#tabs")?.scrollIntoView({ behavior: "smooth" });
+    document.querySelector("#notes")?.scrollIntoView({ behavior: "smooth" });
   };
 
   const clearNotesForm = () => {
     setNotesData({
       note_date: new Date().toLocaleDateString("en-CA"),
       note_text: "",
+      template_type: "General Note",
     });
     setEditingNoteId(null);
-    setSelectedNotesTemplate("Select");
+    // setSelectedNotesTemplate("Select");
+  };
+
+  const clearText = () => {
+    setNotesData((prev) => ({
+      ...prev,
+      note_text: "",
+    }));
   };
 
   // Reset pagination when filter/search changes
@@ -205,15 +205,15 @@ export default function Notes({ setActiveTab, currentRegistrationId }) {
   // Auto-scroll to top when notes page changes
   useEffect(() => {
     if (notesPage > 1) {
-      document
-        .querySelector("#notes-section")
-        ?.scrollIntoView({ behavior: "smooth" });
+      document.querySelector("#notes")?.scrollIntoView({ behavior: "smooth" });
     }
   }, [notesPage]);
 
   return (
-    <div>
+    <div id="notes" className="scroll-mt-[20px]">
       <div className="space-y-6">
+        {showManager === "note" && <TemplateManager type={showManager} />}
+
         {/* Notes Tab Warning */}
         {!currentRegistrationId && (
           <div className="border-2 border-orange-200 bg-orange-50 p-4 rounded-lg">
@@ -299,7 +299,7 @@ export default function Notes({ setActiveTab, currentRegistrationId }) {
                 {userRole == "admin" && (
                   <button
                     type="button"
-                    onClick={() => setShowNoteManager(true)}
+                    onClick={() => setShowManager("note")}
                     className="text-blue-600 hover:text-blue-800 text-sm"
                   >
                     Manage Templates
@@ -308,26 +308,62 @@ export default function Notes({ setActiveTab, currentRegistrationId }) {
               </div>
               <select
                 id="selectedNotesTemplate"
-                value={selectedNotesTemplate}
+                value={notesData.template_type}
                 onChange={(e) => handleNotesTemplateChange(e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black"
               >
-                <option value="Select">Select</option>
-                {notesTemplates.map((template) => (
+                <option value="General Note">General Note</option>
+                {/* Show legacy value if it doesn't exist in current options */}
+                {notesData.template_type &&
+                  !templates["note"].some(
+                    (d) => d.name === notesData.template_type,
+                  ) &&
+                  notesData.template_type !== "General Note" && (
+                    <option
+                      value={notesData.template_type}
+                      disabled
+                      className="text-red-600"
+                    >
+                      {notesData.template_type} (No longer available)
+                    </option>
+                  )}
+                {templates["note"].map((template) => (
                   <option key={template.id} value={template.name}>
                     {template.name}
                   </option>
                 ))}
               </select>
+              {notesData.template_type &&
+                !templates["note"].some(
+                  (d) => d.name === notesData.template_type,
+                ) &&
+                notesData.template_type !== "General Note" && (
+                  <div className="mt-1 flex gap-2 text-sm text-red-600">
+                    ⚠️
+                    <div>
+                      This option is no longer available. Please select a new
+                      option before saving.
+                    </div>
+                  </div>
+                )}
             </div>
 
             <div className="md:col-span-2">
-              <label
-                htmlFor="note_text"
-                className="block text-sm font-medium text-gray-700 mb-2"
-              >
-                Note Text
-              </label>
+              <div className="flex items-center justify-between mb-2">
+                <label
+                  htmlFor="note_text"
+                  className="block text-sm font-medium text-gray-700"
+                >
+                  Note Text
+                </label>
+                <button
+                  type="button"
+                  onClick={clearText}
+                  className="text-blue-600 hover:text-blue-800 text-sm"
+                >
+                  Clear
+                </button>
+              </div>
               <textarea
                 id="note_text"
                 name="note_text"
@@ -338,14 +374,13 @@ export default function Notes({ setActiveTab, currentRegistrationId }) {
                 placeholder={
                   editingNoteId
                     ? "Edit your note content..."
-                    : selectedNotesTemplate === "Select"
+                    : (notesData.template_type === "General Note") === "Select"
                       ? "Please select a template above..."
-                      : `Enter ${selectedNotesTemplate} note content...`
+                      : `Enter note content...`
                 }
                 style={{ whiteSpace: "pre-wrap" }}
                 autoComplete="off"
                 spellCheck="true"
-                // readOnly={selectedNotesTemplate === "Select"}
               />
             </div>
           </div>
@@ -397,9 +432,9 @@ export default function Notes({ setActiveTab, currentRegistrationId }) {
                   className="border border-gray-200 rounded-lg p-4 bg-white hover:shadow-md transition-shadow"
                 >
                   <div className="flex justify-between items-start">
-                    <div className="flex-1">
+                    <div className="flex-1 min-w-0">
                       <div className="mb-2">
-                        <span className="text-lg font-semibold text-gray-900">
+                        <span className="text-lg font-semibold text-gray-900 min-w-0 break-words">
                           {note.template_type || "General Note"}
                         </span>
                       </div>
@@ -455,7 +490,6 @@ export default function Notes({ setActiveTab, currentRegistrationId }) {
           )}
         </div>
       </div>
-      {showNoteManager && <NoteTemplateManager />}
     </div>
   );
 }

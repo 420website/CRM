@@ -4,9 +4,15 @@ import ConfirmModal from "../components/ConfirmModal";
 import { useRegistration } from "../../context/RegistrationContext";
 import DatePicker from "../ui/DatePicker";
 import toast from "react-hot-toast";
+import { useReferences } from "../../context/ReferenceContext";
+import { useAuth } from "../../context/AuthContext";
+import OptionManager from "../managers/OptionManager";
 
 export default function Dispensing({ setActiveTab, currentRegistrationId }) {
-  const { getDispensing, dispensing, medicationTemplates } = useRegistration();
+  const { userRole } = useAuth();
+  const { getClientDispensing, dispensing } = useRegistration();
+  const { setShowManager, showManager, options } = useReferences();
+
   const [loading, setLoading] = useState(false);
   const [editingDispensingId, setEditingDispensingId] = useState(null);
   const [isSavingDispensing, setIsSavingDispensing] = useState(false);
@@ -15,9 +21,9 @@ export default function Dispensing({ setActiveTab, currentRegistrationId }) {
   const [dispensingData, setDispensingData] = useState({
     medication: "",
     rx: "",
-    quantity: "28",
+    quantity: "",
     lot: "",
-    product_type: "Commercial",
+    product_type: "",
     expiry_date: "",
   });
 
@@ -28,8 +34,12 @@ export default function Dispensing({ setActiveTab, currentRegistrationId }) {
       return false;
     }
 
-    if (!dispensingData.medication || dispensingData.medication === "") {
-      toast.error("Please select a medication");
+    if (
+      !dispensingData.medication ||
+      dispensingData.medication === "" ||
+      !options["medication"].some((d) => d.name === dispensingData.medication)
+    ) {
+      toast.error("Please select a valid medication");
       return false;
     }
 
@@ -38,8 +48,30 @@ export default function Dispensing({ setActiveTab, currentRegistrationId }) {
       return false;
     }
 
+    if (
+      !dispensingData.quantity ||
+      dispensingData.quantity === "" ||
+      !options["dispensing_quantity"].some(
+        (d) => d.name === dispensingData.quantity.toString(),
+      )
+    ) {
+      toast.error("Please select a valid quantity");
+      return false;
+    }
+
     if (!dispensingData.lot || dispensingData.lot === "") {
       toast.error("Please enter a lot number");
+      return false;
+    }
+
+    if (
+      !dispensingData.product_type ||
+      dispensingData.product_type === "" ||
+      !options["dispensing_type"].some(
+        (d) => d.name === dispensingData.product_type,
+      )
+    ) {
+      toast.error("Please select a valid product type");
       return false;
     }
 
@@ -68,7 +100,7 @@ export default function Dispensing({ setActiveTab, currentRegistrationId }) {
     );
 
     if (result.success) {
-      getDispensing(currentRegistrationId);
+      getClientDispensing(currentRegistrationId);
       clearDispensingForm();
       toast.success("Dispensing created successfully");
     } else {
@@ -77,7 +109,9 @@ export default function Dispensing({ setActiveTab, currentRegistrationId }) {
       } else {
         toast.error("Error getting dispensing. Please try again.");
       }
-      document.querySelector("#tabs")?.scrollIntoView({ behavior: "smooth" });
+      document
+        .querySelector("#dispensing")
+        ?.scrollIntoView({ behavior: "smooth" });
     }
     setLoading(false);
     setIsSavingDispensing(false);
@@ -94,7 +128,7 @@ export default function Dispensing({ setActiveTab, currentRegistrationId }) {
     );
 
     if (result.success) {
-      getDispensing(currentRegistrationId);
+      getClientDispensing(currentRegistrationId);
       clearDispensingForm();
       toast.success("Dispensing updated successfully");
     } else {
@@ -103,7 +137,9 @@ export default function Dispensing({ setActiveTab, currentRegistrationId }) {
       } else {
         toast.error("Error update dispensing. Please try again.");
       }
-      document.querySelector("#tabs")?.scrollIntoView({ behavior: "smooth" });
+      document
+        .querySelector("#dispensing")
+        ?.scrollIntoView({ behavior: "smooth" });
     }
     setLoading(false);
     setIsSavingDispensing(false);
@@ -118,7 +154,7 @@ export default function Dispensing({ setActiveTab, currentRegistrationId }) {
     );
 
     if (result.success) {
-      getDispensing(currentRegistrationId);
+      getClientDispensing(currentRegistrationId);
       toast.success("Dispensing deleted successfully");
     } else {
       if (result.status === 400 || result.status === 409) {
@@ -148,32 +184,38 @@ export default function Dispensing({ setActiveTab, currentRegistrationId }) {
     setDispensingData({
       medication: dispensing.medication || "",
       rx: dispensing.rx || "",
-      quantity: dispensing.quantity || "28",
+      quantity: dispensing.quantity || "",
       lot: dispensing.lot || "",
-      product_type: dispensing.product_type || "Commercial",
+      product_type: dispensing.product_type || "",
       expiry_date: dispensing.expiry_date || "",
     });
     setEditingDispensingId(dispensing.id);
     // Scroll to top of dispensing form
-    document.querySelector("#tabs")?.scrollIntoView({ behavior: "smooth" });
+    document
+      .querySelector("#dispensing")
+      ?.scrollIntoView({ behavior: "smooth" });
   };
 
   const clearDispensingForm = () => {
     setDispensingData({
       medication: "",
       rx: "",
-      quantity: "28",
+      quantity: "",
       lot: "",
-      product_type: "Commercial",
+      product_type: "",
       expiry_date: "",
     });
     setEditingDispensingId(null);
   };
 
   return (
-    <div>
+    <div id="dispensing" className="scroll-mt-[20px]">
       <div className="tab-content">
         <div className="space-y-6">
+          {(showManager === "dispensing_quantity" ||
+            showManager === "dispensing_type") && (
+            <OptionManager type={showManager} />
+          )}
           {/* Registration ID Check */}
           {!currentRegistrationId && (
             <div className="border-2 border-orange-200 bg-orange-50 p-4 rounded-lg">
@@ -251,8 +293,20 @@ export default function Dispensing({ setActiveTab, currentRegistrationId }) {
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black"
                 >
                   <option value="">Select</option>
+                  {dispensingData.medication &&
+                    !options["medication"].some(
+                      (d) => d.name === dispensingData.medication,
+                    ) && (
+                      <option
+                        value={dispensingData.medication}
+                        disabled
+                        className="text-red-600"
+                      >
+                        {dispensingData.medication} (No longer available)
+                      </option>
+                    )}
                   {/* Most Frequently Used */}
-                  {medicationTemplates
+                  {options["medication"]
                     .filter((d) => d.is_frequent)
                     .map((medication) => (
                       <option key={medication.id} value={medication.name}>
@@ -260,10 +314,10 @@ export default function Dispensing({ setActiveTab, currentRegistrationId }) {
                       </option>
                     ))}
                   {/* Separator */}
-                  {medicationTemplates.filter((d) => !d.is_frequent).length >
+                  {options["medication"].filter((d) => !d.is_frequent).length >
                     0 && <option disabled>-------</option>}
                   {/* All Others in Alphabetical Order */}
-                  {medicationTemplates
+                  {options["medication"]
                     .filter((d) => !d.is_frequent)
                     .sort((a, b) => a.name.localeCompare(b.name))
                     .map((medication) => (
@@ -272,6 +326,18 @@ export default function Dispensing({ setActiveTab, currentRegistrationId }) {
                       </option>
                     ))}
                 </select>
+                {dispensingData.medication &&
+                  !options["medication"].some(
+                    (d) => d.name === dispensingData.medication,
+                  ) && (
+                    <div className="mt-1 flex gap-2 text-sm text-red-600">
+                      ⚠️
+                      <div>
+                        This option is no longer available. Please select a new
+                        option before saving.
+                      </div>
+                    </div>
+                  )}
               </div>
 
               <div>
@@ -293,12 +359,23 @@ export default function Dispensing({ setActiveTab, currentRegistrationId }) {
               </div>
 
               <div>
-                <label
-                  htmlFor="quantity"
-                  className="block text-sm font-medium text-gray-700 mb-2"
-                >
-                  Quantity
-                </label>
+                <div className="flex items-center justify-between mb-2">
+                  <label
+                    htmlFor="quantity"
+                    className="block text-sm font-medium text-gray-700 mb-2"
+                  >
+                    Quantity
+                  </label>
+                  {userRole == "admin" && (
+                    <button
+                      type="button"
+                      onClick={() => setShowManager("dispensing_quantity")}
+                      className="text-blue-600 hover:text-blue-800 text-sm"
+                    >
+                      Manage Quantity
+                    </button>
+                  )}
+                </div>
                 <select
                   id="quantity"
                   name="quantity"
@@ -306,11 +383,52 @@ export default function Dispensing({ setActiveTab, currentRegistrationId }) {
                   onChange={handleDispensingChange}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black"
                 >
-                  <option value="28">28</option>
-                  <option value="14">14</option>
-                  <option value="56">56</option>
-                  <option value="84">84</option>
+                  <option value="">Select</option>
+                  {dispensingData.quantity &&
+                    !options["dispensing_quantity"].some(
+                      (d) => d.name === dispensingData.quantity.toString(),
+                    ) && (
+                      <option
+                        value={dispensingData.quantity}
+                        disabled
+                        className="text-red-600"
+                      >
+                        {dispensingData.quantity} (No longer available)
+                      </option>
+                    )}
+                  {/* Most Frequently Used */}
+                  {options["dispensing_quantity"]
+                    .filter((d) => d.is_frequent)
+                    .map((medication) => (
+                      <option key={medication.id} value={medication.name}>
+                        {medication.name}
+                      </option>
+                    ))}
+                  {/* Separator */}
+                  {options["dispensing_quantity"].filter((d) => !d.is_frequent)
+                    .length > 0 && <option disabled>-------</option>}
+                  {/* All Others in Alphabetical Order */}
+                  {options["dispensing_quantity"]
+                    .filter((d) => !d.is_frequent)
+                    .sort((a, b) => a.name.localeCompare(b.name))
+                    .map((medication) => (
+                      <option key={medication.id} value={medication.name}>
+                        {medication.name}
+                      </option>
+                    ))}
                 </select>
+                {dispensingData.quantity &&
+                  !options["dispensing_quantity"].some(
+                    (d) => d.name === dispensingData.quantity.toString(),
+                  ) && (
+                    <div className="mt-1 flex gap-2 text-sm text-red-600">
+                      ⚠️
+                      <div>
+                        This option is no longer available. Please select a new
+                        option before saving.
+                      </div>
+                    </div>
+                  )}
               </div>
 
               <div>
@@ -332,12 +450,23 @@ export default function Dispensing({ setActiveTab, currentRegistrationId }) {
               </div>
 
               <div>
-                <label
-                  htmlFor="product_type"
-                  className="block text-sm font-medium text-gray-700 mb-2"
-                >
-                  Product Type
-                </label>
+                <div className="flex items-center justify-between mb-2">
+                  <label
+                    htmlFor="product_type"
+                    className="block text-sm font-medium text-gray-700 mb-2"
+                  >
+                    Product Type
+                  </label>
+                  {userRole == "admin" && (
+                    <button
+                      type="button"
+                      onClick={() => setShowManager("dispensing_type")}
+                      className="text-blue-600 hover:text-blue-800 text-sm"
+                    >
+                      Manage Options
+                    </button>
+                  )}
+                </div>
                 <select
                   id="product_type"
                   name="product_type"
@@ -345,9 +474,52 @@ export default function Dispensing({ setActiveTab, currentRegistrationId }) {
                   onChange={handleDispensingChange}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black"
                 >
-                  <option value="Commercial">Commercial</option>
-                  <option value="Compassionate">Compassionate</option>
+                  <option value="">Select</option>
+                  {dispensingData.product_type &&
+                    !options["dispensing_type"].some(
+                      (d) => d.name === dispensingData.product_type,
+                    ) && (
+                      <option
+                        value={dispensingData.product_type}
+                        disabled
+                        className="text-red-600"
+                      >
+                        {dispensingData.product_type} (No longer available)
+                      </option>
+                    )}
+                  {/* Most Frequently Used */}
+                  {options["dispensing_type"]
+                    .filter((d) => d.is_frequent)
+                    .map((medication) => (
+                      <option key={medication.id} value={medication.name}>
+                        {medication.name}
+                      </option>
+                    ))}
+                  {/* Separator */}
+                  {options["dispensing_type"].filter((d) => !d.is_frequent)
+                    .length > 0 && <option disabled>-------</option>}
+                  {/* All Others in Alphabetical Order */}
+                  {options["dispensing_type"]
+                    .filter((d) => !d.is_frequent)
+                    .sort((a, b) => a.name.localeCompare(b.name))
+                    .map((medication) => (
+                      <option key={medication.id} value={medication.name}>
+                        {medication.name}
+                      </option>
+                    ))}
                 </select>
+                {dispensingData.product_type &&
+                  !options["dispensing_type"].some(
+                    (d) => d.name === dispensingData.product_type,
+                  ) && (
+                    <div className="mt-1 flex gap-2 text-sm text-red-600">
+                      ⚠️
+                      <div>
+                        This option is no longer available. Please select a new
+                        option before saving.
+                      </div>
+                    </div>
+                  )}
               </div>
 
               <div>

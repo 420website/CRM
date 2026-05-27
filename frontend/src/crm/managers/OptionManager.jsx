@@ -1,0 +1,410 @@
+import { useState } from "react";
+import EditModal from "./EditModal";
+import { useReferences } from "../../context/ReferenceContext";
+import { ReferenceServices } from "../../services/referenceService";
+import toast from "react-hot-toast";
+
+export default function OptionManager({ type }) {
+  const { options, setShowManager, getOption, selectedProvince } =
+    useReferences();
+  const [error, setError] = useState("");
+  const [message, setMessage] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [optionsSearch, setOptionSearch] = useState("");
+  const [showOptionEditPopup, setShowOptionEditPopup] = useState(false);
+  const [editOptionData, setEditOptionData] = useState(null);
+  const [data, setData] = useState({
+    name: "",
+    is_frequent: false,
+    custom_fields:
+      type === "referral_site" ? { province: selectedProvince } : {},
+  });
+
+  const setResetData = () => {
+    setData({
+      name: "",
+      is_frequent: false,
+      custom_fields:
+        type === "referral_site" ? { province: selectedProvince } : {},
+    });
+  };
+
+  const handleUpdate = (name, value, customFlag = false) => {
+    if (customFlag) {
+      setData((prev) => {
+        const updated = { ...prev.custom_fields };
+        if (value) {
+          updated[name] = value;
+        } else {
+          delete updated[name];
+        }
+
+        return {
+          ...prev,
+          custom_fields: updated,
+        };
+      });
+    } else {
+      setData((prev) => ({
+        ...prev,
+        [name]: value,
+      }));
+    }
+  };
+
+  const handleEditUpdate = (name, value, customFlag = false) => {
+    if (customFlag) {
+      setEditOptionData((prev) => {
+        const updated = { ...prev.custom_fields };
+        if (value) {
+          updated[name] = value;
+        } else {
+          delete updated[name];
+        }
+
+        return {
+          ...prev,
+          custom_fields: updated,
+        };
+      });
+    } else {
+      setEditOptionData((prev) => ({
+        ...prev,
+        [name]: value,
+      }));
+    }
+  };
+
+  const handleProvinceChange = (e) => {
+    const { name, value } = e.target;
+    if (showOptionEditPopup) {
+      handleEditUpdate(name, value, true);
+    } else {
+      handleUpdate(name, value, true);
+    }
+  };
+
+  const createOption = async () => {
+    setLoading(true);
+    setError("");
+    setMessage("");
+
+    if (!data.name.trim()) {
+      toast.error("Please enter an option name");
+      return;
+    }
+
+    if (type === "referral_site" && !data.custom_fields.province) {
+      toast.error("Please enter an option province");
+      return;
+    }
+
+    const result = await ReferenceServices.create_option(type, data);
+
+    if (result.success) {
+      setResetData();
+      getOption(type);
+      toast.success(`Created option successfully`);
+    } else {
+      if (result.status === 400 || result.status === 409) {
+        toast.error(result.message || `Error creating option.`);
+      } else {
+        toast.error(
+          result.message || `Error creating option. Please try again.`,
+        );
+      }
+    }
+    setLoading(false);
+  };
+
+  const updateOption = async (id) => {
+    setLoading(true);
+    setError("");
+    setMessage("");
+
+    if (!editOptionData.name.trim()) {
+      toast.error("Please enter an option name");
+      return;
+    }
+
+    if (type === "referral_site" && !editOptionData.custom_fields.province) {
+      toast.error("Please enter an option province");
+      return;
+    }
+
+    const result = await ReferenceServices.update_option(
+      type,
+      id,
+      editOptionData,
+    );
+
+    if (result.success) {
+      setEditOptionData(null);
+      setShowOptionEditPopup(false);
+      getOption(type);
+    } else {
+      if (result.status === 400 || result.status === 409) {
+        toast.error(result.message || `Error creating option.`);
+      } else {
+        toast.error(
+          result.message || `Error creating option. Please try again.`,
+        );
+      }
+    }
+    setLoading(false);
+  };
+
+  const deleteOption = async (id, name) => {
+    if (
+      !window.confirm(`Are you sure you want to delete the "${name}" option?`)
+    ) {
+      return;
+    }
+    setLoading(true);
+    setError("");
+    setMessage("");
+
+    const result = await ReferenceServices.delete_option_by_id(type, id);
+
+    if (result.success) {
+      setResetData();
+      setShowOptionEditPopup(false);
+      getOption(type);
+      toast.success(`Deleted option successfully`);
+    } else {
+      if (result.status === 400 || result.status === 409) {
+        toast.error(result.message || `Error creating option.`);
+      } else {
+        toast.error(
+          result.message || `Error creating option. Please try again.`,
+        );
+      }
+    }
+    setLoading(false);
+  };
+
+  const openEditOption = (option) => {
+    setEditOptionData(option);
+    setShowOptionEditPopup(true);
+  };
+
+  const closeOptionManager = () => {
+    setEditOptionData(null);
+    setShowManager("");
+    setResetData();
+    setShowOptionEditPopup(false);
+    setOptionSearch("");
+  };
+
+  // Filter based on search
+  const getFilteredOptions = () => {
+    let opt = options[type];
+
+    if (type === "referral_site") {
+      opt = opt.filter((o) => o.custom_fields.province === selectedProvince);
+    }
+
+    if (!optionsSearch.trim()) {
+      return opt;
+    }
+
+    const searchTerm = optionsSearch.toLowerCase();
+    return opt.filter((site) => site.name.toLowerCase().includes(searchTerm));
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black/50 bg-opacity-50 flex items-center justify-center z-50">
+      <div className="bg-white rounded-lg p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto mx-4">
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-xl font-bold text-gray-900">Manage Options</h2>
+          <button
+            type="button"
+            onClick={closeOptionManager}
+            className="text-gray-500 hover:text-gray-700"
+          >
+            <svg
+              className="w-6 h-6"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M6 18L18 6M6 6l12 12"
+              />
+            </svg>
+          </button>
+        </div>
+
+        {/* Search Section */}
+        <div className="mb-4">
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Search Option
+          </label>
+          <input
+            type="text"
+            value={optionsSearch}
+            onChange={(e) => setOptionSearch(e.target.value)}
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black"
+            placeholder="Search by name..."
+          />
+        </div>
+
+        {/* Add New  Section */}
+        <div className="mb-6 p-4 bg-gray-50 rounded-lg">
+          <h3 className="text-lg font-semibold text-gray-700 mb-3">
+            Add New Option
+          </h3>
+          {error && (
+            <div className="mb-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
+              {error}
+            </div>
+          )}
+          {message && (
+            <div className="mb-4 bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded">
+              {message}
+            </div>
+          )}
+
+          <div className="space-y-3">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Option Name
+              </label>
+              <input
+                type="text"
+                value={data.name}
+                onChange={(e) => handleUpdate("name", e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black"
+                placeholder="Enter name"
+              />
+            </div>
+            {type === "referral_site" && (
+              <div id="province" className="scroll-mt-[60px]">
+                <select
+                  id="province"
+                  name="province"
+                  value={data.custom_fields.province}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black"
+                  readOnly
+                >
+                  <option value="">{selectedProvince}</option>
+                </select>
+              </div>
+            )}
+            <div className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                id="newOptionFrequent"
+                checked={data.is_frequent}
+                onChange={(e) => handleUpdate("is_frequent", e.target.checked)}
+                className="w-4 h-4 text-black bg-gray-100 border-gray-300 rounded focus:ring-black"
+              />
+              <label
+                htmlFor="newOptionFrequent"
+                className="text-sm text-gray-700"
+              >
+                Add to "Most Frequently Used" list
+              </label>
+            </div>
+            <button
+              type="button"
+              onClick={createOption}
+              className="bg-black text-white px-4 py-2 rounded-md hover:bg-gray-800 transition-colors"
+            >
+              Add Option
+            </button>
+          </div>
+        </div>
+
+        {/* Existing  List */}
+        <div>
+          <h3 className="text-lg font-semibold text-gray-700 mb-3">
+            Existing Options
+            <span className="text-sm font-normal text-gray-500 ml-2">
+              (Click to edit)
+            </span>
+          </h3>
+
+          {/* Frequently Used Section */}
+          <div className="mb-4">
+            <h4 className="text-sm font-medium text-gray-600 mb-2">
+              Most Frequently Used
+            </h4>
+            <div className="grid grid-cols-3 gap-2">
+              {getFilteredOptions()
+                .filter((s) => s.is_frequent)
+                .sort((a, b) => a.name.localeCompare(b.name))
+                .map((site) => (
+                  <div
+                    key={site.id}
+                    className="p-2 bg-green-50 border border-green-200 rounded-md cursor-pointer hover:bg-green-100 transition-colors"
+                    onClick={() => openEditOption(site)}
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-medium text-gray-900 truncate">
+                        {site.name}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+            </div>
+            {getFilteredOptions().filter((s) => s.is_frequent).length === 0 && (
+              <p className="text-sm text-gray-500 italic">None</p>
+            )}
+          </div>
+
+          {/* All Others Section */}
+          <div>
+            <h4 className="text-sm font-medium text-gray-600 mb-2">
+              All Others
+            </h4>
+            <div className="grid grid-cols-3 gap-2 max-h-60 overflow-y-auto">
+              {getFilteredOptions()
+                .filter((s) => !s.is_frequent)
+                .sort((a, b) => a.name.localeCompare(b.name))
+                .map((site) => (
+                  <div
+                    key={site.id}
+                    className="p-2 bg-gray-50 border border-gray-200 rounded-md cursor-pointer hover:bg-gray-100 transition-colors"
+                    onClick={() => openEditOption(site)}
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-medium text-gray-900 truncate">
+                        {site.name}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+            </div>
+            {getFilteredOptions().filter((s) => !s.is_frequent).length ===
+              0 && <p className="text-sm text-gray-500 italic">None</p>}
+          </div>
+        </div>
+
+        {/* Close Button */}
+        <div className="mt-6 flex justify-end">
+          <button
+            type="button"
+            onClick={closeOptionManager}
+            className="bg-gray-300 text-gray-700 px-4 py-2 rounded-md hover:bg-gray-400"
+          >
+            Close
+          </button>
+        </div>
+      </div>
+      {showOptionEditPopup && (
+        <EditModal
+          type={type}
+          editingTemplate={editOptionData}
+          setShowTemplateEditPopup={setShowOptionEditPopup}
+          handleUpdate={handleEditUpdate}
+          updateTemplate={updateOption}
+          deleteTemplate={deleteOption}
+        />
+      )}
+    </div>
+  );
+}

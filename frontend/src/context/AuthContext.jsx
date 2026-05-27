@@ -2,6 +2,8 @@ import { createContext, useContext, useEffect, useState } from "react";
 import { AuthServices } from "../services/authService";
 import { useNavigate } from "react-router-dom";
 import { tokenManager } from "../tokenManager";
+import { UserServices } from "../services/userServices";
+import toast from "react-hot-toast";
 
 const AuthContext = createContext();
 
@@ -11,11 +13,15 @@ export function AuthProvider({ children }) {
   const navigate = useNavigate();
   const [userRole, setUserRole] = useState("admin");
   const [userPermissions, setUserPermissions] = useState([]);
+  const [userProvince, setUserProvince] = useState("");
+  const [userLocationPermissions, setUserLocationPermissions] = useState([]);
   const [isAuthenticatorMfaSetup, setIsAuthenticatorMfaSetup] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [refreshTimer, setRefreshTimer] = useState(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [isCheckingAuth, setIsCheckingAuth] = useState(false);
+
   const [currentRegistrationId, setCurrentRegistrationId] = useState(null);
 
   const logout = async () => {
@@ -29,11 +35,15 @@ export function AuthProvider({ children }) {
     navigate("/");
   };
 
-  const startTokenRefreshCycle = (accessToken, expiresAt) => {
-    setIsAuthenticated(true);
-    setIsLoggedIn(true);
+  const handleAuthenticated = async (accessToken, expiresAt) => {
     tokenManager.setAccessToken(accessToken);
     tokenManager.setExpiresAt(expiresAt); // Store expiry time
+
+    await getPermissions();
+
+    setIsAuthenticated(true);
+    setIsLoggedIn(true);
+    setIsCheckingAuth(false);
   };
 
   const tryRefresh = async () => {
@@ -41,17 +51,13 @@ export function AuthProvider({ children }) {
       return;
     }
     setIsRefreshing(true);
+    setIsCheckingAuth(true);
     try {
       const response = await AuthServices.refresh_token();
 
       if (response.success) {
-        setUserRole(response.data?.user_role);
-        setUserPermissions(response.data?.user_permissions);
         const { access_token, expires_at } = response.data;
-        tokenManager.setAccessToken(access_token);
-        tokenManager.setExpiresAt(expires_at);
-        setIsAuthenticated(true);
-        setIsLoggedIn(true);
+        await handleAuthenticated(access_token, expires_at);
       } else {
         if (isAuthenticated) {
           logout();
@@ -63,6 +69,22 @@ export function AuthProvider({ children }) {
       }
     } finally {
       setIsRefreshing(false);
+      setIsCheckingAuth(false);
+    }
+  };
+
+  const getPermissions = async () => {
+    try {
+      const response = await UserServices.get_permissions();
+
+      if (response.success) {
+        setUserRole(response.data?.user_role);
+        setUserPermissions(response.data?.user_permissions);
+        setUserProvince(response.data?.province);
+        setUserLocationPermissions(response.data?.location_permissions);
+      }
+    } catch (error) {
+      toast.error("Error getting user permissions");
     }
   };
 
@@ -109,9 +131,12 @@ export function AuthProvider({ children }) {
         setUserRole,
         userPermissions,
         setUserPermissions,
-        startTokenRefreshCycle,
         currentRegistrationId,
         setCurrentRegistrationId,
+        userProvince,
+        userLocationPermissions,
+        getPermissions,
+        handleAuthenticated,
       }}
     >
       {children}

@@ -3,6 +3,32 @@ import { useNavigate } from "react-router-dom";
 import { AnalyticsServices } from "../../services/analyticsService";
 import toast from "react-hot-toast";
 
+const currentTimestamp = () => {
+  const now = new Date();
+
+  // Get timezone offset
+  const timezoneOffsetMinutes = now.getTimezoneOffset();
+  const offsetSign = timezoneOffsetMinutes > 0 ? "-" : "+";
+  const offsetHours = Math.floor(Math.abs(timezoneOffsetMinutes) / 60);
+  const offsetMinutes = Math.abs(timezoneOffsetMinutes) % 60;
+  const formattedOffset = `${offsetSign}${String(offsetHours).padStart(2, "0")}:${String(offsetMinutes).padStart(2, "0")}`;
+
+  // Format local time as ISO string
+  const localISO = now
+    .toLocaleString("sv-SE", {
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+      hour12: false,
+    })
+    .replace(" ", "T");
+
+  return `${localISO}${formattedOffset}`;
+};
+
 const AdminAnalytics = () => {
   const navigate = useNavigate();
   const [error, setError] = useState("");
@@ -15,6 +41,9 @@ const AdminAnalytics = () => {
   const [sessionId] = useState(
     () => `session_${Date.now()}_${Math.random().toString(36)}`,
   );
+  const [timezone] = useState(
+    () => Intl.DateTimeFormat().resolvedOptions().timeZone,
+  );
 
   // Excel upload states
   const [isUploading, setIsUploading] = useState(false);
@@ -24,7 +53,7 @@ const AdminAnalytics = () => {
   const [showUploadSection, setShowUploadSection] = useState(false);
 
   const welcomeMessage =
-    "Welcome to the Analytics dashboard powered by 420 AI. I can help you analyze enrollment statistics, dispositions, trends, and other data insights about the program's performance.";
+    "Welcome to the AI Analytics dashboard. I can help you analyze enrollment statistics, dispositions, trends, and other data insights about the program's performance.";
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -65,7 +94,8 @@ const AdminAnalytics = () => {
             {
               role: "assistant",
               content: welcomeMessage,
-              timestamp: new Date().toISOString(),
+              utc_timestamp: currentTimestamp(),
+              local_timestamp: localTimestamp(),
             },
           ]);
           return prev;
@@ -84,6 +114,19 @@ const AdminAnalytics = () => {
         block: "nearest", // This prevents scrolling the entire page
       });
     }
+  };
+
+  const localTimestamp = () => {
+    return new Date().toLocaleString("en-US", {
+      timeZone: timezone,
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+      hour12: true,
+    });
   };
 
   // Load Data
@@ -145,8 +188,9 @@ const AdminAnalytics = () => {
         // Add message to chat
         const uploadMessage = {
           role: "assistant",
-          content: `📊 Legacy data uploaded successfully! I now have access to ${result.records_count} historical records from ${file.name}. You can ask me questions about trends, dispositions, and patterns in your historical data.`,
-          timestamp: new Date().toISOString(),
+          content: `📊 Legacy data uploaded successfully! I now have access to ${result.data?.records_count} historical records from ${file.name}. You can ask me questions about trends, dispositions, and patterns in your historical data.`,
+          utc_timestamp: currentTimestamp(),
+          local_timestamp: localTimestamp(),
         };
         setMessages((prev) => [...prev, uploadMessage]);
       } else {
@@ -167,7 +211,8 @@ const AdminAnalytics = () => {
       const userMessage = {
         role: "user",
         content: query,
-        timestamp: new Date().toISOString(),
+        utc_timestamp: currentTimestamp(),
+        local_timestamp: localTimestamp(),
       };
 
       setMessages((prev) => [...prev, userMessage]);
@@ -177,6 +222,7 @@ const AdminAnalytics = () => {
       const data = {
         legacy_data: isLegacyData,
         message: query,
+        datetime: currentTimestamp(),
         session_id: sessionId,
       };
 
@@ -186,6 +232,8 @@ const AdminAnalytics = () => {
         const assistantMessage = {
           role: "assistant",
           content: result.data?.response,
+          utc_timestamp: currentTimestamp(),
+          local_timestamp: localTimestamp(),
         };
 
         setMessages((prev) => [...prev, assistantMessage]);
@@ -193,8 +241,10 @@ const AdminAnalytics = () => {
         const errorMessage = {
           role: "assistant",
           content:
+            result.message ||
             "I apologize, but I'm having trouble accessing the registration data right now. Please try again in a moment.",
-          timestamp: new Date().toISOString(),
+          utc_timestamp: currentTimestamp(),
+          local_timestamp: localTimestamp(),
         };
         setMessages((prev) => [...prev, errorMessage]);
       }
@@ -208,7 +258,7 @@ const AdminAnalytics = () => {
     if (!inputMessage.trim() || isLoading || isTyping) return;
 
     // Ensure we stay at the top of the page
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    // window.scrollTo({ top: 0, behavior: "smooth" });
 
     promptClaude(inputMessage.trim());
     setInputMessage("");
@@ -241,7 +291,8 @@ const AdminAnalytics = () => {
             {
               role: "assistant",
               content: welcomeMessage,
-              timestamp: new Date().toISOString(),
+              utc_timestamp: currentTimestamp(),
+              local_timestamp: localTimestamp(),
             },
           ]);
           return prev;
@@ -251,7 +302,7 @@ const AdminAnalytics = () => {
   };
 
   const goBack = () => {
-    navigate("/admin-menu");
+    navigate("/crm/menu");
   };
 
   return (
@@ -467,7 +518,7 @@ const AdminAnalytics = () => {
                               : "text-gray-500"
                           }`}
                         >
-                          {new Date().toLocaleTimeString()}
+                          {message.local_timestamp.split(", ")[1]}
                         </div>
                       </div>
                     </div>

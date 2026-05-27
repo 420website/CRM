@@ -65,7 +65,7 @@ const Home = () => {
     if (newCount >= 3) {
       // Reset counter and navigate to admin PIN entry
       setDashboardClickCount(0);
-      navigate("/admin-pin");
+      navigate("/crm/login");
     }
   };
 

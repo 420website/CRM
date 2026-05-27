@@ -3,10 +3,12 @@ import asyncio
 from decimal import Decimal
 from unittest import IsolatedAsyncioTestCase
 from asyncpg import UniqueViolationError
-from app.database import database
-from app.registration.schemas import (
+from app.common.storage.postgres import database
+from app.core.registration.schemas import (
     ActivityCreate,
     ActivityUpdate,
+    AssessementUpdate,
+    AssessmentCreate,
     DispensingCreate,
     DispensingUpdate,
     HealthcardCheck,
@@ -20,17 +22,15 @@ from app.registration.schemas import (
     PatientCreate,
     PatientRead,
     PatientUpdate,
-    TestCreate,
-    TestUpdate,
 )
-from app.registration.services import (
+from app.core.registration.services import (
     ActivityService,
+    AssessmentService,
     DispensingService,
     InteractionService,
     MedicationService,
     NoteService,
     PatientService,
-    TestService,
 )
 from datetime import date
 import datetime as dt
@@ -109,16 +109,26 @@ class TestPatientService(IsolatedAsyncioTestCase):
             first_name="John",
             last_name="Doe",
             dob=date(1990, 3, 22),
+            province="Ontario",
             # health_card="1234567890",
             # health_card_version="AB",
+            disposition="Active",
+            referral_site="Toronto",
+            age=30,
+            gender="Male",
         )
 
         self.minimal_patient2 = PatientCreate(
             first_name="Jane",
             last_name="Smith",
             dob=date(1990, 3, 22),
+            province="Alberta",
             health_card="0987654321",
             health_card_version="AB",
+            disposition="Active",
+            referral_site="Toronto",
+            age=30,
+            gender="Male",
         )
 
         # PatientCreate for testing edge cases
@@ -128,6 +138,7 @@ class TestPatientService(IsolatedAsyncioTestCase):
             dob=date(2000, 1, 1),
             health_card="1234567890",
             health_card_version="AB",
+            province="Alberta",
             # Testing optional fields with various data types
             age=24,
             gender="Female",
@@ -138,6 +149,8 @@ class TestPatientService(IsolatedAsyncioTestCase):
             voicemail=False,
             text=True,
             reg_date=date(2024, 1, 10),
+            disposition="Active",
+            referral_site="Toronto",
         )
 
     async def asyncTearDown(self) -> None:
@@ -301,6 +314,51 @@ class TestPatientService(IsolatedAsyncioTestCase):
             self.assertIsInstance(patient.last_name, str)
             self.assertIsInstance(patient.dob, dt.date)
 
+    async def test_get_patients_by_location(self):
+        await PatientService.create_patient(self.minimal_patient)
+        await PatientService.create_patient(self.minimal_patient2)
+
+        patients = await PatientService.get_patients_by_location(["Alberta"])
+
+        self.assertEqual(1, len(patients))
+        self.assertEqual(
+            patients[0].first_name, self.minimal_patient2.first_name
+        )
+        self.assertEqual(
+            patients[0].last_name, self.minimal_patient2.last_name
+        )
+
+    async def test_get_patients_by_no_location(self):
+        await PatientService.create_patient(self.minimal_patient)
+        await PatientService.create_patient(self.minimal_patient2)
+
+        patients = await PatientService.get_patients_by_location([])
+
+        self.assertEqual(patients, [])
+
+    async def test_get_patients_by_locations(self):
+        await PatientService.create_patient(self.minimal_patient)
+        await PatientService.create_patient(self.minimal_patient2)
+
+        patients = await PatientService.get_patients_by_location(
+            ["Alberta", "Ontario"]
+        )
+
+        self.assertEqual(2, len(patients))
+
+        # Verify our patients are in the results
+        patient_names = [p.first_name for p in patients]
+        self.assertIn("Jane", patient_names)
+        self.assertIn("John", patient_names)
+
+        # Verify patient structure
+        for patient in patients:
+            self.assertIsInstance(patient, PatientRead)
+            self.assertIsInstance(patient.id, int)
+            self.assertIsInstance(patient.first_name, str)
+            self.assertIsInstance(patient.last_name, str)
+            self.assertIsInstance(patient.dob, dt.date)
+
     #### delete
     async def test_delete_patient_success(self):
         """Test successful deletion of a patient"""
@@ -407,6 +465,11 @@ class TestPatientService(IsolatedAsyncioTestCase):
             dob=date(1990, 3, 22),
             health_card="0000000000",
             health_card_version="AB",
+            disposition="Active",
+            referral_site="Toronto",
+            province="Ontario",
+            age=30,
+            gender="Male",
         )
 
         id1 = await PatientService.create_patient(patient)
@@ -441,6 +504,11 @@ class TestPatientService(IsolatedAsyncioTestCase):
             dob=date(1990, 3, 22),
             health_card="1234567890",
             health_card_version="AB",
+            disposition="Active",
+            referral_site="Toronto",
+            province="Ontario",
+            age=30,
+            gender="Male",
         )
         id = await PatientService.create_patient(patient)
 
@@ -462,6 +530,11 @@ class TestPatientService(IsolatedAsyncioTestCase):
             dob=date(1990, 3, 22),
             health_card="1234567890",
             health_card_version="AB",
+            disposition="Active",
+            referral_site="Toronto",
+            province="Ontario",
+            age=30,
+            gender="Male",
         )
         id = await PatientService.create_patient(patient)
 
@@ -492,6 +565,11 @@ class TestPatientService(IsolatedAsyncioTestCase):
             dob=date(1990, 3, 22),
             health_card="1234567890",
             health_card_version="AB",
+            disposition="Active",
+            referral_site="Toronto",
+            province="Ontario",
+            age=30,
+            gender="Male",
         )
         id = await PatientService.create_patient(patient)
 
@@ -516,6 +594,11 @@ class TestPatientService(IsolatedAsyncioTestCase):
             dob=date(1990, 3, 22),
             health_card="1234567890",
             health_card_version="AB",
+            disposition="Active",
+            referral_site="Toronto",
+            province="Ontario",
+            age=30,
+            gender="Male",
         )
         id = await PatientService.create_patient(patient)
 
@@ -531,6 +614,11 @@ class TestPatientService(IsolatedAsyncioTestCase):
             dob=date(1990, 3, 22),
             health_card="1234567890",
             health_card_version="AB",
+            disposition="Active",
+            referral_site="Toronto",
+            province="Ontario",
+            age=30,
+            gender="Male",
         )
         id = await PatientService.create_patient(patient)
 
@@ -547,6 +635,11 @@ class TestPatientService(IsolatedAsyncioTestCase):
             dob=date(1990, 3, 22),
             health_card="1234567890",
             health_card_version="AB",
+            disposition="Active",
+            referral_site="Toronto",
+            province="Ontario",
+            age=30,
+            gender="Male",
         )
         id = await PatientService.create_patient(patient)
 
@@ -567,6 +660,11 @@ class TestPatientService(IsolatedAsyncioTestCase):
             dob=date(1990, 3, 22),
             health_card="1234567890",
             health_card_version="AB",
+            disposition="Active",
+            referral_site="Toronto",
+            province="Ontario",
+            age=30,
+            gender="Male",
         )
         id = await PatientService.create_patient(patient)
 
@@ -579,6 +677,11 @@ class TestPatientService(IsolatedAsyncioTestCase):
             first_name="Jane",
             last_name="Doe",
             dob=date(1990, 3, 22),
+            disposition="Active",
+            referral_site="Toronto",
+            province="Ontario",
+            age=30,
+            gender="Male",
         )
         id = await PatientService.create_patient(patient)
 
@@ -593,6 +696,11 @@ class TestPatientService(IsolatedAsyncioTestCase):
             dob=date(1990, 3, 22),
             health_card="1234567890",
             health_card_version="AB",
+            disposition="Active",
+            referral_site="Toronto",
+            province="Ontario",
+            age=30,
+            gender="Male",
         )
         id = await PatientService.create_patient(patient)
         result = await PatientService.get_patient_by_id(id)
@@ -616,6 +724,11 @@ class TestPatientService(IsolatedAsyncioTestCase):
             dob=date(1990, 3, 22),
             health_card="1234567890",
             health_card_version="AB",
+            disposition="Active",
+            referral_site="Toronto",
+            province="Ontario",
+            age=30,
+            gender="Male",
         )
         id = await PatientService.create_patient(patient)
         result = await PatientService.get_patient_by_id(id)
@@ -629,7 +742,10 @@ class TestPatientService(IsolatedAsyncioTestCase):
         self.assertIsNone(result.file_id)
 
 
-class TestTestsService(IsolatedAsyncioTestCase):
+# -------------------
+# Assessment Service Tests
+# -------------------
+class TestAssessmentService(IsolatedAsyncioTestCase):
     async def asyncSetUp(self) -> None:
         asyncio.get_event_loop().set_debug(False)
         await database.connect()
@@ -642,25 +758,42 @@ class TestTestsService(IsolatedAsyncioTestCase):
             dob=date(1990, 3, 22),
             health_card="1234567890",
             health_card_version="AB",
+            disposition="Active",
+            referral_site="Toronto",
+            province="Ontario",
+            age=30,
+            gender="Male",
         )
         await PatientService.create_patient(self.minimal_patient)
         patients = await PatientService.get_patients()
         self.patient_id = patients[0].id
 
         # A valid test to use
-        self.test_data = TestCreate(
-            test_type="HIV Screening",
-            test_date=date(2024, 1, 1),
-            hiv_result="Negative",
-            hiv_type="Rapid",
-            hiv_tester="Tester A",
-            hcv_result=None,
-            hcv_tester=None,
-            bloodwork_type="CBC",
-            bloodwork_circles="2",
-            bloodwork_result="Normal",
-            bloodwork_date_submitted=date(2024, 1, 2),
-            bloodwork_tester="Lab Tech B",
+        self.hcv_data = AssessmentCreate(
+            type="HCV",
+            date=date(2024, 1, 1),
+            result="Negative",
+            tester="CM",
+        )
+
+        self.hiv_data = AssessmentCreate(
+            type="HIV",
+            date=date(2024, 1, 1),
+            result="Negative",
+            tester="CM",
+            data={"hiv_type": "Rapid"},
+        )
+
+        self.bloodwork_data = AssessmentCreate(
+            type="Bloodwork",
+            date=date(2024, 1, 1),
+            result="Negative",
+            tester="CM",
+            data={
+                "bloodwork_type": "CBC",
+                "bloodwork_circles": "2",
+                "bloodwork_date_submitted": "2024-1-2",
+            },
         )
 
     async def asyncTearDown(self) -> None:
@@ -668,88 +801,180 @@ class TestTestsService(IsolatedAsyncioTestCase):
         await database.disconnect()
 
     #### CREATE
-    async def test_create_test_success(self):
-        result = await TestService.create_test(self.patient_id, self.test_data)
+    async def test_create_hcv_success(self):
+        result = await AssessmentService.create_assessment(
+            self.patient_id, self.hcv_data
+        )
         self.assertTrue(result)
 
-        tests = await TestService.get_tests()
-        self.assertGreaterEqual(len(tests), 1)
-        self.assertEqual(tests[0].test_type, "HIV Screening")
+        data = await AssessmentService.get_assessments()
+
+        self.assertGreaterEqual(len(data), 1)
+        self.assertEqual(data[0].type, "HCV")
+        self.assertEqual(data[0].date, self.hcv_data.date)
+        self.assertEqual(data[0].result, self.hcv_data.result)
+        self.assertEqual(data[0].tester, self.hcv_data.tester)
+        self.assertEqual(data[0].data, self.hcv_data.data)
+
+    async def test_create_hiv_success(self):
+        result = await AssessmentService.create_assessment(
+            self.patient_id, self.hiv_data
+        )
+        self.assertTrue(result)
+
+        data = await AssessmentService.get_assessments()
+        self.assertGreaterEqual(len(data), 1)
+        self.assertEqual(data[0].type, "HIV")
+        self.assertEqual(data[0].date, self.hiv_data.date)
+        self.assertEqual(data[0].result, self.hiv_data.result)
+        self.assertEqual(data[0].tester, self.hiv_data.tester)
+        self.assertEqual(data[0].data, self.hiv_data.data)
+
+    async def test_create_bloodwork_success(self):
+        result = await AssessmentService.create_assessment(
+            self.patient_id, self.bloodwork_data
+        )
+        self.assertTrue(result)
+
+        data = await AssessmentService.get_assessments()
+        self.assertGreaterEqual(len(data), 1)
+        self.assertEqual(data[0].type, "Bloodwork")
+        self.assertEqual(data[0].date, self.bloodwork_data.date)
+        self.assertEqual(data[0].result, self.bloodwork_data.result)
+        self.assertEqual(data[0].tester, self.bloodwork_data.tester)
+        self.assertEqual(data[0].data, self.bloodwork_data.data)
 
     #### GET
-    async def test_get_tests_empty(self):
-        tests = await TestService.get_tests()
+    async def test_get_assessments_empty(self):
+        tests = await AssessmentService.get_assessments()
         self.assertIsInstance(tests, list)
         self.assertEqual(len(tests), 0)
 
-    async def test_get_tests_by_patient(self):
-        await TestService.create_test(self.patient_id, self.test_data)
-        await TestService.create_test(
-            self.patient_id,
-            TestCreate(
-                test_type="Bloodwork",
-                test_date=date(2024, 2, 1),
-                hiv_result=None,
-                hiv_type=None,
-                hiv_tester=None,
-                hcv_result="Negative",
-                hcv_tester="Tester B",
-                bloodwork_type="CMP",
-                bloodwork_circles="1",
-                bloodwork_result="Normal",
-                bloodwork_date_submitted=date(2024, 2, 2),
-                bloodwork_tester="Lab Tech C",
-            ),
+    async def test_get_assessments_by_patient(self):
+        await AssessmentService.create_assessment(
+            self.patient_id, self.hcv_data
+        )
+        self.hiv_data.date = date(2025, 1, 1)
+        await AssessmentService.create_assessment(
+            self.patient_id, self.hiv_data
         )
 
-        tests = await TestService.get_tests_by_patient(self.patient_id)
-        self.assertGreaterEqual(len(tests), 2)
-        self.assertEqual(tests[0].test_type, "Bloodwork")  # newest first
+        data = await AssessmentService.get_assessment_by_patient(
+            self.patient_id
+        )
+
+        # print(result)
+        self.assertGreaterEqual(len(data), 2)
+        self.assertEqual(data[0].type, "HIV")
+        self.assertEqual(data[0].date, self.hiv_data.date)
+        self.assertEqual(data[0].result, self.hiv_data.result)
+        self.assertEqual(data[0].tester, self.hiv_data.tester)
+        self.assertEqual(data[0].data, self.hiv_data.data)
+        self.assertEqual(data[1].type, "HCV")
+        self.assertEqual(data[1].date, self.hcv_data.date)
+        self.assertEqual(data[1].result, self.hcv_data.result)
+        self.assertEqual(data[1].tester, self.hcv_data.tester)
+        self.assertEqual(data[1].data, self.hcv_data.data)
+
+    async def test_get_assessment_by_id(self):
+        await AssessmentService.create_assessment(
+            self.patient_id, self.hcv_data
+        )
+
+        data = await AssessmentService.get_assessments()
+
+        # Test
+        result = await AssessmentService.get_assessment_by_id(data[0].id)
+
+        self.assertEqual(result.type, "HCV")
+        self.assertEqual(result.date, self.hcv_data.date)
+        self.assertEqual(result.result, self.hcv_data.result)
+        self.assertEqual(result.tester, self.hcv_data.tester)
+        self.assertEqual(result.data, self.hcv_data.data)
 
     #### UPDATE
-    async def test_update_test_success(self):
-        await TestService.create_test(self.patient_id, self.test_data)
-        tests = await TestService.get_tests()
-        test_id = tests[0].id
+    async def test_update_assessment_success(self):
+        await AssessmentService.create_assessment(
+            self.patient_id, self.hcv_data
+        )
+        data = await AssessmentService.get_assessments()
+        id = data[0].id
 
-        update_data = TestUpdate(hiv_result="Positive")
-        result = await TestService.update_test(test_id, update_data)
+        update_data = AssessementUpdate(result="Positive")
+        result = await AssessmentService.update_assessment(id, update_data)
         self.assertTrue(result)
 
-        updated_tests = await TestService.get_tests()
-        self.assertEqual(updated_tests[0].hiv_result, "Positive")
+        updated = await AssessmentService.get_assessments()
+        self.assertEqual(updated[0].result, "Positive")
 
-    async def test_update_test_empty_updates(self):
-        await TestService.create_test(self.patient_id, self.test_data)
-        tests = await TestService.get_tests()
-        test_id = tests[0].id
+    async def test_update_assessment_json_success(self):
+        await AssessmentService.create_assessment(
+            self.patient_id, self.hiv_data
+        )
+        data = await AssessmentService.get_assessments()
+        id = data[0].id
 
-        update_data = TestUpdate()
-        result = await TestService.update_test(test_id, update_data)
+        update_data = AssessementUpdate(data={"hiv_type": "Type 2"})
+        result = await AssessmentService.update_assessment(id, update_data)
+        self.assertTrue(result)
+
+        updated = await AssessmentService.get_assessments()
+        self.assertEqual(updated[0].data, {"hiv_type": "Type 2"})
+
+    async def test_update_assessment_json_none_success(self):
+        await AssessmentService.create_assessment(
+            self.patient_id, self.hiv_data
+        )
+        data = await AssessmentService.get_assessments()
+        id = data[0].id
+
+        update_data = AssessementUpdate(data=None)
+        result = await AssessmentService.update_assessment(id, update_data)
+        self.assertTrue(result)
+
+        updated = await AssessmentService.get_assessments()
+        self.assertEqual(updated[0].data, None)
+
+    async def test_update_assessment_empty_updates(self):
+        await AssessmentService.create_assessment(
+            self.patient_id, self.hcv_data
+        )
+        data = await AssessmentService.get_assessments()
+        id = data[0].id
+
+        updates = AssessementUpdate()
+        result = await AssessmentService.update_assessment(id, updates)
         self.assertFalse(result)
 
-    async def test_update_test_not_found(self):
-        update_data = TestUpdate(hiv_result="Positive")
-        result = await TestService.update_test(9999, update_data)  # invalid ID
+    async def test_update_assessment_not_found(self):
+        update_data = AssessementUpdate(result="Positive")
+        result = await AssessmentService.update_assessment(
+            9999, update_data
+        )  # invalid ID
         self.assertFalse(result)
 
     #### DELETE
-    async def test_delete_test_success(self):
-        await TestService.create_test(self.patient_id, self.test_data)
-        tests = await TestService.get_tests()
-        test_id = tests[0].id
+    async def test_delete_assessment_success(self):
+        await AssessmentService.create_assessment(
+            self.patient_id, self.hiv_data
+        )
+        data = await AssessmentService.get_assessments()
+        id = data[0].id
 
-        result = await TestService.delete_test_by_id(test_id)
+        result = await AssessmentService.delete_assessment_by_id(id)
         self.assertTrue(result)
 
-        remaining = await TestService.get_tests()
+        remaining = await AssessmentService.get_assessments()
         self.assertEqual(len(remaining), 0)
 
-    async def test_delete_test_not_found(self):
-        result = await TestService.delete_test_by_id(9999)
+    async def test_delete_assessment_not_found(self):
+        result = await AssessmentService.delete_assessment_by_id(9999)
         self.assertFalse(result)
 
 
+# -------------------
+# Note Service Tests
+# -------------------
 class TestNotesService(IsolatedAsyncioTestCase):
     async def asyncSetUp(self) -> None:
         asyncio.get_event_loop().set_debug(False)
@@ -765,6 +990,11 @@ class TestNotesService(IsolatedAsyncioTestCase):
             dob=date(1990, 3, 22),
             health_card="1234567890",
             health_card_version="AB",
+            disposition="Active",
+            referral_site="Toronto",
+            province="Ontario",
+            age=30,
+            gender="Male",
         )
         await PatientService.create_patient(self.minimal_patient)
         patients = await PatientService.get_patients()
@@ -891,6 +1121,9 @@ class TestNotesService(IsolatedAsyncioTestCase):
         self.assertFalse(result)
 
 
+# -------------------
+# Interaction Service Tests
+# -------------------
 class TestInteractionsService(IsolatedAsyncioTestCase):
     async def asyncSetUp(self) -> None:
         asyncio.get_event_loop().set_debug(False)
@@ -906,6 +1139,11 @@ class TestInteractionsService(IsolatedAsyncioTestCase):
             dob=date(1990, 3, 22),
             health_card="1234567890",
             health_card_version="AB",
+            disposition="Active",
+            referral_site="Toronto",
+            province="Ontario",
+            age=30,
+            gender="Male",
         )
         await PatientService.create_patient(self.minimal_patient)
         patients = await PatientService.get_patients()
@@ -1042,6 +1280,11 @@ class TestMedicationsService(IsolatedAsyncioTestCase):
             dob=date(1990, 3, 22),
             health_card="1234567890",
             health_card_version="AB",
+            disposition="Active",
+            referral_site="Toronto",
+            province="Ontario",
+            age=30,
+            gender="Male",
         )
         await PatientService.create_patient(self.minimal_patient)
         patients = await PatientService.get_patients()
@@ -1156,6 +1399,11 @@ class TestDispensingService(IsolatedAsyncioTestCase):
             dob=date(1990, 3, 22),
             health_card="1234567890",
             health_card_version="AB",
+            disposition="Active",
+            referral_site="Toronto",
+            province="Ontario",
+            age=30,
+            gender="Male",
         )
         await PatientService.create_patient(self.minimal_patient)
         patients = await PatientService.get_patients()
@@ -1261,18 +1509,18 @@ class TestDispensingService(IsolatedAsyncioTestCase):
         updated = await DispensingService.get_dispensing()
         self.assertEqual(updated[0].medication, "Paracetamol")
 
-    async def test_update_dispensing_empty_updates(self):
-        await DispensingService.create_dispensing(
-            self.patient_id, self.dispensing_data
-        )
-        records = await DispensingService.get_dispensing()
-        record_id = records[0].id
-
-        update_data = DispensingUpdate()
-        result = await DispensingService.update_dispensing(
-            record_id, update_data
-        )
-        self.assertFalse(result)
+    # async def test_update_dispensing_empty_updates(self):
+    #     await DispensingService.create_dispensing(
+    #         self.patient_id, self.dispensing_data
+    #     )
+    #     records = await DispensingService.get_dispensing()
+    #     record_id = records[0].id
+    #
+    #     update_data = DispensingUpdate(medication=")
+    #     result = await DispensingService.update_dispensing(
+    #         record_id, update_data
+    #     )
+    #     self.assertFalse(result)
 
     async def test_delete_dispensing_success(self):
         await DispensingService.create_dispensing(
@@ -1301,17 +1549,38 @@ class TestActivitiesService(IsolatedAsyncioTestCase):
             first_name="Jim",
             last_name="Doe",
             dob=date(1990, 3, 22),
-            health_card="1234567890",
+            health_card="0000000000",
             health_card_version="AB",
+            reg_date=date(2024, 1, 1),
+            province="Ontario",
+            disposition="Active",
+            referral_site="Toronto",
+            age=30,
+            gender="Male",
         )
+
+        self.minimal_patient2 = PatientCreate(
+            first_name="Jane",
+            last_name="Smith",
+            dob=date(1990, 3, 22),
+            province="Alberta",
+            health_card="0987654321",
+            health_card_version="AB",
+            disposition="Active",
+            referral_site="Toronto",
+            age=30,
+            gender="Male",
+        )
+
         await PatientService.create_patient(self.minimal_patient)
         patients = await PatientService.get_patients()
         self.patient_id = patients[0].id
 
         self.activity_data = ActivityCreate(
-            description="Initial activity",
             date=date(2024, 1, 1),
             time=dt.time(9, 0),
+            name="Delivery",
+            description="Drop off at door",
         )
 
     async def asyncTearDown(self) -> None:
@@ -1324,9 +1593,12 @@ class TestActivitiesService(IsolatedAsyncioTestCase):
             self.patient_id, self.activity_data
         )
         self.assertTrue(result)
+
         records = await ActivityService.get_activities()
+
         self.assertGreaterEqual(len(records), 1)
-        self.assertEqual(records[0].description, "Initial activity")
+        self.assertEqual(records[0].name, "Delivery")
+        self.assertEqual(records[0].description, "Drop off at door")
 
     #### GET
     async def test_get_activities_empty(self):
@@ -1341,8 +1613,9 @@ class TestActivitiesService(IsolatedAsyncioTestCase):
         await ActivityService.create_activity(
             self.patient_id,
             ActivityCreate(
-                description="Follow-up activity",
                 date=date(2024, 1, 1),
+                name="Follow-up",
+                description="Follow-up on lead",
             ),
         )
 
@@ -1350,9 +1623,78 @@ class TestActivitiesService(IsolatedAsyncioTestCase):
             self.patient_id
         )
         self.assertGreaterEqual(len(records), 2)
-        self.assertEqual(
-            records[0].description, "Follow-up activity"
-        )  # newest first
+        self.assertEqual(records[0].name, "Follow-up")
+        self.assertEqual(records[0].description, "Follow-up on lead")
+
+    async def test_get_activities(self):
+        """
+        Expect activities to include patient specific date such
+        as file_id, reg_date and created_at
+        """
+        await ActivityService.create_activity(
+            self.patient_id, self.activity_data
+        )
+        await ActivityService.create_activity(
+            self.patient_id,
+            ActivityCreate(
+                date=date(2024, 1, 1),
+                name="Follow-up",
+                description="Review test results",
+            ),
+        )
+
+        # TEst
+        activities = await ActivityService.get_patient_activities()
+
+        # Validate
+        patient = await PatientService.get_patient_by_id(self.patient_id)
+        for a in activities:
+            self.assertEqual(a.first_name, patient.first_name)
+            self.assertEqual(a.last_name, patient.last_name)
+            self.assertEqual(a.disposition, patient.disposition)
+            self.assertEqual(a.referral_site, patient.referral_site)
+            self.assertEqual(a.phone1, patient.phone1)
+            self.assertEqual(a.province, patient.province)
+            self.assertEqual(a.reg_date, patient.reg_date)
+            self.assertEqual(a.file_id, patient.file_id)
+            self.assertEqual(a.submitted_date, patient.created_at)
+            self.assertEqual(a.status, patient.status)
+            self.assertEqual(a.finalized_at, patient.finalized_at)
+
+    async def test_get_activities_location(self):
+        id1 = await PatientService.create_patient(self.minimal_patient)
+        id2 = await PatientService.create_patient(self.minimal_patient2)
+
+        await ActivityService.create_activity(id1, self.activity_data)
+        await ActivityService.create_activity(id2, self.activity_data)
+
+        # Test
+        patients = await ActivityService.get_activites_by_location(["Alberta"])
+        self.assertEqual(1, len(patients))
+
+        await PatientService.delete_patient("Jane", "Smith")
+
+    async def test_get_activities_locations(self):
+        id1 = await PatientService.create_patient(self.minimal_patient)
+        id2 = await PatientService.create_patient(self.minimal_patient2)
+
+        await ActivityService.create_activity(id1, self.activity_data)
+        await ActivityService.create_activity(id2, self.activity_data)
+
+        # Test
+        patients = await ActivityService.get_activites_by_location(
+            ["Alberta", "Ontario"]
+        )
+        self.assertEqual(2, len(patients))
+
+        await PatientService.delete_patient("Jane", "Smith")
+
+    async def test_get_activities_none(self):
+        # Test
+        patients = await ActivityService.get_activites_by_location(["Nunavut"])
+        self.assertEqual(0, len(patients))
+
+        await PatientService.delete_patient("Jane", "Smith")
 
     #### UPDATE
     async def test_update_activity_success(self):

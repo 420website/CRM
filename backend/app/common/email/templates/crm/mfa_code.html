@@ -1,0 +1,33 @@
+<html>
+<body style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+    <div style="background-color: #f8f9fa; padding: 30px; border-radius: 10px;">
+        <h2 style="color: #333; text-align: center; margin-bottom: 30px; line-height: 1.2;">
+            🔐 Login<br>Verification
+        </h2>
+        
+        <div style="background-color: white; padding: 25px; border-radius: 8px; text-align: center; margin-bottom: 20px;">
+            <p style="font-size: 16px; color: #555; margin-bottom: 20px;">
+                Your login code is:
+            </p>
+            
+            <div class="verification-code"  style="background-color: #000; color: white; font-size: 32px; font-weight: bold; padding: 15px 30px; border-radius: 8px; letter-spacing: 8px; font-family: 'Courier New', monospace; white-space: nowrap; display: inline-block;">
+                {{VERIFICATION_CODE}}
+            </div>
+            
+            <p style="font-size: 14px; color: #888; margin-top: 20px;">
+                This code expires in <strong>3 minutes</strong>
+            </p>
+        </div>
+        
+        <div style="background-color: #fff3cd; border: 1px solid #ffeaa7; padding: 15px; border-radius: 5px; margin-top: 20px;">
+            <p style="margin: 0; font-size: 14px; color: #856404;">
+                <strong>⚠️ Security Notice:</strong> If you didn't request this code, please ignore this email. Never share this code with anyone.
+            </p>
+        </div>
+        
+        <p style="font-size: 12px; color: #888; text-align: center; margin-top: 30px;">
+            Automated message - do not reply
+        </p>
+    </div>
+</body>
+</html>

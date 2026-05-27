@@ -97,6 +97,22 @@ describe("PatientServices.patients", () => {
     await PatientServices.delete_patient_by_id(createdId);
   });
 
+  it("should fetch patients by location", async () => {
+    const createRes = await PatientServices.create_patient(patientForm);
+    createdId = createRes.data?.patient_id;
+
+    const listRes = await PatientServices.get_patients_by_location(["Ontario"]);
+
+    expect(listRes.success).toBe(true);
+    expect(Array.isArray(listRes.data)).toBe(true);
+
+    const found = listRes.data.find((p) => p.id == createdId);
+    expect(found).toBeDefined();
+
+    // Clean up
+    await PatientServices.delete_patient_by_id(createdId);
+  });
+
   it("should update a patient successfully", async () => {
     const createRes = await PatientServices.create_patient(patientForm);
     createdId = createRes.data?.patient_id;
@@ -236,7 +252,7 @@ describe("PatientServices.patients", () => {
 ////////////////
 // Tests
 ///////////////
-describe("PatientServices.patient tests", () => {
+describe("PatientServices.patient assessments", () => {
   let createdPatientId;
   let createdTestId;
   const email = "test99@example.com";
@@ -268,19 +284,32 @@ describe("PatientServices.patient tests", () => {
     language: "English",
   };
 
-  const testFormData = {
-    test_type: "HIV Test",
-    test_date: new Date().toISOString().split("T")[0],
-    hiv_result: "negative",
-    hiv_type: "Type 1",
+  const hivFormData = {
+    type: "HIV",
+    date: new Date().toISOString().split("T")[0],
+    result: "negative",
+    tester: "CM",
+    data: { hiv_type: "Type 1" },
+  };
+
+  const hcvFormData = {
+    type: "HCV",
+    date: new Date().toISOString().split("T")[0],
+    result: "negative",
     hiv_tester: "CM",
-    hcv_result: "negative",
-    hcv_tester: "CM",
-    bloodwork_type: "CBC",
-    bloodwork_circles: "3",
-    bloodwork_result: "Pending",
-    bloodwork_date_submitted: new Date().toISOString().split("T")[0],
-    bloodwork_tester: "CM",
+    data: null,
+  };
+
+  const bloodworkFormData = {
+    type: "Bloodwork",
+    date: new Date().toISOString().split("T")[0],
+    result: "negative",
+    tester: "CM",
+    data: {
+      bloodwork_type: "CBC",
+      bloodwork_circles: "3",
+      bloodwork_date_submitted: new Date().toISOString().split("T")[0],
+    },
   };
 
   beforeEach(async () => {
@@ -310,21 +339,26 @@ describe("PatientServices.patient tests", () => {
     await TestServices.deleteUser(email, password);
   });
 
-  it("should create a patient test", async () => {
-    const result = await PatientServices.create_test(
+  it("should create a patient HIV assessment", async () => {
+    const result = await PatientServices.create_assessment(
       createdPatientId,
-      testFormData,
+      hivFormData,
     );
 
     expect(result.success).toBe(true);
-    expect(result.data?.message).toBe("Test created successfully.");
+    expect(result.data?.message).toBe("Assessment created successfully.");
   });
 
-  it("should fetch all tests for a patient", async () => {
-    await PatientServices.create_test(createdPatientId, testFormData);
+  it("should fetch all assessments for a patient", async () => {
+    await PatientServices.create_assessment(createdPatientId, hivFormData);
+    await PatientServices.create_assessment(createdPatientId, hcvFormData);
+    await PatientServices.create_assessment(
+      createdPatientId,
+      bloodworkFormData,
+    );
 
     const listRes =
-      await PatientServices.get_tests_by_patient(createdPatientId);
+      await PatientServices.get_assessments_by_patient(createdPatientId);
 
     expect(listRes.success).toBe(true);
     expect(Array.isArray(listRes.data)).toBe(true);
@@ -333,62 +367,71 @@ describe("PatientServices.patient tests", () => {
     expect(found).toBeDefined();
   });
 
-  it("should fetch a test by ID", async () => {
-    await PatientServices.create_test(createdPatientId, testFormData);
-    const listRes =
-      await PatientServices.get_tests_by_patient(createdPatientId);
-    const found = listRes.data.find((t) => t.patient_id === createdPatientId);
-    createdTestId = found.id;
+  it("should fetch a assessment by ID", async () => {
+    await PatientServices.create_assessment(createdPatientId, hivFormData);
 
-    const getRes = await PatientServices.get_test_by_id(
+    const listRes =
+      await PatientServices.get_assessments_by_patient(createdPatientId);
+
+    const found = listRes.data.find((t) => t.patient_id === createdPatientId);
+    const createdId = found.id;
+
+    const getRes = await PatientServices.get_assessment_by_id(
       createdPatientId,
-      found.id,
+      createdId,
     );
 
     expect(getRes.success).toBe(true);
-    expect(getRes.data?.id).toBe(createdTestId);
-    expect(getRes.data?.test_type).toBe("HIV Test");
+    expect(getRes.data?.id).toBe(createdId);
+    expect(getRes.data?.type).toBe("HIV");
   });
 
-  it("should update a test successfully", async () => {
-    await PatientServices.create_test(createdPatientId, testFormData);
-    const listRes =
-      await PatientServices.get_tests_by_patient(createdPatientId);
-    const found = listRes.data.find((t) => t.patient_id === createdPatientId);
-    createdTestId = found.id;
-
-    const updateRes = await PatientServices.update_test(
+  it("should update a assessment successfully", async () => {
+    await PatientServices.create_assessment(
       createdPatientId,
-      createdTestId,
+      bloodworkFormData,
+    );
+    const listRes =
+      await PatientServices.get_assessments_by_patient(createdPatientId);
+
+    const found = listRes.data.find((t) => t.patient_id === createdPatientId);
+    const createdId = found.id;
+
+    const updateRes = await PatientServices.update_assessment(
+      createdPatientId,
+      createdId,
       {
-        bloodwork_result: "Completed",
+        data: { bloodwork_result: "Completed" },
       },
     );
     expect(updateRes.success).toBe(true);
 
-    const getRes = await PatientServices.get_test_by_id(
+    const getRes = await PatientServices.get_assessment_by_id(
       createdPatientId,
-      createdTestId,
+      createdId,
     );
-    expect(getRes.data?.bloodwork_result).toBe("Completed");
+    expect(getRes.data?.data).toStrictEqual({ bloodwork_result: "Completed" });
   });
 
-  it("should delete a test successfully", async () => {
-    await PatientServices.create_test(createdPatientId, testFormData);
+  it("should delete a assessment successfully", async () => {
+    await PatientServices.create_assessment(createdPatientId, hivFormData);
     const listRes =
-      await PatientServices.get_tests_by_patient(createdPatientId);
-    const found = listRes.data.find((t) => t.patient_id === createdPatientId);
-    createdTestId = found.id;
+      await PatientServices.get_assessments_by_patient(createdPatientId);
 
-    const deleteRes = await PatientServices.delete_test_by_id(
+    const found = listRes.data.find((t) => t.patient_id === createdPatientId);
+    const createdId = found.id;
+
+    const deleteRes = await PatientServices.delete_assessment_by_id(
       createdPatientId,
-      createdTestId,
+      createdId,
     );
+
     expect(deleteRes.success).toBe(true);
 
     const listRes2 =
-      await PatientServices.get_tests_by_patient(createdPatientId);
-    const stillThere = listRes2.data.find((t) => t.id === createdTestId);
+      await PatientServices.get_assessments_by_patient(createdPatientId);
+
+    const stillThere = listRes2.data.find((t) => t.id === createdId);
     expect(stillThere).toBeUndefined();
   });
 });
@@ -574,6 +617,7 @@ describe("PatientServices.patient activities", () => {
   const activityFormData = {
     date: new Date().toISOString().split("T")[0],
     time: "10:00",
+    name: "Delivery",
     description: "Initial intake appointment",
   };
 
@@ -724,6 +768,13 @@ describe("PatientServices.patient dispensings", () => {
     outcome: "Ongoing",
   };
 
+  const medicationFormData2 = {
+    medication: "Tylenol",
+    start_date: new Date().toISOString().split("T")[0],
+    end_date: "2025-12-31",
+    outcome: "Ongoing",
+  };
+
   const dispensingFormData = {
     medication: "Amoxicillin",
     rx: "RX12345",
@@ -755,6 +806,11 @@ describe("PatientServices.patient dispensings", () => {
     await PatientServices.create_medication(
       createdPatientId,
       medicationFormData,
+    );
+
+    await PatientServices.create_medication(
+      createdPatientId,
+      medicationFormData2,
     );
   });
 
@@ -827,6 +883,7 @@ describe("PatientServices.patient dispensings", () => {
       createdPatientId,
       createdDispensingId,
       {
+        medication: "Tylenol",
         quantity: "30",
       },
     );

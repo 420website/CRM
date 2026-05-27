@@ -16,7 +16,7 @@ export function SuccessfullyVerified() {
 
       <button
         type="button"
-        onClick={() => navigate("/admin-pin")}
+        onClick={() => navigate("/crm/login")}
         className="w-full py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-black hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-black"
       >
         Go to Login
@@ -115,7 +115,7 @@ export default function VerifyEmail() {
   }, []);
 
   return (
-    <div className="lg:h-[calc(100vh-400px)] bg-gray-50 flex flex-col justify-center mx-4 my-12">
+    <div className="flex-grow lg:h-[calc(100vh-400px)] bg-gray-50 flex flex-col justify-center mx-4 my-12">
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
         <div className="auth-header">
           {result ? <SuccessfullyVerified /> : <UnsuccessfullyVerified />}

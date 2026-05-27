@@ -1,6 +1,6 @@
 from typing import Optional
 from app.webpage.schema import ContactMessageCreate, RegistrationMessageCreate
-from app.database import database
+from app.common.storage.postgres import database
 
 
 class ContactService:

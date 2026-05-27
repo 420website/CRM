@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>New Registration</title>
+</head>
+<body style="font-family: Arial, sans-serif; line-height: 1.5; color: #333;">
+  <h2 style="color:#2c3e50;">New Registration Completed</h2>
+
+  <p><strong>Registration Details:</strong></p>
+  <ul>
+    <li><strong>Registration Date:</strong> {{REG_DATE}}</li>
+    <li><strong>Status:</strong> Completed</li>
+    <li><strong>Finalized At:</strong> {{FINALIZED_AT}}</li>
+  </ul>
+
+  <h3 style="color:#2c3e50;">Patient Information</h3>
+  <ul>
+    <li><strong>Name:</strong> {{FIRST_NAME}} {{LAST_NAME}}</li>
+    <li><strong>Date of Birth:</strong> {{DOB}}</li>
+    <li><strong>Age:</strong> {{AGE}}</li>
+    <li><strong>Gender:</strong> {{GENDER}}</li>
+    <li><strong>Health Card:</strong> {{HEALTH_CARD}}</li>
+    <li><strong>Version:</strong> {{HEALTH_CARD_VERSION}}</li>
+  </ul>
+
+  <h3 style="color:#2c3e50;">Contact Information</h3>
+  <ul>
+    <li><strong>Phone 1:</strong> {{PHONE1}}</li>
+    <li><strong>Phone 2:</strong> {{PHONE2}}</li>
+    <li><strong>Email:</strong> {{EMAIL}}</li>
+    <li><strong>Address:</strong> {{ADDRESS}}</li>
+    <li><strong>City:</strong> {{CITY}}</li>
+    <li><strong>Province:</strong> {{PROVINCE}}</li>
+    <li><strong>Postal Code:</strong> {{POSTAL_CODE}}</li>
+  </ul>
+
+  <h3 style="color:#2c3e50;">Other Information</h3>
+  <ul>
+    <li><strong>Patient Consent:</strong> {{PATIENT_CONSENT}}</li>
+    <li><strong>Disposition:</strong> {{DISPOSITION}}</li>
+    <li><strong>Referral Site:</strong> {{REFERRAL_SITE}}</li>
+    <li><strong>Physician:</strong> {{PHYSICIAN}}</li>
+    <li><strong>Language:</strong> {{LANGUAGE}}</li>
+  </ul>
+
+  <h3 style="color:#2c3e50;">Additional Notes</h3>
+  <ul>
+    <li><strong>Special Attention:</strong> {{SPECIAL_ATTENTION}}</li>
+    <li><strong>Instructions:</strong> {{INSTRUCTIONS}}</li>
+    <li><strong>Clinical Summary:</strong> {{SUMMARY_TEMPLATE}}</li>
+  </ul>
+
+  <hr>
+  <p style="font-size: 12px; color: #777;">
+      This registration was finalized through {{SUPPORT_EMAIL}}.<br>
+    If you have any questions, please reply directly to this email.
+  </p>
+</body>
+</html>

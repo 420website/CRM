@@ -1,0 +1,294 @@
+# Frontend
+x-frontend-base: &frontend_base 
+    build: 
+      context: ./frontend
+      dockerfile: Dockerfile.test
+    networks:
+      - frontend-net
+
+services:
+  postgres_test:
+    image: postgres:16
+    restart: unless-stopped
+    volumes:
+      - postgres_test_data:/var/lib/postgresql/data
+    environment:
+      POSTGRES_USER: root
+      POSTGRES_PASSWORD: example
+      POSTGRES_DB: appdb
+    networks:
+      - backend-net
+      - db-net
+    profiles:
+      - test
+      - database
+      - test_backend_integration_watch
+      - test_frontend_integration_watch
+      - test_e2e_watch
+
+  dbmate_dev:
+    image: amacneil/dbmate
+    depends_on:
+      - postgres_test
+    environment:
+      - DATABASE_URL=postgres://root:example@postgres_test:5432/appdb?sslmode=disable
+    volumes:
+      - ./db/migrations:/db/migrations
+    networks:
+      - db-net
+    profiles:
+      - test
+      - database
+      - test_backend_integration_watch
+      - test_frontend_integration_watch
+      - test_e2e_watch
+    command: ["--wait","up"]
+
+  redis:
+    image: redis:7
+    container_name: redis-test
+    restart: unless-stopped
+    volumes: 
+      - redis_data:/data
+    networks: 
+      - backend-net
+    environment: 
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: password
+    command: sh -c 'redis-server --requirepass password'
+    profiles:
+      - test
+      - database
+      - test_backend_integration_watch
+      - test_frontend_integration_watch
+      - test_e2e_watch
+
+  minio:
+    image: minio/minio:latest
+    container_name: minio
+    restart: unless-stopped
+    ports:
+      - "9000:9000"   # API & SDK access
+      - "9001:9001"   # Web console
+    environment:
+      MINIO_ROOT_USER: testuser
+      MINIO_ROOT_PASSWORD: password
+      MINIO_SERVER_URL: http://minio:9000
+    volumes:
+      - minio_data:/data
+    networks:
+      - backend-net
+      - db-net
+    profiles:
+      - test
+      - database
+      - test_backend_integration_watch
+      - test_frontend_integration_watch
+      - test_e2e_watch
+    command: server /data --console-address ":9001" --address ":9000"
+
+  minio_init:
+    image: minio/mc:latest
+    depends_on:
+      - minio
+    entrypoint: >
+      /bin/sh -c "
+      sleep 5 &&
+      mc alias set local http://minio:9000 testuser password --api S3v4 
+      "
+    networks:
+      - backend-net
+      - db-net
+    profiles:
+      - test
+      - database
+      - test_backend_integration_watch
+      - test_frontend_integration_watch
+      - test_e2e_watch
+
+  mongodb:
+    image: mongodb/mongodb-community-server:latest
+    container_name: mongodb
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+    profiles:
+      - test
+      - database
+      - test_backend_integration_watch
+      - test_frontend_integration_watch
+      - test_e2e_watch
+    environment:
+      MONGODB_INITDB_ROOT_USERNAME: root
+      MONGODB_INITDB_ROOT_PASSWORD: example
+    networks:
+      - backend-net
+
+  backend_dummy: 
+    build: 
+      context: ./backend
+      dockerfile : Dockerfile.test
+    env_file: 
+    - path: .env
+      required: false
+    environment:
+      - JWT_ALGORITHM=HS256
+      - JWT_ACCESS_SECRET=STUFRZH-MKLFj4j-6c9Z50WNWkvd9uqiWQJOpeCtI9Q
+      - MFA_ENCRYPTION_KEY=7CrUl1rG4NBNk4bSV2uU7RW79Z_dRdvrrZn3Eqgytqg=
+      - ALLOWED_ORIGINS=http://localhost:3000
+      - APP_NAME=dummy
+      - APP_URL=http://localhost:5174 
+      - DEBUG=True
+      - ENVIRONMENT=dev
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-sk-ant-dummy-key-for-testing}
+      - SUPPORT_EMAIL=email@exmaple.com
+      - ENVIRONMENT=Testing
+      - SMTP_EMAIL=email@exmaple.com
+      - SMTP_PASSWORD=password
+      - SMTP_SERVER=mail.privateemail.com
+      - POSTGRES_HOST=postgres_test
+      - POSTGRES_PORT=5432
+      - POSTGRES_DB=appdb 
+      - POSTGRES_USER=root 
+      - POSTGRES_PASSWORD=example
+      - POSTGRES_URL=postgres://root:example@postgres_test:5432/appdb
+      - MONGODB_URL=mongodb://root:example@mongodb:27017
+      - MONGODB_NAME=my420_ca_db
+      - MINIO_SERVER_URL=http://minio:9000
+      - MINIO_ROOT_USER=testuser
+      - MINIO_ROOT_PASSWORD=password
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - REDIS_PASSWORD=password
+    volumes:
+      - ./scripts/wait-for-db.sh:/scripts/wait-for-db.sh
+      - ./backend:/backend 
+      - dummy-logs:/logs
+    profiles:
+      - backend
+      - test_frontend_integration_watch
+    networks:
+      - frontend-net 
+      - backend-net 
+    ports:
+      - 8002:8000
+    entrypoint: ["/scripts/wait-for-db.sh"]
+    command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+
+  # caddy:
+  #   image: caddy:2-alpine
+  #   ports:
+  #     - "443:443"
+  #     - "80:80"
+  #   volumes:
+  #     - ./Caddyfile:/etc/caddy/Caddyfile
+  #     - caddy_data:/data
+  #   networks:
+  #     - frontend-net
+  #   profiles:
+  #     - test
+  #     - test_integration
+  #     - test_frontend
+  #     - test_frontend_integration
+  #     - test_frontend_integration_watch
+  #
+  # zoom-client:
+  #   image: node:23-slim
+  #   working_dir: /zoom
+  #   volumes:
+  #     - ./frontend/tests/fixtures/zoom:/zoom
+  #   ports:
+  #     - "5111:5111"
+  #   env_file: 
+  #     - path: .env
+  #       required: false
+  #   profiles:
+  #     - test
+  #     - test_integration
+  #     - test_frontend
+  #     - test_frontend_integration
+  #     - test_frontend_integration_watch
+  #   networks:
+  #     - frontend-net 
+  #     - backend-net 
+  #   command: sh -c "npm install && npm run dev -- --host 0.0.0.0 --port 5111"
+  #
+  # tests
+  frontend_integration_tests: 
+    <<: *frontend_base
+    environment:
+      - BACKEND_URL=http://backend_dummy:8000
+      - VITE_API_BASE_URL=http://backend_dummy:8000
+      - ZOOM_CLIENT_URL=http://zoom-client:5173
+    profiles:
+      - test
+      - test_integration 
+      - test_frontend
+      - test_frontend_integration
+    env_file: 
+      - path: .env
+        required: false
+    ports:
+      - 5174:5173
+    volumes:
+      - ./scripts/wait-for-backend.sh:/scripts/wait-for-backend.sh
+      - ./frontend:/frontend
+      - node_modules:/frontend/node_modules
+    entrypoint: ["/scripts/wait-for-backend.sh"]
+    command: sh -c  "npm run test:zoom"
+  
+ 
+  frontend_integration_tests_watch: 
+    <<: *frontend_base
+    extra_hosts:
+      - "host.docker.internal:172.17.0.1"  # Default Docker bridge gateway
+      - "caddy:172.17.0.1"
+    environment:
+      - BACKEND_URL=http://backend_dummy:8000
+      - VITE_API_BASE_URL=http://backend_dummy:8000
+      - ZOOM_CLIENT_URL=https://host.docker.internal:5173
+      - TZ=America/Toronto
+    env_file: 
+      - path: .env
+        required: false
+    profiles:
+      - test_frontend_integration_watch
+    ports:
+      - 5174:5173
+    volumes:
+      - ./scripts/wait-for-backend.sh:/scripts/wait-for-backend.sh
+      - ./frontend:/frontend
+      - node_modules:/frontend/node_modules
+    entrypoint: ["/scripts/wait-for-backend.sh"]
+    command: > 
+       sh -c "npx playwright install chromium --with-deps &&
+              while true; do
+                npm run test:zoom
+                inotifywait -e modify,create,delete -r /frontend/src /frontend/tests;
+              done"
+
+volumes:
+  mongo_data:
+  postgres_test_data:
+  node_modules:
+  minio_data:
+  redis_data:
+  backend-logs:
+  dummy-logs:
+  caddy_data:
+
+networks:
+  frontend-net:
+    driver: bridge
+ 
+  db-net:
+    driver: bridge
+
+  backend-net:
+    driver: bridge
+
+
+

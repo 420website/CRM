@@ -6,12 +6,13 @@ import { useAuth } from "../../context/AuthContext";
 import { Link, Navigate, useLocation, useNavigate } from "react-router-dom";
 import { Eye, EyeOff } from "lucide-react";
 
+// <div className="lg:h-[calc(100vh-400px)] bg-gray-50 flex flex-col justify-center m-4">
 function InsertPin({ handleSubmit, formData, handleChange, error, loading }) {
   const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
 
   return (
-    <div className="lg:h-[calc(100vh-400px)] bg-gray-50 flex flex-col justify-center m-4">
+    <div className="flex-grow lg:h-[calc(100vh-400px)] bg-gray-50 flex flex-col justify-center m-4">
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
         <div className="bg-white py-8 px-4 shadow rounded-lg sm:px-10">
           <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
@@ -60,13 +61,14 @@ function InsertPin({ handleSubmit, formData, handleChange, error, loading }) {
                   required
                   value={formData.password}
                   onChange={handleChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black resize-y appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-black focus:border-black focus:z-10  text-left  tracking-widest text-sm"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black resize-y appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-black focus:border-black focus:z-10  text-left  tracking-widest text-sm pr-10"
                   placeholder="Enter your password"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword((prev) => !prev)}
-                  className="absolute inset-y-0 right-0 px-3 flex items-center text-gray-500 hover:text-gray-700 focus:outline-none"
+                  onMouseDown={(e) => e.preventDefault()}
+                  className="absolute inset-y-0 right-0 px-3 flex items-center text-gray-500 hover:text-gray-700 focus:outline-none z-10"
                 >
                   {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                 </button>
@@ -79,7 +81,7 @@ function InsertPin({ handleSubmit, formData, handleChange, error, loading }) {
                   If you did not receive a verification email, please check your
                   spam folder or{" "}
                   <Link
-                    to="/verify-email"
+                    to="/crm/verify-email"
                     className="text-blue-600 hover:underline font-medium"
                   >
                     resend it here
@@ -161,7 +163,7 @@ const AdminPIN = () => {
   };
 
   if (isAuthenticated) {
-    return <Navigate to="/admin-menu" state={{ from: location }} replace />;
+    return <Navigate to="/crm/menu" state={{ from: location }} replace />;
   }
 
   if (showTwoFactor) {

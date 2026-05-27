@@ -2,12 +2,18 @@ import { useState } from "react";
 import { HealthServices } from "../../services/healthService";
 import { compressImageToBlob } from "../../utils/compressImage";
 import toast from "react-hot-toast";
+import { Trash } from "lucide-react";
+import { Image } from "lucide-react";
+import { ImageOff } from "lucide-react";
+import ConfirmModal from "./ConfirmModal";
 
 export default function Intake({ submitStatus, setPhotoData }) {
   const [error, setError] = useState(null);
   const [selectedFileName, setSelectedFileName] = useState("");
   const [systemTestStatus, setSystemTestStatus] = useState(null);
   const [photoPreview, setPhotoPreview] = useState(null);
+  const [showingPhoto, setShowingPhoto] = useState(false);
+  const [showConfirm, setShowConfirm] = useState("");
 
   // Not really neccessary, backend should always be functioning
   const testPhotoUploadSystem = async () => {
@@ -88,6 +94,23 @@ export default function Intake({ submitStatus, setPhotoData }) {
 
   return (
     <div className="mb-0">
+      {showConfirm === "delete" && (
+        <ConfirmModal
+          message={"Confirm to delete photo"}
+          subMessage={"This action cannot be undone"}
+          confirm={removePhoto}
+          setShowConfirm={setShowConfirm}
+        />
+      )}
+
+      {showConfirm === "upload" && (
+        <ConfirmModal
+          message={"Confirm to upload photo"}
+          subMessage={"This will delete the current photo"}
+          confirm={() => document.getElementById("photo-upload").click()}
+          setShowConfirm={setShowConfirm}
+        />
+      )}
       {submitStatus?.type === "error" && (
         <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-md">
           <p className="text-red-800">{submitStatus.message}</p>
@@ -194,51 +217,56 @@ export default function Intake({ submitStatus, setPhotoData }) {
 
       <div id="intake" className="space-y-6">
         {/* Photo Upload Section */}
-        <div className="border-b border-gray-200 pb-6">
-          <h2 className="text-lg font-medium text-gray-900 mb-4">
-            Client Photo
-          </h2>
-          <div className="space-y-4">
-            <div>
-              {/* Upload Option */}
-              <div className="mb-4">
-                <div>
-                  <div className="flex items-center gap-3">
+        <div className="border-b border-gray-200 pb-2 flex flex-col">
+          <div className="flex gap-4 items-center">
+            <h2 className="text-lg font-medium text-gray-900">
+              Client Profile
+            </h2>
+            <div className="flex items-center gap-4">
+              <div className="flex gap-2 items-center">
+                <input
+                  type="file"
+                  id="photo-upload"
+                  accept="image/*"
+                  onChange={handlePhotoChange}
+                  className="hidden"
+                />
+                {photoPreview ? (
+                  showingPhoto ? (
                     <button
                       type="button"
-                      className="bg-black text-white text-sm font-semibold py-2 px-4 rounded-md hover:bg-gray-800"
-                      onClick={() =>
-                        document.getElementById("photo-upload").click()
-                      }
+                      onClick={() => setShowingPhoto(false)}
                     >
-                      Upload Photo
+                      <ImageOff className="w-3 h-4" />
                     </button>
-
-                    <span className="text-sm text-gray-600 truncate max-w-[200px]">
-                      {selectedFileName || "No file chosen"}
-                    </span>
-
-                    <input
-                      type="file"
-                      id="photo-upload"
-                      accept="image/*"
-                      onChange={handlePhotoChange}
-                      className="hidden"
-                    />
-                  </div>
-                </div>
+                  ) : (
+                    <button type="button" onClick={() => setShowingPhoto(true)}>
+                      <Image className="w-3 h-4" />
+                    </button>
+                  )
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() =>
+                      document.getElementById("photo-upload").click()
+                    }
+                  >
+                    <Image className="w-3 h-4" />
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={() => photoPreview && setShowConfirm("delete")}
+                >
+                  <Trash className="w-3 h-4" />
+                </button>
               </div>
-              <p className="mt-2 text-sm text-gray-500">
-                Photos are optimized to ~800KB while maintaining high quality.
-                Supported formats: JPG, PNG, GIF.
-              </p>
             </div>
+          </div>
 
-            {photoPreview && (
-              <div className="mt-4">
-                <h3 className="text-sm font-medium text-gray-900 mb-2">
-                  Photo Preview
-                </h3>
+          {photoPreview && showingPhoto && (
+            <div className="mt-2 mb-0">
+              <button type="button" onClick={() => setShowConfirm("upload")}>
                 <div className="w-48 h-48 border-2 border-gray-300 rounded-lg overflow-hidden">
                   <img
                     src={photoPreview}
@@ -246,16 +274,9 @@ export default function Intake({ submitStatus, setPhotoData }) {
                     className="w-full h-full object-cover"
                   />
                 </div>
-                <button
-                  type="button"
-                  onClick={removePhoto}
-                  className="mt-2 text-red-600 hover:text-red-800 text-sm font-medium"
-                >
-                  Remove Photo
-                </button>
-              </div>
-            )}
-          </div>
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </div>

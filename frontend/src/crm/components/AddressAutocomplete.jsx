@@ -28,6 +28,7 @@ const AddressAutocomplete = ({ onPlaceSelected }) => {
       // Create the autocomplete element
       const placeAutocomplete =
         new google.maps.places.PlaceAutocompleteElement();
+      placeAutocomplete.includedRegionCodes = ["CA"];
       placeAutocomplete.background;
       containerRef.current.appendChild(placeAutocomplete);
 

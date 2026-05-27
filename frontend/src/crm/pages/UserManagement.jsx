@@ -5,6 +5,25 @@ import PasswordInput from "../ui/PasswordInput";
 import ConfirmModal from "../components/ConfirmModal";
 import { useUsers } from "../../context/UserContext";
 import toast from "react-hot-toast";
+import ProvinceDropdown from "../components/ProvinceDropdown";
+import MultiSelectWithTags from "../components/MultiSelectWithTags";
+
+const provinceMap = [
+  "All",
+  "Alberta",
+  "British Columbia",
+  "Manitoba",
+  "Nova Scotia",
+  "New Brunswick",
+  "Newfoundland and Labrador",
+  "Northwest Territories",
+  "Nunavut",
+  "Ontario",
+  "Prince Edward Island",
+  "Quebec",
+  "Saskatchewan",
+  "Yukon",
+];
 
 function EditUser({
   editingUser,
@@ -15,6 +34,9 @@ function EditUser({
   loading,
   handlePermissionChange,
   resetForm,
+  handleLocationAdd,
+  handleLocationRemove,
+  handleProvinceChange,
 }) {
   return (
     <div className="bg-white rounded-lg shadow-md p-6 mb-6">
@@ -24,56 +46,56 @@ function EditUser({
 
       <form onSubmit={editingUser ? handleUpdateUser : handleAddUser}>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-          <div>
+          <div id="firstName" className="scroll-mt-[60px]">
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              First Name *
+              First Name <span className="text-red-500">*</span>
             </label>
             <input
               type="text"
               name="first_name"
               value={formData.first_name}
               onChange={handleInputChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-black"
               style={{ height: "40px" }}
-              required
+              // required
             />
           </div>
 
-          <div>
+          <div id="lastName" className="scroll-mt-[60px]">
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Last Name *
+              Last Name <span className="text-red-500">*</span>
             </label>
             <input
               type="text"
               name="last_name"
               value={formData.last_name}
               onChange={handleInputChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-black"
               style={{ height: "40px" }}
-              required
+              // required
             />
           </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-          <div>
+          <div id="email" className="scroll-mt-[60px]">
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Email Address *
+              Email Address <span className="text-red-500">*</span>
             </label>
             <input
               type="email"
               name="email"
               value={formData.email}
               onChange={handleInputChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-black"
               style={{ height: "40px" }}
-              required
+              // required
             />
           </div>
 
-          <div>
+          <div id="phone" className="scroll-mt-[60px]">
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Phone Number *
+              Phone Number <span className="text-red-500">*</span>
             </label>
             <input
               type="tel"
@@ -81,9 +103,9 @@ function EditUser({
               value={formData.phone_number}
               onChange={handleInputChange}
               placeholder="(XXX) XXX-XXXX"
-              className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-black"
               style={{ height: "40px" }}
-              required
+              // required
             />
           </div>
         </div>
@@ -94,12 +116,30 @@ function EditUser({
           required={editingUser ? false : true}
         />
 
+        <div className="mb-4">
+          <ProvinceDropdown
+            value={formData.province}
+            handleChange={handleProvinceChange}
+          />
+        </div>
+
+        <div id="locationPermissions" className="mb-4 scroll-mt-[60px]">
+          <MultiSelectWithTags
+            options={provinceMap}
+            values={formData.location_permissions}
+            handleRemove={handleLocationRemove}
+            handleAdd={handleLocationAdd}
+            placeholder="Select"
+            header="Location Permissions "
+          />
+        </div>
+
         {/* Role Selection Section */}
-        <div className="mb-6">
+        <div id="role" className="mb-6 scroll-mt-[60px]">
           <label className="block text-sm font-medium text-gray-700 mb-3">
-            User Role
+            User Role <span className="text-red-500">*</span>
           </label>
-          <div class="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-2 gap-4">
             {["admin", "standard", "guest", "limited"].map((roleOption) => (
               <div key={roleOption} className="flex items-center">
                 <input
@@ -134,7 +174,7 @@ function EditUser({
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             {[
               "Client",
-              "Tests",
+              "Assessments",
               "Medication",
               "Dispensing",
               "Notes",
@@ -241,10 +281,22 @@ function UserList({ handleEditUser, handleDeleteUser }) {
                           <strong>Phone:</strong> {user.phone_number}
                         </p>
                         <p>
+                          <strong>Location:</strong> {user.province}
+                        </p>
+                        <p>
                           <strong>Tab Access:</strong>{" "}
                           {Array.isArray(user.permissions) &&
                           user.permissions.length > 0
                             ? user.permissions
+                                .map((tab) => capitalizeFirstLetter(tab))
+                                .join(", ")
+                            : "No access"}
+                        </p>
+                        <p>
+                          <strong>Location Access:</strong>{" "}
+                          {Array.isArray(user.location_permissions) &&
+                          user.location_permissions.length > 0
+                            ? user.location_permissions
                                 .map((tab) => capitalizeFirstLetter(tab))
                                 .join(", ")
                             : "No access"}
@@ -299,6 +351,8 @@ const UserManagement = () => {
     password: "",
     role: "",
     permissions: [],
+    province: "",
+    location_permissions: [],
   });
 
   const resetForm = () => {
@@ -310,6 +364,8 @@ const UserManagement = () => {
       password: "",
       role: "",
       permissions: [],
+      province: "",
+      location_permissions: [],
     });
     setEditingUser(null);
     setShowAddUser(false);
@@ -318,30 +374,65 @@ const UserManagement = () => {
   const validateAddForm = () => {
     if (!formData.first_name) {
       toast.error("First Name required");
+      document
+        .querySelector("#firstName")
+        ?.scrollIntoView({ behavior: "smooth" });
       return false;
     }
 
     if (!formData.last_name) {
       toast.error("Last Name required");
+      document
+        .querySelector("#lastName")
+        ?.scrollIntoView({ behavior: "smooth" });
       return false;
     }
 
     if (!formData.email) {
-      toast.error("Please fill in all required fields");
+      toast.error("Email required");
+      document.querySelector("#email")?.scrollIntoView({ behavior: "smooth" });
       return false;
     }
 
     if (!formData.phone_number) {
       toast.error("Phone number required");
+      document.querySelector("#phone")?.scrollIntoView({ behavior: "smooth" });
       return false;
     }
 
-    if (!formData.password) {
-      toast.error("Password required");
+    if (!editingUser) {
+      if (!formData.password) {
+        toast.error("Password required");
+        document
+          .querySelector("#password")
+          ?.scrollIntoView({ behavior: "smooth" });
+        return false;
+      }
+    }
+
+    if (!formData.province) {
+      toast.error("Province is required");
+      document
+        .querySelector("#province")
+        ?.scrollIntoView({ behavior: "smooth" });
       return false;
     }
+
+    if (
+      formData.location_permissions.length === 0 ||
+      (!formData.location_permissions.includes("All") &&
+        !formData.location_permissions.includes(formData.province))
+    ) {
+      toast.error("User must have access to their location");
+      document
+        .querySelector("#locationPermissions")
+        ?.scrollIntoView({ behavior: "smooth" });
+      return false;
+    }
+
     if (!formData.role) {
       toast.error("Role required");
+      document.querySelector("#role")?.scrollIntoView({ behavior: "smooth" });
       return false;
     }
 
@@ -351,21 +442,55 @@ const UserManagement = () => {
   const validateEditForm = () => {
     if (!formData.first_name) {
       toast.error("First Name required");
+      document
+        .querySelector("#firstName")
+        ?.scrollIntoView({ behavior: "smooth" });
       return false;
     }
 
     if (!formData.last_name) {
       toast.error("Last Name required");
+      document
+        .querySelector("#lastName")
+        ?.scrollIntoView({ behavior: "smooth" });
       return false;
     }
 
     if (!formData.email) {
-      toast.error("Please fill in all required fields");
+      toast.error("Email required");
+      document.querySelector("#email")?.scrollIntoView({ behavior: "smooth" });
       return false;
     }
 
     if (!formData.phone_number) {
       toast.error("Phone number required");
+      document.querySelector("#phone")?.scrollIntoView({ behavior: "smooth" });
+      return false;
+    }
+
+    if (!formData.province) {
+      toast.error("Province is required");
+      document
+        .querySelector("#province")
+        ?.scrollIntoView({ behavior: "smooth" });
+      return false;
+    }
+
+    if (
+      formData.location_permissions.length === 0 ||
+      (!formData.location_permissions.includes("All") &&
+        !formData.location_permissions.includes(formData.province))
+    ) {
+      toast.error("User must have access to their location");
+      document
+        .querySelector("#locationPermissions")
+        ?.scrollIntoView({ behavior: "smooth" });
+      return false;
+    }
+
+    if (!formData.role) {
+      toast.error("Role required");
+      document.querySelector("#role")?.scrollIntoView({ behavior: "smooth" });
       return false;
     }
 
@@ -454,6 +579,8 @@ const UserManagement = () => {
       password: "",
       role: user.role,
       permissions: user.permissions || [],
+      province: user.province || "",
+      location_permissions: user.location_permissions || [],
     });
     setEditingUser(user);
     setUser(user);
@@ -484,8 +611,45 @@ const UserManagement = () => {
     });
   };
 
+  const handleLocationRemove = (v) => {
+    setFormData((prev) => {
+      return {
+        ...prev,
+        location_permissions: prev.location_permissions.filter((p) => p !== v),
+      };
+    });
+  };
+
+  const handleLocationAdd = (v) => {
+    setFormData((prev) => {
+      if (!prev.location_permissions.includes(v)) {
+        return {
+          ...prev,
+          location_permissions: [...prev.location_permissions, v],
+        };
+      } else {
+        return { ...prev };
+      }
+    });
+  };
+
+  const handleProvinceChange = (e) => {
+    const { name, value } = e.target;
+    const oldProvince = formData.province;
+
+    setFormData((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+
+    if (value !== "") {
+      handleLocationAdd(value);
+    }
+    handleLocationRemove(oldProvince);
+  };
+
   const goBack = () => {
-    navigate("/admin-menu");
+    navigate("/crm/menu");
   };
 
   return (
@@ -558,6 +722,9 @@ const UserManagement = () => {
             formData={formData}
             loading={loading}
             resetForm={resetForm}
+            handleLocationAdd={handleLocationAdd}
+            handleLocationRemove={handleLocationRemove}
+            handleProvinceChange={handleProvinceChange}
           />
         )}
 

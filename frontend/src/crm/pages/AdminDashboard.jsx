@@ -1,68 +1,88 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { PatientServices } from "../../services/patientServices";
 import PaginationControls from "../ui/PaginationControls";
 import { RegistrationItems } from "../ui/RegistrationItem";
 import { ActivityItems } from "../ui/ActivityItem";
 import { useAuth } from "../../context/AuthContext";
 import ConfirmModal from "../components/ConfirmModal";
-import { useRegistration } from "../../context/RegistrationContext";
-import toast from "react-hot-toast";
 import DatePicker from "../ui/DatePicker";
+import { useDashboard } from "../../context/DashboardContext";
+import { useReferences } from "../../context/ReferenceContext";
+import MonthPicker from "../ui/MonthPicker";
+import { ChevronRight, ChevronLeft } from "lucide-react";
+import ProvinceDropdown from "../components/ProvinceDropdown";
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
-  const { logout, userRole } = useAuth();
+  const { logout, userRole, userPermissions } = useAuth();
   const {
-    referralSites,
-    dispositions,
-    pendingData,
-    finalizedData,
-    activityData,
-    getRegistrations,
+    filtering,
+    clearAllFilters,
+    setActiveTab,
+    activeTab,
+    dashboardStats,
+    totalRegistrations,
+    clearRegistrationFilters,
+    clearActivityFilters,
+    searchDate,
+    searchEndDate,
+    handleMonthSearch,
+    handleEndDateSearch,
+    searchMonth,
+    searchName,
+    searchDisposition,
+    searchReferralSite,
+    activityStatusFilter,
+    activitySearchTerm,
+    handleDateSearch,
+    handleNameSearch,
+    handleDispositionSearch,
+    handleReferralSiteSearch,
+    handleActivityTermSearch,
+    handleActivityStatusSearch,
     getDashboardActivities,
-  } = useRegistration();
+    getDashboardRegistrations,
+    deleteRegistration,
+    saveRegistration,
+    revertToPending,
+    finalizeRegistration,
+    filteredActivity,
+    filteredSubmitted,
+    filteredPending,
+    deleteActivity,
+    searchProvince,
+    handleProvinceSearch,
+  } = useDashboard();
+  const { options } = useReferences();
 
   // Core state
-  const [activeTab, setActiveTab] = useState(
-    userRole !== "limited" ? "activities" : "submitted",
-  );
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalRecords, setTotalRecords] = useState(0);
 
-  // Search and filter state
-  const [searchName, setSearchName] = useState("");
-  const [searchDate, setSearchDate] = useState("");
-  const [searchDisposition, setSearchDisposition] = useState("");
-  const [searchReferralSite, setSearchReferralSite] = useState("");
-  const [activitySearchTerm, setActivitySearchTerm] = useState("");
-  const [activityStatusFilter, setActivityStatusFilter] = useState("all");
-
-  // Action states
-  const [finalizingId, setFinalizingId] = useState(null);
-  const [deletingId, setDeletingId] = useState(null);
-  const [revertingId, setRevertingId] = useState(null);
-
-  // Confirmation
+  // Actions
   const [deleteRegistrationId, setDeleteRegistrationId] = useState(null);
+  const [deleteActivityId, setDeleteActivityId] = useState(null);
   const [finalizeRegistrationId, setFinalizeRegistrationId] = useState(null);
   const [revertRegistrationId, setRevertRegistrationId] = useState(null);
   const [saveRegistrationId, setSaveRegistrationId] = useState(null);
-
   const [showConfirm, setShowConfirm] = useState("");
 
-  // Data state - now paginated
-  const [currentData, setCurrentData] = useState([]);
-  const [dashboardStats, setDashboardStats] = useState({
-    pending_registrations: 0,
-    submitted_registrations: 0,
-    total_activities: 0,
-  });
+  let currentData =
+    activeTab === "activities"
+      ? filteredActivity
+      : activeTab === "pending"
+        ? filteredPending
+        : filteredSubmitted;
+
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
 
   const handleLogout = async () => {
     try {
@@ -72,33 +92,30 @@ const AdminDashboard = () => {
     }
   };
 
-  const setDisplayed = () => {
-    if (activeTab === "activities") {
-      setCurrentData(activityData);
-    } else if (activeTab === "pending") {
-      setCurrentData(pendingData);
-    } else {
-      setCurrentData(finalizedData);
-    }
+  const handleDelete = async (id) => {
+    setDeleteRegistrationId(id);
+    setShowConfirm("delete");
   };
 
-  useEffect(() => {
-    window.scrollTo(0, 0);
-  }, []);
+  const handleDeleteActivity = async (patient_id, activity_id) => {
+    setDeleteActivityId([patient_id, activity_id]);
+    setShowConfirm("deleteActivity");
+  };
 
-  useEffect(() => {
-    setDashboardStats({
-      pending_registrations: pendingData.length,
-      submitted_registrations: finalizedData.length,
-      total_activities: activityData.length,
-    });
-    setDisplayed();
-  }, [activityData, pendingData, finalizedData]);
+  const handleFinalize = async (id) => {
+    setFinalizeRegistrationId(id);
+    setShowConfirm("finalize");
+  };
 
-  useEffect(() => {
-    setCurrentPage(1);
-    setDisplayed();
-  }, [activeTab]);
+  const handleSave = async (id) => {
+    setSaveRegistrationId(id);
+    setShowConfirm("save");
+  };
+
+  const handleRevertToPending = async (id) => {
+    setRevertRegistrationId(id);
+    setShowConfirm("revert");
+  };
 
   // Handle search changes with debouncing
   useEffect(() => {
@@ -124,271 +141,49 @@ const AdminDashboard = () => {
   };
 
   const handle_refresh = async () => {
-    getDashboardActivities();
-    getRegistrations();
+    setIsRefreshing(true);
+
+    // Run data fetches and minimum delay in parallel
+    await Promise.all([
+      getDashboardActivities(),
+      getDashboardRegistrations(),
+      new Promise((resolve) => setTimeout(resolve, 500)), // 500ms minimum
+    ]);
+
+    setIsRefreshing(false);
   };
 
-  // Optimized search handlers
-  const handleNameSearch = (value) => {
-    setSearchName(value);
-  };
+  const checkArrows = () => {
+    const container = document.getElementById("tabs-container");
+    const leftArrow = document.getElementById("scroll-left");
+    const rightArrow = document.getElementById("scroll-right");
 
-  const handleDateSearch = (value) => {
-    setSearchDate(value);
-  };
+    if (!container || !leftArrow || !rightArrow) return;
 
-  const handleDispositionSearch = (value) => {
-    setSearchDisposition(value);
-  };
-
-  const handleReferralSiteSearch = (value) => {
-    setSearchReferralSite(value);
-  };
-
-  const clearAllFilters = () => {
-    setSearchName("");
-    setSearchDate("");
-    setSearchDisposition("");
-    setSearchReferralSite("");
-    setActivitySearchTerm("");
-    setActivityStatusFilter("all");
-  };
-
-  const deleteRegistration = async () => {
-    const result =
-      await PatientServices.delete_patient_by_id(deleteRegistrationId);
-
-    if (result.success) {
-      getDashboardActivities();
-      getRegistrations();
-      toast.success("Registration deleted successfully");
+    // Check if scrolled to the left
+    if (container.scrollLeft <= 0) {
+      leftArrow.classList.add("hidden");
     } else {
-      if (result.status === 400 || result.status === 409) {
-        toast.error(result.message || "Error deleting patient.");
-      } else {
-        toast.error("Error deleting patient. Please try again.");
-      }
+      leftArrow.classList.remove("hidden");
     }
-  };
 
-  const handleDelete = async (id) => {
-    setDeleteRegistrationId(id);
-    setShowConfirm("delete");
-  };
-
-  const finalizeRegistration = async () => {
-    setError(null);
-
-    const result = await PatientServices.update_patient_status(
-      finalizeRegistrationId,
-      {
-        status: "finalized",
-      },
-    );
-
-    if (result.success) {
-      getDashboardActivities();
-      getRegistrations();
-      toast.success("Registration finalized successfully");
+    // Check if scrolled to the right
+    if (
+      container.scrollLeft + container.clientWidth >=
+      container.scrollWidth - 1
+    ) {
+      rightArrow.classList.add("hidden");
     } else {
-      if (result.status === 400 || result.status === 409) {
-        toast.error(result.message || "Error updating patient status.");
-      } else {
-        toast.error("Error updating patient status. Please try again.");
-      }
+      rightArrow.classList.remove("hidden");
     }
   };
 
-  const handleFinalize = async (id) => {
-    setFinalizeRegistrationId(id);
-    setShowConfirm("finalize");
-  };
-
-  const saveRegistration = async () => {
-    setError(null);
-
-    const result = await PatientServices.update_patient_status(
-      saveRegistrationId,
-      {
-        status: "saved",
-      },
-    );
-
-    if (result.success) {
-      getDashboardActivities();
-      getRegistrations();
-      toast.success("Registration saved successfully");
-    } else {
-      if (result.status === 400 || result.status === 409) {
-        toast.error(result.message || "Error updating patient status.");
-      } else {
-        toast.error("Error updating patient status. Please try again.");
-      }
-    }
-  };
-
-  const handleSave = async (id) => {
-    setSaveRegistrationId(id);
-    setShowConfirm("save");
-  };
-
-  const revertToPending = async () => {
-    setError(null);
-
-    const result = await PatientServices.update_patient_status(
-      revertRegistrationId,
-      {
-        status: "pending",
-      },
-    );
-
-    if (result.success) {
-      getDashboardActivities();
-      getRegistrations();
-      toast.success("Registration reverted to pending");
-    } else {
-      if (result.status === 400 || result.status === 409) {
-        toast.error(result.message || "Error updating patient status.");
-      } else {
-        toast.error("Error updating patient status. Please try again.");
-      }
-    }
-  };
-
-  const handleRevertToPending = async (id) => {
-    setRevertRegistrationId(id);
-    setShowConfirm("revert");
-  };
-
-  // Compute filtered data based on active tab + filters
-  const getFilteredData = () => {
-    let data = [];
-
-    if (activeTab === "activities") {
-      data = activityData;
-      if (activitySearchTerm) {
-        const terms = activitySearchTerm.toLowerCase().trim().split(/\s+/);
-
-        data = data.filter((item) => {
-          const haystack =
-            `${item.first_name ?? ""} ${item.last_name ?? ""} ${item.description ?? ""}`.toLowerCase();
-          return terms.every((term) => haystack.includes(term));
-        });
-      }
-
-      if (searchDate) {
-        data = data.filter((item) => item.date === searchDate);
-      }
-
-      if (searchDisposition) {
-        data = data.filter(
-          (item) =>
-            (item.disposition || "").toLowerCase() ===
-            searchDisposition.toLowerCase(),
-        );
-      }
-
-      if (searchReferralSite) {
-        data = data.filter(
-          (item) =>
-            (item.referral_site || "").toLowerCase() ===
-            searchReferralSite.toLowerCase(),
-        );
-      }
-
-      if (activityStatusFilter === "completed") {
-        data = data.filter((item) => item.completed === true);
-      } else if (
-        activityStatusFilter === "late" ||
-        activityStatusFilter === "upcoming"
-      ) {
-        data = data.filter((item) => {
-          if (item.completed) return false;
-
-          const itemDateTime = new Date(`${item.date}T${item.time}`);
-          const now = new Date();
-
-          const computedStatus = itemDateTime > now ? "upcoming" : "late";
-          return (
-            computedStatus.toLowerCase() === activityStatusFilter.toLowerCase()
-          );
-        });
-      }
-    } else if (activeTab === "pending") {
-      data = pendingData;
-
-      if (searchName) {
-        data = data.filter((item) =>
-          `${item.first_name} ${item.last_name}`
-            .toLowerCase()
-            .includes(searchName.toLowerCase()),
-        );
-      }
-      if (searchDate) {
-        data = data.filter(
-          (item) =>
-            new Date(item.created_at).toLocaleDateString("en-CA") ===
-            searchDate,
-        );
-      }
-
-      if (searchDisposition) {
-        data = data.filter(
-          (item) =>
-            (item.disposition || "").toLowerCase() ===
-            searchDisposition.toLowerCase(),
-        );
-      }
-      if (searchReferralSite) {
-        data = data.filter(
-          (item) =>
-            (item.referral_site || "").toLowerCase() ===
-            searchReferralSite.toLowerCase(),
-        );
-      }
-    } else if (activeTab === "submitted") {
-      data = finalizedData;
-      if (searchName) {
-        data = data.filter((item) =>
-          `${item.first_name} ${item.last_name}`
-            .toLowerCase()
-            .includes(searchName.toLowerCase()),
-        );
-      }
-      if (searchDate) {
-        data = data.filter(
-          (item) =>
-            new Date(item.created_at).toLocaleDateString("en-CA") ===
-            searchDate,
-        );
-      }
-      if (searchDisposition) {
-        data = data.filter(
-          (item) =>
-            (item.disposition || "").toLowerCase() ===
-            searchDisposition.toLowerCase(),
-        );
-      }
-      if (searchReferralSite) {
-        data = data.filter(
-          (item) =>
-            (item.referral_site || "").toLowerCase() ===
-            searchReferralSite.toLowerCase(),
-        );
-      }
-    }
-
-    return data;
-  };
-
+  // Call on mount to set initial arrow visibility
   useEffect(() => {
-    getDashboardActivities();
-    getRegistrations();
-  }, []);
-
-  const goBack = () => {
-    navigate("/");
-  };
+    if (filtering) {
+      checkArrows();
+    }
+  }, [filtering]);
 
   return (
     <div className="flex-grow flex flex-col bg-gray-50">
@@ -397,7 +192,17 @@ const AdminDashboard = () => {
           <ConfirmModal
             message={"Confirm to delete registration"}
             subMessage={"This action cannot be undone"}
-            confirm={deleteRegistration}
+            confirm={() => deleteRegistration(deleteRegistrationId)}
+            setShowConfirm={setShowConfirm}
+          />
+        )}
+        {showConfirm === "deleteActivity" && (
+          <ConfirmModal
+            message={"Confirm to delete activity"}
+            subMessage={"This action cannot be undone"}
+            confirm={() =>
+              deleteActivity(deleteActivityId[0], deleteActivityId[1])
+            }
             setShowConfirm={setShowConfirm}
           />
         )}
@@ -405,7 +210,7 @@ const AdminDashboard = () => {
           <ConfirmModal
             message={"Confirm save registration"}
             subMessage={"This will save registration without sending an email"}
-            confirm={saveRegistration}
+            confirm={() => saveRegistration(saveRegistrationId)}
             setShowConfirm={setShowConfirm}
           />
         )}
@@ -413,7 +218,7 @@ const AdminDashboard = () => {
           <ConfirmModal
             message={"Confirm finalize registration"}
             subMessage={"This will send the email notification"}
-            confirm={finalizeRegistration}
+            confirm={() => finalizeRegistration(finalizeRegistrationId)}
             setShowConfirm={setShowConfirm}
           />
         )}
@@ -423,7 +228,7 @@ const AdminDashboard = () => {
             subMessage={
               "This will allow you to make edits and resubmit with a new email notification"
             }
-            confirm={revertToPending}
+            confirm={() => revertToPending(revertRegistrationId)}
             setShowConfirm={setShowConfirm}
           />
         )}
@@ -434,7 +239,7 @@ const AdminDashboard = () => {
           </h1>
           <div className="flex gap-2">
             <button
-              onClick={() => navigate("/admin-menu")}
+              onClick={() => navigate("/crm/menu")}
               className="inline-flex items-center gap-1 px-2 py-1 bg-black text-white rounded-md hover:bg-gray-800 transition-colors text-xs font-medium"
             >
               <svg
@@ -453,10 +258,7 @@ const AdminDashboard = () => {
               Admin Menu
             </button>
             <button
-              onClick={() => {
-                sessionStorage.setItem("admin_authenticated", "true");
-                navigate("/admin-register");
-              }}
+              onClick={() => navigate("/crm/register")}
               className="inline-flex items-center gap-1 px-2 py-1 bg-black text-white rounded-md hover:bg-gray-800 transition-colors text-xs font-medium"
             >
               <svg
@@ -475,7 +277,7 @@ const AdminDashboard = () => {
               Register
             </button>
             <button
-              onClick={goBack}
+              onClick={() => navigate("/")}
               className="inline-flex items-center gap-1 px-2 py-1 bg-white text-black border border-black rounded-md hover:bg-gray-100 transition-colors text-xs font-medium"
             >
               <svg
@@ -516,275 +318,308 @@ const AdminDashboard = () => {
         </div>
 
         {/* Main Content */}
-        <div className="flex-grow flex flex-col bg-white rounded-lg shadow-md p-6">
-          {/* Tabs */}
-          <div className="flex border-b mb-6">
-            {userRole !== "limited" && (
-              <>
+        <div className="flex-grow flex flex-col bg-white rounded-lg shadow-md pt-6">
+          {/* Left Arrow */}
+          <div className="flex items-center">
+            {/* Left Arrow - always takes up space */}
+            <div className="flex-shrink-0 w-6 flex justify-end">
+              {filtering && (
                 <button
-                  onClick={() => setActiveTab("activities")}
-                  className={`py-2 px-4 font-medium border-b-2 transition-colors ${
-                    activeTab === "activities"
-                      ? "border-blue-600 text-blue-600"
-                      : "border-transparent text-gray-500 hover:text-gray-700"
-                  }`}
+                  id="scroll-left"
+                  onClick={() => {
+                    const container = document.getElementById("tabs-container");
+                    const scrollAmount = container.offsetWidth * 0.3333; // 33.33% of container width
+                    container.scrollBy({
+                      left: -scrollAmount, // negative to scroll left
+                      behavior: "smooth",
+                    });
+                    setTimeout(checkArrows, 300);
+                  }}
+                  className="hover:bg-gray-100 text-gray-500 hidden"
                 >
-                  Activities (
-                  {activeTab === "activities"
-                    ? getFilteredData().length
-                    : dashboardStats.total_activities}
-                  )
+                  <ChevronLeft />
                 </button>
+              )}
+            </div>
+            {/* Tabs */}
+            <div className="flex-grow overflow-hidden">
+              <div
+                id="tabs-container"
+                className="flex space-x-1 overflow-x-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
+                onScroll={() => checkArrows()}
+              >
+                <div className="flex  mb-6 w-full">
+                  {userRole !== "limited" && (
+                    <>
+                      {userPermissions.includes("activities") && (
+                        <button
+                          onClick={() => setActiveTab("activities")}
+                          className={`py-2 px-4 font-medium border-b-2 flex-shrink-0 transition-colors ${
+                            activeTab === "activities"
+                              ? "border-blue-600 text-blue-600"
+                              : "border-gray-500 text-gray-500 hover:text-gray-700"
+                          }`}
+                          style={{ width: "33.333%" }}
+                        >
+                          Activities (
+                          {activeTab === "activities"
+                            ? filteredActivity.length
+                            : dashboardStats.total_activities}
+                          )
+                        </button>
+                      )}
+                      <button
+                        onClick={() => setActiveTab("pending")}
+                        className={`py-2 px-4 font-medium border-b-2 flex-shrink-0 transition-colors ${
+                          activeTab === "pending"
+                            ? "border-blue-600 text-blue-600"
+                            : "border-gray-500 text-gray-500 hover:text-gray-700"
+                        }`}
+                        style={{ width: "33.333%" }}
+                      >
+                        Pending <br></br> (
+                        {activeTab === "pending"
+                          ? filteredPending.length
+                          : dashboardStats.pending_registrations}
+                        )
+                      </button>
+                    </>
+                  )}
+                  <button
+                    onClick={() => setActiveTab("submitted")}
+                    className={`py-2 px-4 font-medium border-b-2 flex-shrink-0 transition-colors ${
+                      activeTab === "submitted"
+                        ? "border-blue-600 text-blue-600"
+                        : "border-gray-500 text-gray-500 hover:text-gray-700"
+                    }`}
+                    style={{ width: "33.333%" }}
+                  >
+                    Submitted (
+                    {activeTab === "submitted"
+                      ? filteredSubmitted.length
+                      : dashboardStats.submitted_registrations}
+                    )
+                  </button>
+                  {filtering && userRole !== "limited" && (
+                    <div
+                      className="py-2 px-4 font-medium border-b-2 border-gray-500 text-gray-500 hover:text-gray-700 flex-shrink-0 flex flex-col items-center"
+                      style={{ width: "33.333%" }}
+                    >
+                      <div>Total</div>
+                      <div>({totalRegistrations})</div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+            <div className="flex-shrink-0 w-6 flex justify-start">
+              {filtering && (
                 <button
-                  onClick={() => setActiveTab("pending")}
-                  className={`py-2 px-4 font-medium border-b-2 transition-colors ${
-                    activeTab === "pending"
-                      ? "border-blue-600 text-blue-600"
-                      : "border-transparent text-gray-500 hover:text-gray-700"
-                  }`}
+                  id="scroll-right"
+                  onClick={() => {
+                    const container = document.getElementById("tabs-container");
+                    const scrollAmount = container.offsetWidth * 0.3333; // 33% of container width
+                    container.scrollBy({
+                      left: scrollAmount, // negative to scroll left
+                      behavior: "smooth",
+                    });
+                    setTimeout(checkArrows, 300);
+                  }}
+                  className="hover:bg-gray-100 text-gray-500"
                 >
-                  Pending (
-                  {activeTab === "pending"
-                    ? getFilteredData().length
-                    : dashboardStats.pending_registrations}
-                  )
+                  <ChevronRight />
                 </button>
-              </>
-            )}
-            <button
-              onClick={() => setActiveTab("submitted")}
-              className={`py-2 px-4 font-medium border-b-2 transition-colors ${
-                activeTab === "submitted"
-                  ? "border-blue-600 text-blue-600"
-                  : "border-transparent text-gray-500 hover:text-gray-700"
-              }`}
-            >
-              Submitted (
-              {activeTab === "submitted"
-                ? getFilteredData().length
-                : dashboardStats.submitted_registrations}
-              )
-            </button>
+              )}
+            </div>
           </div>
 
           {/* Header */}
-          <div className="flex justify-between items-center mb-4">
-            <div className="flex items-center gap-3">
-              <h2 className="text-xl font-bold text-gray-900">
-                {activeTab === "activities" ? "Activities" : "Registrations"}
-              </h2>
-              {loading && (
-                <span className="text-xs text-blue-600 flex items-center gap-1">
-                  <svg
-                    className="animate-spin h-3 w-3"
-                    xmlns="http://www.w3.org/2000/svg"
-                    fill="none"
-                    viewBox="0 0 24 24"
+          <div className="pl-6 pr-6 pb-6">
+            <div className="flex justify-between items-center mb-4">
+              <div className="flex items-center gap-3">
+                <h2 className="text-xl font-bold text-gray-900">
+                  {activeTab === "activities" ? "Activities" : "Registrations"}
+                </h2>
+                {loading && (
+                  <span className="text-xs text-blue-600 flex items-center gap-1">
+                    <svg
+                      className="animate-spin h-3 w-3"
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                    >
+                      <circle
+                        className="opacity-25"
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        strokeWidth="4"
+                      ></circle>
+                      <path
+                        className="opacity-75"
+                        fill="currentColor"
+                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                      ></path>
+                    </svg>
+                    Loading...
+                  </span>
+                )}
+              </div>
+              <div className="flex gap-2 ">
+                {/* Clear All Filters Button */}
+                {(searchDate ||
+                  searchName ||
+                  searchProvince ||
+                  searchEndDate ||
+                  searchMonth ||
+                  searchDisposition ||
+                  searchReferralSite ||
+                  activitySearchTerm ||
+                  activityStatusFilter !== "all") && (
+                  <button
+                    onClick={clearAllFilters}
+                    className="bg-gray-100 text-gray-700 py-1 px-2 rounded-md hover:bg-gray-200 transition-colors text-sm disabled:opacity-50 flex items-center gap-2"
                   >
-                    <circle
-                      className="opacity-25"
-                      cx="12"
-                      cy="12"
-                      r="10"
+                    Clear
+                  </button>
+                )}
+                <button
+                  onClick={() => handle_refresh()}
+                  // disabled={isRefreshing}
+                  className="bg-gray-100 text-gray-700 py-1 px-2 rounded-md hover:bg-gray-200 transition-colors text-xs disabled:opacity-50 flex items-center gap-2"
+                >
+                  {isRefreshing ? (
+                    <svg
+                      className="h-4 w-4"
+                      style={{ animation: "spin 1s linear infinite reverse" }}
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24"
                       stroke="currentColor"
-                      strokeWidth="4"
-                    ></circle>
-                    <path
-                      className="opacity-75"
-                      fill="currentColor"
-                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                    ></path>
-                  </svg>
-                  Loading...
-                </span>
-              )}
-            </div>
-            <button
-              onClick={() => handle_refresh()}
-              disabled={loading}
-              className="bg-gray-100 text-gray-700 py-1 px-3 rounded-md hover:bg-gray-200 transition-colors text-sm disabled:opacity-50 flex items-center gap-2"
-            >
-              {loading ? (
-                <>
-                  <svg
-                    className="animate-spin h-4 w-4 text-gray-500"
-                    xmlns="http://www.w3.org/2000/svg"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                  >
-                    <circle
-                      className="opacity-25"
-                      cx="12"
-                      cy="12"
-                      r="10"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth="2"
+                        d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                      />
+                    </svg>
+                  ) : (
+                    <svg
+                      className="h-4 w-4"
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24"
                       stroke="currentColor"
-                      strokeWidth="4"
-                    ></circle>
-                    <path
-                      className="opacity-75"
-                      fill="currentColor"
-                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                    ></path>
-                  </svg>
-                  Refreshing...
-                </>
-              ) : (
-                <>
-                  <svg
-                    className="h-4 w-4"
-                    xmlns="http://www.w3.org/2000/svg"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth="2"
-                      d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-                    />
-                  </svg>
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth="2"
+                        d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                      />
+                    </svg>
+                  )}{" "}
                   Refresh
-                </>
-              )}
-            </button>
-          </div>
-
-          {/* Search and Filters - Mobile Responsive */}
-          <div className="mb-6 p-4 bg-gray-50 rounded-lg">
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
-              <div className="min-w-0">
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  {activeTab === "activities"
-                    ? "Search Activities"
-                    : "Search by Name"}
-                </label>
-                <input
-                  type="text"
-                  placeholder={
-                    activeTab === "activities"
-                      ? "Search description or client"
-                      : "e.g. smith, j"
-                  }
-                  value={
-                    activeTab === "activities" ? activitySearchTerm : searchName
-                  }
-                  onChange={(e) =>
-                    activeTab === "activities"
-                      ? setActivitySearchTerm(e.target.value)
-                      : handleNameSearch(e.target.value)
-                  }
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  style={{
-                    height: "40px",
-                    minHeight: "40px",
-                    maxHeight: "40px",
-                  }}
-                />
+                </button>
               </div>
-              <div className="min-w-0">
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Search by Date
-                </label>
-                <DatePicker
-                  name="reg_date"
-                  value={searchDate}
-                  onChange={(e) => handleDateSearch(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  style={{
-                    height: "40px",
-                    minHeight: "40px",
-                    maxHeight: "40px",
-                  }}
-                />
-              </div>
+            </div>
 
-              <div className="min-w-0">
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Disposition
-                </label>
-                <select
-                  value={searchDisposition}
-                  onChange={(e) => handleDispositionSearch(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  style={{
-                    height: "40px",
-                    minHeight: "40px",
-                    maxHeight: "40px",
-                  }}
-                >
-                  <option value="">All</option>
-                  {/* Most Frequently Used */}
-                  {dispositions
-                    .filter((d) => d.is_frequent)
-                    .map((disposition) => (
-                      <option key={disposition.id} value={disposition.name}>
-                        {disposition.name}
-                      </option>
-                    ))}
-                  {/* Separator */}
-                  {dispositions.filter((d) => !d.is_frequent).length > 0 && (
-                    <option disabled>-------</option>
-                  )}
-                  {/* All Others in Alphabetical Order */}
-                  {dispositions
-                    .filter((d) => !d.is_frequent)
-                    .sort((a, b) => a.name.localeCompare(b.name))
-                    .map((disposition) => (
-                      <option key={disposition.id} value={disposition.name}>
-                        {disposition.name}
-                      </option>
-                    ))}
-                </select>
-              </div>
-
-              <div className="min-w-0">
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Referral Site
-                </label>
-                <select
-                  value={searchReferralSite}
-                  onChange={(e) => handleReferralSiteSearch(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  style={{
-                    height: "40px",
-                    minHeight: "40px",
-                    maxHeight: "40px",
-                  }}
-                >
-                  <option value="">Select Referral Site</option>
-                  {/* Most Frequently Used */}
-                  {referralSites
-                    .filter((s) => s.is_frequent)
-                    .map((site) => (
-                      <option key={site.id} value={site.name}>
-                        {site.name}
-                      </option>
-                    ))}
-                  {/* Separator */}
-                  {referralSites.filter((s) => !s.is_frequent).length > 0 && (
-                    <option disabled>-------</option>
-                  )}
-                  {/* All Others in Alphabetical Order */}
-                  {referralSites
-                    .filter((s) => !s.is_frequent)
-                    .sort((a, b) => a.name.localeCompare(b.name))
-                    .map((site) => (
-                      <option key={site.id} value={site.name}>
-                        {site.name}
-                      </option>
-                    ))}
-                </select>
-              </div>
-
-              {activeTab === "activities" && (
-                <div className="min-w-0 md:col-span-2 xl:col-span-1">
+            {/* Search and Filters - Mobile Responsive */}
+            <div className="mb-6 p-4 bg-gray-50 rounded-lg">
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+                <div className="min-w-0">
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Status
+                    {activeTab === "activities"
+                      ? "Search Activities"
+                      : "Search by Name"}
+                  </label>
+                  <input
+                    type="text"
+                    placeholder={
+                      activeTab === "activities"
+                        ? "Search description or client"
+                        : "e.g. smith, j"
+                    }
+                    value={
+                      activeTab === "activities"
+                        ? activitySearchTerm
+                        : searchName
+                    }
+                    onChange={(e) =>
+                      activeTab === "activities"
+                        ? handleActivityTermSearch(e.target.value)
+                        : handleNameSearch(e.target.value)
+                    }
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    style={{
+                      height: "40px",
+                      minHeight: "40px",
+                      maxHeight: "40px",
+                    }}
+                  />
+                </div>
+                <div className="min-w-0">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Search by Date
+                  </label>
+                  <DatePicker
+                    name="reg_date"
+                    value={searchDate}
+                    onChange={(e) => handleDateSearch(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    style={{
+                      height: "40px",
+                      minHeight: "40px",
+                      maxHeight: "40px",
+                    }}
+                  />
+                </div>
+
+                {searchDate && (
+                  <div className="min-w-0">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      End Date
+                    </label>
+                    <DatePicker
+                      name="reg_date"
+                      value={searchEndDate}
+                      onChange={(e) => handleEndDateSearch(e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      style={{
+                        height: "40px",
+                        minHeight: "40px",
+                        maxHeight: "40px",
+                      }}
+                    />
+                  </div>
+                )}
+
+                <div className="min-w-0">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Search by Month
+                  </label>
+                  <MonthPicker
+                    name="reg_date"
+                    value={searchMonth}
+                    onChange={(e) => handleMonthSearch(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    style={{
+                      height: "40px",
+                      minHeight: "40px",
+                      maxHeight: "40px",
+                    }}
+                  />
+                </div>
+
+                <div className="min-w-0">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Disposition
                   </label>
                   <select
-                    value={activityStatusFilter}
-                    onChange={(e) => setActivityStatusFilter(e.target.value)}
+                    value={searchDisposition}
+                    onChange={(e) => handleDispositionSearch(e.target.value)}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                     style={{
                       height: "40px",
@@ -792,87 +627,174 @@ const AdminDashboard = () => {
                       maxHeight: "40px",
                     }}
                   >
-                    <option value="all">All Activities</option>
-                    <option value="upcoming">Upcoming</option>
-                    <option value="completed">Completed</option>
-                    <option value="late">Late</option>
+                    <option value="">All</option>
+                    {/* Most Frequently Used */}
+                    {options["disposition"]
+                      .filter((d) => d.is_frequent)
+                      .map((disposition) => (
+                        <option key={disposition.id} value={disposition.name}>
+                          {disposition.name}
+                        </option>
+                      ))}
+                    {/* Separator */}
+                    {options["disposition"].filter((d) => !d.is_frequent)
+                      .length > 0 && <option disabled>-------</option>}
+                    {/* All Others in Alphabetical Order */}
+                    {options["disposition"]
+                      .filter((d) => !d.is_frequent)
+                      .sort((a, b) => a.name.localeCompare(b.name))
+                      .map((disposition) => (
+                        <option key={disposition.id} value={disposition.name}>
+                          {disposition.name}
+                        </option>
+                      ))}
                   </select>
                 </div>
-              )}
+                <div id="province" className="scroll-mt-[60px]">
+                  <ProvinceDropdown
+                    value={searchProvince}
+                    handleChange={handleProvinceSearch}
+                    all_provinces={false}
+                    formatting={"text-sm focus:ring-blue-500"}
+                    fixedHeight={true}
+                  />
+                </div>
+
+                {searchProvince && (
+                  <div className="min-w-0">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Referral Site
+                    </label>
+                    <select
+                      value={searchReferralSite}
+                      onChange={(e) => handleReferralSiteSearch(e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      style={{
+                        height: "40px",
+                        minHeight: "40px",
+                        maxHeight: "40px",
+                      }}
+                    >
+                      <option value="">Select Referral Site</option>
+                      {/* Most Frequently Used */}
+                      {options["referral_site"]
+                        .filter((s) => s.is_frequent)
+                        .filter(
+                          (s) =>
+                            !searchProvince ||
+                            s.custom_fields.province === searchProvince,
+                        )
+                        .map((site) => (
+                          <option key={site.id} value={site.name}>
+                            {site.name}
+                          </option>
+                        ))}
+                      {/* Separator */}
+                      {options["referral_site"]
+                        .filter((s) => !s.is_frequent)
+                        .filter(
+                          (s) =>
+                            !searchProvince ||
+                            s.custom_fields.province === searchProvince,
+                        ).length > 0 && <option disabled>-------</option>}
+                      {/* All Others in Alphabetical Order */}
+                      {options["referral_site"]
+                        .filter((s) => !s.is_frequent)
+                        .filter(
+                          (s) =>
+                            !searchProvince ||
+                            s.custom_fields.province === searchProvince,
+                        )
+                        .sort((a, b) => a.name.localeCompare(b.name))
+                        .map((site) => (
+                          <option key={site.id} value={site.name}>
+                            {site.name}
+                          </option>
+                        ))}
+                    </select>
+                  </div>
+                )}
+
+                {activeTab === "activities" && (
+                  <div className="min-w-0 md:col-span-2 xl:col-span-1">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Status
+                    </label>
+                    <select
+                      value={activityStatusFilter}
+                      onChange={(e) =>
+                        handleActivityStatusSearch(e.target.value)
+                      }
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      style={{
+                        height: "40px",
+                        minHeight: "40px",
+                        maxHeight: "40px",
+                      }}
+                    >
+                      <option value="all">All Activities</option>
+                      <option value="upcoming">Upcoming</option>
+                      <option value="completed">Completed</option>
+                      <option value="late">Late</option>
+                    </select>
+                  </div>
+                )}
+              </div>
             </div>
 
-            {/* Clear All Filters Button */}
-            {(searchName ||
-              searchDate ||
-              searchDisposition ||
-              searchReferralSite ||
-              activitySearchTerm ||
-              activityStatusFilter !== "all") && (
-              <div className="mt-4 flex justify-center">
-                <button
-                  onClick={clearAllFilters}
-                  className="bg-gray-500 text-white py-2 px-4 rounded-md hover:bg-gray-600 transition-colors text-sm"
-                >
-                  Clear All Filters
-                </button>
+            {error && (
+              <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+                {error}
+              </div>
+            )}
+
+            {/* Content Area */}
+            {loading && currentData.length === 0 ? (
+              <div className="text-center py-8">
+                <div className="text-gray-600">Loading {activeTab}...</div>
+              </div>
+            ) : (
+              <div>
+                {/* No Data Messages */}
+                {currentData.length === 0 && (
+                  <div className="text-center py-8">
+                    <p className="text-gray-600">
+                      {totalRecords === 0
+                        ? `No ${activeTab} found.`
+                        : `No ${activeTab} match your search criteria.`}
+                    </p>
+                  </div>
+                )}
+
+                {/* Data Display */}
+                {currentData.length > 0 && (
+                  <>
+                    {/* Performance optimized rendering */}
+                    <div className="space-y-4">
+                      {activeTab === "activities" ? (
+                        <ActivityItems
+                          handleDelete={handleDeleteActivity}
+                          handleSave={handleSave}
+                          handleFinalize={handleFinalize}
+                          handleRevertToPending={handleRevertToPending}
+                        />
+                      ) : (
+                        <RegistrationItems
+                          handleSave={handleSave}
+                          handleDelete={handleDelete}
+                          handleFinalize={handleFinalize}
+                          handleRevertToPending={handleRevertToPending}
+                        />
+                      )}
+                    </div>
+
+                    {/* Pagination Controls */}
+                    {totalPages > 1 && <PaginationControls />}
+                  </>
+                )}
               </div>
             )}
           </div>
-
-          {error && (
-            <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
-              {error}
-            </div>
-          )}
-
-          {/* Content Area */}
-          {loading && currentData.length === 0 ? (
-            <div className="text-center py-8">
-              <div className="text-gray-600">Loading {activeTab}...</div>
-            </div>
-          ) : (
-            <div>
-              {/* No Data Messages */}
-              {currentData.length === 0 && (
-                <div className="text-center py-8">
-                  <p className="text-gray-600">
-                    {totalRecords === 0
-                      ? `No ${activeTab} found.`
-                      : `No ${activeTab} match your search criteria.`}
-                  </p>
-                </div>
-              )}
-
-              {/* Data Display */}
-              {currentData.length > 0 && (
-                <>
-                  {/* Performance optimized rendering */}
-                  <div className="space-y-4">
-                    {activeTab === "activities" ? (
-                      <ActivityItems filteredData={getFilteredData()} />
-                    ) : (
-                      <RegistrationItems
-                        activeTab={activeTab}
-                        deletingId={deletingId}
-                        finalizingId={finalizingId}
-                        revertingId={revertingId}
-                        finalizedData={finalizedData}
-                        pendingData={pendingData}
-                        handleDelete={handleDelete}
-                        handleSave={handleSave}
-                        handleFinalize={handleFinalize}
-                        handleRevertToPending={handleRevertToPending}
-                        filteredData={getFilteredData()}
-                      />
-                    )}
-                  </div>
-
-                  {/* Pagination Controls */}
-                  {totalPages > 1 && <PaginationControls />}
-                </>
-              )}
-            </div>
-          )}
         </div>
       </div>
     </div>

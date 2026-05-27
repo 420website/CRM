@@ -1,6 +1,6 @@
 import unittest
 from unittest.mock import patch
-from app.config import Settings, get_env
+from app.common.config import get_env
 
 
 class TestSettings(unittest.TestCase):

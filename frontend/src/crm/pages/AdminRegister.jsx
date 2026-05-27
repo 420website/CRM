@@ -1,6 +1,7 @@
+import { useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
+import toast from "react-hot-toast";
 import Client from "../components/Client";
-import Tests from "../tabs/Tests";
 import Intake from "../components/Intake";
 import Dispensing from "../tabs/Dispensing";
 import Medications from "../tabs/Medication";
@@ -8,33 +9,27 @@ import Notes from "../tabs/Notes";
 import Activities from "../tabs/Activities";
 import Interactions from "../tabs/Interactions";
 import Attachments from "../tabs/Attachments";
-import ClinicalTemplateManager from "../managers/ClinicalTemplateManager";
-import DispositionManager from "../managers/DispositionManager";
-import ReferralSiteManager from "../managers/ReferralSiteManager";
 import VoiceDataModal from "../components/VoiceDateModal";
-import { useAuth } from "../../context/AuthContext";
+import VoiceFillModal from "../components/VoiceInput";
+import DuplicateModal from "../components/DuplicateModal";
+import RegistrationSaved from "../components/RegistrationSaved";
+import { PatientServices } from "../../services/patientServices";
+import { ObjectServices } from "../../services/objectService";
 import { calculateAge, normalizeFormData } from "../../utils/formatData";
 import { copyFormData, copyLabelsData } from "../../utils/labelData";
 import { parseDateFromSpeech, parseFields } from "../../utils/parseFromSpeech";
-import { PatientServices } from "../../services/patientServices";
-import RegistrationSaved from "../components/RegistrationSaved";
 import { DEFAULT_FORM } from "../forms/Registration";
-import VoiceFillModal from "../components/VoiceInput";
-import { ObjectServices } from "../../services/objectService";
-import { useRegistration } from "../../context/RegistrationContext";
-import toast from "react-hot-toast";
-import DuplicateModal from "../components/DuplicateModal";
-import { useNavigate } from "react-router-dom";
+import { useAuth } from "../../context/AuthContext";
+import { useDashboard } from "../../context/DashboardContext";
+import Assessments from "../tabs/Assessments";
+import { useReferences } from "../../context/ReferenceContext";
 
 const AdminRegister = () => {
   const navigate = useNavigate();
-  const { userRole, userPermissions } = useAuth();
-  const {
-    showDispositionManager,
-    showReferralSiteManager,
-    showClinicalManager,
-    getRegistrations,
-  } = useRegistration();
+  const { userRole, userPermissions, userProvince } = useAuth();
+  const { getDashboardRegistrations } = useDashboard();
+  const [missingFields, setMissingFields] = useState(false);
+  const { templates, options, selectedProvince } = useReferences();
 
   const [loading, setLoading] = useState(false);
   const [voiceInputText, setVoiceInputText] = useState("");
@@ -42,7 +37,6 @@ const AdminRegister = () => {
   const [activeTab, setActiveTab] = useState("client");
   const [showVoiceDateModal, setShowVoiceDateModal] = useState(false);
   const [showVoiceFillModal, setShowVoiceFillModal] = useState(false);
-  const [templates, setTemplates] = useState({});
   const [selectedTemplate, setSelectedTemplate] = useState("Select");
   const [voiceDateInput, setVoiceDateInput] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -57,8 +51,22 @@ const AdminRegister = () => {
   const [showNavigateIdentityModal, setShowNavigateIdentityModal] =
     useState(false);
 
+  const filterReferralSites = () => {
+    if (!selectedProvince) {
+      return [];
+    }
+
+    const filteredSites = options["referral_site"].filter((s) => {
+      const siteProvince = s?.custom_fields?.province;
+      return siteProvince === selectedProvince;
+    });
+
+    return filteredSites;
+  };
+
   const getDefaultForm = () => ({
     ...DEFAULT_FORM,
+    province: userProvince,
     reg_date: new Date().toISOString().split("T")[0],
     rna_sample_date: new Date().toISOString().split("T")[0],
   });
@@ -138,20 +146,16 @@ const AdminRegister = () => {
     client: (
       <Client
         formData={formData}
-        setShowVoiceDateModal={setShowVoiceDateModal}
         setFormData={setFormData}
-        setTemplates={setTemplates}
-        templates={templates}
         selectedTemplate={selectedTemplate}
         setSelectedTemplate={setSelectedTemplate}
+        missingFields={missingFields}
         openVoiceDateInput={openVoiceDateInput}
         openVoiceFillInput={openVoiceFillInput}
-        currentVoiceDateField={currentVoiceDateField}
-        setCurrentVoiceDateField={setCurrentVoiceDateField}
       />
     ),
-    tests: (
-      <Tests
+    assessments: (
+      <Assessments
         setActiveTab={setActiveTab}
         currentRegistrationId={currentRegistrationId}
       />
@@ -204,7 +208,7 @@ const AdminRegister = () => {
   const getAllowedTabs = () => {
     const allTabs = [
       { id: "client", name: "Client" },
-      { id: "tests", name: "Tests" },
+      { id: "assessments", name: "Assessments" },
       { id: "medication", name: "Medication" },
       { id: "dispensing", name: "Dispensing" },
       { id: "notes", name: "Notes" },
@@ -228,11 +232,13 @@ const AdminRegister = () => {
         "Photo is too large for submission. Please try uploading a different photo.",
       );
       setIsSubmitting(false);
+      setMissingFields(true);
       return false;
     }
 
     if (!formData.reg_date) {
       setIsSubmitting(false);
+      setMissingFields(true);
       toast.error("Registration date required");
       document
         .querySelector("#regDate")
@@ -243,6 +249,8 @@ const AdminRegister = () => {
 
     if (!formData.first_name.trim()) {
       setIsSubmitting(false);
+      setMissingFields(true);
+
       toast.error("First Name required");
       document
         .querySelector("#firstName")
@@ -253,6 +261,8 @@ const AdminRegister = () => {
 
     if (!formData.last_name.trim()) {
       setIsSubmitting(false);
+      setMissingFields(true);
+
       toast.error("Last Name required");
       document
         .querySelector("#lastName")
@@ -262,6 +272,8 @@ const AdminRegister = () => {
 
     if (!formData.dob) {
       setIsSubmitting(false);
+      setMissingFields(true);
+
       toast.error("Date of birth required");
       document
         .querySelector("#dateOfBirth")
@@ -269,9 +281,42 @@ const AdminRegister = () => {
       return false;
     }
 
+    if (!formData.gender) {
+      setIsSubmitting(false);
+      setMissingFields(true);
+
+      toast.error("Gender required");
+      document.querySelector("#gender")?.scrollIntoView({ behavior: "smooth" });
+      return false;
+    }
+
+    if (!formData.disposition) {
+      setIsSubmitting(false);
+      setMissingFields(true);
+
+      toast.error("Disposition required");
+      document
+        .querySelector("#disposition")
+        ?.scrollIntoView({ behavior: "smooth" });
+      return false;
+    }
+
+    if (!options["disposition"].some((d) => d.name === formData.disposition)) {
+      setIsSubmitting(false);
+      setMissingFields(true);
+
+      toast.error("Select valid Disposition");
+      document
+        .querySelector("#disposition")
+        ?.scrollIntoView({ behavior: "smooth" });
+      return false;
+    }
+
     if (formData.health_card && formData.health_card.length != 10) {
       setIsSubmitting(false);
-      toast.error("Health Card Number must be 10 digits");
+      setMissingFields(true);
+
+      toast.error("Health Card Number must be 10 digits.");
       document
         .querySelector("#healthcard")
         ?.scrollIntoView({ behavior: "smooth" });
@@ -280,11 +325,75 @@ const AdminRegister = () => {
 
     if (formData.health_card && formData.health_card !== "0000000000") {
       if (await checkIfHealthcardExists(formData.health_card)) {
+        setMissingFields(true);
+
         document
           .querySelector("#healthcard")
           ?.scrollIntoView({ behavior: "smooth" });
         return false;
       }
+    }
+
+    if (!formData.referral_site) {
+      setIsSubmitting(false);
+      setMissingFields(true);
+
+      toast.error("Referral Site required");
+      document
+        .querySelector("#referral_site")
+        ?.scrollIntoView({ behavior: "smooth" });
+      return false;
+    }
+
+    if (!filterReferralSites().some((d) => d.name === formData.referral_site)) {
+      setIsSubmitting(false);
+      setMissingFields(true);
+
+      toast.error("Select valid Referral Site");
+      document
+        .querySelector("#referral_site")
+        ?.scrollIntoView({ behavior: "smooth" });
+      return false;
+    }
+
+    if (!formData.province) {
+      setIsSubmitting(false);
+      setMissingFields(true);
+
+      toast.error("Province required");
+      document
+        .querySelector("#province")
+        ?.scrollIntoView({ behavior: "smooth" });
+      return false;
+    }
+
+    if (
+      formData.selected_template &&
+      !templates["clinical"].some((d) => d.name === formData.selected_template)
+    ) {
+      setIsSubmitting(false);
+      setMissingFields(true);
+
+      toast.error("Select valid clinical template");
+      document
+        .querySelector("#selected_template")
+        ?.scrollIntoView({ behavior: "smooth" });
+      return false;
+    }
+
+    if (
+      formData.physician &&
+      formData.physician !== "None" &&
+      !options["physician"].some((d) => d.name === formData.physician)
+    ) {
+      setIsSubmitting(false);
+      setMissingFields(true);
+
+      toast.error("Select valid physician");
+      document
+        .querySelector("#physician")
+        ?.scrollIntoView({ behavior: "smooth" });
+      return false;
     }
 
     return true;
@@ -293,7 +402,7 @@ const AdminRegister = () => {
   const handleNavigateToRegistration = (id) => {
     setShowNavigateModal(false);
     setShowNavigateIdentityModal(false);
-    navigate(`/admin-edit/${id}`);
+    navigate(`/crm/file/${id}`);
   };
 
   const handleSubmit = async (e, dataOverride = formData) => {
@@ -318,9 +427,7 @@ const AdminRegister = () => {
     if (cleanedFormData.reg_date === "") {
       cleanedFormData.reg_date = null;
     }
-    if (cleanedFormData.address === "") {
-      cleanedFormData.province = null;
-    }
+
     if (cleanedFormData.coverage_type === "Select") {
       cleanedFormData.coverage_type = null;
     }
@@ -382,7 +489,7 @@ const AdminRegister = () => {
     }
     window.scrollTo({ top: 0, behavior: "smooth" });
 
-    getRegistrations();
+    getDashboardRegistrations();
     setLoading(false);
     setIsSubmitting(false);
   };
@@ -510,7 +617,7 @@ const AdminRegister = () => {
           <h1 className="text-2xl font-bold text-gray-900 mb-4">Intake</h1>
           <div className="flex gap-2">
             <button
-              onClick={() => navigate("/admin-menu")}
+              onClick={() => navigate("/crm/menu")}
               className="inline-flex items-center gap-1 px-3 py-1 bg-black text-white rounded-md hover:bg-gray-800 transition-colors text-xs font-medium"
               type="button"
             >
@@ -530,7 +637,7 @@ const AdminRegister = () => {
               Admin Menu
             </button>
             <button
-              onClick={() => navigate("/admin-dashboard")}
+              onClick={() => navigate("/crm/dashboard")}
               className="inline-flex items-center gap-1 px-3 py-1 bg-black text-white rounded-md hover:bg-gray-800 transition-colors text-xs font-medium"
               type="button"
             >
@@ -572,7 +679,7 @@ const AdminRegister = () => {
           </div>
         </div>
         <div className="bg-white rounded-lg shadow-md p-4">
-          {getAllowedTabs().length == 0 ? (
+          {!hasTabPermission("client") || getAllowedTabs().length == 0 ? (
             <div className="text-center py-8">
               <h1 className="text-gray-500 text-bold text-lg mb-2">
                 🔒 Access Restricted
@@ -582,7 +689,7 @@ const AdminRegister = () => {
               </p>
               <button
                 type="button"
-                onClick={() => navigate("/admin-menu")}
+                onClick={() => navigate("/crm/menu")}
                 className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
               >
                 Back to Menu
@@ -606,7 +713,7 @@ const AdminRegister = () => {
                         onClick={() => setActiveTab(tab.id)}
                         className={`px-4 py-2 text-sm font-medium whitespace-nowrap relative ${
                           activeTab === tab.id
-                            ? "border-b-2 border-white text-black bg-white -mb-0.5 z-10"
+                            ? "border-b-2 border-white text-black bg-white"
                             : "border-b-2 border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-50"
                         }`}
                       >
@@ -623,7 +730,7 @@ const AdminRegister = () => {
                       You don't have permission to access any registration tabs.
                     </p>
                     <button
-                      onClick={() => navigate("/admin-menu")}
+                      onClick={() => navigate("/crm/menu")}
                       className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
                     >
                       Back to Menu
@@ -689,9 +796,6 @@ const AdminRegister = () => {
           handleVoiceDateSubmit={handleVoiceDateSubmit}
         />
       )}
-      {showDispositionManager && <DispositionManager />}
-      {showReferralSiteManager && <ReferralSiteManager />}
-      {showClinicalManager && <ClinicalTemplateManager />}
     </div>
   );
 };

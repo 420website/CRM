@@ -3,10 +3,11 @@ import { ObjectServices } from "../../services/objectService";
 import { loadImage, loadPDF, loadWord } from "../../utils/loadFile";
 import DocumentFullScreen from "../components/DocumentFullScreen";
 import DocumentPreview from "../components/DocumentPreview";
-import { useRegistration } from "../../context/RegistrationContext";
 import toast from "react-hot-toast";
 import { useAuth } from "../../context/AuthContext";
 import { Download } from "lucide-react";
+import OptionManager from "../managers/OptionManager";
+import { useReferences } from "../../context/ReferenceContext";
 
 export default function Attachments({
   setActiveTab,
@@ -14,8 +15,9 @@ export default function Attachments({
   fileId,
 }) {
   const { userRole } = useAuth();
-  const { setShowDocumentTypeManager, documentTypes } = useRegistration();
+  const { setShowManager, showManager, options } = useReferences();
   const [loading, setLoading] = useState(false);
+
   const [documentType, setDocumentType] = useState("");
   const [documentUrl, setDocumentUrl] = useState("");
   const [isLoadingDocument, setIsLoadingDocument] = useState(false);
@@ -55,8 +57,11 @@ export default function Attachments({
       return;
     }
 
-    if (!documentType) {
-      toast.error("Please select a document type");
+    if (
+      !documentType ||
+      !options["document_type"].some((d) => d.name === documentType)
+    ) {
+      toast.error("Please select a valid document type");
       return;
     }
 
@@ -85,17 +90,14 @@ export default function Attachments({
     setLoading(false);
   };
 
-  const deleteAttachment = async (attachmentName) => {
+  const deleteAttachment = async (attachmentKey) => {
     if (!window.confirm(`Are you sure you want to remove this attachment?`)) {
       return;
     }
 
     setLoading(true);
 
-    const result = await ObjectServices.delete_attachment(
-      currentRegistrationId,
-      attachmentName,
-    );
+    const result = await ObjectServices.delete_attachment(attachmentKey);
 
     if (result.success) {
       await getAttachments(currentRegistrationId);
@@ -111,10 +113,7 @@ export default function Attachments({
   };
 
   const downloadAttachment = async (attachment) => {
-    const result = await ObjectServices.get_attachment_raw(
-      currentRegistrationId,
-      attachment.file_name,
-    );
+    const result = await ObjectServices.get_attachment_raw(attachment.file_key);
 
     if (result.success) {
       const type =
@@ -148,10 +147,7 @@ export default function Attachments({
     const fileInput = document.getElementById("documentFile");
     if (fileInput) fileInput.value = "";
 
-    const result = await ObjectServices.get_attachment_raw(
-      currentRegistrationId,
-      attachment.file_name,
-    );
+    const result = await ObjectServices.get_attachment_raw(attachment.file_key);
 
     const file = new File([result.data], attachment.file_name, {
       type: attachment.mime_type,
@@ -298,6 +294,10 @@ export default function Attachments({
   return (
     <div className="tab-content">
       <div className="space-y-6">
+        {showManager === "document_type" && (
+          <OptionManager type={showManager} />
+        )}
+
         {!currentRegistrationId && (
           <div className="border-2 border-orange-200 bg-orange-50 p-4 rounded-lg">
             <div className="flex items-center">
@@ -361,7 +361,7 @@ export default function Attachments({
               {userRole == "admin" && (
                 <button
                   type="button"
-                  onClick={() => setShowDocumentTypeManager(true)}
+                  onClick={() => setShowManager("document_type")}
                   className="text-blue-600 hover:text-blue-800 text-sm"
                 >
                   Manage Document Types
@@ -378,8 +378,21 @@ export default function Attachments({
               size="1"
             >
               <option value="">Select Document Type</option>
+              {/* Show legacy value if it doesn't exist in current options */}
+              {documentType &&
+                !options["document_type"].some(
+                  (d) => d.name === documentType,
+                ) && (
+                  <option
+                    value={documentType}
+                    disabled
+                    className="text-red-600"
+                  >
+                    {documentType} (No longer available)
+                  </option>
+                )}
               {/* Most Frequently Used */}
-              {documentTypes
+              {options["document_type"]
                 .filter((d) => d.is_frequent)
                 .map((documentType) => (
                   <option key={documentType.id} value={documentType.name}>
@@ -387,11 +400,10 @@ export default function Attachments({
                   </option>
                 ))}
               {/* Separator */}
-              {documentTypes.filter((d) => !d.is_frequent).length > 0 && (
-                <option disabled>-------</option>
-              )}
+              {options["document_type"].filter((d) => !d.is_frequent).length >
+                0 && <option disabled>-------</option>}
               {/* All Others in Alphabetical Order */}
-              {documentTypes
+              {options["document_type"]
                 .filter((d) => !d.is_frequent)
                 .sort((a, b) => a.name.localeCompare(b.name))
                 .map((documentType) => (
@@ -400,6 +412,18 @@ export default function Attachments({
                   </option>
                 ))}
             </select>
+            {documentType &&
+              !options["document_type"].some(
+                (d) => d.name === documentType,
+              ) && (
+                <div className="mt-1 flex gap-2 text-sm text-red-600">
+                  ⚠️
+                  <div>
+                    This option is no longer available. Please select a new
+                    option before saving.
+                  </div>
+                </div>
+              )}
           </div>
 
           {/* File Upload Options */}
@@ -651,7 +675,7 @@ export default function Attachments({
                         </button>
                         <button
                           type="button"
-                          onClick={() => deleteAttachment(attachment.file_name)}
+                          onClick={() => deleteAttachment(attachment.file_key)}
                           className="bg-red-600 text-white px-2 py-1 rounded text-xs hover:bg-red-700 transition-colors"
                         >
                           Remove

@@ -1,16 +1,17 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import AddressAutocomplete from "./AddressAutocomplete";
 import {
   calculateAge,
   formatPhoneNumber,
   formatPostalCode,
 } from "../../utils/formatData";
-import { useRegistration } from "../../context/RegistrationContext";
 import DatePicker from "../ui/DatePicker";
 import { useAuth } from "../../context/AuthContext";
-import CoverageManager from "../managers/CoverageManager";
-import PhysicianManager from "../managers/PhysicianManager";
 import { PhoneCall } from "lucide-react";
+import { useReferences } from "../../context/ReferenceContext";
+import OptionManager from "../managers/OptionManager";
+import TemplateManager from "../managers/TemplateManager";
+import ProvinceDropdown from "./ProvinceDropdown";
 
 // Map Google Places province codes to full province names
 const getProvince = (code) => {
@@ -38,27 +39,24 @@ export default function Client({
   setFormData,
   selectedTemplate,
   setSelectedTemplate,
-  templates,
+  missingFields,
   openVoiceDateInput,
   openVoiceFillInput,
 }) {
   const { userRole } = useAuth();
-
   const [error, setError] = useState("");
   const {
-    dispositions,
-    genericCoverage,
-    genericPhysicians,
-    referralSites,
-    clinicalTemplates,
-    setShowCoverageManager,
-    showCoverageManager,
-    setShowDispositionManager,
-    setShowClinicalManager,
-    setShowReferralSiteManager,
-    setShowPhysicianManager,
-    showPhysicianManager,
-  } = useRegistration();
+    setShowManager,
+    showManager,
+    options,
+    templates,
+    setSelectedProvince,
+    selectedProvince,
+  } = useReferences();
+
+  useEffect(() => {
+    setSelectedProvince(formData.province);
+  }, [formData.province]);
 
   const defaultPositiveClinicalSummary = async (formData) => {
     const baseTemplate = "Dx 10+ years ago and treated. ";
@@ -216,8 +214,8 @@ export default function Client({
       }));
     } else {
       const content =
-        clinicalTemplates.find((item) => item.name === templateName)?.content ||
-        "";
+        templates["clinical"].find((item) => item.name === templateName)
+          ?.content || "";
 
       setFormData((prev) => ({
         ...prev,
@@ -245,6 +243,11 @@ export default function Client({
       ...formData,
       [name]: processedValue,
     };
+
+    if (name === "province") {
+      setSelectedProvince(value);
+      newFormData.referral_site = "";
+    }
 
     // Update clinical summary ONLY if user has explicitly selected Positive template
     if (
@@ -296,22 +299,46 @@ export default function Client({
       },
     });
 
-    setFormData((prev) => ({
-      ...prev,
-      address: place.displayName,
-      city: place.city,
-      postal_code: place.postal_code,
-      province: getProvince(place.province),
-    }));
+    const newProvince = getProvince(place.province);
+
+    let newFormData = { ...formData };
+
+    if (newProvince !== newFormData.province) {
+      newFormData.province = newProvince;
+      newFormData.referral_site = "";
+    }
+
+    newFormData.address = place.displayName;
+    newFormData.city = place.city;
+    newFormData.postal_code = place.postal_code;
+
+    setFormData(newFormData);
+  };
+
+  const filterReferralSites = () => {
+    if (!selectedProvince) {
+      return [];
+    }
+
+    const filteredSites = options["referral_site"].filter((s) => {
+      const siteProvince = s?.custom_fields?.province;
+      return siteProvince === selectedProvince;
+    });
+
+    return filteredSites;
   };
 
   return (
     <div>
       <div className="tab-content">
         <div className="space-y-6">
-          {showCoverageManager && <CoverageManager />}
-          {showPhysicianManager && <PhysicianManager />}
-
+          {(showManager === "coverage" ||
+            showManager === "physician" ||
+            showManager === "disposition" ||
+            showManager === "referral_site") && (
+            <OptionManager type={showManager} />
+          )}
+          {showManager === "clinical" && <TemplateManager type={showManager} />}
           {/* Basic Information */}
           <div>
             <h2 className="text-lg font-medium text-gray-900 mb-4">
@@ -381,7 +408,7 @@ export default function Client({
                   name="first_name"
                   value={formData.first_name}
                   onChange={handleChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 ${missingFields && !formData.first_name?.trim() ? "border-red-700" : "border-gray-300 focus:ring-black"}`}
                   placeholder="Enter first name"
                   autoComplete="given-name"
                   // required
@@ -401,7 +428,7 @@ export default function Client({
                   name="last_name"
                   value={formData.last_name}
                   onChange={handleChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 ${missingFields && !formData.last_name?.trim() ? "border-red-700" : "border-gray-300 focus:ring-black"}`}
                   placeholder="Enter last name"
                   autoComplete="family-name"
                   // required
@@ -413,14 +440,14 @@ export default function Client({
                   htmlFor="dob"
                   className="block text-sm font-medium text-gray-700 mb-2"
                 >
-                  Date of Birth<span className="text-red-500">*</span>
+                  Date of Birth <span className="text-red-500">*</span>
                 </label>
                 <div className="flex items-center space-x-2">
                   <DatePicker
                     name="dob"
                     value={formData.dob}
                     onChange={handleChange}
-                    className="px-3 py-2 bg-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-black text-left font-medium cursor-pointer border border-gray-300"
+                    className={`px-3 py-2 bg-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-black text-left font-medium cursor-pointer border ${missingFields && !formData.dob ? "border-red-700" : "border-gray-300"}`}
                     style={{
                       width: "160px",
                     }}
@@ -451,24 +478,24 @@ export default function Client({
                   name="age"
                   value={formData.age}
                   readOnly
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-gray-600 cursor-not-allowed"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-gray-600 cursor-not-allowed focus:outline-none"
                   placeholder="Select date of birth to calculate age"
                 />
               </div>
 
-              <div>
+              <div id="gender" className="scroll-mt-[60px]">
                 <label
                   htmlFor="gender"
-                  className="block text-sm font-medium text-gray-700 mb-2"
+                  className="block text-sm font-medium text-gray-700 mb-2 "
                 >
-                  Gender
+                  Gender <span className="text-red-500">*</span>
                 </label>
                 <select
                   id="gender"
                   name="gender"
                   value={formData.gender}
                   onChange={handleChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black"
+                  className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 ${missingFields && !formData.gender ? "border-red-700" : "border-gray-300"} focus:ring-black`}
                 >
                   <option value="">Select Gender</option>
                   <option value="Male">Male</option>
@@ -476,18 +503,18 @@ export default function Client({
                 </select>
               </div>
 
-              <div>
+              <div id="disposition" className="scroll-mt-[60px]">
                 <div className="flex items-center justify-between mb-2">
                   <label
                     htmlFor="disposition"
                     className="block text-sm font-medium text-gray-700"
                   >
-                    Disposition
+                    Disposition <span className="text-red-500">*</span>
                   </label>
                   {userRole == "admin" && (
                     <button
                       type="button"
-                      onClick={() => setShowDispositionManager(true)}
+                      onClick={() => setShowManager("disposition")}
                       className="text-blue-600 hover:text-blue-800 text-sm"
                     >
                       Manage Dispositions
@@ -499,11 +526,23 @@ export default function Client({
                   name="disposition"
                   value={formData.disposition}
                   onChange={handleChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black"
+                  className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 ${missingFields && !formData.disposition ? "border-red-700" : "border-gray-300 focus:ring-black"}`}
                 >
                   <option value="">Select Disposition</option>
+                  {formData.disposition &&
+                    !options["disposition"].some(
+                      (d) => d.name === formData.disposition,
+                    ) && (
+                      <option
+                        value={formData.disposition}
+                        disabled
+                        className="text-red-600"
+                      >
+                        {formData.disposition} (No longer available)
+                      </option>
+                    )}
                   {/* Most Frequently Used */}
-                  {dispositions
+                  {options["disposition"]
                     .filter((d) => d.is_frequent)
                     .map((disposition) => (
                       <option key={disposition.id} value={disposition.name}>
@@ -511,11 +550,10 @@ export default function Client({
                       </option>
                     ))}
                   {/* Separator */}
-                  {dispositions.filter((d) => !d.is_frequent).length > 0 && (
-                    <option disabled>-------</option>
-                  )}
+                  {options["disposition"].filter((d) => !d.is_frequent).length >
+                    0 && <option disabled>-------</option>}
                   {/* All Others in Alphabetical Order */}
-                  {dispositions
+                  {options["disposition"]
                     .filter((d) => !d.is_frequent)
                     .sort((a, b) => a.name.localeCompare(b.name))
                     .map((disposition) => (
@@ -524,6 +562,18 @@ export default function Client({
                       </option>
                     ))}
                 </select>
+                {formData.disposition &&
+                  !options["disposition"].some(
+                    (d) => d.name === formData.disposition,
+                  ) && (
+                    <div className="mt-1 flex gap-2 text-sm text-red-600">
+                      ⚠️
+                      <div>
+                        This option is no longer available. Please select a new
+                        option before saving.
+                      </div>
+                    </div>
+                  )}
               </div>
 
               <div>
@@ -583,18 +633,18 @@ export default function Client({
                 </div>
               </div>
 
-              <div>
+              <div id="referral_site" className="scroll-mt-[60px]">
                 <div className="flex items-center justify-between mb-2">
                   <label
                     htmlFor="referral_site"
                     className="block text-sm font-medium text-gray-700"
                   >
-                    Referral Site
+                    Referral Site <span className="text-red-500">*</span>
                   </label>
-                  {userRole == "admin" && (
+                  {userRole == "admin" && selectedProvince && (
                     <button
                       type="button"
-                      onClick={() => setShowReferralSiteManager(true)}
+                      onClick={() => setShowManager("referral_site")}
                       className="text-blue-600 hover:text-blue-800 text-sm"
                     >
                       Manage Referral Sites
@@ -606,11 +656,23 @@ export default function Client({
                   name="referral_site"
                   value={formData.referral_site}
                   onChange={handleChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black"
+                  className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 ${missingFields && !formData.referral_site?.trim() ? "border-red-700" : "border-gray-300 focus:ring-black"}`}
                 >
                   <option value="">Select Referral Site</option>
+                  {formData.referral_site &&
+                    !filterReferralSites().some(
+                      (d) => d.name === formData.referral_site,
+                    ) && (
+                      <option
+                        value={formData.referral_site}
+                        disabled
+                        className="text-red-600"
+                      >
+                        {formData.referral_site} (No longer available)
+                      </option>
+                    )}
                   {/* Most Frequently Used */}
-                  {referralSites
+                  {filterReferralSites()
                     .filter((s) => s.is_frequent)
                     .map((site) => (
                       <option key={site.id} value={site.name}>
@@ -618,11 +680,10 @@ export default function Client({
                       </option>
                     ))}
                   {/* Separator */}
-                  {referralSites.filter((s) => !s.is_frequent).length > 0 && (
-                    <option disabled>-------</option>
-                  )}
+                  {filterReferralSites().filter((s) => !s.is_frequent).length >
+                    0 && <option disabled>-------</option>}
                   {/* All Others in Alphabetical Order */}
-                  {referralSites
+                  {filterReferralSites()
                     .filter((s) => !s.is_frequent)
                     .sort((a, b) => a.name.localeCompare(b.name))
                     .map((site) => (
@@ -631,10 +692,21 @@ export default function Client({
                       </option>
                     ))}
                 </select>
+                {formData.referral_site &&
+                  !filterReferralSites().some(
+                    (d) => d.name === formData.referral_site,
+                  ) && (
+                    <div className="mt-1 flex gap-2 text-sm text-red-600">
+                      ⚠️
+                      <div>
+                        This option is no longer available. Please select a new
+                        option before saving.
+                      </div>
+                    </div>
+                  )}
               </div>
             </div>
           </div>
-
           {/* Address Information */}
           <div>
             <h2 className="text-lg font-medium text-gray-900 mb-4">
@@ -696,41 +768,13 @@ export default function Client({
                 />
               </div>
 
-              <div>
-                <label
-                  htmlFor="province"
-                  className="block text-sm font-medium text-gray-700 mb-2"
-                >
-                  Province
-                </label>
-                <select
-                  id="province"
-                  name="province"
+              <div id="province" className="scroll-mt-[60px]">
+                <ProvinceDropdown
                   value={formData.province}
-                  onChange={handleChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black"
-                >
-                  <option value="">Select Province</option>
-                  <option value="Ontario">Ontario</option>
-                  <option value="Quebec">Quebec</option>
-                  <option value="British Columbia">British Columbia</option>
-                  <option value="Alberta">Alberta</option>
-                  <option value="Manitoba">Manitoba</option>
-                  <option value="Saskatchewan">Saskatchewan</option>
-                  <option value="Nova Scotia">Nova Scotia</option>
-                  <option value="New Brunswick">New Brunswick</option>
-                  <option value="Newfoundland and Labrador">
-                    Newfoundland and Labrador
-                  </option>
-                  <option value="Prince Edward Island">
-                    Prince Edward Island
-                  </option>
-                  <option value="Northwest Territories">
-                    Northwest Territories
-                  </option>
-                  <option value="Nunavut">Nunavut</option>
-                  <option value="Yukon">Yukon</option>
-                </select>
+                  handleChange={handleChange}
+                  required={true}
+                  all_provinces={false}
+                />
               </div>
 
               <div>
@@ -763,7 +807,6 @@ export default function Client({
               </div>
             </div>
           </div>
-
           {/* Contact Information */}
           <div>
             <h2 className="text-lg font-medium text-gray-900 mb-4">
@@ -934,7 +977,6 @@ export default function Client({
               </div>
             </div>
           </div>
-
           {/* Additional Information */}
           <div>
             <h2 className="text-lg font-medium text-gray-900 mb-4">
@@ -988,7 +1030,7 @@ export default function Client({
                   {userRole == "admin" && (
                     <button
                       type="button"
-                      onClick={() => setShowClinicalManager(true)}
+                      onClick={() => setShowManager("clinical")}
                       className="text-blue-600 hover:text-blue-800 text-sm"
                     >
                       Manage Templates
@@ -999,15 +1041,41 @@ export default function Client({
                   id="selected_template"
                   value={selectedTemplate}
                   onChange={(e) => handleTemplateChange(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black scroll-mt-[100px]"
                 >
                   <option value="Select">Select</option>
-                  {clinicalTemplates.map((template) => (
+                  {/* Show legacy value if it doesn't exist in current options */}
+                  {selectedTemplate &&
+                    !templates["clinical"].some(
+                      (d) => d.name === selectedTemplate,
+                    ) && (
+                      <option
+                        value={selectedTemplate}
+                        disabled
+                        className="text-red-600"
+                      >
+                        {selectedTemplate} (No longer available)
+                      </option>
+                    )}
+                  {templates["clinical"].map((template) => (
                     <option key={template.id} value={template.name}>
                       {template.name}
                     </option>
                   ))}
                 </select>
+                {selectedTemplate &&
+                  selectedTemplate !== "Select" &&
+                  !templates["clinical"].some(
+                    (d) => d.name === selectedTemplate,
+                  ) && (
+                    <div className="mt-1 flex gap-2 text-sm text-red-600">
+                      ⚠️
+                      <div>
+                        This option is no longer available. Please select a new
+                        option before saving.
+                      </div>
+                    </div>
+                  )}
               </div>
 
               {selectedTemplate === "Positive" && (
@@ -1097,7 +1165,7 @@ export default function Client({
                       {userRole == "admin" && (
                         <button
                           type="button"
-                          onClick={() => setShowCoverageManager(true)}
+                          onClick={() => setShowManager("coverage")}
                           className="text-blue-600 hover:text-blue-800 text-sm"
                         >
                           Manage Coverage
@@ -1113,7 +1181,7 @@ export default function Client({
                     >
                       <option value="">Select</option>
                       {/* Most Frequently Used */}
-                      {genericCoverage
+                      {options["coverage"]
                         .filter((c) => c.is_frequent)
                         .map((c) => (
                           <option key={c.id} value={c.name}>
@@ -1121,10 +1189,10 @@ export default function Client({
                           </option>
                         ))}
                       {/* Separator */}
-                      {genericCoverage.filter((c) => !c.is_frequent).length >
-                        0 && <option disabled>-------</option>}
+                      {options["coverage"].filter((c) => !c.is_frequent)
+                        .length > 0 && <option disabled>-------</option>}
                       {/* All Others in Alphabetical Order */}
-                      {genericCoverage
+                      {options["coverage"]
                         .filter((c) => !c.is_frequent)
                         .sort((a, b) => a.name.localeCompare(b.name))
                         .map((c) => (
@@ -1210,7 +1278,7 @@ export default function Client({
                   {userRole == "admin" && (
                     <button
                       type="button"
-                      onClick={() => setShowPhysicianManager(true)}
+                      onClick={() => setShowManager("physician")}
                       className="text-blue-600 hover:text-blue-800 text-sm"
                     >
                       Manage Physicians
@@ -1225,8 +1293,21 @@ export default function Client({
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black"
                 >
                   <option value="None">None</option>
+                  {formData.physician &&
+                    formData.physician !== "None" &&
+                    !options["physician"].some(
+                      (d) => d.name === formData.physician,
+                    ) && (
+                      <option
+                        value={formData.physician}
+                        disabled
+                        className="text-red-600"
+                      >
+                        {formData.physician} (No longer available)
+                      </option>
+                    )}
                   {/* Most Frequently Used */}
-                  {genericPhysicians
+                  {options["physician"]
                     .filter((c) => c.is_frequent)
                     .map((c) => (
                       <option key={c.id} value={c.name}>
@@ -1234,10 +1315,10 @@ export default function Client({
                       </option>
                     ))}
                   {/* Separator */}
-                  {genericPhysicians.filter((c) => !c.is_frequent).length >
+                  {options["physician"].filter((c) => !c.is_frequent).length >
                     0 && <option disabled>-------</option>}
                   {/* All Others in Alphabetical Order */}
-                  {genericPhysicians
+                  {options["physician"]
                     .filter((c) => !c.is_frequent)
                     .sort((a, b) => a.name.localeCompare(b.name))
                     .map((c) => (
@@ -1246,13 +1327,25 @@ export default function Client({
                       </option>
                     ))}
                 </select>
+                {formData.physician &&
+                  formData.physician !== "None" &&
+                  !options["physician"].some(
+                    (d) => d.name === formData.physician,
+                  ) && (
+                    <div className="mt-1 flex gap-2 text-sm text-red-600">
+                      ⚠️
+                      <div>
+                        This option is no longer available. Please select a new
+                        option before saving.
+                      </div>
+                    </div>
+                  )}
                 <p className="mt-1 text-sm text-gray-500">
                   Automatically set to "None" when disposition is "POCT NEG"
                 </p>
               </div>
             </div>
           </div>
-
           {/* Patient Consent */}
           <div className="border-t pt-6">
             <label className="block text-sm font-medium text-gray-700 mb-2">

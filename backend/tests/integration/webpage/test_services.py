@@ -3,7 +3,7 @@ import asyncio
 from unittest import IsolatedAsyncioTestCase
 from app.webpage.schema import ContactMessageCreate, RegistrationMessageCreate
 from app.webpage.services import ContactService, RegisterService
-from app.database import database
+from app.common.storage.postgres import database
 
 
 class TestContactService(IsolatedAsyncioTestCase):
@@ -48,6 +48,7 @@ class TestContactService(IsolatedAsyncioTestCase):
             row = await conn.fetchrow(
                 "SELECT * FROM contact_messages WHERE id = $1", message_id
             )
+            assert row
             self.assertIsNotNone(row)
             self.assertEqual(row["email"], "test_contact@example.com")
             self.assertEqual(row["subject"], "Test Subject")
@@ -126,6 +127,7 @@ class TestRegisterService(IsolatedAsyncioTestCase):
             row = await conn.fetchrow(
                 "SELECT * FROM register_messages WHERE id = $1", reg_id
             )
+            assert row
             self.assertIsNotNone(row)
             self.assertEqual(row["email"], "test_register@example.com")
             self.assertTrue(row["consent_given"])

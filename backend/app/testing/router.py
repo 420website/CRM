@@ -1,10 +1,10 @@
 from asyncpg.exceptions import UniqueViolationError
-from app.authentication.services import (
+from app.core.authentication.services import (
     EmailMfaCodeService,
     TokenService,
     UserService,
 )
-from app.authentication.schemas import (
+from app.core.authentication.schemas import (
     Email,
     ForgotPassword,
     RegisterRequest,
@@ -15,14 +15,17 @@ from app.authentication.schemas import (
 )
 from fastapi import APIRouter, Depends, HTTPException, status
 from datetime import datetime, timedelta
-from app.authentication.utils import SecurityService
-from app.config import settings
-from app.dependencies import get_current_user
+from app.common.crypt import SecurityService
+from app.common.config import settings
+from app.common.dependencies import get_current_user
 import datetime as dt
-from app.database import database
-
+from app.common.storage.postgres import database
+from datetime import timezone
+from app.common.storage.redis import redis_client
 from app.webpage.schema import ContactMessageCreate, RegistrationMessageCreate
 from app.webpage.services import ContactService, RegisterService
+
+# from app.core.zoom.services import ZoomService
 
 router = APIRouter(prefix="/testing", tags=["Testing"])
 
@@ -31,8 +34,8 @@ async def register_user(data: RegisterRequest) -> UserResponse:
     password_hash = SecurityService.hash_password(data.password)
 
     insert_query = """
-    INSERT INTO users (email, password_hash, is_verified, role)
-    VALUES ($1, $2, $3, 'admin')
+    INSERT INTO users (email, password_hash, is_verified, role, location_permissions)
+    VALUES ($1, $2, $3, 'admin', ARRAY['All'])
     RETURNING id;
     """
 
@@ -240,3 +243,17 @@ async def delete_user(user_data: RegisterRequest):
 @router.get("/me", response_model=UserResponse)
 def get_current_user_info(current_user: UserRead = Depends(get_current_user)):
     return current_user
+
+
+@router.post("/expire-zoom-session/{patient_id}")
+async def expire_session(patient_id: int):
+    past_time = datetime.now(timezone.utc) - timedelta(days=1)
+
+    redis = redis_client.get_client()
+    await redis.hset(
+        f"session:metadata:{patient_id}",
+        "host_last_seen_at",
+        past_time.isoformat(),
+    )
+
+    return {"message": "Expired session successfully"}

@@ -5,22 +5,14 @@ import { useRegistration } from "../../context/RegistrationContext";
 import DatePicker from "../ui/DatePicker";
 import toast from "react-hot-toast";
 import { useAuth } from "../../context/AuthContext";
-import MedicationTemplateManager from "../managers/MedicationManager";
-import MedicationOutcomeManager from "../managers/MedicationOutcomeManager";
+import { useReferences } from "../../context/ReferenceContext";
+import OptionManager from "../managers/OptionManager";
 
 export default function Medications({ setActiveTab, currentRegistrationId }) {
   const { userRole } = useAuth();
-  const {
-    medications,
-    getMedications,
-    showMedicationManager,
-    setShowMedicationManager,
-    medicationTemplates,
-    getOutcomes,
-    outcomes,
-    setShowOutcomeManager,
-    showOutcomeManager,
-  } = useRegistration();
+  const { medications, getClientMedications } = useRegistration();
+  const { setShowManager, showManager, options } = useReferences();
+
   const [loading, setLoading] = useState(false);
   const [editingMedicationId, setEditingMedicationId] = useState(null);
   const [isSavingMedication, setIsSavingMedication] = useState(false);
@@ -40,13 +32,23 @@ export default function Medications({ setActiveTab, currentRegistrationId }) {
       return false;
     }
 
-    if (!medicationData.medication || medicationData.medication === "") {
-      toast.error("Please select a medication");
+    if (
+      !medicationData.medication ||
+      medicationData.medication === "" ||
+      !options["medication"].some((d) => d.name === medicationData.medication)
+    ) {
+      toast.error("Please select a valid medication");
       return false;
     }
 
-    if (!medicationData.outcome || medicationData.outcome === "") {
-      toast.error("Please select an outcome");
+    if (
+      !medicationData.outcome ||
+      medicationData.outcome === "" ||
+      !options["medication_outcome"].some(
+        (d) => d.name === medicationData.outcome,
+      )
+    ) {
+      toast.error("Please select a valid outcome");
       return false;
     }
 
@@ -87,7 +89,7 @@ export default function Medications({ setActiveTab, currentRegistrationId }) {
     );
 
     if (result.success) {
-      getMedications(currentRegistrationId);
+      getClientMedications(currentRegistrationId);
       clearMedicationForm();
       toast.success("Medication created successfully");
     } else {
@@ -121,7 +123,7 @@ export default function Medications({ setActiveTab, currentRegistrationId }) {
     );
 
     if (result.success) {
-      getMedications(currentRegistrationId);
+      getClientMedications(currentRegistrationId);
       clearMedicationForm();
       toast.success("Medication updated successfully");
     } else {
@@ -144,7 +146,7 @@ export default function Medications({ setActiveTab, currentRegistrationId }) {
     );
 
     if (result.success) {
-      getMedications(currentRegistrationId);
+      getClientMedications(currentRegistrationId);
       toast.success("Medication deleted successfully");
     } else {
       if (result.status === 400 || result.status === 409) {
@@ -179,7 +181,9 @@ export default function Medications({ setActiveTab, currentRegistrationId }) {
     });
     setEditingMedicationId(medication.id);
     // Scroll to top of medication form
-    document.querySelector("#tabs")?.scrollIntoView({ behavior: "smooth" });
+    document
+      .querySelector("#medications")
+      ?.scrollIntoView({ behavior: "smooth" });
   };
   const clearMedicationForm = () => {
     setMedicationData({
@@ -192,10 +196,12 @@ export default function Medications({ setActiveTab, currentRegistrationId }) {
   };
 
   return (
-    <div>
+    <div id="medications" className="scroll-mt-[20px]">
       <div className="space-y-6">
-        {showMedicationManager && <MedicationTemplateManager />}
-        {showOutcomeManager && <MedicationOutcomeManager />}
+        {(showManager === "medication" ||
+          showManager === "medication_outcome") && (
+          <OptionManager type={showManager} />
+        )}
         {/* Registration ID Check */}
         {!currentRegistrationId && (
           <div className="border-2 border-orange-200 bg-orange-50 p-4 rounded-lg">
@@ -266,7 +272,7 @@ export default function Medications({ setActiveTab, currentRegistrationId }) {
                 {userRole == "admin" && (
                   <button
                     type="button"
-                    onClick={() => setShowMedicationManager(true)}
+                    onClick={() => setShowManager("medication")}
                     className="text-blue-600 hover:text-blue-800 text-sm"
                   >
                     Manage Medications
@@ -281,8 +287,20 @@ export default function Medications({ setActiveTab, currentRegistrationId }) {
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black"
               >
                 <option value="">Select</option>
+                {medicationData.medication &&
+                  !options["medication"].some(
+                    (d) => d.name === medicationData.medication,
+                  ) && (
+                    <option
+                      value={medicationData.medication}
+                      disabled
+                      className="text-red-600"
+                    >
+                      {medicationData.medication} (No longer available)
+                    </option>
+                  )}
                 {/* Most Frequently Used */}
-                {medicationTemplates
+                {options["medication"]
                   .filter((d) => d.is_frequent)
                   .map((medication) => (
                     <option key={medication.id} value={medication.name}>
@@ -290,10 +308,10 @@ export default function Medications({ setActiveTab, currentRegistrationId }) {
                     </option>
                   ))}
                 {/* Separator */}
-                {medicationTemplates.filter((d) => !d.is_frequent).length >
+                {options["medication"].filter((d) => !d.is_frequent).length >
                   0 && <option disabled>-------</option>}
                 {/* All Others in Alphabetical Order */}
-                {medicationTemplates
+                {options["medication"]
                   .filter((d) => !d.is_frequent)
                   .sort((a, b) => a.name.localeCompare(b.name))
                   .map((medication) => (
@@ -302,6 +320,18 @@ export default function Medications({ setActiveTab, currentRegistrationId }) {
                     </option>
                   ))}
               </select>
+              {medicationData.medication &&
+                !options["medication"].some(
+                  (d) => d.name === medicationData.medication,
+                ) && (
+                  <div className="mt-1 flex gap-2 text-sm text-red-600">
+                    ⚠️
+                    <div>
+                      This option is no longer available. Please select a new
+                      option before saving.
+                    </div>
+                  </div>
+                )}
             </div>
 
             <div>
@@ -315,7 +345,7 @@ export default function Medications({ setActiveTab, currentRegistrationId }) {
                 {userRole == "admin" && (
                   <button
                     type="button"
-                    onClick={() => setShowOutcomeManager(true)}
+                    onClick={() => setShowManager("medication_outcome")}
                     className="text-blue-600 hover:text-blue-800 text-sm"
                   >
                     Manage Outcomes
@@ -330,8 +360,20 @@ export default function Medications({ setActiveTab, currentRegistrationId }) {
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black"
               >
                 <option value="">Select</option>
+                {medicationData.outcome &&
+                  !options["medication_outcome"].some(
+                    (d) => d.name === medicationData.outcome,
+                  ) && (
+                    <option
+                      value={medicationData.outcome}
+                      disabled
+                      className="text-red-600"
+                    >
+                      {medicationData.outcome} (No longer available)
+                    </option>
+                  )}
                 {/* Most Frequently Used */}
-                {outcomes
+                {options["medication_outcome"]
                   .filter((d) => d.is_frequent)
                   .map((outcome) => (
                     <option key={outcome.id} value={outcome.name}>
@@ -339,11 +381,10 @@ export default function Medications({ setActiveTab, currentRegistrationId }) {
                     </option>
                   ))}
                 {/* Separator */}
-                {outcomes.filter((d) => !d.is_frequent).length > 0 && (
-                  <option disabled>-------</option>
-                )}
+                {options["medication_outcome"].filter((d) => !d.is_frequent)
+                  .length > 0 && <option disabled>-------</option>}
                 {/* All Others in Alphabetical Order */}
-                {outcomes
+                {options["medication_outcome"]
                   .filter((d) => !d.is_frequent)
                   .sort((a, b) => a.name.localeCompare(b.name))
                   .map((outcome) => (
@@ -352,6 +393,18 @@ export default function Medications({ setActiveTab, currentRegistrationId }) {
                     </option>
                   ))}
               </select>
+              {medicationData.outcome &&
+                !options["medication_outcome"].some(
+                  (d) => d.name === medicationData.outcome,
+                ) && (
+                  <div className="mt-1 flex gap-2 text-sm text-red-600">
+                    ⚠️
+                    <div>
+                      This option is no longer available. Please select a new
+                      option before saving.
+                    </div>
+                  </div>
+                )}
             </div>
 
             <div className="grid grid-cols-2 gap-4">

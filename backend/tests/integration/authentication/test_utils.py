@@ -3,9 +3,9 @@
 import asyncio
 import unittest
 from jose import jwt
-from app.config import settings
-from app.database import database
-from app.authentication.utils import SecurityService
+from app.common.config import settings
+from app.common.storage.postgres import database
+from app.common.crypt import SecurityService
 from datetime import datetime, timedelta
 import datetime as dt
 
@@ -42,7 +42,7 @@ class TestSercurityService(unittest.TestCase):
 
     def test_generate_temp_token(self):
         expires_delta = timedelta(30)
-        (token, _) = SecurityService.generate_jwt(1, expires_delta, False)
+        token, _ = SecurityService.generate_jwt(1, expires_delta, False)
 
         payload = jwt.decode(
             token,
@@ -55,7 +55,7 @@ class TestSercurityService(unittest.TestCase):
 
     def test_generate_access_token(self):
         expires_delta = timedelta(30)
-        (token, _) = SecurityService.generate_jwt(1, expires_delta, True)
+        token, _ = SecurityService.generate_jwt(1, expires_delta, True)
 
         payload = jwt.decode(
             token,
@@ -76,7 +76,7 @@ class TestSercurityService(unittest.TestCase):
 
     def test_decode_access_token(self):
         expires_delta = timedelta(30)
-        (token, _) = SecurityService.generate_jwt(1, expires_delta, True)
+        token, _ = SecurityService.generate_jwt(1, expires_delta, True)
         payload = SecurityService.decode_jwt(token)
         assert payload
 

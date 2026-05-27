@@ -4,9 +4,15 @@ on:
   push:
     branches:
       - main
+      - nightly
+      - dev 
+      - zoom
+      - ai-analytcs-use-tools
+      - update_object_keys_unique_id
   pull_request:
     branches:
       - main
+      - nightly
       - dev
 
 jobs:

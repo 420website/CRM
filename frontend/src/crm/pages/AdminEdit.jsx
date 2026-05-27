@@ -1,15 +1,11 @@
 import { useState, useEffect, useRef } from "react";
 import Client from "../components/Client";
-import Tests from "../tabs/Tests";
 import Dispensing from "../tabs/Dispensing";
 import Medications from "../tabs/Medication";
 import Notes from "../tabs/Notes";
 import Activities from "../tabs/Activities";
 import Interactions from "../tabs/Interactions";
 import Attachments from "../tabs/Attachments";
-import ClinicalTemplateManager from "../managers/ClinicalTemplateManager";
-import DispositionManager from "../managers/DispositionManager";
-import ReferralSiteManager from "../managers/ReferralSiteManager";
 import VoiceDataModal from "../components/VoiceDateModal";
 import { useAuth } from "../../context/AuthContext";
 import { calculateAge, normalizeFormData } from "../../utils/formatData";
@@ -21,23 +17,24 @@ import { useNavigate, useParams } from "react-router-dom";
 import { DEFAULT_FORM } from "../forms/Registration";
 import VoiceFillModal from "../components/VoiceInput";
 import { ObjectServices } from "../../services/objectService";
-import DocumentTypeManager from "../managers/DocumentTypeManager";
 import { useRegistration } from "../../context/RegistrationContext";
 import toast from "react-hot-toast";
 import DuplicateModal from "../components/DuplicateModal";
+import { useDashboard } from "../../context/DashboardContext";
+import Assessments from "../tabs/Assessments";
+import { useReferences } from "../../context/ReferenceContext";
 
 const AdminEdit = () => {
   const navigate = useNavigate();
+  const { patientId } = useParams();
+  const { userRole, userPermissions, userProvince } = useAuth();
+  const { templates, options, selectedProvince } = useReferences();
+  const { setLastItem } = useDashboard();
+  const { getClientAssociatedData } = useRegistration();
+  const { getDashboardRegistrations, getDashboardActivities } = useDashboard();
   const hasRun = useRef(false);
-  const {
-    showDispositionManager,
-    showReferralSiteManager,
-    showClinicalManager,
-    showDocumentTypeManager,
-    getRegistrationData,
-  } = useRegistration();
-  const { registrationId } = useParams();
-  const { userRole, userPermissions } = useAuth();
+  const [missingFields, setMissingFields] = useState(false);
+
   const [voiceInputText, setVoiceInputText] = useState("");
   const [loading, setLoading] = useState(false);
   const [saveStatus, setSaveStatus] = useState(null);
@@ -47,10 +44,6 @@ const AdminEdit = () => {
   const [currentVoiceDateField, setCurrentVoiceDateField] = useState("");
   const [voiceDateInput, setVoiceDateInput] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [photoPreview, setPhotoPreview] = useState(null);
-  const [photoData, setPhotoData] = useState({});
-  const [photoChanged, setPhotoChanged] = useState(false);
-  const [templates, setTemplates] = useState({});
   const [showNavigateModal, setShowNavigateModal] = useState(false);
   const [duplicateHealthcardPatient, setDuplicateHealthcardPatient] =
     useState(null);
@@ -59,8 +52,22 @@ const AdminEdit = () => {
     useState(false);
   const [forceSave, setForceSave] = useState(true);
 
+  const filterReferralSites = () => {
+    if (!selectedProvince) {
+      return [];
+    }
+
+    const filteredSites = options["referral_site"].filter((s) => {
+      const siteProvince = s?.custom_fields?.province;
+      return siteProvince === selectedProvince;
+    });
+
+    return filteredSites;
+  };
+
   const getDefaultForm = () => ({
     ...DEFAULT_FORM,
+    province: userProvince,
     reg_date: new Date().toISOString().split("T")[0],
     rna_sample_date: new Date().toISOString().split("T")[0],
   });
@@ -73,7 +80,7 @@ const AdminEdit = () => {
   const getFirstAllowedTab = () => {
     const allTabs = [
       { id: "client", name: "Client" },
-      { id: "tests", name: "Tests" },
+      { id: "assessments", name: "Assessments" },
       { id: "medication", name: "Medication" },
       { id: "dispensing", name: "Dispensing" },
       { id: "notes", name: "Notes" },
@@ -159,7 +166,16 @@ const AdminEdit = () => {
   const getRegistration = async () => {
     setLoading(true);
 
-    const result = await PatientServices.get_patient_by_id(registrationId);
+    try {
+      await getClientData();
+    } catch (error) {
+      toast.error(error);
+    }
+    setLoading(false);
+  };
+
+  const getClientData = async () => {
+    const result = await PatientServices.get_patient_by_id(patientId);
 
     if (result.success) {
       const merged = { ...DEFAULT_FORM, ...result.data };
@@ -174,92 +190,72 @@ const AdminEdit = () => {
       } else {
         setSelectedTemplate("Select");
       }
-
-      const photoRes = await ObjectServices.get_photo_raw(registrationId);
-
-      if (photoRes.success) {
-        const blob = new Blob([photoRes.data], { type: "image/jpeg" });
-        const url = URL.createObjectURL(blob);
-        setPhotoPreview(url);
-        setPhotoData({
-          name: photoRes.headers["file-name"],
-        });
-      }
     } else {
       if (result.status === 400 || result.status === 409) {
-        toast.error(result.message || "Invalid credentials.");
+        toast.error(result.message || "Failed to get client data.");
       } else {
-        toast.error(result.message || "Failed to Fetch Registration.");
+        toast.error(result.message || "Failed to get client data.");
       }
     }
 
-    getRegistrationData(registrationId);
-    setPhotoChanged(false);
-    setLoading(false);
+    getClientAssociatedData(patientId);
   };
 
   useEffect(() => {
-    if (registrationId) {
+    if (patientId) {
       getRegistration();
     }
-  }, [registrationId]);
+  }, [patientId]);
 
   const tabComponents = {
     client: (
       <Client
         formData={formData}
-        setShowVoiceDateModal={setShowVoiceDateModal}
         setFormData={setFormData}
-        setTemplates={setTemplates}
-        templates={templates}
         selectedTemplate={selectedTemplate}
         setSelectedTemplate={setSelectedTemplate}
+        missingFields={missingFields}
         openVoiceDateInput={openVoiceDateInput}
         openVoiceFillInput={openVoiceFillInput}
-        currentVoiceDateField={currentVoiceDateField}
-        setCurrentVoiceDateField={setCurrentVoiceDateField}
       />
     ),
-    tests: (
-      <Tests
+    assessments: (
+      <Assessments
         setActiveTab={setActiveTab}
-        currentRegistrationId={registrationId}
+        currentRegistrationId={patientId}
       />
     ),
     medication: (
       <Medications
         setActiveTab={setActiveTab}
-        currentRegistrationId={registrationId}
+        currentRegistrationId={patientId}
       />
     ),
     dispensing: (
       <Dispensing
         setActiveTab={setActiveTab}
-        currentRegistrationId={registrationId}
+        currentRegistrationId={patientId}
       />
     ),
     notes: (
-      <Notes
-        setActiveTab={setActiveTab}
-        currentRegistrationId={registrationId}
-      />
+      <Notes setActiveTab={setActiveTab} currentRegistrationId={patientId} />
     ),
     activities: (
       <Activities
         setActiveTab={setActiveTab}
-        currentRegistrationId={registrationId}
+        currentRegistrationId={patientId}
       />
     ),
     interactions: (
       <Interactions
         setActiveTab={setActiveTab}
-        currentRegistrationId={registrationId}
+        currentRegistrationId={patientId}
       />
     ),
     attachments: (
       <Attachments
         setActiveTab={setActiveTab}
-        currentRegistrationId={registrationId}
+        currentRegistrationId={patientId}
         fileId={formData.file_id}
       />
     ),
@@ -269,7 +265,7 @@ const AdminEdit = () => {
   const getAllowedTabs = () => {
     const allTabs = [
       { id: "client", name: "Client" },
-      { id: "tests", name: "Tests" },
+      { id: "assessments", name: "Assessments" },
       { id: "medication", name: "Medication" },
       { id: "dispensing", name: "Dispensing" },
       { id: "notes", name: "Notes" },
@@ -282,16 +278,9 @@ const AdminEdit = () => {
   };
 
   async function validateForm() {
-    if (formData.photo && formData.photo.length > 1200 * 1024) {
-      toast.error(
-        "Photo is too large for submission. Please try uploading a different photo.",
-      );
-      setIsSubmitting(false);
-      return false;
-    }
-
     if (!formData.reg_date) {
       setIsSubmitting(false);
+      setMissingFields(true);
       toast.error("Registration date required");
       document
         .querySelector("#regDate")
@@ -302,6 +291,8 @@ const AdminEdit = () => {
 
     if (!formData.first_name.trim()) {
       setIsSubmitting(false);
+      setMissingFields(true);
+
       toast.error("First Name required");
       document
         .querySelector("#firstName")
@@ -312,6 +303,8 @@ const AdminEdit = () => {
 
     if (!formData.last_name.trim()) {
       setIsSubmitting(false);
+      setMissingFields(true);
+
       toast.error("Last Name required");
       document
         .querySelector("#lastName")
@@ -321,6 +314,8 @@ const AdminEdit = () => {
 
     if (!formData.dob) {
       setIsSubmitting(false);
+      setMissingFields(true);
+
       toast.error("Date of birth required");
       document
         .querySelector("#dateOfBirth")
@@ -328,8 +323,41 @@ const AdminEdit = () => {
       return false;
     }
 
+    if (!formData.gender) {
+      setIsSubmitting(false);
+      setMissingFields(true);
+
+      toast.error("Gender required");
+      document.querySelector("#gender")?.scrollIntoView({ behavior: "smooth" });
+      return false;
+    }
+
+    if (!formData.disposition) {
+      setIsSubmitting(false);
+      setMissingFields(true);
+
+      toast.error("Disposition required");
+      document
+        .querySelector("#disposition")
+        ?.scrollIntoView({ behavior: "smooth" });
+      return false;
+    }
+
+    if (!options["disposition"].some((d) => d.name === formData.disposition)) {
+      setIsSubmitting(false);
+      setMissingFields(true);
+
+      toast.error("Select valid Disposition");
+      document
+        .querySelector("#disposition")
+        ?.scrollIntoView({ behavior: "smooth" });
+      return false;
+    }
+
     if (formData.health_card && formData.health_card.length != 10) {
       setIsSubmitting(false);
+      setMissingFields(true);
+
       toast.error("Health Card Number must be 10 digits.");
       document
         .querySelector("#healthcard")
@@ -339,11 +367,75 @@ const AdminEdit = () => {
 
     if (formData.health_card && formData.health_card !== "0000000000") {
       if (await checkIfHealthcardExists(formData.health_card)) {
+        setMissingFields(true);
+
         document
           .querySelector("#healthcard")
           ?.scrollIntoView({ behavior: "smooth" });
         return false;
       }
+    }
+
+    if (!formData.referral_site) {
+      setIsSubmitting(false);
+      setMissingFields(true);
+
+      toast.error("Referral Site required");
+      document
+        .querySelector("#referral_site")
+        ?.scrollIntoView({ behavior: "smooth" });
+      return false;
+    }
+
+    if (!filterReferralSites().some((d) => d.name === formData.referral_site)) {
+      setIsSubmitting(false);
+      setMissingFields(true);
+
+      toast.error("Select valid Referral Site");
+      document
+        .querySelector("#referral_site")
+        ?.scrollIntoView({ behavior: "smooth" });
+      return false;
+    }
+
+    if (!formData.province) {
+      setIsSubmitting(false);
+      setMissingFields(true);
+
+      toast.error("Province required");
+      document
+        .querySelector("#province")
+        ?.scrollIntoView({ behavior: "smooth" });
+      return false;
+    }
+
+    if (
+      formData.selected_template &&
+      !templates["clinical"].some((d) => d.name === formData.selected_template)
+    ) {
+      setIsSubmitting(false);
+      setMissingFields(true);
+
+      toast.error("Select valid clinical template");
+      document
+        .querySelector("#selected_template")
+        ?.scrollIntoView({ behavior: "smooth" });
+      return false;
+    }
+
+    if (
+      formData.physician &&
+      formData.physician !== "None" &&
+      !options["physician"].some((d) => d.name === formData.physician)
+    ) {
+      setIsSubmitting(false);
+      setMissingFields(true);
+
+      toast.error("Select valid physician");
+      document
+        .querySelector("#physician")
+        ?.scrollIntoView({ behavior: "smooth" });
+      return false;
     }
 
     return true;
@@ -352,7 +444,7 @@ const AdminEdit = () => {
   const handleNavigateToRegistration = (id) => {
     setShowNavigateModal(false);
     setShowNavigateIdentityModal(false);
-    navigate(`/admin-edit/${id}`);
+    navigate(`/crm/file/${id}`);
   };
 
   const handleSubmit = async (e, dataOverride = formData) => {
@@ -376,9 +468,7 @@ const AdminEdit = () => {
     if (cleanedFormData.reg_date === "") {
       cleanedFormData.reg_date = null;
     }
-    if (cleanedFormData.address === "") {
-      cleanedFormData.province = null;
-    }
+
     if (cleanedFormData.coverage_type === "Select") {
       cleanedFormData.coverage_type = null;
     }
@@ -392,32 +482,13 @@ const AdminEdit = () => {
     cleanedFormData.force_update = forceSave;
     const data = normalizeFormData(cleanedFormData);
 
-    const result = await PatientServices.update_patient(registrationId, data);
+    const result = await PatientServices.update_patient(patientId, data);
 
     if (result.success) {
-      if (photoData.file) {
-        const photoRes = await ObjectServices.upload_photo(
-          registrationId,
-          photoData.name,
-          photoData.file,
-        );
-        if (photoRes.success) {
-          setPhotoData({ name: photoData.name });
-          setPhotoChanged(false);
-          toast.success("Changes saved successfully");
-        } else {
-          toast.error(result.message || "Error updating photo.");
-        }
-      } else if (!photoPreview && photoChanged) {
-        const deleteRes = await ObjectServices.delete_photo(registrationId);
-        if (deleteRes.success) {
-          toast.success("Changes saved successfully");
-        } else {
-          toast.error(result.message || "Error removing photo.");
-        }
-      } else {
-        toast.success("Changes saved successfully");
-      }
+      getDashboardRegistrations();
+      getDashboardActivities();
+      toast.success("Changes saved successfully");
+      await getClientData();
     } else {
       if (result.status === 400 || result.status === 409) {
         toast.error(result.message || "Failed editing registration.");
@@ -429,7 +500,6 @@ const AdminEdit = () => {
     window.scrollTo({ top: 0, behavior: "smooth" });
     setLoading(false);
     setIsSubmitting(false);
-    setPhotoChanged(false);
   };
 
   const checkIfUserExists = async (firstName, lastName, dob) => {
@@ -437,7 +507,7 @@ const AdminEdit = () => {
       first_name: firstName,
       last_name: lastName,
       dob: dob,
-      id: registrationId,
+      id: patientId,
     };
 
     const result = await PatientServices.check_identity_exists(data);
@@ -485,7 +555,7 @@ const AdminEdit = () => {
   const checkIfHealthcardExists = async (healthCard) => {
     const data = {
       health_card: healthCard,
-      id: registrationId,
+      id: patientId,
     };
 
     const result = await PatientServices.check_healthcard_exists(data);
@@ -562,7 +632,10 @@ const AdminEdit = () => {
           <div className="flex gap-2">
             <button
               type="button"
-              onClick={() => navigate("/admin-menu")}
+              onClick={() => {
+                setLastItem(null);
+                navigate("/crm/menu");
+              }}
               className="inline-flex items-center gap-1 px-3 py-1 bg-black text-white rounded-md hover:bg-gray-800 transition-colors text-xs font-medium"
             >
               <svg
@@ -582,7 +655,7 @@ const AdminEdit = () => {
             </button>
             <button
               type="button"
-              onClick={() => navigate("/admin-dashboard")}
+              onClick={() => navigate("/crm/dashboard")}
               className="inline-flex items-center gap-1 px-3 py-1 bg-black text-white rounded-md hover:bg-gray-800 transition-colors text-xs font-medium"
             >
               <svg
@@ -633,7 +706,7 @@ const AdminEdit = () => {
               </p>
               <button
                 type="button"
-                onClick={() => navigate("/admin-menu")}
+                onClick={() => navigate("/crm/menu")}
                 className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
               >
                 Back to Menu
@@ -641,13 +714,7 @@ const AdminEdit = () => {
             </div>
           ) : (
             <form onSubmit={handleSubmit} className="space-y-6">
-              <EditPhoto
-                photoData={photoData}
-                setPhotoData={setPhotoData}
-                photoPreview={photoPreview}
-                setPhotoPreview={setPhotoPreview}
-                setPhotoChanged={setPhotoChanged}
-              />
+              <EditPhoto registrationId={patientId} formData={formData} />
 
               {/* Tabs Navigation */}
               <div
@@ -662,7 +729,7 @@ const AdminEdit = () => {
                       onClick={() => setActiveTab(tab.id)}
                       className={`px-4 py-2 text-sm font-medium whitespace-nowrap relative ${
                         activeTab === tab.id
-                          ? "border-b-2 border-white text-black bg-white -mb-0.5 z-10"
+                          ? "border-b-2 border-white text-black bg-white"
                           : "border-b-2 border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-50"
                       }`}
                     >
@@ -691,7 +758,7 @@ const AdminEdit = () => {
                   {/* Copy Button */}
                   <button
                     type="button"
-                    onClick={() => copyFormData(registrationId, formData)}
+                    onClick={() => copyFormData(patientId, formData)}
                     className="w-full bg-black text-white py-3 px-6 rounded-md hover:bg-gray-800 transition-colors text-lg font-semibold"
                   >
                     Copy
@@ -728,10 +795,6 @@ const AdminEdit = () => {
           handleVoiceDateSubmit={handleVoiceDateSubmit}
         />
       )}
-      {showDispositionManager && <DispositionManager />}
-      {showReferralSiteManager && <ReferralSiteManager />}
-      {showClinicalManager && <ClinicalTemplateManager />}
-      {showDocumentTypeManager && <DocumentTypeManager />}
     </div>
   );
 };

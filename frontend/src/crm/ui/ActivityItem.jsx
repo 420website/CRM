@@ -1,14 +1,22 @@
 import { useNavigate } from "react-router-dom";
-import { useCallback } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import { ObjectServices } from "../../services/objectService";
 import { useState } from "react";
 import toast from "react-hot-toast";
-import { useRegistration } from "../../context/RegistrationContext";
 import { PatientServices } from "../../services/patientServices";
 import { CheckCircleIcon, CircleIcon, SquarePenIcon } from "lucide-react";
 import DatePicker from "./DatePicker";
+import { useDashboard } from "../../context/DashboardContext";
+import { useReferences } from "../../context/ReferenceContext";
 
-export function ActivityItems({ filteredData }) {
+export function ActivityItems({
+  handleSave,
+  handleDelete,
+  handleFinalize,
+  handleRevertToPending,
+}) {
+  const { filteredActivity, lastItem, setLastItem } = useDashboard();
+
   const [showingPhotos, setShowingPhotos] = useState([]);
   const [loadedPhotos, setLoadedPhotos] = useState({});
   const [loadingPhotos, setLoadingPhotos] = useState(new Set());
@@ -55,6 +63,17 @@ export function ActivityItems({ filteredData }) {
     );
   };
 
+  useEffect(() => {
+    if (lastItem && filteredActivity.length > 0) {
+      setTimeout(() => {
+        document
+          .getElementById(`item-${lastItem}`)
+          ?.scrollIntoView({ behavior: "smooth" });
+        setLastItem(null); // Clear after scrolling
+      }, 300);
+    }
+  }, []);
+
   const renderActivityItem = useCallback(
     (item, index) => (
       <ActivityItem
@@ -64,15 +83,26 @@ export function ActivityItems({ filteredData }) {
         activityId={item.id}
         loadedPhotos={loadedPhotos}
         loadingPhotos={loadingPhotos}
+        handleDelete={handleDelete}
+        handleSave={handleSave}
+        handleFinalize={handleFinalize}
+        handleRevertToPending={handleRevertToPending}
         showPhoto={showPhoto}
         hidePhoto={hidePhoto}
         showingPhotos={showingPhotos}
       />
     ),
-    [loadedPhotos, loadingPhotos, showPhoto, hidePhoto, showingPhotos],
+    [
+      loadedPhotos,
+      loadingPhotos,
+      showPhoto,
+      hidePhoto,
+      showingPhotos,
+      filteredActivity,
+    ],
   );
 
-  return <div>{filteredData.map(renderActivityItem)}</div>;
+  return <div>{filteredActivity.map(renderActivityItem)}</div>;
 }
 
 export default function ActivityItem({
@@ -81,13 +111,22 @@ export default function ActivityItem({
   activityId,
   loadingPhotos,
   loadedPhotos,
+  handleDelete,
+  handleSave,
+  handleFinalize,
+  handleRevertToPending,
   showPhoto,
   hidePhoto,
   showingPhotos,
 }) {
-  const navigate = useNavigate();
-  const { getDashboardActivities, activityData } = useRegistration();
+  // Check stops error if activity item deleted
+  const { getDashboardActivities, activityData, setLastItem } = useDashboard();
   const activity = activityData.find((activity) => activity.id === activityId);
+  if (!activity) return null;
+
+  const navigate = useNavigate();
+  const nameRef = useRef(null);
+  const [nameOnOneLine, setNameOnOneLine] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
 
   const updateActivityStatus = async (isComplete) => {
@@ -99,7 +138,7 @@ export default function ActivityItem({
 
     if (result.success) {
       item = { ...item, completed: isComplete };
-      getDashboardActivities();
+      await getDashboardActivities();
     } else {
       if (result.status === 400 || result.status === 409) {
         setError(result.message || "Error updating activity.");
@@ -138,13 +177,26 @@ export default function ActivityItem({
       status = "Late";
     }
   }
-
   const statusStyles = {
     Upcoming: "bg-blue-100 text-blue-800",
     in_progress: "bg-yellow-100 text-yellow-800",
     Late: "bg-red-100 text-red-800",
     Completed: "bg-green-100 text-green-800",
   };
+
+  useEffect(() => {
+    if (nameRef.current) {
+      // Small delay to ensure layout is complete
+      const timer = setTimeout(() => {
+        const height = nameRef.current.offsetHeight;
+        const lineHeight = parseFloat(
+          getComputedStyle(nameRef.current).lineHeight,
+        );
+        setNameOnOneLine(height <= lineHeight * 1.5);
+      }, 0);
+      return () => clearTimeout(timer);
+    }
+  }, [item.first_name, item.last_name]);
 
   return (
     <div>
@@ -158,107 +210,194 @@ export default function ActivityItem({
       )}
       <div
         key={item.id}
-        className="relative border rounded-lg  bg-gray-50 hover:bg-gray-100 transition-colors cursor-pointer mb-2"
+        id={`item-${item.id}`}
+        className="relative border rounded-lg  bg-gray-50 hover:bg-gray-100 transition-colors cursor-pointer mb-2 scroll-mt-[20px] p-4"
       >
-        <div className="flex justify-between items-center  m-4 ml-2 mb-0 ">
-          {item.disposition && (
-            <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-xs font-normal ">
-              {item.disposition.charAt(0).toUpperCase() +
-                item.disposition.slice(1).toLowerCase()}
-            </span>
-          )}
-          <div className="flex items-center  ml-auto">
-            <span
-              className={`pl-2 pr-0  py-1 text-xs font-normal rounded-l-full rounded-r-none ${
-                statusStyles[status] || "bg-gray-100 text-gray-800"
-              }`}
-            >
-              {status}
-            </span>
-            {/* Check icon */}
-            <button
-              onClick={() => handleToggleComplete()}
-              className={`top-3 right-3 p-1 rounded-l-none rounded-r-full transition-colors ${
-                statusStyles[status] || "bg-gray-100 text-gray-800"
-              }`}
-              title={item.completed ? "Mark incomplete" : "Mark complete"}
-            >
-              {item.completed ? (
-                <CheckCircleIcon className="w-5 h-4" />
-              ) : (
-                <CircleIcon className="w-5 h-4" />
-              )}
-            </button>
-          </div>
-        </div>
-        <div className="flex justify-between items-start pl-4 pr-4 ">
-          <div className="flex-1">
-            <div className="flex items-center gap-3 mb-2 break-all">
-              <h3 className="text-lg font-semibold text-gray-900">
-                {item.description}
-              </h3>
+        <div className="flex justify-between items-start">
+          <div className="flex-1 min-w-0">
+            <div className="flex gap-2 justify-between items-start">
+              <div className="flex break-words">
+                <h3 className="text-lg font-semibold text-gray-900">
+                  {item.name}
+                </h3>
+              </div>
+              <button onClick={handleEdit} className="py-1">
+                <SquarePenIcon className="w-3 h-4" />
+              </button>
+              <div className="flex items-center  ml-auto">
+                <span
+                  className={`pl-2 pr-0  py-1 text-xs font-normal rounded-l-full rounded-r-none ${
+                    statusStyles[status] || "bg-gray-100 text-gray-800"
+                  }`}
+                >
+                  {status}
+                </span>
+                {/* Check icon */}
+                <button
+                  onClick={() => handleToggleComplete()}
+                  className={`top-3 right-3 p-1 rounded-l-none rounded-r-full transition-colors ${
+                    statusStyles[status] || "bg-gray-100 text-gray-800"
+                  }`}
+                  title={item.completed ? "Mark incomplete" : "Mark complete"}
+                >
+                  {item.completed ? (
+                    <CheckCircleIcon className="w-5 h-4" />
+                  ) : (
+                    <CircleIcon className="w-5 h-4" />
+                  )}
+                </button>
+              </div>
             </div>
-            <div className="text-sm text-gray-600 mt-1">
-              <p className="text-xs text-gray-500 mt-1">
-                Activity ID: {item.id}
-              </p>
-              <p className="font-medium">
-                Client: {item.first_name} {item.last_name}
-              </p>
-              <p>Date: {item.date}</p>
-              {item.time && <p>Time: {item.time}</p>}
-              {item.phone1 && <p>Phone: {item.phone1}</p>}
+            <div>
+              <div className="text-sm text-gray-600 mb-1 text-wrap">
+                <p className="break-words">{item.description}</p>
+              </div>
             </div>
-
-            {/* Lazy loaded photo */}
-            {isShowing && (
-              <div className="flex-grow">
-                <div className="flex flex-row items-center justify-between sm:flex-row">
+            <div className="flex justify-between items-start ">
+              <div className="flex-1  min-w-0">
+                <div className="flex justify-between items-start gap-2 min-w-0">
+                  <h3
+                    ref={nameRef}
+                    className="text-lg font-semibold text-gray-900 min-w-0 break-words"
+                  >
+                    {nameOnOneLine ? (
+                      <>
+                        <span>{item.first_name}</span>{" "}
+                        <span>{item.last_name}</span>
+                      </>
+                    ) : (
+                      <>
+                        <span>{item.first_name}</span>
+                        <br />
+                        <span>{item.last_name}</span>
+                      </>
+                    )}
+                  </h3>
+                  {item.disposition && (
+                    <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded-md text-xs font-normal whitespace-nowrap shrink-0">
+                      {item.disposition.charAt(0).toUpperCase() +
+                        item.disposition.slice(1).toLowerCase()}
+                    </span>
+                  )}
+                </div>
+                <div className="text-sm text-gray-600 mt-1">
+                  <p className="text-xs text-gray-500 mt-1">
+                    {`File: ${item.file_id || "N/A"} ID: ${item.id}`}
+                  </p>
+                  <p style={{ whiteSpace: "nowrap", fontSize: "14px" }}>
+                    {`
+              Registration Date: ${
+                new Date(item.submitted_date).toLocaleDateString("en-CA") ||
+                "Not provided"
+              }`}
+                  </p>
+                  <p style={{ whiteSpace: "nowrap", fontSize: "14px" }}>
+                    Submitted: {new Date(item.submitted_date).toLocaleString()}
+                  </p>
+                  {(item.status === "finalized" || item.status === "saved") &&
+                    item.finalized_at && (
+                      <p style={{ whiteSpace: "nowrap", fontSize: "14px" }}>
+                        Finalized:{" "}
+                        {new Date(item.finalized_at).toLocaleString()}
+                      </p>
+                    )}
+                </div>
+                {!isShowing && (
+                  <button
+                    onClick={() => showPhoto(item.patient_id, index)}
+                    className="flex justify-start mt-2 mb-2 text-sm text-blue-600 hover:text-blue-800"
+                  >
+                    Show Photo
+                  </button>
+                )}
+                {isShowing && (
                   <button
                     onClick={() => hidePhoto(item.patient_id, index)}
                     className="flex justify-start mt-2 mb-2 text-sm text-blue-600 hover:text-blue-800"
                   >
                     Hide Photo
                   </button>
-                </div>
-                <img
-                  src={loadedPhotos[item.patient_id]}
-                  alt="Registration photo"
-                  className="w-64 h-48 object-cover border rounded"
-                  onError={(e) => {
-                    e.target.style.display = "none";
-                  }}
-                />
+                )}
               </div>
-            )}
+            </div>
 
-            {!isShowing && (
-              <button
-                onClick={() => showPhoto(item.patient_id, index)}
-                className="mt-2 text-sm text-blue-600 hover:text-blue-800"
+            {/* Photo and buttons*/}
+            <div
+              className={`flex gap-2 justify-between ${isShowing ? "flex-row" : "flex-col"}`}
+            >
+              {/* Lazy loaded photo */}
+              {isShowing && (
+                <div className="flex-grow">
+                  <img
+                    src={loadedPhotos[item.patient_id]}
+                    alt="Registration photo"
+                    className="w-64 h-48 object-cover border rounded"
+                    onError={(e) => {
+                      e.target.style.display = "none";
+                    }}
+                  />
+                </div>
+              )}
+
+              {loadingPhotos.has(item.id) && (
+                <div className="mt-2 text-sm text-gray-500">
+                  Loading photo...
+                </div>
+              )}
+
+              {/* Action Buttons - Horizontal layout with intuitive colors */}
+              <div
+                className={`flex gap-2  ${isShowing ? "flex-col" : "flex-row"}`}
               >
-                Show Photo
-              </button>
-            )}
+                <button
+                  onClick={() => handleDelete(item.patient_id, item.id)}
+                  className={`bg-red-600 hover:bg-red-700 text-white ${isShowing ? "py-1 px-2" : "py-2 px-3"} rounded-md transition-colors text-xs font-medium disabled:opacity-50 flex-1 min-w-[60px]`}
+                >
+                  Delete
+                </button>
+                <button
+                  onClick={() => {
+                    setLastItem(item.id);
+                    navigate(`/crm/file/${item.patient_id}`);
+                  }}
+                  className={`bg-black hover:bg-gray-800 text-white ${isShowing ? "py-1 px-2" : "py-2 px-3"} rounded-md transition-colors text-xs font-medium flex-1 min-w-[60px]`}
+                >
+                  Edit
+                </button>
+                {item.status === "pending" && (
+                  <>
+                    <button
+                      onClick={() => {
+                        hidePhoto(item.patient_id, index);
+                        handleSave(item.patient_id);
+                      }}
+                      className={`bg-black hover:bg-gray-800 text-white ${isShowing ? "py-1 px-2" : "py-2 px-3"} rounded-md transition-colors text-xs font-medium disabled:opacity-50 flex-1 min-w-[60px]`}
+                    >
+                      Save
+                    </button>
+                    <button
+                      onClick={() => {
+                        hidePhoto(item.patient_id, index);
+                        handleFinalize(item.patient_id);
+                      }}
+                      className={`bg-green-600 hover:bg-green-700 text-white ${isShowing ? "py-1 px-2" : "py-2 px-3"} rounded-md transition-colors text-xs font-medium disabled:opacity-50 flex-1 min-w-[60px]`}
+                    >
+                      Submit
+                    </button>
+                  </>
+                )}
 
-            {loadingPhotos.has(item.patient_id) && (
-              <div className="mt-2 text-sm text-gray-500">Loading photo...</div>
-            )}
+                {(item.status === "saved" || item.status === "finalized") && (
+                  <button
+                    onClick={() => handleRevertToPending(item.patient_id)}
+                    className="bg-green-600 hover:bg-green-700 text-white py-2 px-3 rounded-md transition-colors text-xs font-medium disabled:opacity-50 flex-1 min-w-[60px]"
+                  >
+                    Back To Pending
+                  </button>
+                )}
+              </div>
+            </div>
           </div>
-        </div>
-
-        <div className="flex gap-2 mt-2 p-4 pt-0 justify-between">
-          <button
-            onClick={() => {
-              navigate(`/admin-edit/${item.patient_id}`);
-            }}
-            className="bg-black hover:bg-gray-800 text-white py-2 px-4 rounded-md transition-colors text-xs font-medium"
-          >
-            View Client Profile
-          </button>
-          <button onClick={handleEdit}>
-            <SquarePenIcon className="w-3 h-4" />
-          </button>
         </div>
       </div>
     </div>
@@ -266,13 +405,41 @@ export default function ActivityItem({
 }
 
 function EditActivityItem({ index, item, activityData, setIsEditing }) {
-  const { getDashboardActivities } = useRegistration();
+  const { updateActivity, deleteActivity } = useDashboard();
+  const { templates } = useReferences();
 
   const [activityForm, setActivityForm] = useState({
     date: activityData.date,
     time: activityData.time,
+    name: activityData.name,
     description: activityData.description,
   });
+
+  const handleTemplateChange = async (templateName) => {
+    const template = templates["activity"].find(
+      (template) => template.name === templateName,
+    );
+
+    const content =
+      activityForm.description !== ""
+        ? activityForm.description
+        : template
+          ? template.content
+          : "";
+
+    setActivityForm((prev) => ({
+      ...prev,
+      name: templateName === "Select" ? "General Activity" : templateName,
+      description: content,
+    }));
+  };
+
+  const clearDescription = () => {
+    setActivityForm((prev) => ({
+      ...prev,
+      description: "",
+    }));
+  };
 
   const handleActivityChange = (e) => {
     const { name, value } = e.target;
@@ -305,45 +472,25 @@ function EditActivityItem({ index, item, activityData, setIsEditing }) {
     return true;
   }
 
-  const updateActivities = async () => {
+  const handleEdit = async () => {
     if (!validateForm()) {
       return;
     }
 
-    const result = await PatientServices.update_activity(
-      item.patient_id,
-      item.id,
-      activityForm,
-    );
-
-    if (result.success) {
-      getDashboardActivities();
+    try {
+      await updateActivity(item.patient_id, item.id, activityForm);
       setIsEditing(false);
-      toast.success("Activity updated successfully");
-    } else {
-      if (result.status === 400 || result.status === 409) {
-        toast.error(result.message || "Error updating activity.");
-      } else {
-        toast.error("Error updating activity. Please try again.");
-      }
+    } catch (error) {
+      toast.error(error);
     }
   };
 
-  const deleteActivity = async () => {
-    const result = await PatientServices.delete_activity_by_id(
-      item.patient_id,
-      item.id,
-    );
-
-    if (result.success) {
-      getDashboardActivities();
-      toast.success("Activity deleted successfully");
-    } else {
-      if (result.status === 400 || result.status === 409) {
-        toast.error(result.message || "Error deleting activity.");
-      } else {
-        toast.error("Error deleting activity. Please try again.");
-      }
+  const handleDelete = async () => {
+    try {
+      await deleteActivity(item.patient_id, item.id);
+      setIsEditing(false);
+    } catch (error) {
+      toast.error(error);
     }
   };
 
@@ -357,7 +504,7 @@ function EditActivityItem({ index, item, activityData, setIsEditing }) {
           <div>
             <label
               htmlFor="activityDescription"
-              className="block text-sm font-medium text-gray-700 mb-2"
+              className="block text-sm font-medium text-gray-700 mb-1"
             >
               Date *
             </label>
@@ -373,7 +520,7 @@ function EditActivityItem({ index, item, activityData, setIsEditing }) {
           <div>
             <label
               htmlFor="activityTime"
-              className="block text-sm font-medium text-gray-700 mb-2"
+              className="block text-sm font-medium text-gray-700 mt-1 mb-1 "
             >
               Time
             </label>
@@ -390,12 +537,45 @@ function EditActivityItem({ index, item, activityData, setIsEditing }) {
           </div>
 
           <div>
-            <label
-              htmlFor="activityDescription"
-              className="block text-sm font-medium text-gray-700 mb-2"
+            <div className="flex items-center justify-between mt-1 mb-1">
+              <label
+                htmlFor="selectedTemplate"
+                className="block text-sm font-medium text-gray-700"
+              >
+                Activity Template
+              </label>
+            </div>
+            <select
+              id="selectedTemplate"
+              value={activityForm.name}
+              onChange={(e) => handleTemplateChange(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black"
             >
-              Description
-            </label>
+              <option value="General Activity">General Activity</option>
+              {templates["activity"].map((template) => (
+                <option key={template.id} value={template.name}>
+                  {template.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <div className="flex items-center justify-between mt-1 mb-1">
+              <label
+                htmlFor="activityDescription"
+                className="block text-sm font-medium text-gray-700"
+              >
+                Description
+              </label>
+              <button
+                type="button"
+                onClick={clearDescription}
+                className="text-blue-600 hover:text-blue-800 text-sm"
+              >
+                Clear
+              </button>
+            </div>
             <textarea
               id="activityDescription"
               name="description"
@@ -410,17 +590,10 @@ function EditActivityItem({ index, item, activityData, setIsEditing }) {
           <div className="flex gap-3">
             <button
               type="button"
-              onClick={updateActivities}
+              onClick={handleEdit}
               className="bg-black text-white text-xs px-4 py-2 rounded-md hover:bg-gray-800 disabled:bg-gray-400 transition-colors"
             >
               Update
-            </button>
-            <button
-              type="button"
-              onClick={deleteActivity}
-              className="bg-black text-white px-4 text-xs py-2 rounded-md hover:bg-gray-800 disabled:bg-gray-400 transition-colors"
-            >
-              Delete
             </button>
             <button
               type="button"
