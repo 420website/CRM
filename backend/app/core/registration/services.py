@@ -33,6 +33,8 @@ from app.core.registration.schemas import (
 )
 from app.common.storage.postgres import database
 
+AGE_QUERY = "DATE_PART('year', AGE(dob))::INT AS age"
+
 
 class PatientService:
     # Patient
@@ -40,7 +42,7 @@ class PatientService:
     async def create_patient(patient: PatientCreate) -> Optional[int]:
         query = """
         INSERT INTO patients (
-            first_name, last_name, dob, age, gender, aka, address, unit_number, 
+            first_name, last_name, dob, gender, aka, address, unit_number, 
             city, province, postal_code, phone1, phone2, email, language, health_card, 
             health_card_version, coverage_type, disposition, physician, 
             patient_consent, leave_message, voicemail, text, preferred_time,
@@ -51,7 +53,7 @@ class PatientService:
         VALUES (
             $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15,
             $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28,
-            $29, $30, $31, $32, $33, $34, $35, $36
+            $29, $30, $31, $32, $33, $34, $35
         )
         RETURNING id;
         """
@@ -63,7 +65,6 @@ class PatientService:
                     patient.first_name,
                     patient.last_name,
                     patient.dob,
-                    patient.age,
                     patient.gender,
                     patient.aka,
                     patient.address,
@@ -105,8 +106,8 @@ class PatientService:
 
     @staticmethod
     async def get_patients() -> List[PatientBase]:
-        query = """
-        SELECT * FROM patients; 
+        query = f"""
+        SELECT *, {AGE_QUERY} FROM patients;
         """
         async with database.get_connection() as conn:
             rows = await conn.fetch(query)
@@ -124,8 +125,8 @@ class PatientService:
         if len(locations) == 0:
             return []
 
-        query = """
-        SELECT * 
+        query = f"""
+        SELECT *, {AGE_QUERY}        
         FROM patients
         WHERE province= ANY($1); 
         """
@@ -140,8 +141,8 @@ class PatientService:
 
     @staticmethod
     async def get_patient_by_id(id: int) -> Union[PatientRead, None]:
-        query = """
-        SELECT * 
+        query = f"""
+        SELECT *, {AGE_QUERY}    
         FROM patients
         WHERE id=$1; 
         """

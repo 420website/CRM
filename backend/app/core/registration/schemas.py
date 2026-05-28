@@ -84,7 +84,7 @@ class PatientBase(BaseModel):
     finalized_at: Optional[datetime] = None
 
 
-# Schema for creating a new patient - only require essential fields
+# Sonly require essential fields
 class PatientCreate(PatientBase):
     first_name: str
     last_name: str
@@ -93,7 +93,6 @@ class PatientCreate(PatientBase):
     province: str
     disposition: str
     gender: str
-    age: int
     force_create: bool = False
     limited: bool = True
     status: Optional[str] = None
@@ -111,7 +110,6 @@ class PatientUpdate(PatientBase):
     first_name: Optional[str] = None
     last_name: Optional[str] = None
     dob: Optional[dt.date] = None
-    age: Optional[int] = None
     gender: Optional[str] = None
     province: Optional[str] = None
     referral_site: Optional[str] = None

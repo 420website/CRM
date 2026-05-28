@@ -77,7 +77,6 @@ FIELD_DESCRIPTIONS = {
         "first_name": "Patient's first name",
         "last_name": "Patient's last name",
         "dob": "Date of birth of the patient",
-        "age": "Patient's age in years",
         "gender": "Gender of the patient (Male, Female)",
         "aka": "Alternate name or nickname",
         "address": "Street address",
