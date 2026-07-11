@@ -1,4 +1,5 @@
 services:
+  ####### Secrets/Certs ########
   vault-agent:
     image: hashicorp/vault
     restart: unless-stopped
@@ -29,6 +30,7 @@ services:
       - setup
       - prod
 
+  ####### Grafana ########
   alloy:
     image: grafana/alloy:latest
     restart: unless-stopped
@@ -54,6 +56,7 @@ services:
     mem_limit: 290m
     memswap_limit: 290m
 
+  ####### Storage ########
   postgres:
     image: postgres:16
     restart: unless-stopped
@@ -78,6 +81,7 @@ services:
     mem_reservation: 120m
     mem_limit: 150m
     memswap_limit: 150m
+
 
   dbmate:
     image: amacneil/dbmate
@@ -186,6 +190,29 @@ services:
     mem_limit: 280m
     memswap_limit: 280m
 
+  ####### Reverse Proxy #######
+  caddy:
+    image: caddy:latest
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    env_file:
+      - /etc/vault/secrets/.env
+    volumes:
+      - frontend_dist:/srv/react
+      - ./prod.caddy:/etc/caddy/Caddyfile
+      - caddy_data:/data
+      - caddy_config:/config
+    networks:
+      - backend-net
+      - frontend-net
+    depends_on: 
+      - backend
+    profiles: 
+      - prod
+
+  ####### Application ########
   backend:
     build: ./backend
     restart: unless-stopped
@@ -215,6 +242,7 @@ services:
     mem_limit: 500m
     memswap_limit: 500m
 
+  ####### UI #########
   frontend-builder:
     build: ./frontend
     volumes:
@@ -232,6 +260,8 @@ services:
         cp -r dist/. /dist
       "
 
+
+
   # nginx-dev:
   #   image: nginx:stable-alpine
   #   ports:
@@ -244,66 +274,66 @@ services:
   #     - frontend_dist:/usr/share/nginx/html:ro
   #     - ./nginx/nginx.dev.conf:/etc/nginx/conf.d/default.conf:ro
 
-  nginx-setup:
-    image: nginx:alpine
-    ports:
-      - 80:80
-    volumes:
-      - certbot-etc:/etc/letsencrypt
-      - certbot-var:/var/lib/letsencrypt
-      - certbot-www:/var/www/certbot
-      - frontend_dist:/usr/share/nginx/html:ro
-      - ./nginx/nginx.setup.conf:/etc/nginx/templates/nginx.conf.template
-      - /etc/vault/certs:/certs:ro
-    env_file:
-      - /etc/vault/secrets/.env
-    profiles:
-      - staging
-
-  certbot-setup:
-    image: certbot/certbot
-    volumes:
-      - certbot-etc:/etc/letsencrypt
-      - certbot-var:/var/lib/letsencrypt
-      - certbot-www:/var/www/certbot
-      - ./scripts/cert_check.sh:/scripts/cert_check.sh:ro
-      - /etc/vault/certs:/certs:ro
-    env_file:
-      - /etc/vault/secrets/.env
-    depends_on:
-      - nginx-setup
-    profiles:
-      - staging
-    entrypoint: ["sh"]
-    command: ["/scripts/cert_check.sh"]
-
-  nginx:
-    image: nginx:alpine
-    restart: unless-stopped
-    ports:
-      - 80:80
-      - 443:443
-    volumes:
-      - certbot-etc:/etc/letsencrypt
-      - certbot-var:/var/lib/letsencrypt
-      - certbot-www:/var/www/certbot
-      - frontend_dist:/usr/share/nginx/html:ro
-      - ./nginx/nginx.prod.conf:/etc/nginx/templates/nginx.conf.template
-      - ./nginx/nginx.conf:/etc/nginx/nginx.conf
-      - /etc/vault/certs:/certs:ro
-    env_file:
-      - /etc/vault/secrets/.env
-    profiles:
-      - prod
-      - cert-reload
-      - secret-reload
-    networks:
-      - frontend-net
-    depends_on:
-      - backend
-    mem_reservation: 50m
-    mem_limit: 80m
-    memswap_limit: 80m
+  # nginx-setup:
+  #   image: nginx:alpine
+  #   ports:
+  #     - 80:80
+  #   volumes:
+  #     - certbot-etc:/etc/letsencrypt
+  #     - certbot-var:/var/lib/letsencrypt
+  #     - certbot-www:/var/www/certbot
+  #     - frontend_dist:/usr/share/nginx/html:ro
+  #     - ./nginx/nginx.setup.conf:/etc/nginx/templates/nginx.conf.template
+  #     - /etc/vault/certs:/certs:ro
+  #   env_file:
+  #     - /etc/vault/secrets/.env
+  #   profiles:
+  #     - staging
+  #
+  # certbot-setup:
+  #   image: certbot/certbot
+  #   volumes:
+  #     - certbot-etc:/etc/letsencrypt
+  #     - certbot-var:/var/lib/letsencrypt
+  #     - certbot-www:/var/www/certbot
+  #     - ./scripts/cert_check.sh:/scripts/cert_check.sh:ro
+  #     - /etc/vault/certs:/certs:ro
+  #   env_file:
+  #     - /etc/vault/secrets/.env
+  #   depends_on:
+  #     - nginx-setup
+  #   profiles:
+  #     - staging
+  #   entrypoint: ["sh"]
+  #   command: ["/scripts/cert_check.sh"]
+  #
+  # nginx:
+  #   image: nginx:alpine
+  #   restart: unless-stopped
+  #   ports:
+  #     - 80:80
+  #     - 443:443
+  #   volumes:
+  #     - certbot-etc:/etc/letsencrypt
+  #     - certbot-var:/var/lib/letsencrypt
+  #     - certbot-www:/var/www/certbot
+  #     - frontend_dist:/usr/share/nginx/html:ro
+  #     - ./nginx/nginx.prod.conf:/etc/nginx/templates/nginx.conf.template
+  #     - ./nginx/nginx.conf:/etc/nginx/nginx.conf
+  #     - /etc/vault/certs:/certs:ro
+  #   env_file:
+  #     - /etc/vault/secrets/.env
+  #   profiles:
+  #     - prod
+  #     - cert-reload
+  #     - secret-reload
+  #   networks:
+  #     - frontend-net
+  #   depends_on:
+  #     - backend
+  #   mem_reservation: 50m
+  #   mem_limit: 80m
+  #   memswap_limit: 80m
 
 volumes:
   frontend_dist:
@@ -314,6 +344,8 @@ volumes:
   certbot-etc:
   certbot-var:
   certbot-www:
+  caddy_data:
+  caddy_config:
 
   backend-logs:
     driver: local

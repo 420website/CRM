@@ -1,0 +1,24 @@
+:80 {
+	encode gzip
+
+	request_body {
+		max_size 10MB
+	}
+
+	# handle_path strips the "/api" prefix before forwarding
+	handle_path /api/* {
+		reverse_proxy http://backend-dev:8000 {
+			# Replaces client_body_timeout 300s
+			transport http {
+				read_timeout 300s
+			}
+		}
+	}
+
+	# Frontend Dev / Fallback (replaces location /)
+	# WebSockets upgrade completely automatically in Caddy
+	handle /* {
+		reverse_proxy http://frontend-dev:5173
+	}
+}
+
