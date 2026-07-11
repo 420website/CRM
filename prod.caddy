@@ -1,0 +1,43 @@
+{
+	email {$CADDY_EMAIL}
+}
+
+ {$DOMAIN_NAME} {
+	redir https://{$DOMAIN_ROOT}{uri} permanent
+}
+
+{$DOMAIN_ROOT} {
+	# Redirect HTTP -> HTTPS automatically (built-in)
+	encode gzip
+
+  header {
+		X-Content-Type-Options nosniff
+		X-Frame-Options DENY
+		X-XSS-Protection "1; mode=block"
+	}
+
+	request_body {
+		max_size 10MB
+	}
+
+	# API backend
+	handle_path /api/* {
+		reverse_proxy http://backend:8000 {
+			transport http {
+				versions 1.1
+			}
+			header_up Host {host}
+			header_up X-Real-IP {remote_host}
+			header_up X-Forwarded-For {remote_host}
+			header_up X-Forwarded-Proto {scheme}
+			flush_interval -1
+		}
+	}
+
+	# Support Site
+	handle /* {
+		root * /srv/react
+		file_server
+		try_files {path} /index.html
+	}
+}
